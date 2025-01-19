@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.16)
+set(CMAKE_CXX_STANDARD 20)
+project(app)
+
+file(GLOB_RECURSE SOURCES "sources/*.cpp" "sources/*.h")
+source_group("Source Files" FILES ${SOURCES})
+
+set(CMAKE_PREFIX_PATH "C:/Qt/6.5.1")
+find_package(Qt6 COMPONENTS Widgets REQUIRED)
+qt_standard_project_setup()
+set(CMAKE_AUTOMOC ON)
+
+include_directories("sources")
+
+qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc)
+
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${QRC_FILES})
+target_link_libraries(${PROJECT_NAME} Qt6::Widgets)
