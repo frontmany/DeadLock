@@ -1,13 +1,14 @@
 #include "mainWindow.h"
+#include "clientSide.h"
 
-
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget* parent, ClientSide* client) : QMainWindow(parent) {
     setupLoginWidget();
+    m_client = client;
 }
 
 
 MainWindow::~MainWindow() {
-    delete loginWidget;
+    delete m_loginWidget;
 }
 
 
@@ -44,9 +45,12 @@ void MainWindow::setRegistrationWidget() {
 
 }
 
+void MainWindow::onLogin(bool isLoggedIn) {
+
+}
 
 void MainWindow::setupLoginWidget() {
-    loginWidget = new LoginWidget(this);
-    loginWidget->setTheme(LIGHT);
-    setCentralWidget(loginWidget);
+    m_loginWidget = new LoginWidget(this, this, m_client);
+    m_loginWidget->setTheme(DARK);
+    setCentralWidget(m_loginWidget);
 }

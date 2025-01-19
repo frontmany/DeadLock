@@ -10,7 +10,7 @@
 
 #include "loginWidget.h"
 
-struct StyleRegistrationComponent {
+struct StyleAuthorizationComponent {
 
     QString DarkButtonStyle = R"(
     QPushButton {
@@ -74,37 +74,37 @@ struct StyleRegistrationComponent {
 
 };
 
+class LoginWidget;
 
-
-class RegistrationComponent : public QWidget {
+class AuthorizationComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit RegistrationComponent(QWidget* parent);
+    explicit AuthorizationComponent(QWidget* parent, LoginWidget* loginWidget);
     void setTheme(Theme theme);
 
 
 protected:
     void paintEvent(QPaintEvent* event) override;
+    
 
 private slots:
-    void onAuthorizeButtonClicked();
+    void SlotToSendLoginData();
+
+signals:
+    void sendLoginData(QString& login, QString& password);
 
 
 private:
-    StyleRegistrationComponent* style;
+    StyleAuthorizationComponent*    style;
     QColor                      m_backgroundColor;
 
 
-    QHBoxLayout* m_registerButtonHla;
-    QHBoxLayout* m_usernameEditHla;
-    QHBoxLayout* m_passwordEditHla;
-    QHBoxLayout* m_password2EditHla;
-    QHBoxLayout* m_nameEditHla;
+    QHBoxLayout*                m_loginButtonHla;
+    QHBoxLayout*                m_loginEditHla;
+    QHBoxLayout*                m_passwordEditHla;
 
-    QPushButton* m_registerButton;
-    QLineEdit* m_usernameEdit;
-    QLineEdit* m_passwordEdit;
-    QLineEdit* m_password2Edit;
-    QLineEdit* m_nameEdit;
+    QPushButton*                m_loginButton;
+    QLineEdit*                  m_loginEdit;
+    QLineEdit*                  m_passwordEdit;
 };

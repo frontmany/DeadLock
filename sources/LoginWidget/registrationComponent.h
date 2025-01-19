@@ -10,7 +10,7 @@
 
 #include "loginWidget.h"
 
-struct StyleAuthorizationComponent {
+struct StyleRegistrationComponent {
 
     QString DarkButtonStyle = R"(
     QPushButton {
@@ -74,34 +74,43 @@ struct StyleAuthorizationComponent {
 
 };
 
+class LoginWidget;
 
 
-class AuthorizationComponent : public QWidget {
+class RegistrationComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit AuthorizationComponent(QWidget* parent);
+    explicit RegistrationComponent(QWidget* parent, LoginWidget* loginWidget);
     void setTheme(Theme theme);
 
 
 protected:
     void paintEvent(QPaintEvent* event) override;
 
+
 private slots:
-    void onAuthorizeButtonClicked();
-    
+    void slotToSendRegistrationData();
+
+signals:
+    void sendRegistrationData(QString& login, QString& data, QString& name);
+
+
 
 private:
-    StyleAuthorizationComponent*    style;
+    StyleRegistrationComponent* style;
     QColor                      m_backgroundColor;
-    Theme                       m_currentTheme;
 
 
-    QHBoxLayout*                m_loginButtonHla;
-    QHBoxLayout*                m_usernameEditHla;
-    QHBoxLayout*                m_passwordEditHla;
+    QHBoxLayout* m_registerButtonHla;
+    QHBoxLayout* m_loginEditHla;
+    QHBoxLayout* m_passwordEditHla;
+    QHBoxLayout* m_password2EditHla;
+    QHBoxLayout* m_nameEditHla;
 
-    QPushButton*                m_loginButton;
-    QLineEdit*                  m_usernameEditAuthorize;
-    QLineEdit*                  m_passwordEditAuthorize;
+    QPushButton* m_registerButton;
+    QLineEdit* m_loginEdit;
+    QLineEdit* m_passwordEdit;
+    QLineEdit* m_password2Edit;
+    QLineEdit* m_nameEdit;
 };

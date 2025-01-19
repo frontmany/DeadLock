@@ -9,8 +9,7 @@
 #include <QPixmap>
 
 
-class AuthorizationComponent;
-class RegistrationComponent;
+
 
 struct StyleLoginWidget {
     QString buttonStyleBlue = R"(
@@ -55,28 +54,42 @@ enum Theme {
     LIGHT
 };
 
+class AuthorizationComponent;
+class RegistrationComponent;
+class ClientSide;
+class MainWindow;
+
+
 class LoginWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LoginWidget(QWidget* parent);
+    explicit LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client);
     void setTheme(Theme theme);
 
+signals:
+    void sendLoginStatus(bool status);
+
 private slots:
-    void onAuthorizeButtonClicked();
-    void onRegisterButtonClicked();
     void switchToAuthorize();
     void switchToRegister();
+
+public slots:
+    void onAuthorizeButtonClicked(QString& login, QString& password);
+    void onRegisterButtonClicked(QString& login, QString& password, QString& name);
 
 
 private:
     void paintEvent(QPaintEvent* event) override;
     void setBackGround(Theme theme);
+    void swapSwitchStyles();
+    enum SwithcState{AUTHORIZATION, REGISTRATION};
 
 private:
     StyleLoginWidget*       style;
     QPixmap                 m_background;
-
+    SwithcState             m_switchState;
+    ClientSide*             m_client;
 
     QVBoxLayout*            m_mainVLayout;
     QHBoxLayout*            m_switchersHLayout;

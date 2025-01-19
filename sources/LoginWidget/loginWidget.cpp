@@ -1,11 +1,13 @@
 #include "loginWidget.h"
 #include "authorizationComponent.h"
 #include "registrationComponent.h"
+#include "mainwindow.h"
+#include "clientSide.h"
 
-LoginWidget::LoginWidget(QWidget* parent)
-    : QWidget(parent){
+LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client)
+    : QWidget(parent), m_client(client){
 
-
+    m_switchState = AUTHORIZATION;
     style = new StyleLoginWidget;
 
     m_switchToRegisterButton = new QPushButton("register", this);
@@ -22,8 +24,8 @@ LoginWidget::LoginWidget(QWidget* parent)
     m_FormsHLayout = new QHBoxLayout;
     m_FormsHLayout->setAlignment(Qt::AlignCenter);
 
-    m_authorizationWidget = new AuthorizationComponent(this);
-    m_registrationWidget = new RegistrationComponent(this);
+    m_authorizationWidget = new AuthorizationComponent(this, this);
+    m_registrationWidget = new RegistrationComponent(this, this);
     m_FormsHLayout->addWidget(m_authorizationWidget);
     m_FormsHLayout->addWidget(m_registrationWidget);
 
@@ -38,25 +40,34 @@ LoginWidget::LoginWidget(QWidget* parent)
     
     connect(m_switchToRegisterButton, &QPushButton::clicked, this, &LoginWidget::switchToRegister);
     connect(m_switchToAuthorizeButton, &QPushButton::clicked, this, &LoginWidget::switchToAuthorize);
+
+    connect(this, &LoginWidget::sendLoginStatus, mw, &MainWindow::onLogin);
 }
 
-void LoginWidget::onAuthorizeButtonClicked() {
-    // Логика авторизации
-
+void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
+    qDebug() << "Received data:" << login << password;
+    bool isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
+    emit(sendLoginStatus(isLog));
 }
 
-void LoginWidget::onRegisterButtonClicked() {
-    // Логика регистрации 
+void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
+    qDebug() << "Received data:" << login << password << name;
+    bool isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
+    emit(sendLoginStatus(isLog));
 }
 
 void LoginWidget::switchToAuthorize() {
     m_registrationWidget->hide();
     m_authorizationWidget->show();
+    m_switchState = AUTHORIZATION;
+    swapSwitchStyles();
 }
 
 void LoginWidget::switchToRegister() {
     m_authorizationWidget->hide();
     m_registrationWidget->show();
+    m_switchState = REGISTRATION;
+    swapSwitchStyles();
 }
 
 void LoginWidget::paintEvent(QPaintEvent* event) {
@@ -66,8 +77,7 @@ void LoginWidget::paintEvent(QPaintEvent* event) {
 }
 
 void LoginWidget::setTheme(Theme theme) {
-    m_switchToAuthorizeButton->setStyleSheet(style->buttonStyleBlue);
-    m_switchToRegisterButton->setStyleSheet(style->buttonStyleGray);
+    swapSwitchStyles();
     m_authorizationWidget->setTheme(theme);
     m_registrationWidget->setTheme(theme);
     setBackGround(theme);
@@ -82,5 +92,16 @@ void LoginWidget::setBackGround(Theme theme) {
     else {
         if (m_background.load(":/resources/LoginWidget/lightLoginBackground.jpg")) { 
         }
+    }
+}
+
+void LoginWidget::swapSwitchStyles() {
+    if (m_switchState == AUTHORIZATION) {
+        m_switchToAuthorizeButton->setStyleSheet(style->buttonStyleBlue);
+        m_switchToRegisterButton->setStyleSheet(style->buttonStyleGray);
+    }
+    if (m_switchState == REGISTRATION) {
+        m_switchToAuthorizeButton->setStyleSheet(style->buttonStyleGray);
+        m_switchToRegisterButton->setStyleSheet(style->buttonStyleBlue);
     }
 }

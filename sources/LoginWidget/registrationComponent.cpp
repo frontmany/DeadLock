@@ -4,15 +4,15 @@
 #include <QDebug>
 
 
-RegistrationComponent::RegistrationComponent(QWidget* parent)
+RegistrationComponent::RegistrationComponent(QWidget* parent, LoginWidget* loginWidget)
     : QWidget(parent) {
 
     style = new StyleRegistrationComponent;
     m_backgroundColor = QColor(30, 30, 30, 200);
 
-    m_usernameEdit = new QLineEdit(this);
-    m_usernameEdit->setPlaceholderText("Login");
-    m_usernameEdit->setMaximumSize(500, 40);
+    m_loginEdit = new QLineEdit(this);
+    m_loginEdit->setPlaceholderText("Login");
+    m_loginEdit->setMaximumSize(500, 40);
 
     m_passwordEdit = new QLineEdit(this);
     m_passwordEdit->setPlaceholderText("Password");
@@ -32,19 +32,20 @@ RegistrationComponent::RegistrationComponent(QWidget* parent)
 
     m_registerButton = new QPushButton("Register", this);
     m_registerButton->setMaximumSize(500, 40);
-    connect(m_registerButton, &QPushButton::clicked, this, &RegistrationComponent::onAuthorizeButtonClicked);
+    connect(m_registerButton, &QPushButton::clicked, this, &RegistrationComponent::slotToSendRegistrationData);
+    connect(this, &RegistrationComponent::sendRegistrationData, loginWidget, &LoginWidget::onRegisterButtonClicked);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
     m_registerButtonHla = new QHBoxLayout;
-    m_usernameEditHla = new QHBoxLayout;
+    m_loginEditHla = new QHBoxLayout;
     m_nameEditHla = new QHBoxLayout;
     m_passwordEditHla = new QHBoxLayout;
     m_password2EditHla = new QHBoxLayout;
 
 
-    m_usernameEditHla->addSpacing(25);
-    m_usernameEditHla->addWidget(m_usernameEdit);
-    m_usernameEditHla->addSpacing(25);
+    m_loginEditHla->addSpacing(25);
+    m_loginEditHla->addWidget(m_loginEdit);
+    m_loginEditHla->addSpacing(25);
 
     m_nameEditHla->addSpacing(25);
     m_nameEditHla->addWidget(m_nameEdit);
@@ -63,7 +64,7 @@ RegistrationComponent::RegistrationComponent(QWidget* parent)
     m_registerButtonHla->addSpacing(25);
 
 
-    layout->addLayout(m_usernameEditHla);
+    layout->addLayout(m_loginEditHla);
     layout->addLayout(m_nameEditHla);
     layout->addLayout(m_passwordEditHla);
     layout->addLayout(m_password2EditHla);
@@ -85,17 +86,10 @@ void RegistrationComponent::paintEvent(QPaintEvent* event) {
 }
 
 
-void RegistrationComponent::onAuthorizeButtonClicked() {
-    QString username = m_usernameEdit->text();
-    QString password = m_passwordEdit->text();
-
-    qDebug() << "Username:" << username << "Password:" << password;
-}
-
 
 void RegistrationComponent::setTheme(Theme theme) {
     if (theme == DARK) {
-        m_usernameEdit->setStyleSheet(style->DarkLineEditStyle);
+        m_loginEdit->setStyleSheet(style->DarkLineEditStyle);
         m_nameEdit->setStyleSheet(style->DarkLineEditStyle);
         m_passwordEdit->setStyleSheet(style->DarkLineEditStyle);
         m_password2Edit->setStyleSheet(style->DarkLineEditStyle);
@@ -104,7 +98,7 @@ void RegistrationComponent::setTheme(Theme theme) {
         update();
     }
     else {
-        m_usernameEdit->setStyleSheet(style->LightLineEditStyle);
+        m_loginEdit->setStyleSheet(style->LightLineEditStyle);
         m_nameEdit->setStyleSheet(style->LightLineEditStyle);
         m_passwordEdit->setStyleSheet(style->LightLineEditStyle);
         m_password2Edit->setStyleSheet(style->LightLineEditStyle);
@@ -114,3 +108,9 @@ void RegistrationComponent::setTheme(Theme theme) {
     }
 }
 
+void RegistrationComponent::slotToSendRegistrationData() {
+    QString login = m_loginEdit->text();
+    QString password = m_passwordEdit->text();
+    QString name = m_nameEdit->text();
+    emit sendRegistrationData(login, password, name);
+}

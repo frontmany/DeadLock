@@ -5,17 +5,17 @@
 #include <Qlayout>
 #include <QDebug>
 #include <QEvent>
-#include <windows.h>
 
 
 #include "loginWidget.h"
 
+class ClientSide;
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget* parent = nullptr);
+	explicit MainWindow(QWidget* parent, ClientSide* client);
 	~MainWindow();
 
 	void setAuthorizationWidget();
@@ -23,11 +23,15 @@ public:
 	void setChatMenu();
 
 
+public slots:
+	void onLogin(bool isLoggedIn);
+
 private:
 	void setupLoginWidget();
 
 private:
-	LoginWidget* loginWidget;
+	ClientSide* m_client = nullptr;
+	LoginWidget* m_loginWidget;
 	bool isDarkMode();
 
 };

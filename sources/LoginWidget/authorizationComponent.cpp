@@ -1,40 +1,42 @@
 #include "authorizationComponent.h"
+#include "loginWidget.h"
 
 
 #include <QDebug>
 
 
-AuthorizationComponent::AuthorizationComponent(QWidget* parent)
+AuthorizationComponent::AuthorizationComponent(QWidget* parent, LoginWidget* loginWidget)
     : QWidget(parent) {
 
     style = new StyleAuthorizationComponent;
     m_backgroundColor = QColor(30, 30, 30, 200);
 
-    m_usernameEditAuthorize = new QLineEdit(this);
-    m_usernameEditAuthorize->setPlaceholderText("Login"); 
-    m_usernameEditAuthorize->setMaximumSize(500, 40);
+   m_loginEdit = new QLineEdit(this);
+   m_loginEdit->setPlaceholderText("Login"); 
+   m_loginEdit->setMaximumSize(500, 40);
 
-    m_passwordEditAuthorize = new QLineEdit(this);
-    m_passwordEditAuthorize->setPlaceholderText("Password"); 
-    m_passwordEditAuthorize->setMaximumSize(500, 40);
-    m_passwordEditAuthorize->setEchoMode(QLineEdit::Password);
+    m_passwordEdit = new QLineEdit(this);
+    m_passwordEdit->setPlaceholderText("Password"); 
+    m_passwordEdit->setMaximumSize(500, 40);
+    m_passwordEdit->setEchoMode(QLineEdit::Password);
 
     m_loginButton = new QPushButton("Login", this);
     m_loginButton->setMaximumSize(500, 40);
-    connect(m_loginButton, &QPushButton::clicked, this, &AuthorizationComponent::onAuthorizeButtonClicked);
+    connect(m_loginButton, &QPushButton::clicked, this, &AuthorizationComponent::SlotToSendLoginData);
+    connect(this, &AuthorizationComponent::sendLoginData, loginWidget, &LoginWidget::onAuthorizeButtonClicked);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
     m_loginButtonHla = new QHBoxLayout;
-    m_usernameEditHla = new QHBoxLayout;
+    m_loginEditHla = new QHBoxLayout;
     m_passwordEditHla = new QHBoxLayout;
 
 
-    m_usernameEditHla->addSpacing(25);
-    m_usernameEditHla->addWidget(m_usernameEditAuthorize);
-    m_usernameEditHla->addSpacing(25);
+    m_loginEditHla->addSpacing(25);
+    m_loginEditHla->addWidget(m_loginEdit);
+    m_loginEditHla->addSpacing(25);
 
     m_passwordEditHla->addSpacing(25);
-    m_passwordEditHla->addWidget(m_passwordEditAuthorize);
+    m_passwordEditHla->addWidget(m_passwordEdit);
     m_passwordEditHla->addSpacing(25);
 
     m_loginButtonHla->addSpacing(25);
@@ -42,7 +44,7 @@ AuthorizationComponent::AuthorizationComponent(QWidget* parent)
     m_loginButtonHla->addSpacing(25);
 
     
-    layout->addLayout(m_usernameEditHla);
+    layout->addLayout(m_loginEditHla);
     layout->addLayout(m_passwordEditHla);
     layout->addLayout(m_loginButtonHla);
     setLayout(layout);
@@ -62,28 +64,25 @@ void AuthorizationComponent::paintEvent(QPaintEvent* event) {
 }
 
 
-void AuthorizationComponent::onAuthorizeButtonClicked() {
-    QString username = m_usernameEditAuthorize->text();
-    QString password = m_passwordEditAuthorize->text();
-
-    qDebug() << "Username:" << username << "Password:" << password;
-}
-
-
 void AuthorizationComponent::setTheme(Theme theme) {
     if (theme == DARK) {
-        m_usernameEditAuthorize->setStyleSheet(style->DarkLineEditStyle);
-        m_passwordEditAuthorize->setStyleSheet(style->DarkLineEditStyle);
+       m_loginEdit->setStyleSheet(style->DarkLineEditStyle);
+        m_passwordEdit->setStyleSheet(style->DarkLineEditStyle);
         m_loginButton->setStyleSheet(style->DarkButtonStyle);
         m_backgroundColor = QColor(30, 30, 30, 200);
         update();
     }
     else {
-        m_usernameEditAuthorize->setStyleSheet(style->LightLineEditStyle);
-        m_passwordEditAuthorize->setStyleSheet(style->LightLineEditStyle);
+       m_loginEdit->setStyleSheet(style->LightLineEditStyle);
+        m_passwordEdit->setStyleSheet(style->LightLineEditStyle);
         m_loginButton->setStyleSheet(style->LightButtonStyle);
         m_backgroundColor = QColor(204, 204, 204, 200); 
         update();
     }
 }
 
+void AuthorizationComponent::SlotToSendLoginData() {
+    QString login = m_loginEdit->text();
+    QString password = m_passwordEdit->text();
+    emit sendLoginData(login, password);
+}
