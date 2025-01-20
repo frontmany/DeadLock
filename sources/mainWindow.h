@@ -8,8 +8,14 @@
 
 
 #include "loginWidget.h"
+#include "chatsWidget.h"
 
 class ClientSide;
+
+enum Theme {
+	DARK,
+	LIGHT
+};
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
@@ -18,9 +24,6 @@ public:
 	explicit MainWindow(QWidget* parent, ClientSide* client);
 	~MainWindow();
 
-	void setAuthorizationWidget();
-	void setRegistrationWidget();
-	void setChatMenu();
 
 
 public slots:
@@ -28,10 +31,12 @@ public slots:
 
 private:
 	void setupLoginWidget();
+	void setupChatsWidget();
 
 private:
-	ClientSide* m_client = nullptr;
-	LoginWidget* m_loginWidget;
+	ClientSide*		m_client = nullptr;
+	LoginWidget*	m_loginWidget;
+	ChatsWidget*	m_chatsWidget;
 	bool isDarkMode();
 
 };

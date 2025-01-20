@@ -1,4 +1,5 @@
 #include "registrationComponent.h"
+#include "mainWindow.h"
 
 
 #include <QDebug>

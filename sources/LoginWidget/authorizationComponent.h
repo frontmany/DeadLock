@@ -10,6 +10,7 @@
 
 #include "loginWidget.h"
 
+
 struct StyleAuthorizationComponent {
 
     QString DarkButtonStyle = R"(
@@ -75,6 +76,7 @@ struct StyleAuthorizationComponent {
 };
 
 class LoginWidget;
+enum Theme;
 
 class AuthorizationComponent : public QWidget {
     Q_OBJECT

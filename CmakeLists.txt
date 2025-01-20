@@ -7,7 +7,7 @@ file(GLOB SOURCES "sources/*.cpp" "sources/*.h")
 source_group("Source Files" FILES ${SOURCES})
 
 # Создание группы Login
-file(GLOB LOGIN_FILES "sources/LoginWidget/*.cpp" "sources/Login/*.h")
+file(GLOB LOGIN_FILES "sources/LoginWidget/*.cpp" "sources/LoginWidget/*.h")
 source_group("Source Files\\LoginUI Files" FILES ${LOGIN_FILES})
 
 file(GLOB CHATS_FILES "sources/ChatsWidget/*.cpp" "sources/ChatsWidget/*.h")
@@ -24,7 +24,7 @@ set(CMAKE_AUTOMOC ON)
 
 include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Network")
 
-qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc)
+qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/ChatsWidget/chatsResources.qrc)
 
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${CHATS_FILES} ${NETWORK_FILES} ${QRC_FILES})

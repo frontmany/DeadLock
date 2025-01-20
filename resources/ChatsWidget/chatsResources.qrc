@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/resources/ChatsWidget">
+        <file>darkChatsBackground.jpg</file>
+        <file>lightChatsBackground.jpg</file>
+        <file>addChat.png</file>
+    </qresource>
+</RCC>

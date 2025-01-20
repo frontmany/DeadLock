@@ -2,7 +2,8 @@
 #include "clientSide.h"
 
 MainWindow::MainWindow(QWidget* parent, ClientSide* client) : QMainWindow(parent) {
-    setupLoginWidget();
+    //setupLoginWidget();
+    setupChatsWidget();
     m_client = client;
 }
 
@@ -31,26 +32,22 @@ bool MainWindow::isDarkMode() {
 }
 
 
-void MainWindow::setChatMenu() {
-
-}
-
-
-void MainWindow::setAuthorizationWidget() {
-
-}
-
-
-void MainWindow::setRegistrationWidget() {
-
-}
-
 void MainWindow::onLogin(bool isLoggedIn) {
-
+    if (isLoggedIn) {
+        setupChatsWidget();
+    }
 }
+
 
 void MainWindow::setupLoginWidget() {
     m_loginWidget = new LoginWidget(this, this, m_client);
     m_loginWidget->setTheme(DARK);
     setCentralWidget(m_loginWidget);
+}
+
+
+void MainWindow::setupChatsWidget() {
+    m_chatsWidget = new ChatsWidget(this);
+    m_chatsWidget->setTheme(DARK);
+    setCentralWidget(m_chatsWidget);
 }

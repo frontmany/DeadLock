@@ -11,6 +11,7 @@
 
 
 
+
 struct StyleLoginWidget {
     QString buttonStyleBlue = R"(
             QPushButton {
@@ -49,15 +50,11 @@ struct StyleLoginWidget {
 
 };
 
-enum Theme {
-    DARK,
-    LIGHT
-};
-
 class AuthorizationComponent;
 class RegistrationComponent;
 class ClientSide;
 class MainWindow;
+enum Theme;
 
 
 class LoginWidget : public QWidget {
