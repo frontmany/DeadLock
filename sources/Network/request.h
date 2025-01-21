@@ -5,7 +5,7 @@
 namespace req {
 
     struct SenderData {
-        SenderData() {}
+        SenderData() : login(""), name(""), password(""), needsRegistration(true) {}
         SenderData(std::string Login) 
             : login(Login), name(""), password(""), needsRegistration(true) {}
 

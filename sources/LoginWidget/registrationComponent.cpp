@@ -28,7 +28,6 @@ RegistrationComponent::RegistrationComponent(QWidget* parent, LoginWidget* login
     m_nameEdit = new QLineEdit(this);
     m_nameEdit->setPlaceholderText("Name");
     m_nameEdit->setMaximumSize(500, 40);
-    m_nameEdit->setEchoMode(QLineEdit::Password);
 
 
     m_registerButton = new QPushButton("Register", this);

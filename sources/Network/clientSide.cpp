@@ -73,13 +73,13 @@ bool ClientSide::authorizeClient(std::string login, std::string password) {
 
 bool ClientSide::registerClient(std::string login, std::string password, std::string name) {
     using namespace req;
-    SenderData data(login);
-    data.login = login;
-    data.password = password;
-    data.name = name;
-    data.needsRegistration = true;
-    std::string msg = data.serialize();
-    m_my_data = data;
+ 
+    m_my_data.login = login;
+    m_my_data.password = password;
+    m_my_data.name = name;
+    m_my_data.needsRegistration = true;
+    std::string msg = m_my_data.serialize();
+
     sendToServer(msg);
     while (m_isAuthorized == NOT_STATED) {
         continue;
@@ -130,6 +130,21 @@ std::vector<Chat>::iterator ClientSide::getChat(std::string receiverLogin) {
 }
 
 
+req::Packet ClientSide::getUserDataByLogin(std::string login) {
+    std::string s = "GET_NAME" + login;
+    sendToServer(s);
+
+    while (m_currentResponse != ServerResponse::NAME_FOUND) {
+        if (m_currentResponse == ServerResponse::NAME_NOT_FOUND) {
+            return req::Packet();
+        }
+    }
+
+    return m_packet_tmp;
+    
+}
+
+
 void ClientSide::receive() {
     char buffer[200];
 
@@ -153,12 +168,12 @@ void ClientSide::receive() {
                 continue;
             }
             if (receivedString == "CHAT_CREATE_SUCCESS") {
-                Chat ch = m_vec_chats.back();
+                Chat& ch = m_vec_chats.back();
                 ch.setState(ALLOWED);
                 continue;
             }
             if (receivedString == "CHAT_CREATE_FAIL") {
-                Chat ch = m_vec_chats.back();
+                Chat& ch = m_vec_chats.back();
                 ch.setState(FORBIDDEN);
                 continue;
             }
@@ -170,6 +185,17 @@ void ClientSide::receive() {
             if (receivedString.substr(0, 15) == "USER_INFO_NOT_FOUND") {
                 continue;
             }
+
+            if (receivedString.substr(0, 14) == "NAME_NOT_FOUND") {
+                m_currentResponse = ServerResponse::NAME_NOT_FOUND;
+            }
+
+            if (receivedString.substr(0, 10) == "NAME_FOUND") {
+                using namespace req;
+                m_packet_tmp = Packet::deserialize(receivedString.substr(11));
+
+            }
+
             else {
                 req::Packet pack = req::Packet::deserialize(receivedString);
                 auto it = getChat(pack.sender.login);

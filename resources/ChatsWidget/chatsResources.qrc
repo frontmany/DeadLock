@@ -2,6 +2,13 @@
     <qresource prefix="/resources/ChatsWidget">
         <file>darkChatsBackground.jpg</file>
         <file>lightChatsBackground.jpg</file>
-        <file>addChat.png</file>
+        <file>userDark.png</file>
+        <file>userDarkHover.png</file>
+        <file>userLight.png</file>
+        <file>userLightHover.png</file>
+        <file>startChatDark.png</file>
+        <file>startChatHoverDark.png</file>
+        <file>close.png</file>
+        <file>closeHover.png</file>
     </qresource>
 </RCC>

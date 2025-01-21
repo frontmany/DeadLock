@@ -1,10 +1,14 @@
 #include "mainWindow.h"
 #include "clientSide.h"
 
-MainWindow::MainWindow(QWidget* parent, ClientSide* client) : QMainWindow(parent) {
-    //setupLoginWidget();
-    setupChatsWidget();
-    m_client = client;
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+    m_client = new ClientSide();
+    m_client->init();
+    m_client->connectTo("192.168.1.49", 54000);
+
+    setupLoginWidget();
+    //setupChatsWidget();
+
 }
 
 
@@ -47,7 +51,7 @@ void MainWindow::setupLoginWidget() {
 
 
 void MainWindow::setupChatsWidget() {
-    m_chatsWidget = new ChatsWidget(this);
+    m_chatsWidget = new ChatsWidget(this, m_client);
     m_chatsWidget->setTheme(DARK);
     setCentralWidget(m_chatsWidget);
 }

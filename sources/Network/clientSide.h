@@ -19,18 +19,22 @@ enum class ServerResponse {
 	CHAT_CREATE_SUCCESS,
 	CHAT_CREATE_FAIL,
 	USER_INFO_FOUND,
-	USER_INFO_NOT_FOUND
+	USER_INFO_NOT_FOUND,
+	NAME_FOUND,
+	NAME_NOT_FOUND,
+	NONE
 };
 
 enum class UserRequest {
-	GET_USER_INFO
+	GET_USER_INFO,
+	GET_NAME
 }; 
 
 
 class ClientSide {
 public:
 	ClientSide() : m_socket(-1), m_server_IpAddress(""),
-		m_server_port(-1), m_isAuthorized(NOT_STATED) {};
+		m_server_port(-1), m_isAuthorized(NOT_STATED), m_my_data(req::SenderData()) {};
 
 	void init();
 	void connectTo(std::string ipAddress, int port);
@@ -38,6 +42,7 @@ public:
 	bool registerClient(std::string login, std::string password, std::string name);
 	void sendMessage(req::Packet pack);
 	bool createChatWith(std::string receiverLogin);
+	req::Packet getUserDataByLogin(std::string login);
 
 	req::SenderData& getMyInfo() { return m_my_data; }
 	std::vector<Chat>::iterator getChat(std::string receiverLogin);
@@ -51,6 +56,9 @@ private:
 
 	std::thread			m_receiverThread;
 	std::vector<Chat>	m_vec_chats;
+
+	ServerResponse		m_currentResponse = ServerResponse::NONE;
+	req::Packet			m_packet_tmp = req::Packet();
 
 private:
 	void receive();

@@ -45,13 +45,11 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client)
 }
 
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
-    qDebug() << "Received data:" << login << password;
     bool isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
     emit(sendLoginStatus(isLog));
 }
 
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
-    qDebug() << "Received data:" << login << password << name;
     bool isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
     emit(sendLoginStatus(isLog));
 }

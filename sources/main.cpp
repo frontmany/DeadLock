@@ -6,7 +6,7 @@
 #include <QStyleFactory>
 
 #include "mainWindow.h"
-#include "clientSide.h"
+
 
 class CustomStyle : public QProxyStyle {
 public:
@@ -15,16 +15,15 @@ public:
 
 int main(int argc, char* argv[])
 {
-    ClientSide* client = new ClientSide;
-    //client->init();
-    //client->connectTo("192.168.1.49", 54000);
 
     QApplication app(argc, argv);
     CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
     app.setStyle(customStyle);
 
-    MainWindow* mainWindow = new MainWindow(nullptr, client);
+    MainWindow* mainWindow = new MainWindow(nullptr);
     
+
+
     mainWindow->show();
     mainWindow->resize(960, 540);
 

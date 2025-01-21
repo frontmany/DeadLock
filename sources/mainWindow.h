@@ -21,7 +21,7 @@ class MainWindow : public QMainWindow {
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget* parent, ClientSide* client);
+	explicit MainWindow(QWidget* parent);
 	~MainWindow();
 
 
@@ -34,7 +34,7 @@ private:
 	void setupChatsWidget();
 
 private:
-	ClientSide*		m_client = nullptr;
+	ClientSide*		m_client;
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;
 	bool isDarkMode();
