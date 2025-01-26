@@ -1,5 +1,6 @@
 #include "mainWindow.h"
 #include "clientSide.h"
+//#include<windows.h>
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     m_client = new ClientSide();
@@ -16,7 +17,7 @@ MainWindow::~MainWindow() {
     delete m_loginWidget;
 }
 
-
+/*
 bool MainWindow::isDarkMode() {
     HKEY hKey;
     const TCHAR* subKey = TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize");
@@ -34,7 +35,7 @@ bool MainWindow::isDarkMode() {
     }
     return false;
 }
-
+*/
 
 void MainWindow::onLogin(bool isLoggedIn) {
     if (isLoggedIn) {
@@ -51,7 +52,7 @@ void MainWindow::setupLoginWidget() {
 
 
 void MainWindow::setupChatsWidget() {
-    m_chatsWidget = new ChatsWidget(this, m_client);
+    m_chatsWidget = new ChatsWidget(this, m_client, DARK);
     m_chatsWidget->setTheme(DARK);
     setCentralWidget(m_chatsWidget);
 }

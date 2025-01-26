@@ -32,12 +32,12 @@ struct StyleRegistrationComponent {
     QLineEdit {
         background-color: #333;    
         color: white;               
-        border: 1px solid #666;     
+        border: none;     
         border-radius: 5px;         
         padding: 5px;               
     }
     QLineEdit:focus {
-        border: 1px solid #888;     
+        border: 2px solid #888;    
     }
 )";
 
@@ -61,12 +61,12 @@ struct StyleRegistrationComponent {
     QLineEdit {
         background-color: #ffffff;    
         color: black;                 
-        border: 1px solid #ccc;       
+        border: none;       
         border-radius: 5px;           
         padding: 5px;                 
     }
     QLineEdit:focus {
-        border: 1px solid #888;        
+        border: 2px solid rgb(237, 237, 237);         
     }
 )";
 

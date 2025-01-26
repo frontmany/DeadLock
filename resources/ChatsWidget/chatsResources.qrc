@@ -7,8 +7,22 @@
         <file>userLight.png</file>
         <file>userLightHover.png</file>
         <file>startChatDark.png</file>
+        <file>startChatLight.png</file>
         <file>startChatHoverDark.png</file>
+        <file>startChatHoverLight.png</file>
         <file>close.png</file>
         <file>closeHover.png</file>
+        <file>sendHoverDark.png</file>
+        <file>sendHoverLight.png</file>
+        <file>sendDark.png</file>
+        <file>sendLight.png</file>
+        <file>userFriendDark.png</file>
+        <file>userFriendLight.png</file>
+        <file>userFriendHoverDark.png</file>
+        <file>userFriendHoverLight.png</file>
+        <file>menuHoverLight.png</file>
+        <file>menuHoverDark.png</file>
+        <file>menuDark.png</file>
+        <file>menuLight.png</file>
     </qresource>
 </RCC>

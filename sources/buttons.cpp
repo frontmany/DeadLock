@@ -61,6 +61,10 @@ void ButtonIcon::hoverLeave(QHoverEvent* event)
 }
 
 
+void ButtonIcon::setIconSize(QSize size) {
+    setFixedSize(size);
+}
+
 void RoundIconButton::setTheme(Theme theme) {
     if (theme == DARK) {
         QIcon icon(":/resources/ChatsWidget/userDark.png");

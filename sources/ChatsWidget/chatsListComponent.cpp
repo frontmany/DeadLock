@@ -9,17 +9,17 @@
 
 
 
-ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget)
+ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme)
     : QWidget(parent), m_backgroundColor(Qt::transparent), m_chatsWidget(chatsWidget){
 
     style = new StyleChatsListComponent;
     m_backgroundColor = QColor(20, 20, 20, 200);
-    m_theme = DARK;
+    m_theme = theme;
 
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
-
+    this->setMinimumSize(600, 300);
 
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
@@ -32,12 +32,14 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->addWidget(m_profileButton);
 
     m_newChatButton = new ButtonIcon(this);
+
     QIcon icon1(":/resources/ChatsWidget/startChatDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/startChatHoverDark.png");
     m_newChatButton->uploadIconsDark(icon1, iconHover1);
-    QIcon icon2(":/resources/ChatsWidget/userDark.png");
-    QIcon iconHover2(":/resources/ChatsWidget/userDarkHover.png");
+    QIcon icon2(":/resources/ChatsWidget/startChatLight.png");
+    QIcon iconHover2(":/resources/ChatsWidget/startChatHoverLight.png");
     m_newChatButton->uploadIconsLight(icon2, iconHover2);
+
     m_profileHLayout->addWidget(m_newChatButton);
     connect(m_newChatButton, &ButtonIcon::clicked, this, &ChatsListComponent::showChatAddDialog);
     
@@ -48,9 +50,9 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_contentsHLayout->setAlignment(Qt::AlignLeft);
     m_searchLineEdit = new QLineEdit(this);
     m_searchLineEdit->setPlaceholderText("Search...");
-    m_searchLineEdit->setMaximumSize(965, 30);
+    m_searchLineEdit->setMaximumSize(975, 30);
     m_contentsHLayout->addWidget(m_searchLineEdit);
-    m_contentsHLayout->addSpacing(20);
+    m_contentsHLayout->addSpacing(15);
 
 
     m_mainVLayout->addLayout(m_profileHLayout);
@@ -79,11 +81,12 @@ ChatsListComponent::~ChatsListComponent() {
     
 }
 
-void ChatsListComponent::addChatComponent(const QString& name, const QString& message, const QPixmap& avatar) {
-    ChatComponent* chatComponent = new ChatComponent(this);
+void ChatsListComponent::addChatComponent(const QString& name, const QString& message, const QPixmap& avatar, Theme theme) {
+    ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget);
     chatComponent->setName(name);
     chatComponent->setMessage(message);
     chatComponent->setAvatar(avatar);
+    chatComponent->setTheme(theme);
 
     
     m_containerVLayout->addWidget(chatComponent);
@@ -132,7 +135,7 @@ void ChatsListComponent::showChatAddDialog() {
     m_cancelButton->setMaximumSize(25, 25);
     m_cancelButton->setTheme(m_theme);
     m_aVLayout->addWidget(m_cancelButton);
-    m_aVLayout->addSpacing(20);
+    m_aVLayout->addSpacing(35);
     m_buttonsLayout->addSpacing(-10);
     m_buttonsLayout->addLayout(m_aVLayout);
     m_buttonsLayout->addSpacing(-10);
@@ -150,6 +153,11 @@ void ChatsListComponent::showChatAddDialog() {
 
     if (m_theme == DARK) {
         m_friendLoginEdit->setStyleSheet(style.DarkLineEditStyle);
+        m_createChatButton->setStyleSheet(style.DarkButtonStyleBlue);
+        m_cancelButton->setStyleSheet(style.DarkButtonStyleRed);
+    }
+    else {
+        m_friendLoginEdit->setStyleSheet(style.LightLineEditStyle);
         m_createChatButton->setStyleSheet(style.DarkButtonStyleBlue);
         m_cancelButton->setStyleSheet(style.DarkButtonStyleRed);
     }
@@ -212,18 +220,27 @@ void ChatsListComponent::slotToSendCreateChatData() {
 }
 
 void ChatsListComponent::setRedBorderToChatAddDialog() {
-    m_friendLoginEdit->setStyleSheet(style->DarkLineEditStyleRed);
+    if (m_theme == DARK) {
+        m_friendLoginEdit->setStyleSheet(style->DarkLineEditStyleRed);
+
+    }
+    else {
+        m_friendLoginEdit->setStyleSheet(style->LightLineEditStyleRed);
+    }
 }
 
 void ChatsListComponent::setTheme(Theme theme) {
+    m_theme = theme;
     if (theme == DARK) {
-        m_theme = theme;
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
         m_profileButton->setTheme(theme);
         m_newChatButton->setTheme(theme);
     }
     else {
-
+        m_scrollArea->verticalScrollBar()->setStyleSheet(style->lightSlider);
+        m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
+        m_profileButton->setTheme(theme);
+        m_newChatButton->setTheme(theme);
     }
 }

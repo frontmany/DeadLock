@@ -38,6 +38,27 @@ struct StyleChatsListComponent {
     }
 )";
 
+    QString lightSlider = R"(
+    QScrollBar:vertical {
+        border: 2px solid rgb(250, 250, 250);      
+        background: rgb(250, 250, 250);        
+        width: 10px;                 
+        border-radius: 5px; 
+    }
+
+    QScrollBar::handle:vertical {
+        background: rgb(218, 219, 227);   
+        border: 2px solid rgb(218, 219, 227);      
+        width: 10px;    
+        border-radius: 5px;           
+    }
+
+    QScrollBar::add-line:vertical, 
+    QScrollBar::sub-line:vertical { 
+        background: none;             
+    }
+)";
+
     QString DarkLineEditStyle = R"(
     QLineEdit {
         background-color: #333;    
@@ -64,6 +85,19 @@ struct StyleChatsListComponent {
     }
 )";
 
+    QString LightLineEditStyleRed = R"(
+    QLineEdit {
+        background-color: #ffffff;     
+        color: black;               
+        border: 2px solid rgb(255, 189, 189);        
+        border-radius: 13px;         
+        padding: 5px;               
+    }
+    QLineEdit:focus {
+        border: 2px solid rgb(255, 189, 189);       
+    }
+)";
+
     QString LightLineEditStyle = R"(
     QLineEdit {
         background-color: #ffffff;    
@@ -73,7 +107,7 @@ struct StyleChatsListComponent {
         padding: 5px;                 
     }
     QLineEdit:focus {
-        border: 2px solid #888;        
+        border: 2px solid rgb(237, 237, 237);        
     }
 )";
 
@@ -138,11 +172,11 @@ class ChatsListComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget);
+    explicit ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme);
     ~ChatsListComponent();
     void setTheme(Theme theme);
 
-    void addChatComponent(const QString& name, const QString& message, const QPixmap& avatar);
+    void addChatComponent(const QString& name, const QString& message, const QPixmap& avatar, Theme theme);
     void setRedBorderToChatAddDialog();
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
 

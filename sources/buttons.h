@@ -5,8 +5,9 @@
 #include <QIcon>
 #include <QHoverEvent>
 #include <QMouseEvent>
-#include <QPainter>
 #include <QEvent>
+#include <QPainter>
+
 
 
 enum Theme;
@@ -22,6 +23,7 @@ public:
     void setTheme(Theme theme);
     void uploadIconsLight(QIcon light, QIcon lightHover);
     void uploadIconsDark(QIcon dark, QIcon darkHover);
+    void setIconSize(QSize size);
 
 protected:
     void paintEvent(QPaintEvent* event) override

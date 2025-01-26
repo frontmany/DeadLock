@@ -1,66 +1,96 @@
 #pragma once
+
 #include<iostream>
 #include<vector>
 #include<algorithm>
 #include<thread>
 #include<mutex>
+#include<windows.h>
 
-#include<winsock2.h>
-#include<ws2tcpip.h>
 
+#include"user.h"
 #include"request.h"
 #include"chat.h"
 
-enum class ServerResponse {
-	AUTHORIZATION_SUCCESS,
-	REGISTRATION_SUCCESS,
-	AUTHORIZATION_FAIL,
-	REGISTRATION_FAIL,
-	CHAT_CREATE_SUCCESS,
-	CHAT_CREATE_FAIL,
-	USER_INFO_FOUND,
-	USER_INFO_NOT_FOUND,
-	NAME_FOUND,
-	NAME_NOT_FOUND,
-	NONE
+/*
+class RequiredFromServerUserInfo {
+public:
+	RequiredFromServerUserInfo() : m_isHasPhoto(false), m_isOnline(false), m_isInfo(false) {}
+
+	const std::string& getLogin() const { return m_user_login; }
+	void setLogin(const std::string& login) { m_user_login = login; }
+
+	const std::string& getName() const { return m_user_name; }
+	void setName(const std::string& name) { m_user_name = name; }
+
+	const std::string& getLastSeen() const { return m_last_seen; }
+	void setLastSeen(const std::string& lastSeen) { m_last_seen = lastSeen; }
+
+	const bool getIsOnline() const { return m_isOnline; }
+	void setIsOnline(const bool isOnline) { m_isOnline = isOnline; }
+
+	const bool getIsHasPhoto() const { return m_isHasPhoto; }
+	void setIsHasPhoto(const bool isHasPhoto) { m_isHasPhoto = isHasPhoto; }
+
+	const Photo& getPhoto() const { return m_user_photo; }
+	void setPhoto(const Photo& photo) { m_user_photo = photo; }
+
+	const bool isInfo() const { return m_isInfo; }
+	void setIsInfoFlag(const bool isInfo) { m_isInfo = isInfo; }
+
+private:
+	bool		m_isInfo;
+	std::string m_user_login;
+	std::string m_user_name;
+	std::string	m_last_seen;
+	Photo       m_user_photo;
+	bool		m_isOnline;
+	bool		m_isHasPhoto;
 };
-
-enum class UserRequest {
-	GET_USER_INFO,
-	GET_NAME
-}; 
-
+*/
 
 class ClientSide {
 public:
-	ClientSide() : m_socket(-1), m_server_IpAddress(""),
-		m_server_port(-1), m_isAuthorized(NOT_STATED), m_my_data(req::SenderData()) {};
+	ClientSide() : m_socket(-1), m_server_IpAddress(""), 
+		m_server_port(-1), m_is_authorized(AuthorizationState::NOT_STATED), m_messages_id_counter(0) {}
 
 	void init();
 	void connectTo(std::string ipAddress, int port);
 	bool authorizeClient(std::string login, std::string password);
 	bool registerClient(std::string login, std::string password, std::string name);
-	void sendMessage(req::Packet pack);
-	bool createChatWith(std::string receiverLogin);
-	req::Packet getUserDataByLogin(std::string login);
+	Chat* createChatWith(const std::string& friendLogin);
+	void sendMessage(Chat* chat, std::string message);
 
-	req::SenderData& getMyInfo() { return m_my_data; }
-	std::vector<Chat>::iterator getChat(std::string receiverLogin);
+	const User getMyInfo() const { return m_my_user_data; }
+	void setMyInfo(const User user) { m_my_user_data = user; }
+
+	std::vector<Chat*> getMyChatsVec() { return m_vec_chats; }
+	std::vector<Chat*> getMyAwaitedChatsVec() { return m_vec_awaited_chats; }
 
 private:
-	SOCKET				m_socket;
+	enum class AuthorizationState {
+		NOT_STATED,
+		AUTHORIZED,
+		NOT_AUTHORIZED
+	};
+	int					m_messages_id_counter;
+	std::mutex			m_mtx;
+	int					m_socket;
 	std::string			m_server_IpAddress;
 	int					m_server_port;
-	State				m_isAuthorized;
-	req::SenderData		m_my_data;
-
 	std::thread			m_receiverThread;
-	std::vector<Chat>	m_vec_chats;
+	std::vector<Chat*>	m_vec_chats;
+	std::vector<Chat*>	m_vec_awaited_chats;
+	AuthorizationState	m_is_authorized;
 
-	ServerResponse		m_currentResponse = ServerResponse::NONE;
-	req::Packet			m_packet_tmp = req::Packet();
+	User m_my_user_data;
+
+	/*
+	responses (shared tmp data, can be updated by createChat, or incoming message (not always))
+	RequiredFromServerUserInfo	m_required_friend_info;
+	*/
 
 private:
 	void receive();
-	void sendToServer(std::string msg);
+	void sendPacket(Packet& packet);
 };

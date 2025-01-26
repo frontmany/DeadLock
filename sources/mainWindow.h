@@ -37,6 +37,6 @@ private:
 	ClientSide*		m_client;
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;
-	bool isDarkMode();
+	//bool isDarkMode();
 
 };
