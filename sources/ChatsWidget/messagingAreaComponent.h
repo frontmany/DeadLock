@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <QLineEdit>
+#include <QTextEdit>
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QScrollArea>
@@ -10,6 +11,8 @@
 
 #include "request.h"
 #include "chat.h"
+
+std::string getCurrentTime();
 
 struct StyleMessagingAreaComponent {
     QString darkSlider = R"(
@@ -53,35 +56,36 @@ struct StyleMessagingAreaComponent {
         background: none;             
     }
 )";
-
-    QString DarkLineEditStyle = R"(
-    QLineEdit {
-        background-color: #333;    
+    
+    QString DarkTextEditStyle = R"(
+    QTextEdit {
+        background-color: rgb(36, 36, 36);    
         color: white;               
         border: none;     
-        border-radius: 13px;         
+        border-radius: 15px;         
         padding: 5px;               
     }
-    QLineEdit:focus {
+    QTextEdit:focus {
         border: 2px solid #888;     
     }
 )";
 
-    QString LightLineEditStyle = R"(
-    QLineEdit {
+QString LightTextEditStyle = R"(
+    QTextEdit {
         background-color: #ffffff;    
         color: black;                 
         border: none;       
-        border-radius: 13px;           
+        border-radius: 15px;           
         padding: 5px;                 
     }
-    QLineEdit:focus {
+    QTextEdit:focus {
         border: 2px solid rgb(237, 237, 237);        
     }
 )";
 };
 
 class ButtonIcon;
+class ButtonCursor;
 class ChatHeaderComponent;
 class Packet;
 enum Theme;
@@ -94,7 +98,11 @@ public:
     MessagingAreaComponent(Theme theme);
     void setTheme(Theme theme);
 
+    ChatHeaderComponent* getChatHeader() { return m_header; }
+    const Chat* getChatConst() const { return m_chat; }
+
 private slots:
+    void adjustTextEditHeight();
     void onSendMessageClicked();
     void onTypeMessage();
 
@@ -103,18 +111,20 @@ protected:
 
 
 private:
-    StyleMessagingAreaComponent* style;
+    StyleMessagingAreaComponent*    style;
     Theme                           m_theme;
     QColor                          m_backColor;
     
+    QVBoxLayout* m_sendMessage_VLayout;
+    QVBoxLayout* m_main_VLayout;
+    QVBoxLayout* m_containerVLayout;
 
     QString                 m_friendName;
-    QLineEdit*              m_messageInputEdit;
+    QTextEdit*              m_messageInputEdit;
     ChatHeaderComponent*    m_header;
     QScrollArea*            m_scrollArea;  
-    QWidget*                m_messagesWidget; 
-    QVBoxLayout*            m_messagesLayout; 
-    ButtonIcon*             m_sendMessageButton;
+    QWidget*                m_containerWidget;
+    ButtonCursor*           m_sendMessageButton;
 
     Chat*                   m_chat;
 };

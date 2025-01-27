@@ -13,7 +13,7 @@
 class Photo {
 public:
     Photo(const std::string& photoPath = "")
-        : m_photoPath(photoPath), m_size(0) {
+        : m_photoPath(photoPath), m_size(-1) {
         if (photoPath != "") {
             updateSize();
             saveToFile();

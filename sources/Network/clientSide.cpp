@@ -2,6 +2,12 @@
 #include<ws2tcpip.h>
 
 #include"clientSide.h"
+#include"messagingAreaComponent.h"
+#include"chatsListComponent.h"
+#include"chatHeaderComponent.h"
+#include"chatsWidget.h"
+
+
 
 void ClientSide::init() {
     WSADATA wsaData;
@@ -54,7 +60,7 @@ void ClientSide::receive() {
     int bufferSize = 40;
     while (true) {
         char* buffer = new char[bufferSize];
-        int byteCount = recv(m_socket, buffer, 40, 0);
+        int byteCount = recv(m_socket, buffer, bufferSize, 0);
 
         if (byteCount > 0 && isReceivingNextPacketSize) {
             std::string bufferStr(buffer, byteCount);
@@ -111,13 +117,10 @@ void ClientSide::receive() {
             }
             else if (pair.first == Response::FRIEND_STATE_CHANGED) {
                 rcv::FriendStatePacket packet = rcv::FriendStatePacket::deserialize(pair.second);
-                auto& friendsVec = m_my_user_data.getUserFriendsVec();
+                auto* b = m_chatsWidget->getChatsList();
+                auto* a = m_chatsWidget->getMessagingArea();
 
-                auto it = std::find_if(friendsVec.begin(), friendsVec.end(), [&packet](const auto& pairFriend) {
-                    return packet.getLogin() == pairFriend.first;
-                    });
-
-                it->second = packet.getLastSeen(); 
+                updateStatusInChatsWidget(a, b, packet);
                 
             }
             else if (pair.first == Response::ALL_FRIENDS_STATES) {
@@ -169,7 +172,40 @@ void ClientSide::receive() {
         }
 
         isReceivingNextPacketSize = true;
+        bufferSize = 40;
         delete buffer;
+    }
+}
+
+void ClientSide::updateStatusInChatsWidget(MessagingAreaComponent* messagingAreaComponent, ChatsListComponent* chatsListComponent, rcv::FriendStatePacket packet) {
+    auto& friendsVec = m_my_user_data.getUserFriendsVec();
+    auto it = std::find_if(friendsVec.begin(), friendsVec.end(), [&packet](const auto& pairFriend) {
+        return packet.getLogin() == pairFriend.first;
+        });
+    it->second = packet.getLastSeen();
+
+    auto& chatsComponentsVec = chatsListComponent->getChatComponentsVec();
+    auto itComponentsVec = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [&packet](ChatComponent* chatComponent) {
+        return packet.getLogin() == chatComponent->getChatConst()->getFriendLogin();
+        });
+
+    
+    if (itComponentsVec != chatsComponentsVec.end()) {
+        ChatComponent* component = *itComponentsVec; 
+        if (packet.getLastSeen() != component->getChat()->getFriendLastSeen()) {
+            component->getChat()->setFriendLastSeen(packet.getLastSeen());
+            bool isOnline = packet.getLastSeen() == "online";
+            QMetaObject::invokeMethod(component, "setOnlineDot", Qt::QueuedConnection, Q_ARG(bool, isOnline));
+        }
+
+        
+        if (messagingAreaComponent->getChatConst()->getFriendLogin() == packet.getLogin()) {
+            QString lastSeen = QString::fromStdString(packet.getLastSeen());
+            QMetaObject::invokeMethod(messagingAreaComponent->getChatHeader(), "setLastSeen", Qt::QueuedConnection, Q_ARG(const QString&, lastSeen));
+        }
+    }
+    else {
+        std::cout << "component not found";
     }
 }
 
@@ -253,6 +289,8 @@ Chat* ClientSide::createChatWith(const std::string& friendLogin) {
     while (m_vec_chats.back()->getChatState() == ChatState::NOT_STATED) {}
 
     if (m_vec_chats.back()->getChatState() == ChatState::ALLOWED) {
+        auto& friendsVec = m_my_user_data.getUserFriendsVec();
+        friendsVec.push_back(std::make_pair(friendLogin, chat->getFriendLastSeen()));
         return chat;
     }
     else if (m_vec_chats.back()->getChatState() == ChatState::FORBIDDEN) {
@@ -265,6 +303,6 @@ void ClientSide::sendPacket(Packet& packet) {
     SizePacket sizePacket;
     sizePacket.setData(serializedPacket);
     std::string serializedSizePacket = sizePacket.serialize();
-    send(m_socket, serializedSizePacket.c_str(), strlen(serializedSizePacket.c_str()), 0);
-    send(m_socket, serializedPacket.c_str(), strlen(serializedPacket.c_str()), 0);
+    send(m_socket, serializedSizePacket.c_str(), serializedSizePacket.size(), 0);
+    send(m_socket, serializedPacket.c_str(), serializedPacket.size(), 0);
 }

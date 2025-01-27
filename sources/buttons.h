@@ -12,12 +12,45 @@
 
 enum Theme;
 
+class ButtonCursor : public QWidget
+{
+    Q_OBJECT
+
+public:
+    ButtonCursor(QWidget* parent, Theme theme);
+
+    QSize sizeHint() const override;
+    void setTheme(Theme theme);
+    void uploadIconsLight(QIcon light, QIcon lightHover);
+    void uploadIconsDark(QIcon dark, QIcon darkHover);
+
+signals:
+    void clicked();
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+    bool event(QEvent* event) override;
+    void hoverEnter(QHoverEvent* event);
+    void hoverLeave(QHoverEvent* event);
+    void hoverMove(QHoverEvent* event);
+    void mouseReleaseEvent(QMouseEvent* event) override;
+
+private:
+    QIcon m_iconLight;
+    QIcon m_iconDark;
+    QIcon m_hoverIconLight;
+    QIcon m_hoverIconDark;
+    QIcon m_currentIcon;
+    Theme m_theme;
+};
+
+
 class ButtonIcon : public QWidget
 {
     Q_OBJECT
 
 public:
-    ButtonIcon(QWidget* parent);
+    ButtonIcon(QWidget* parent, int x, int y);
 
     QSize sizeHint() const override { return QSize(50, 50); }
     void setTheme(Theme theme);

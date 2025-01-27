@@ -12,20 +12,29 @@
 
 #include <chat.h>
 
+
+
 enum Theme;
 class ChatsWidget;
+class ButtonIcon;
 
 class ChatComponent : public QWidget {
     Q_OBJECT
 
 public:
     explicit ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat);
-    explicit ChatComponent(QWidget* parent, ChatsWidget* chatsWidget);
 
     void setName(const QString& name);
-    void setMessage(const QString& message);
+    void setLastMessage(const QString& message);
     void setAvatar(const QPixmap& avatar);
     void setTheme(Theme theme);
+    void setSelected(bool isSelected);
+
+    const Chat* getChatConst() const { return m_chat; }
+    Chat* getChat() { return m_chat; }
+
+   
+   
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -34,8 +43,14 @@ protected:
     void hoverEnter(QHoverEvent* event);
     void hoverLeave(QHoverEvent* event);
 
+
 private slots:
     void slotToSendChatData();
+    
+
+public slots:
+    void setOnlineDot(bool isOnline);
+
 
 signals:
     void clicked();
@@ -47,8 +62,12 @@ private:
 
     Theme        m_theme;
     QColor       m_backColor;
+
     QHBoxLayout* m_mainHLayout;
     QVBoxLayout* m_contentsVLayout;
+    QVBoxLayout* m_statusVLayout;
+
+    ButtonIcon*  m_statusOnlineDot;
     QLabel*      m_lastMessageLabel;
     QLabel*      m_nameLabel;
     QPixmap      m_avatar;
@@ -58,5 +77,6 @@ private:
     QColor       m_currentColor; 
 
     bool         m_isClicked;
+    bool         m_isSelected;
     int          m_avatarSize;
 };

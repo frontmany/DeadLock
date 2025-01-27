@@ -148,6 +148,8 @@ UserInfoPacket UserInfoPacket::deserialize(const std::string& str) {
     std::string line;
     UserInfoPacket packet;
 
+    std::string lineType; // reads USER_INFO_FOUND
+    std::getline(iss, lineType);
     std::getline(iss, packet.m_user_login);
     std::getline(iss, packet.m_user_name);
     std::getline(iss, packet.m_last_seen);
@@ -229,13 +231,13 @@ StatusPacket StatusPacket::deserialize(const std::string& str) {
         response = Response::USER_INFO_NOT_FOUND;
     }
     else if (str == "USER_INFO_UPDATED") {
-        response = Response::USER_INFO_NOT_FOUND;
+        response = Response::USER_INFO_UPDATED;
     }
     else if (str == "USER_INFO_NOT_UPDATED") {
-        response = Response::USER_INFO_NOT_FOUND;
+        response = Response::USER_INFO_NOT_UPDATED;
     }
     else if (str == "FRIEND_STATE_CHANGED") {
-        response = Response::USER_INFO_NOT_FOUND;
+        response = Response::FRIEND_STATE_CHANGED;
     }
     else if (str == "ALL_FRIENDS_STATES") {
         response = Response::ALL_FRIENDS_STATES;

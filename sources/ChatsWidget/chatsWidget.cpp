@@ -2,9 +2,11 @@
 #include "ChatsListComponent.h"
 #include "messagingAreaComponent.h"
 #include "helloAreaComponent.h"
+#include "chatHeaderComponent.h"
 #include "clientSide.h"
 #include "request.h"
 #include "chat.h"
+#include "chatComponent.h"
 #include"mainWindow.h"
 
 
@@ -19,7 +21,6 @@ ChatsWidget::ChatsWidget(QWidget* parent, ClientSide* client, Theme theme)
     m_messagingAreaComponent = nullptr;
     m_isFirstChatSet = true;
 	m_chatsListComponent = new ChatsListComponent(this, this, m_theme);
-    //m_chatsListComponent->addChatComponent("qq", "zxc", m_background, m_theme);
     
     
     m_helloAreaComponent = new HelloAreaComponent(m_theme);
@@ -30,6 +31,7 @@ ChatsWidget::ChatsWidget(QWidget* parent, ClientSide* client, Theme theme)
 	
 
 }
+
 
 
 ChatsWidget::~ChatsWidget() {
@@ -66,10 +68,10 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
     m_mainHLayout->addWidget(m_messagingAreaComponent);
 
     if (chat->getIsFriendHasPhoto() == false) {
-        m_chatsListComponent->addChatComponent(QString::fromStdString(chat->getFriendName()), "", QPixmap(), m_theme);
+        m_chatsListComponent->addChatComponent(m_theme, chat);
     }
     else {
-        m_chatsListComponent->addChatComponent(QString::fromStdString(chat->getFriendName()), "", QPixmap(QString::fromStdString(chat->getFriendPhoto().getPhotoPath())), m_theme);
+        m_chatsListComponent->addChatComponent(m_theme, chat);
     }
     m_chatsListComponent->setAbleToCreateChatFlag(true);
 }
@@ -81,6 +83,10 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat) {
         m_messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat);
         m_messagingAreaComponent->setTheme(m_theme);
         m_mainHLayout->addWidget(m_messagingAreaComponent);
+
+        for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
+            chatComp->setSelected(false);
+        }
     }
     else {
         m_mainHLayout->removeWidget(m_messagingAreaComponent);
@@ -88,6 +94,13 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat) {
         m_messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat);
         m_messagingAreaComponent->setTheme(m_theme);
         m_mainHLayout->addWidget(m_messagingAreaComponent);
+
+        for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
+            if (chat->getFriendLogin() == chatComp->getChat()->getFriendLogin()) {
+                chatComp->setSelected(true);
+            }
+            chatComp->setSelected(false);
+        }
     }
     
    

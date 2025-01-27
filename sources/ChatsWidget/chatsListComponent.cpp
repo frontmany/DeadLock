@@ -31,7 +31,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileButton->setFixedSize(40, 40);
     m_profileHLayout->addWidget(m_profileButton);
 
-    m_newChatButton = new ButtonIcon(this);
+    m_newChatButton = new ButtonIcon(this, 50, 50);
 
     QIcon icon1(":/resources/ChatsWidget/startChatDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/startChatHoverDark.png");
@@ -81,15 +81,17 @@ ChatsListComponent::~ChatsListComponent() {
     
 }
 
-void ChatsListComponent::addChatComponent(const QString& name, const QString& message, const QPixmap& avatar, Theme theme) {
-    ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget);
-    chatComponent->setName(name);
-    chatComponent->setMessage(message);
-    chatComponent->setAvatar(avatar);
+void ChatsListComponent::addChatComponent(Theme theme, Chat* chat) {
+    for (auto chatComp : m_vec_chatComponents) {
+        chatComp->setSelected(false);
+    }
+    ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
+    chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setTheme(theme);
-
-    
+    chatComponent->setOnlineDot(chat->getFriendLastSeen() == "online");
     m_containerVLayout->addWidget(chatComponent);
+    m_vec_chatComponents.push_back(chatComponent);
+    chatComponent->setSelected(true);
 }
 
 void ChatsListComponent::onTextChanged(const QString& text) {
@@ -127,7 +129,7 @@ void ChatsListComponent::showChatAddDialog() {
     connect(m_friendLoginEdit, &QLineEdit::textChanged, this, &ChatsListComponent::onTextChanged);
 
     m_aVLayout = new QVBoxLayout();
-    m_cancelButton = new ButtonIcon(m_chatAddDialog);
+    m_cancelButton = new ButtonIcon(m_chatAddDialog, 50, 50);
     QIcon icon1(":/resources/ChatsWidget/close.png");
     QIcon iconHover1(":/resources/ChatsWidget/closeHover.png");
     m_cancelButton->uploadIconsDark(icon1, iconHover1);

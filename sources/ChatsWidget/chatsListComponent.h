@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <vector>
 #include <QVBoxLayout>
 #include <QPixmap>
 #include <QIcon>
@@ -176,9 +177,11 @@ public:
     ~ChatsListComponent();
     void setTheme(Theme theme);
 
-    void addChatComponent(const QString& name, const QString& message, const QPixmap& avatar, Theme theme);
+    void addChatComponent(Theme theme, Chat* chat);
     void setRedBorderToChatAddDialog();
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
+
+    std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
 
 signals:
     void sendCreateChatData(QString login);
@@ -212,10 +215,12 @@ private:
     QPushButton*    m_createChatButton;
     ButtonIcon*     m_cancelButton;
     QWidget*        m_chatAddDialog;
+
     QVBoxLayout*    m_dialogLayout;
     QHBoxLayout*    m_buttonsLayout;
     QVBoxLayout*    m_aVLayout;
 
+    std::vector<ChatComponent*> m_vec_chatComponents;
     bool m_isChatAddDialog = false;
     bool m_ableToCreateChat = true;
 };

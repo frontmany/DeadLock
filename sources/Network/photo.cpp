@@ -37,13 +37,17 @@ std::string Photo::serialize(){
         return oss.str();
     }
     else {
-        return "";
+        return "no photo";
     }
 
 }
 
 
 Photo Photo::deserialize(const std::string& data) {
+    if (data == "no photo") {
+        return Photo("");
+    }
+
     std::istringstream iss(data);
     std::size_t size;
 
@@ -51,32 +55,28 @@ Photo Photo::deserialize(const std::string& data) {
     WCHAR username[256];
     DWORD username_len = sizeof(username) / sizeof(WCHAR);
     if (!GetUserNameW(username, &username_len)) {
-        std::cerr << "No User data" << std::endl;
-        return Photo("");
+        std::cout << "No User data" << std::endl;
     }
 
     std::string usernameStr = wideStringToString(username);
     std::string saveDirectory = "C:\\Users\\" + usernameStr + "\\Documents\\ReceivedFiles";
     std::string tempPath = saveDirectory + "\\restored_photo.jpg";
 
-    if (size > 0) {
-        std::vector<char> buffer(size);
+    
+    std::vector<char> buffer(size);
 
-        iss.read(buffer.data(), size);
-        std::filesystem::create_directories(saveDirectory);
-        std::ofstream outFile(tempPath, std::ios::binary);
-        if (outFile) {
-            outFile.write(buffer.data(), size);
-            outFile.close();
-            std::cout << tempPath << std::endl;
-        }
-        else {
-            std::cerr << "Open file Error" << std::endl;
-        }
+    iss.read(buffer.data(), size);
+    std::filesystem::create_directories(saveDirectory);
+    std::ofstream outFile(tempPath, std::ios::binary);
+    if (outFile) {
+        outFile.write(buffer.data(), size);
+        outFile.close();
+        std::cout << tempPath << std::endl;
     }
     else {
-        std::cerr << "No Photo data" << std::endl;
+        std::cerr << "Open file Error" << std::endl;
     }
+    
 
     return Photo(tempPath);
 }

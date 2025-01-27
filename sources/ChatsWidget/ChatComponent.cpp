@@ -1,13 +1,12 @@
 #include "chatComponent.h"
 #include "chatsWidget.h"
+#include "buttons.h"
 #include "mainwindow.h"
 
-
-//tmp
-ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget)
-    : QWidget(parent), m_avatarSize(50), m_theme(DARK) {
-    setMinimumSize(100, 60);
-    setMaximumSize(1000, 60);
+ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
+    : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat), m_isSelected(false), m_isClicked(true) {
+    setMinimumSize(100, 70);
+    setMaximumSize(1000, 70);
 
     setMouseTracking(true);
     setAttribute(Qt::WA_Hover);
@@ -15,17 +14,52 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget)
     m_nameLabel = new QLabel(this);
     m_lastMessageLabel = new QLabel(this);
 
+    if (m_chat->getIsFriendHasPhoto() == true) {
+        const Photo& photo = m_chat->getFriendPhoto();
+        m_avatar = QPixmap(QString::fromStdString(photo.getPhotoPath()));
+        update();
+    }
+    else {
+        if (m_theme == DARK) {
+            m_avatar = QPixmap(":/resources/LoginWidget/lightLoginBackground.jpg");
+        }
+        else {
+            m_avatar = QPixmap(":/resources/LoginWidget/lightLoginBackground.jpg");
 
-    m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
-    m_lastMessageLabel->setStyleSheet("font-size: 12px; color: gray;");
+        }
+        update();
+    }
+
+    m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; font-family: 'Segoe UI'; ");
+    m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
+    m_lastMessageLabel->setText("no messages yet");
 
     m_contentsVLayout = new QVBoxLayout();
     m_contentsVLayout->addWidget(m_nameLabel);
     m_contentsVLayout->addWidget(m_lastMessageLabel);
 
+    
+
+    m_statusOnlineDot = new ButtonIcon(this, 50, 50);
+    QIcon icon1(":/resources/ChatsWidget/online.png");
+    QIcon iconHover1(":/resources/ChatsWidget/online.png");
+    m_statusOnlineDot->uploadIconsDark(icon1, iconHover1);
+    QIcon icon2(":/resources/ChatsWidget/online.png");
+    QIcon iconHover2(":/resources/ChatsWidget/online.png");
+    m_statusOnlineDot->uploadIconsLight(icon2, iconHover2);
+    m_statusOnlineDot->hide();
+    m_statusOnlineDot->setTheme(m_theme);
+
+    m_statusVLayout = new  QVBoxLayout;
+    m_statusVLayout->setAlignment(Qt::AlignBottom);
+    m_statusVLayout->addWidget(m_statusOnlineDot);
+    m_statusVLayout->addSpacing(-10);
+
     m_mainHLayout = new QHBoxLayout();
-    m_mainHLayout->setContentsMargins(70, 10, 10, 10); 
+    m_mainHLayout->setContentsMargins(70, 10, 10, 10);
     m_mainHLayout->addLayout(m_contentsVLayout);
+    m_mainHLayout->addSpacing(500);
+    m_mainHLayout->addLayout(m_statusVLayout);
 
     m_hoverColorLight = QColor(240, 240, 240);
     m_hoverColorDark = QColor(56, 56, 56);
@@ -35,44 +69,32 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget)
 
     setLayout(m_mainHLayout);
 }
+void ChatComponent::setSelected(bool isSelected) {
+    m_isSelected = isSelected;
+    if (isSelected == true) {
+        m_backColor = QColor(56, 56, 56);
+        update();
+    }
+    else {
+        m_backColor = QColor(25, 25, 25);
+        update();
+    }
+}
 
-ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
-    : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat) {
-    setMinimumSize(100, 60);
-    setMaximumSize(1000, 60);
-
-    setMouseTracking(true);
-    setAttribute(Qt::WA_Hover);
-
-    m_nameLabel = new QLabel(this);
-    m_lastMessageLabel = new QLabel(this);
-
-
-    m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
-    m_lastMessageLabel->setStyleSheet("font-size: 12px; color: gray;");
-
-    m_contentsVLayout = new QVBoxLayout();
-    m_contentsVLayout->addWidget(m_nameLabel);
-    m_contentsVLayout->addWidget(m_lastMessageLabel);
-
-    m_mainHLayout = new QHBoxLayout();
-    m_mainHLayout->setContentsMargins(70, 10, 10, 10);
-    m_mainHLayout->addLayout(m_contentsVLayout);
-
-    m_hoverColorLight = QColor(240, 240, 240);
-    m_hoverColorDark = QColor(56, 56, 56);
-
-    connect(this, &ChatComponent::clicked, this, &ChatComponent::slotToSendChatData);
-    connect(this, &ChatComponent::sendChatData, chatsWidget, &ChatsWidget::onSetChatMessagingArea);
-
-    setLayout(m_mainHLayout);
+void ChatComponent::setOnlineDot(bool isOnline) {
+    if (isOnline == true) {
+        m_statusOnlineDot->show();
+    }
+    else {
+        m_statusOnlineDot->hide();
+    }
 }
 
 void ChatComponent::setName(const QString& name) {
     m_nameLabel->setText(name);
 }
 
-void ChatComponent::setMessage(const QString& message) {
+void ChatComponent::setLastMessage(const QString& message) {
     m_lastMessageLabel->setText(message);
 }
 
@@ -160,5 +182,7 @@ void ChatComponent::mouseReleaseEvent(QMouseEvent* event)
 }
 
 void ChatComponent::slotToSendChatData() {
-    emit sendChatData(m_chat);
+    if (m_isSelected == false) {
+        emit sendChatData(m_chat);
+    }
 }

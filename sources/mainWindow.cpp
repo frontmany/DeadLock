@@ -2,8 +2,8 @@
 #include "clientSide.h"
 //#include<windows.h>
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
-    m_client = new ClientSide();
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {\
+    m_client = new ClientSide(m_chatsWidget);
     m_client->init();
     m_client->connectTo("192.168.1.49", 54000);
 
@@ -55,4 +55,5 @@ void MainWindow::setupChatsWidget() {
     m_chatsWidget = new ChatsWidget(this, m_client, DARK);
     m_chatsWidget->setTheme(DARK);
     setCentralWidget(m_chatsWidget);
+    m_client->setChatsWidget(m_chatsWidget);
 }

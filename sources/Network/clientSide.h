@@ -6,7 +6,7 @@
 #include<thread>
 #include<mutex>
 #include<windows.h>
-
+#include <QObject>
 
 #include"user.h"
 #include"request.h"
@@ -49,10 +49,15 @@ private:
 };
 */
 
+class MessagingAreaComponent;
+class ChatsListComponent;
+class ChatsWidget;
+
 class ClientSide {
 public:
-	ClientSide() : m_socket(-1), m_server_IpAddress(""), 
-		m_server_port(-1), m_is_authorized(AuthorizationState::NOT_STATED), m_messages_id_counter(0) {}
+	ClientSide(ChatsWidget* chatsWidget) : m_socket(-1), m_server_IpAddress(""), 
+		m_server_port(-1), m_is_authorized(AuthorizationState::NOT_STATED),
+		m_messages_id_counter(0), m_chatsWidget(chatsWidget) {}
 
 	void init();
 	void connectTo(std::string ipAddress, int port);
@@ -60,9 +65,11 @@ public:
 	bool registerClient(std::string login, std::string password, std::string name);
 	Chat* createChatWith(const std::string& friendLogin);
 	void sendMessage(Chat* chat, std::string message);
+	void updateStatusInChatsWidget(MessagingAreaComponent* messagingAreaComponent, ChatsListComponent* chatsListComponent, rcv::FriendStatePacket packet);
 
 	const User getMyInfo() const { return m_my_user_data; }
 	void setMyInfo(const User user) { m_my_user_data = user; }
+	void setChatsWidget(ChatsWidget* chatsWidget) { m_chatsWidget = chatsWidget; }
 
 	std::vector<Chat*> getMyChatsVec() { return m_vec_chats; }
 	std::vector<Chat*> getMyAwaitedChatsVec() { return m_vec_awaited_chats; }
@@ -84,7 +91,7 @@ private:
 	AuthorizationState	m_is_authorized;
 
 	User m_my_user_data;
-
+	ChatsWidget* m_chatsWidget;
 	/*
 	responses (shared tmp data, can be updated by createChat, or incoming message (not always))
 	RequiredFromServerUserInfo	m_required_friend_info;

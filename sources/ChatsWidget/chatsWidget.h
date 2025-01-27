@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <vector>
+#include <thread>
 #include <QLayout>
 
 #include "chat.h"
@@ -22,6 +23,9 @@ public:
 	~ChatsWidget();
 	void setTheme(Theme theme);
 	
+	MessagingAreaComponent* getMessagingArea() { return m_messagingAreaComponent; }
+	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
+
 
 public slots:
 	void onCreateChatButtonClicked(QString login);
@@ -29,7 +33,7 @@ public slots:
 	
 
 private:
-	void loadChats() { /*TODO*/ };
+	void loadChats() {/*TODO*/ }
 	void paintEvent(QPaintEvent* event) override;
 	void setBackGround(Theme theme);
 
