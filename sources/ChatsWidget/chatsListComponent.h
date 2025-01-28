@@ -73,32 +73,6 @@ struct StyleChatsListComponent {
     }
 )";
 
-    QString DarkLineEditStyleRed = R"(
-    QLineEdit {
-        background-color: #333;    
-        color: white;               
-        border: 2px solid rgb(232, 44, 57);      
-        border-radius: 13px;         
-        padding: 5px;               
-    }
-    QLineEdit:focus {
-        border: 2px solid rgb(232, 44, 57);       
-    }
-)";
-
-    QString LightLineEditStyleRed = R"(
-    QLineEdit {
-        background-color: #ffffff;     
-        color: black;               
-        border: 2px solid rgb(255, 189, 189);        
-        border-radius: 13px;         
-        padding: 5px;               
-    }
-    QLineEdit:focus {
-        border: 2px solid rgb(255, 189, 189);       
-    }
-)";
-
     QString LightLineEditStyle = R"(
     QLineEdit {
         background-color: #ffffff;    
@@ -112,61 +86,9 @@ struct StyleChatsListComponent {
     }
 )";
 
-    QString addButtonStyle = R"(
+    QString transparentButtonStyle = R"(
     QPushButton {
         background-color: transparent;   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
-
-    QString DarkButtonStyleBlue = R"(
-    QPushButton {
-        background-color: rgb(21, 119, 232);   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-        font-family: "Segoe UI";  
-        font-size: 14px;          
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
-
-    QString LightButtonStyleBlue = R"(
-    QPushButton {
-        background-color: rgb(26, 133, 255);   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-        font-family: "Segoe UI";  
-        font-size: 14px;          
-    }
-    QPushButton:hover {
-        background-color: rgb(21, 119, 232);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(21, 119, 232);      
-    }
-)";
-
-    QString DarkButtonStyleRed = R"(
-    QPushButton {
-        background-color: rgb(232, 44, 44);   
         color: white;             
         border: none;   
         border-radius: 5px;       
@@ -183,6 +105,7 @@ struct StyleChatsListComponent {
 };
 
 class RoundIconButton;
+class AddChatDialogComponent;
 class ButtonIcon;
 class ChatsWidget;
 enum Theme;
@@ -191,29 +114,29 @@ class ChatsListComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme);
+    ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme);
     ~ChatsListComponent();
     void setTheme(Theme theme);
-
     void addChatComponent(Theme theme, Chat* chat);
-    void setRedBorderToChatAddDialog();
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
+    AddChatDialogComponent* getAddChatDialogComponent() { return m_chatAddDialog; }
+    QLineEdit* getSearchLineEdit() { return m_searchLineEdit; }
 
 signals:
     void sendCreateChatData(QString login);
 
-private slots:
-    void slotToSendCreateChatData();
-    void showChatAddDialog();
-    void onTextChanged(const QString& text);
 
+public slots:
+    void openAddChatDialog();
+    void closeAddChatDialog();
+    void receiveCreateChatData(QString login);
 
 private:
-    QColor          m_backgroundColor;
-    StyleChatsListComponent* style;
-    Theme           m_theme;
+    QColor                      m_backgroundColor;
+    StyleChatsListComponent*    style;
+    Theme                       m_theme;
 
     QVBoxLayout* m_mainVLayout;
     QHBoxLayout* m_profileHLayout;
@@ -227,16 +150,8 @@ private:
     QLineEdit*          m_searchLineEdit;
     RoundIconButton*    m_profileButton;
     ButtonIcon*         m_newChatButton;
+    AddChatDialogComponent* m_chatAddDialog;
 
-
-    QLineEdit*      m_friendLoginEdit;
-    QPushButton*    m_createChatButton;
-    ButtonIcon*     m_cancelButton;
-    QWidget*        m_chatAddDialog;
-
-    QVBoxLayout*    m_dialogLayout;
-    QHBoxLayout*    m_buttonsLayout;
-    QVBoxLayout*    m_aVLayout;
 
     std::vector<ChatComponent*> m_vec_chatComponents;
     bool m_isChatAddDialog = false;

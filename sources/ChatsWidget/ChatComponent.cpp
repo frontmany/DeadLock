@@ -1,10 +1,11 @@
 #include "chatComponent.h"
 #include "chatsWidget.h"
+#include "addChatDialogComponent.h"
 #include "buttons.h"
 #include "mainwindow.h"
 
 ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
-    : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat), m_isSelected(false), m_isClicked(true) {
+    : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat), m_isClicked(true), m_isSelected(false) {
     setMinimumSize(100, 70);
     setMaximumSize(1000, 70);
 
@@ -61,7 +62,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_mainHLayout->addSpacing(500);
     m_mainHLayout->addLayout(m_statusVLayout);
 
-    m_hoverColorLight = QColor(224, 224, 224);
+    m_hoverColorLight = QColor(214, 214, 214);
     m_hoverColorDark = QColor(56, 56, 56);
 
     connect(this, &ChatComponent::clicked, this, &ChatComponent::slotToSendChatData);
@@ -73,19 +74,26 @@ void ChatComponent::setSelected(bool isSelected) {
     m_isSelected = isSelected;
     if (isSelected == true) {
         if (m_theme == DARK) {
-            m_backColor = m_hoverColorDark;
+            m_backColor = QColor(135, 135, 135);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(227, 227, 227); font-family: 'Segoe UI'; ");
+            m_currentColor = m_backColor;
         }
         else {
-            m_backColor = m_hoverColorLight;
+            m_backColor = QColor(176, 208, 255);
+            m_currentColor = m_backColor;
         }
         update();
     }
     else {
         if (m_theme == DARK) {
             m_backColor = QColor(25, 25, 25);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
+            m_currentColor = m_backColor;
         }
         else {
-            m_backColor = QColor(214, 214, 214);
+            m_backColor = QColor(224, 224, 224);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
+            m_currentColor = m_backColor;
         }
         update();
     }
@@ -167,13 +175,23 @@ bool ChatComponent::event(QEvent* event)
 void ChatComponent::hoverEnter(QHoverEvent* event)
 {
     if (m_theme == LIGHT) {
-        m_currentColor = m_hoverColorLight;
-        update();
+        if (m_isSelected == true) {
+            m_currentColor = QColor(176, 208, 255);
+        }
+        else {
+            m_currentColor = m_hoverColorLight;
+        }
+        
     }
     else {
-        m_currentColor = m_hoverColorDark;
-        update();
+        if (m_isSelected == true) {
+            m_currentColor = QColor(135, 135, 135);
+        }
+        else {
+            m_currentColor = m_hoverColorDark;
+        }
     }
+    update();
 }
 
 void ChatComponent::hoverLeave(QHoverEvent* event)
@@ -192,7 +210,6 @@ void ChatComponent::mouseReleaseEvent(QMouseEvent* event)
 }
 
 void ChatComponent::slotToSendChatData() {
-    if (m_isSelected == false) {
-        emit sendChatData(m_chat);
-    }
+    emit sendChatData(m_chat, this);
+    
 }

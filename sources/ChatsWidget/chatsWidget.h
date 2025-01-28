@@ -12,6 +12,7 @@
 class ChatsListComponent;
 class MessagingAreaComponent;
 class HelloAreaComponent;
+class ChatComponent;
 class MainWindow;
 class ClientSide;
 enum Theme;
@@ -29,7 +30,7 @@ public:
 
 public slots:
 	void onCreateChatButtonClicked(QString login);
-	void onSetChatMessagingArea(Chat* chat);
+	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
 	
 
 private:

@@ -10,8 +10,10 @@
         <file>startChatLight.png</file>
         <file>startChatHoverDark.png</file>
         <file>startChatHoverLight.png</file>
-        <file>close.png</file>
-        <file>closeHover.png</file>
+        <file>closeDark.png</file>
+        <file>closeLight.png</file>
+        <file>closeHoverLight.png</file>
+        <file>closeHoverDark.png</file>
         <file>sendHoverDark.png</file>
         <file>sendHoverLight.png</file>
         <file>sendDark.png</file>

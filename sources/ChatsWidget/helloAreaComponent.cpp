@@ -9,7 +9,7 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
     m_main_VLayout->setAlignment(Qt::AlignCenter);
 
     m_label = new QLabel("select a chat to start");
-    m_label->setMinimumSize(100, 40);
+    m_label->setMinimumSize(150, 40);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     m_main_HLayout = new QHBoxLayout;

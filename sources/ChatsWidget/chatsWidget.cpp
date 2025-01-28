@@ -1,6 +1,7 @@
 #include "chatsWidget.h"
 #include "ChatsListComponent.h"
 #include "messagingAreaComponent.h"
+#include "addChatDialogComponent.h"
 #include "helloAreaComponent.h"
 #include "chatHeaderComponent.h"
 #include "clientSide.h"
@@ -40,43 +41,38 @@ ChatsWidget::~ChatsWidget() {
 
 
 void ChatsWidget::onCreateChatButtonClicked(QString login) {
+    QString login2 = login;
     Chat* chat = nullptr;
     try {
-        Chat* chatTry = m_client->createChatWith(login.toStdString());
-        chat = chatTry;
+        chat = m_client->createChatWith(login2.toStdString());
     }
     catch (...) {
         auto ChatsVec = m_client->getMyChatsVec();
         ChatsVec.erase(ChatsVec.end() - 1);
-
-        m_chatsListComponent->setAbleToCreateChatFlag(false);
-        m_chatsListComponent->setRedBorderToChatAddDialog();
+        m_chatsListComponent->getAddChatDialogComponent()->getEditComponent()->setRedBorderToChatAddDialog();
         return;
     }
     
     if (m_isFirstChatSet == true) {
         m_mainHLayout->removeWidget(m_helloAreaComponent);
         delete m_helloAreaComponent;
+        m_isFirstChatSet = false;
     }
     else {
         m_mainHLayout->removeWidget(m_messagingAreaComponent);
         delete m_messagingAreaComponent;
+
     }
-    
+
     m_messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat);
     m_messagingAreaComponent->setTheme(m_theme);
     m_mainHLayout->addWidget(m_messagingAreaComponent);
 
-    if (chat->getIsFriendHasPhoto() == false) {
-        m_chatsListComponent->addChatComponent(m_theme, chat);
-    }
-    else {
-        m_chatsListComponent->addChatComponent(m_theme, chat);
-    }
-    m_chatsListComponent->setAbleToCreateChatFlag(true);
+    m_chatsListComponent->addChatComponent(m_theme, chat);
+    m_chatsListComponent->closeAddChatDialog();
 }
 
-void ChatsWidget::onSetChatMessagingArea(Chat* chat) {
+void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     if (m_isFirstChatSet == true) {
         m_mainHLayout->removeWidget(m_helloAreaComponent);
         delete m_helloAreaComponent;
@@ -87,6 +83,9 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat) {
         for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
             chatComp->setSelected(false);
         }
+
+        component->setSelected(true);
+        m_isFirstChatSet = false;
     }
     else {
         m_mainHLayout->removeWidget(m_messagingAreaComponent);
@@ -96,18 +95,13 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat) {
         m_mainHLayout->addWidget(m_messagingAreaComponent);
 
         for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
-            if (chat->getFriendLogin() == chatComp->getChat()->getFriendLogin()) {
-                chatComp->setSelected(true);
-            }
             chatComp->setSelected(false);
         }
+        component->setSelected(true);
     }
     
    
 }
-
-
-
 
 void ChatsWidget::setTheme(Theme theme) {
     m_theme = theme;

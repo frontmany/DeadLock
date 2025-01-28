@@ -54,7 +54,7 @@ public slots:
 
 signals:
     void clicked();
-    void sendChatData(Chat* chat);
+    void sendChatData(Chat* chat, ChatComponent* component);
 
 
 private:
