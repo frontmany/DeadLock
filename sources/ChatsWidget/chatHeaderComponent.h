@@ -19,20 +19,32 @@ struct StyleChatHeaderComponent {
     QLabel {
         font-family: "Segoe UI";
         background-color: transparent;  
+        font-weight: normal;
         border: none;   
         font-size: 14px;
         color: rgb(85, 90, 250);            
     }
 )";
 
-    QString whiteLabelStyle = R"(
+    QString lightLabelStyle = R"(
     QLabel {
         font-family: "Segoe UI";
         background-color: transparent;  
         font-weight: bold;
         border: none;   
-        font-size: 20px;
+        font-size: 14px;
         color: rgb(219, 219, 219);            
+    }
+)";
+
+    QString darkLabelStyle = R"(
+    QLabel {
+        font-family: "Segoe UI";
+        background-color: transparent;  
+        font-weight: bold;
+        border: none;   
+        font-size: 14px;
+        color: rgb(47, 47, 48);            
     }
 )";
 
@@ -40,7 +52,7 @@ struct StyleChatHeaderComponent {
     QLabel {
         font-family: "Segoe UI";
         background-color: transparent;  
-        font-weight: bold;
+        font-weight: normal;
         border: none;   
         font-size: 14px;
         color: rgb(120, 120, 120);            

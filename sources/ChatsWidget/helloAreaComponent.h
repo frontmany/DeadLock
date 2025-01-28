@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include <QPainterPath>
 #include <QPainter>
 #include <QScrollBar>
 
@@ -46,6 +47,7 @@ class HelloAreaComponent : public QWidget {
 public:
     HelloAreaComponent(Theme theme);
     void setTheme(Theme theme);
+    void setBackGround(Theme theme);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -53,9 +55,10 @@ protected:
 private:
     StyleHelloAreaComponent* style;
     Theme                    m_theme;
-    QColor                   m_backColor;
+    QPixmap					 m_background;
+    
 
-    QLabel* m_label;
+    QLabel*                  m_label;
     QVBoxLayout*             m_main_VLayout;
     QHBoxLayout*             m_main_HLayout;
 };

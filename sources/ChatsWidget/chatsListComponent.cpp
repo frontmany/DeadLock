@@ -160,7 +160,7 @@ void ChatsListComponent::showChatAddDialog() {
     }
     else {
         m_friendLoginEdit->setStyleSheet(style.LightLineEditStyle);
-        m_createChatButton->setStyleSheet(style.DarkButtonStyleBlue);
+        m_createChatButton->setStyleSheet(style.LightButtonStyleBlue);
         m_cancelButton->setStyleSheet(style.DarkButtonStyleRed);
     }
 

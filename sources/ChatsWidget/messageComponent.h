@@ -19,7 +19,20 @@ struct StyleInnerComponent {
         color: rgb(240, 240, 240); 
         font-family: 'Segoe UI'; 
         font-size: 14px; 
-        font-weight: bold;
+        font-weight: normal;
+        padding: 10px; 
+        border: none; 
+        border-radius: 20px; 
+    }
+)";
+
+    QString labelStyleLightMessage = R"(
+    QLabel {
+        background-color: transparent; 
+        color: rgb(52, 52, 52); 
+        font-family: 'Segoe UI'; 
+        font-size: 14px; 
+        font-weight: normal;
         padding: 10px; 
         border: none; 
         border-radius: 20px; 
@@ -31,7 +44,19 @@ struct StyleInnerComponent {
         background-color: transparent; 
         color: rgb(219, 219, 219); 
         font-family: 'Segoe UI'; 
-        font-size: 12px; 
+        font-size: 13px; 
+        padding: 10px; 
+        border: none; 
+        border-radius: 20px; 
+    }
+)";
+
+    QString labelStyleLightTime = R"(
+    QLabel {
+        background-color: transparent; 
+        color: rgb(153, 153, 153); 
+        font-family: 'Segoe UI'; 
+        font-size: 13px; 
         padding: 10px; 
         border: none; 
         border-radius: 20px; 

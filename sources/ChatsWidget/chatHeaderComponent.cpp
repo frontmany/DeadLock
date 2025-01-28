@@ -38,7 +38,12 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
     m_rightLayout = new QVBoxLayout();
 
     m_nameLabel = new QLabel(name, this);
-    m_nameLabel->setStyleSheet(style->whiteLabelStyle);
+    if (m_theme == DARK) {
+        m_nameLabel->setStyleSheet(style->lightLabelStyle);
+    }
+    else {
+        m_nameLabel->setStyleSheet(style->darkLabelStyle);
+    }
 
     m_lastSeenLabel = new QLabel(lastSeen, this);
     if (m_lastSeenLabel->text() == "online") {
@@ -85,13 +90,14 @@ void ChatHeaderComponent::setTheme(Theme theme) {
         m_backColor = QColor(36, 36, 36);
         m_rightButton->setTheme(m_theme);
         m_leftIcon->setTheme(m_theme);
+        m_nameLabel->setStyleSheet(style->lightLabelStyle);
         update();
     }
     else {
         m_backColor = QColor(224, 224, 224);
         m_rightButton->setTheme(m_theme);
         m_leftIcon->setTheme(m_theme);
-        m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(47, 47, 48);");
+        m_nameLabel->setStyleSheet(style->darkLabelStyle);
         update();
     }
 }

@@ -74,14 +74,14 @@ void InnerComponent::paintEvent(QPaintEvent* event) {
 void InnerComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (theme == DARK) {
-        m_backColor = QColor(56, 147, 252);
+        m_backColor = QColor(29, 52, 99);
         m_textLabel->setStyleSheet(style->labelStyleDarkMessage);
         m_timestampLabel->setStyleSheet(style->labelStyleDarkTime);
     }
     else {
-        m_backColor = QColor(32, 100, 179);
-        m_textLabel->setStyleSheet(style->labelStyleDarkMessage);
-        m_timestampLabel->setStyleSheet(style->labelStyleDarkTime);
+        m_backColor = QColor(212, 229, 255);
+        m_textLabel->setStyleSheet(style->labelStyleLightMessage);
+        m_timestampLabel->setStyleSheet(style->labelStyleLightTime);
 
     }
     update(); 

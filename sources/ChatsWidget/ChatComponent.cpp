@@ -61,7 +61,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_mainHLayout->addSpacing(500);
     m_mainHLayout->addLayout(m_statusVLayout);
 
-    m_hoverColorLight = QColor(240, 240, 240);
+    m_hoverColorLight = QColor(224, 224, 224);
     m_hoverColorDark = QColor(56, 56, 56);
 
     connect(this, &ChatComponent::clicked, this, &ChatComponent::slotToSendChatData);
@@ -72,11 +72,21 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
 void ChatComponent::setSelected(bool isSelected) {
     m_isSelected = isSelected;
     if (isSelected == true) {
-        m_backColor = QColor(56, 56, 56);
+        if (m_theme == DARK) {
+            m_backColor = m_hoverColorDark;
+        }
+        else {
+            m_backColor = m_hoverColorLight;
+        }
         update();
     }
     else {
-        m_backColor = QColor(25, 25, 25);
+        if (m_theme == DARK) {
+            m_backColor = QColor(25, 25, 25);
+        }
+        else {
+            m_backColor = QColor(214, 214, 214);
+        }
         update();
     }
 }

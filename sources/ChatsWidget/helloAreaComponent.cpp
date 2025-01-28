@@ -25,24 +25,44 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
 void HelloAreaComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (theme == DARK) {
-        m_backColor = QColor(25, 25, 25);
         m_label->setStyleSheet(style->labelStyleDark);
+        setBackGround(m_theme);
         update();
     }
     else {
-        m_backColor = QColor(204, 204, 204, 200);
         m_label->setStyleSheet(style->labelStyleLight);
+        setBackGround(m_theme);
         update();
     }
 }
-                                                            
+
 void HelloAreaComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-
-    painter.setBrush(m_backColor);
     painter.setPen(Qt::NoPen);
-    painter.drawRoundedRect(rect(), 10, 10);
+
+
+    QPainterPath path;
+    QRect rect = this->rect();
+    int radius = 20; 
+    path.addRoundedRect(rect, radius, radius);
+
+
+    painter.setClipPath(path); 
+    painter.drawPixmap(rect, m_background);
+    painter.setClipping(false);
 
     QWidget::paintEvent(event);
+}
+
+
+void HelloAreaComponent::setBackGround(Theme theme) {
+    if (theme == DARK) {
+        if (m_background.load(":/resources/ChatsWidget/helloDark.jpg")) {
+        }
+    }
+    else {
+        if (m_background.load(":/resources/ChatsWidget/helloLight.jpg")) {
+        }
+    }
 }

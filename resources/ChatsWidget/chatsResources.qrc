@@ -28,5 +28,7 @@
         <file>notCheck.png</file>
         <file>check.png</file>
         <file>online.png</file>
+        <file>helloDark.jpg</file>
+        <file>helloLight.jpg</file>
     </qresource>
 </RCC>
