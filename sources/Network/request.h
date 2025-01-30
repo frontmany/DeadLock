@@ -2,6 +2,7 @@
 
 #include<string>
 #include<sstream>
+#include<vector>
 
 #include"photo.h"
 
@@ -24,6 +25,7 @@ private:
 };
 
 enum class Response {
+    MESSAGES_READ_PACKET,
     EMPTY_RESPONSE,
     NEXT_QUERY_SIZE,
     AUTHORIZATION_SUCCESS,
@@ -44,6 +46,26 @@ enum class Response {
 
 
 namespace rpl {
+    class MessagesReadPacket {
+    public:
+        MessagesReadPacket(){}
+        static MessagesReadPacket deserialize(const std::string& str);
+        std::string serialize() const;
+
+        const std::string& getMyLogin() const { return m_my_login; }
+        void setMyLogin(const std::string& login) { m_my_login = login; }
+
+        const std::string& getFriendLogin() const { return m_friend_login; }
+        void setFriendLogin(const std::string& login) { m_friend_login = login; }
+
+        std::vector<double>& getReadMessagesVec()  { return m_read_messages_id_vec; }
+
+    private:
+        std::vector<double> m_read_messages_id_vec;
+        std::string m_my_login;
+        std::string m_friend_login;
+    };
+
     class UserInfoPacket {
     public:
         UserInfoPacket() : m_isHasPhoto(false), m_isOnline(false) {}
@@ -93,6 +115,9 @@ namespace rpl {
         const std::string& getMessage() const { return m_message; }
         void setMessage(const std::string& message) { m_message = message; }
 
+        const std::string& getTimeStamp() const { return m_timeStamp; }
+        void setTimeStamp(const std::string& timeStamp) { m_timeStamp = timeStamp; }
+
         const int getId() const { return m_id; }
         void setId(const int id) { m_id = id; }
 
@@ -101,6 +126,7 @@ namespace rpl {
         rpl::UserInfoPacket m_friend_info;
         rpl::UserInfoPacket m_my_info;
         std::string m_message;
+        std::string m_timeStamp;
     };
 }
 
@@ -169,6 +195,7 @@ namespace rcv {
 
 
 enum class Query {
+    MESSAGES_READ_PACKET,
     NEXT_QUERY_SIZE,
     AUTHORIZATION,
     REGISTRATION,

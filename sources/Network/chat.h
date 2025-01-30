@@ -17,11 +17,20 @@ public:
 	const std::string& getMessage() const { return m_message; }
 	void setMessage(const std::string& message) { m_message = message; }
 
+	const std::string& getTimestamp() const { return m_timestamp; }
+	void setTimestamp(const std::string& timestamp) { m_timestamp = timestamp; }
+
 	void setId(int id) { m_id = id; }
-	const bool getId() const { return m_id; }
+	const int getId() const { return m_id; }
+
+
+	void setIsSend(bool isSend) { m_is_send = isSend; }
+	const bool getIsSend() const { return m_is_send; }
 
 private:
 	std::string m_message;
+	std::string m_timestamp;
+	bool m_is_send;
 	int m_id;
 };
 
@@ -32,11 +41,8 @@ public:
 	const std::string& getFriendLogin() const;
 	void setFriendLogin(const std::string& friendLogin);
 
-	std::vector<Msg*>& getSendMsgVec();
-	std::vector<int>& getNotReadSendMsgVec() { return m_vec_not_read_send_messages_id; }
-
-	std::vector<Msg*>& getReceivedMsgVec();
-	std::vector<int>& getNotReadReceivedMsgVec() { return m_vec_not_read_received_messages_id; }
+	std::vector<double>& getNotReadSendMsgVec() { return m_vec_not_read_send_messages_id; }
+	std::vector<double>& getNotReadReceivedMsgVec() { return m_vec_not_read_received_messages_id; }
 
 	void setLastIncomeMsg(const std::string& lastIncomeMessage);
 	const std::string& getLastIncomeMessage() const;
@@ -57,12 +63,8 @@ public:
 	const Photo& getFriendPhoto() const { return m_friend_photo; }
 
 private:
-
-	std::vector<Msg*> m_vec_send_messages;
-	std::vector<int> m_vec_not_read_send_messages_id;
-
-	std::vector<Msg*> m_vec_received_messages;
-	std::vector<int> m_vec_not_read_received_messages_id;
+	std::vector<double>	m_vec_not_read_received_messages_id;
+	std::vector<double>	m_vec_not_read_send_messages_id;
 
 	ChatState				 m_chat_state;
 	std::string				 m_friend_last_seen;

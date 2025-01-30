@@ -19,7 +19,7 @@ ChatsWidget::ChatsWidget(QWidget* parent, ClientSide* client, Theme theme)
 
 	m_leftVLayout = new QVBoxLayout;
     m_background.load(":/resources/LoginWidget/lightLoginBackground.jpg");
-    m_messagingAreaComponent = nullptr;
+    m_current_messagingAreaComponent = nullptr;
     m_isFirstChatSet = true;
 	m_chatsListComponent = new ChatsListComponent(this, this, m_theme);
     
@@ -59,14 +59,16 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
         m_isFirstChatSet = false;
     }
     else {
-        m_mainHLayout->removeWidget(m_messagingAreaComponent);
-        delete m_messagingAreaComponent;
-
+        m_mainHLayout->removeWidget(m_current_messagingAreaComponent);
+        m_current_messagingAreaComponent->hide();
+        m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
     }
 
-    m_messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat);
-    m_messagingAreaComponent->setTheme(m_theme);
-    m_mainHLayout->addWidget(m_messagingAreaComponent);
+    auto messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat, this);
+    m_current_messagingAreaComponent = messagingAreaComponent;
+    m_current_messagingAreaComponent->setTheme(m_theme);
+    m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
+    m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
     m_chatsListComponent->addChatComponent(m_theme, chat);
     m_chatsListComponent->closeAddChatDialog();
@@ -76,31 +78,43 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     if (m_isFirstChatSet == true) {
         m_mainHLayout->removeWidget(m_helloAreaComponent);
         delete m_helloAreaComponent;
-        m_messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat);
-        m_messagingAreaComponent->setTheme(m_theme);
-        m_mainHLayout->addWidget(m_messagingAreaComponent);
-
-        for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
-            chatComp->setSelected(false);
-        }
-
-        component->setSelected(true);
         m_isFirstChatSet = false;
     }
     else {
-        m_mainHLayout->removeWidget(m_messagingAreaComponent);
-        delete m_messagingAreaComponent;
-        m_messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat);
-        m_messagingAreaComponent->setTheme(m_theme);
-        m_mainHLayout->addWidget(m_messagingAreaComponent);
-
-        for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
-            chatComp->setSelected(false);
-        }
-        component->setSelected(true);
+        m_mainHLayout->removeWidget(m_current_messagingAreaComponent);
+        m_current_messagingAreaComponent->hide();
     }
+
+    auto itMsgComp = std::find_if(m_vec_messagingComponents_cache.begin(), m_vec_messagingComponents_cache.end(), [chat](MessagingAreaComponent* msgComp) {
+        return msgComp->getChatConst()->getFriendLogin() == chat->getFriendLogin();
+        });
+
+    if (itMsgComp == m_vec_messagingComponents_cache.end()) {        
+        std::cout << "error can not find mesaging Area Component";
+    }
+    else {
+        m_current_messagingAreaComponent = *itMsgComp;
+        m_current_messagingAreaComponent->show();
+        m_mainHLayout->addWidget(m_current_messagingAreaComponent);
+    }
+
+    for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
+        chatComp->setSelected(false);
+    }
+    component->setSelected(true);
     
-   
+    
+
+    //TODO direct Notification about messages was read
+}
+
+void ChatsWidget::onSendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id) {
+    Msg* msg = new Msg;
+    msg->setId(id);
+    msg->setIsSend(true);
+    msg->setMessage(message.toStdString());
+    msg->setTimestamp(timeStamp.toStdString());
+    m_client->sendMessage(chat, message.toStdString(), timeStamp.toStdString(), id);
 }
 
 void ChatsWidget::setTheme(Theme theme) {

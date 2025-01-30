@@ -49,7 +49,7 @@ private slots:
     
 
 public slots:
-    void setOnlineDot(bool isOnline);
+    void setUnreadMessageDot(bool isUnreadMessages);
 
 
 signals:
@@ -67,7 +67,7 @@ private:
     QVBoxLayout* m_contentsVLayout;
     QVBoxLayout* m_statusVLayout;
 
-    ButtonIcon*  m_statusOnlineDot;
+    ButtonIcon*  m_UnreadDot;
     QLabel*      m_lastMessageLabel;
     QLabel*      m_nameLabel;
     QPixmap      m_avatar;

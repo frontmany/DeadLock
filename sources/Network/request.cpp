@@ -71,12 +71,47 @@ std::string UpdateUserInfoPacket::serialize() {
 }
 
 using namespace rpl;
+std::string MessagesReadPacket::serialize() const {
+    std::ostringstream oss;
+    oss << "MESSAGES_READ_PACKET" << "\n"
+        << m_my_login << '\n'
+        << m_friend_login << '\n';
+
+    for (const auto& id : m_read_messages_id_vec) {
+        oss << id << ' '; 
+    }
+    oss << '\n'; 
+
+    return oss.str();
+}
+
+MessagesReadPacket MessagesReadPacket::deserialize(const std::string& str) {
+    std::istringstream iss(str);
+    std::string line;
+    MessagesReadPacket packet;
+
+
+    std::getline(iss, packet.m_my_login);
+    std::getline(iss, packet.m_friend_login);
+
+    std::getline(iss, line);
+    std::istringstream lineStream(line);
+    double messageId;
+    while (lineStream >> messageId) {
+        packet.m_read_messages_id_vec.push_back(messageId);
+    }
+
+    return packet;
+}
+
 Message Message::deserialize(const std::string& str) {
     std::istringstream iss(str);
     Message  message;
 
     std::string idStr;
+    std::string timeStampStr;
     std::getline(iss, idStr);
+    std::getline(iss, timeStampStr);
     message.m_id = std::stoi(idStr);
 
     std::getline(iss, message.m_message);
@@ -119,6 +154,7 @@ std::string Message::serialize() {
     std::ostringstream oss;
     oss << "MESSAGE" << "\n"
         << m_id << '\n' 
+        << m_timeStamp << '\n' 
         << m_message << '\n'
         << m_my_info.serialize() << '\n'
         << ":" << '\n'
@@ -202,9 +238,11 @@ std::pair<Response, std::string> rcv::parseResponse(const std::string& response)
 
 StatusPacket StatusPacket::deserialize(const std::string& str) {
     Response response = Response::EMPTY_RESPONSE;
-
     if (str == "EMPTY_RESPONSE") {
         response = Response::EMPTY_RESPONSE;
+    }
+    if (str == "MESSAGES_READ_PACKET") {
+        response = Response::MESSAGES_READ_PACKET;
     }
     else if (str == "AUTHORIZATION_SUCCESS") {
         response = Response::AUTHORIZATION_SUCCESS;

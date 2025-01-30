@@ -129,6 +129,7 @@ signals:
 
 
 public slots:
+    void addChatComponentSlot(QString theme, Chat* chat);
     void openAddChatDialog();
     void closeAddChatDialog();
     void receiveCreateChatData(QString login);

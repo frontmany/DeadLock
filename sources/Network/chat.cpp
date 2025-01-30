@@ -1,12 +1,7 @@
 #include "chat.h"
 
-
-
 const std::string& Chat::getFriendLogin() const { return m_friend_login; };
 void Chat::setFriendLogin(const std::string& friendLogin) {m_friend_login  = friendLogin; };
-
-std::vector<Msg*>& Chat::getSendMsgVec() { return m_vec_send_messages; };
-std::vector<Msg*>& Chat::getReceivedMsgVec() { return m_vec_received_messages; };
 
 const std::string& Chat::getLastIncomeMessage() const { return m_last_incoming_message; };
 void Chat::setLastIncomeMsg(const std::string& message) { m_last_incoming_message = message; };

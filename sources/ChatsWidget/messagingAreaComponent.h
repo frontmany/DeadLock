@@ -7,10 +7,14 @@
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <QPainter>
+#include <vector>
 #include <QScrollBar>
+#include <random>
 
 #include "request.h"
 #include "chat.h"
+
+
 
 std::string getCurrentTime();
 
@@ -87,6 +91,8 @@ QString LightTextEditStyle = R"(
 class ButtonIcon;
 class ButtonCursor;
 class ChatHeaderComponent;
+class MessageComponent;
+class ChatsWidget;
 class Packet;
 enum Theme;
 
@@ -94,12 +100,20 @@ class MessagingAreaComponent : public QWidget {
     Q_OBJECT
 
 public:
-    MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat);
+    MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget);
     MessagingAreaComponent(Theme theme);
     void setTheme(Theme theme);
 
     ChatHeaderComponent* getChatHeader() { return m_header; }
+    std::vector<MessageComponent*>& getMessagesComponentsVec() { return m_vec_messagesComponents; }
     const Chat* getChatConst() const { return m_chat; }
+
+signals:
+    void sendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id);
+
+public slots:
+    void addMessageReceived(QString msg, QString timestamp, double id);
+    void addMessageSent(QString msg, QString timestamp, double id);
 
 private slots:
     void adjustTextEditHeight();
@@ -115,9 +129,12 @@ private:
     Theme                           m_theme;
     QColor                          m_backColor;
     
+    std::vector<MessageComponent*> m_vec_messagesComponents;
+
     QVBoxLayout* m_sendMessage_VLayout;
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
+    ChatsWidget* m_chatsWidget;
 
     QString                 m_friendName;
     QTextEdit*              m_messageInputEdit;

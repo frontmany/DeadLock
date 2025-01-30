@@ -41,19 +41,19 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
 
     
 
-    m_statusOnlineDot = new ButtonIcon(this, 50, 50);
+    m_UnreadDot = new ButtonIcon(this, 50, 50);
     QIcon icon1(":/resources/ChatsWidget/online.png");
     QIcon iconHover1(":/resources/ChatsWidget/online.png");
-    m_statusOnlineDot->uploadIconsDark(icon1, iconHover1);
+    m_UnreadDot->uploadIconsDark(icon1, iconHover1);
     QIcon icon2(":/resources/ChatsWidget/online.png");
     QIcon iconHover2(":/resources/ChatsWidget/online.png");
-    m_statusOnlineDot->uploadIconsLight(icon2, iconHover2);
-    m_statusOnlineDot->hide();
-    m_statusOnlineDot->setTheme(m_theme);
+    m_UnreadDot->uploadIconsLight(icon2, iconHover2);
+    m_UnreadDot->hide();
+    m_UnreadDot->setTheme(m_theme);
 
     m_statusVLayout = new  QVBoxLayout;
     m_statusVLayout->setAlignment(Qt::AlignBottom);
-    m_statusVLayout->addWidget(m_statusOnlineDot);
+    m_statusVLayout->addWidget(m_UnreadDot);
     m_statusVLayout->addSpacing(-10);
 
     m_mainHLayout = new QHBoxLayout();
@@ -99,12 +99,12 @@ void ChatComponent::setSelected(bool isSelected) {
     }
 }
 
-void ChatComponent::setOnlineDot(bool isOnline) {
-    if (isOnline == true) {
-        m_statusOnlineDot->show();
+void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
+    if (isUnreadMessages == true) {
+        m_UnreadDot->show();
     }
     else {
-        m_statusOnlineDot->hide();
+        m_UnreadDot->hide();
     }
 }
 

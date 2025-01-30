@@ -95,7 +95,6 @@ void ChatsListComponent::addChatComponent(Theme theme, Chat* chat) {
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setTheme(theme);
-    chatComponent->setOnlineDot(chat->getFriendLastSeen() == "online");
     m_containerVLayout->insertWidget(0, chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
     chatComponent->setSelected(true);
@@ -135,4 +134,27 @@ void ChatsListComponent::setTheme(Theme theme) {
         m_profileButton->setTheme(theme);
         m_newChatButton->setTheme(theme);
     }
+}
+
+
+void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
+    Theme themeT;
+    if (theme == "DARK") {
+        themeT = DARK;
+    }
+    else {
+        themeT = LIGHT;
+    }
+
+    for (auto chatComp : m_vec_chatComponents) {
+        chatComp->setSelected(false);
+    }
+    ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
+    chatComponent->setLastMessage(QString::fromStdString(chat->getLastIncomeMessage()));
+    chatComponent->setUnreadMessageDot(true);
+    chatComponent->setName(QString::fromStdString(chat->getFriendName()));
+    chatComponent->setTheme(themeT);
+    m_containerVLayout->insertWidget(0, chatComponent);
+    m_vec_chatComponents.push_back(chatComponent);
+    chatComponent->setSelected(true);
 }

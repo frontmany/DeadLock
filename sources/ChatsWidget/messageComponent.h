@@ -83,12 +83,15 @@ public:
 
     void setText(const QString& text) { m_textLabel->setText(text); }
     void setTimestamp(const QString& text) { m_timestampLabel->setText(text); }
+    bool getIsRead() const { return m_is_read; }
     void setReadStatus(bool read);
+    
 
 protected:
     void paintEvent(QPaintEvent* event) override;
 
 private:
+    bool m_is_read = false;
     StyleInnerComponent* style;
     Theme m_theme;
     QColor m_backColor;
@@ -108,17 +111,19 @@ class MessageComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit MessageComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, int id);
+    explicit MessageComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, double id, bool isSent);
     void setTheme(Theme theme) { m_innerWidget->setTheme(theme); }
     void setMessage(const QString& message) { m_innerWidget->setText(message); }
     void setTimestamp(const QString& timestamp) { m_innerWidget->setTimestamp(timestamp); }
+    bool getReadStatus() const { return  m_innerWidget->getIsRead(); }
     void setReadStatus(bool isRead) { m_innerWidget->setReadStatus(isRead); }
-
+    const double getId() const { return m_id; }
 
 
 private:
     Theme m_theme;
-    int m_id;
+    double m_id;
+    bool m_isSent;
     QHBoxLayout* m_main_HLayout;
     InnerComponent* m_innerWidget;
 };

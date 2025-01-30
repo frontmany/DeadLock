@@ -4,9 +4,19 @@
 #include"clientSide.h"
 #include"messagingAreaComponent.h"
 #include"chatsListComponent.h"
+#include"messageComponent.h"
 #include"chatHeaderComponent.h"
+#include"mainwindow.h"
 #include"chatsWidget.h"
 
+bool contains(std::vector<double>& vec, double number) {
+    for (const auto& num : vec) {
+        if (num == number) {
+            return true;
+        }
+    }
+    return false;
+}
 
 
 void ClientSide::init() {
@@ -136,9 +146,10 @@ void ClientSide::receive() {
 
                 if (it == m_vec_chats.end()) {
                     Chat* newChat = new Chat;
-
+                    
                     Msg* msg = new Msg;
                     msg->setId(message.getId());
+                    msg->setTimestamp(message.getTimeStamp());
                     msg->setMessage(message.getMessage());
 
                     newChat->setFriendLogin(message.getFriendInfo().getLogin());
@@ -147,22 +158,74 @@ void ClientSide::receive() {
                     newChat->setIsFriendHasPhoto(message.getFriendInfo().getIsHasPhoto());
                     newChat->setLastIncomeMsg(message.getMessage());
                     newChat->setFriendPhoto(message.getFriendInfo().getPhoto());
-                    newChat->getReceivedMsgVec().push_back(msg);
+
                     newChat->getNotReadReceivedMsgVec().push_back(msg->getId());
-                    m_vec_awaited_chats.push_back(newChat);
+                    m_vec_chats.push_back(newChat);
+
+
+                    QString s;
+                    if (m_chatsWidget->getTheme() == DARK) {
+                        s = "DARK";
+                    }
+                    else {
+                        s = "LIGHT";
+                    }
+                    
+                    QMetaObject::invokeMethod(m_chatsWidget->getChatsList(), "addChatComponentSlot", Qt::QueuedConnection, Q_ARG(QString, s, Chat*, newChat));
                 }
                 else {
                     Chat* foundChat = *it;
 
+
                     Msg* msg = new Msg;
                     msg->setId(message.getId());
                     msg->setMessage(message.getMessage());
+                    msg->setIsSend(false);
+                    msg->setMessage(message.getTimeStamp());
 
-                    foundChat->getReceivedMsgVec().push_back(msg);
                     foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
                     foundChat->setLastIncomeMsg(message.getMessage());
+
+                    auto& chatsComponentsVec = m_chatsWidget->getChatsList()->getChatComponentsVec();
+                    auto itComponent = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [foundChat](ChatComponent* chatComponent) {
+                        return foundChat->getFriendLogin() == chatComponent->getChatConst()->getFriendLogin();
+                        });
+
+                    if (m_chatsWidget->getMessagingArea() != nullptr) {
+                        if (m_chatsWidget->getMessagingArea()->getChatConst()->getFriendLogin() != foundChat->getFriendLogin()) {
+                            QMetaObject::invokeMethod(*itComponent, "setUnreadMessageDot", Qt::QueuedConnection, Q_ARG(bool, true));
+                            foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
+                        }
+                        else {
+                            QMetaObject::invokeMethod(m_chatsWidget->getMessagingArea(), "addMessageReceived", Qt::QueuedConnection, Q_ARG(QString, QString::fromStdString(msg->getMessage()), QString, QString::fromStdString(msg->getTimestamp())));
+                        }
+                    }
+
                 }
             }
+            else if (pair.first == Response::MESSAGES_READ_PACKET) {
+                rpl::MessagesReadPacket packet = rpl::MessagesReadPacket::deserialize(pair.second);
+                auto itChat = std::find_if(m_vec_chats.begin(), m_vec_chats.end(), [&packet](Chat* chat) {
+                    return packet.getFriendLogin() == chat->getFriendLogin();
+                    });
+
+                Chat* chat = *itChat;
+                for (auto id : chat->getNotReadSendMsgVec()) {
+                    std::vector<MessageComponent*>& vec =  m_chatsWidget->getMessagingArea()->getMessagesComponentsVec();
+                    auto itMessageComp = std::find_if(vec.begin(), vec.end(), [id](MessageComponent* component) {
+                        if ((id == component->getId()) && (component->getReadStatus() == false)) {
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                        });
+                    
+                    auto* v = *itMessageComp;
+                    v->setReadStatus(true);
+                }
+            }
+
         }
         else {
             std::cerr << "recv failed with error: " << WSAGetLastError() << std::endl;
@@ -195,7 +258,6 @@ void ClientSide::updateStatusInChatsWidget(MessagingAreaComponent* messagingArea
         if (packet.getLastSeen() != component->getChat()->getFriendLastSeen()) {
             component->getChat()->setFriendLastSeen(packet.getLastSeen());
             bool isOnline = packet.getLastSeen() == "online";
-            QMetaObject::invokeMethod(component, "setOnlineDot", Qt::QueuedConnection, Q_ARG(bool, isOnline));
         }
 
         
@@ -209,11 +271,13 @@ void ClientSide::updateStatusInChatsWidget(MessagingAreaComponent* messagingArea
     }
 }
 
-void ClientSide::sendMessage(Chat* chat, std::string msg) {
+void ClientSide::sendMessage(Chat* chat, std::string msg, std::string timeStamp, double id) {
     rpl::Message message;
-    message.setId(m_messages_id_counter);
-    m_messages_id_counter++;
+    message.setTimeStamp(timeStamp);
+    message.setId(id);
     message.setMessage(msg);
+
+    chat->getNotReadSendMsgVec().push_back(id);
 
     rpl::UserInfoPacket myInfo;
     myInfo.setIsHasPhoto(m_my_user_data.getIsHasPhoto());

@@ -50,10 +50,13 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
 }
 
 void InnerComponent::setReadStatus(bool read) {
+    
     if (read) {
+        m_is_read = true;
         m_readStatusBtn->setTheme(LIGHT);
     }
     else {
+        m_is_read = false;
         m_readStatusBtn->setTheme(DARK);
     }
 }
@@ -88,13 +91,19 @@ void InnerComponent::setTheme(Theme theme) {
 }
 
 
-MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, int id)
-    : QWidget(parent), m_theme(theme), m_id(id) {
+MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp, 
+    const QString& text, Theme theme, double id, bool isSent)
+    : QWidget(parent), m_theme(theme), m_id(id), m_isSent(isSent){
     m_innerWidget = new InnerComponent(this, timestamp, text, m_theme);
     this->setStyleSheet("background-color: transparent;");
   
     m_main_HLayout = new QHBoxLayout(this);
-    m_main_HLayout->setAlignment(Qt::AlignRight); 
+    if (m_isSent){
+        m_main_HLayout->setAlignment(Qt::AlignRight);
+    }
+    else {
+        m_main_HLayout->setAlignment(Qt::AlignLeft);
+    }
     m_main_HLayout->addWidget(m_innerWidget);
     m_main_HLayout->addSpacing(5);
     m_main_HLayout->setContentsMargins(5, 5, 5, 5);
