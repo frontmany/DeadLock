@@ -4,9 +4,12 @@
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QLabel>
+#include <QDebug>
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <QPainter>
+#include <string>
+#include <QKeyEvent>
 #include <vector>
 #include <QScrollBar>
 #include <random>
@@ -96,6 +99,31 @@ class ChatsWidget;
 class Packet;
 enum Theme;
 
+class MyTextEdit : public QTextEdit
+{
+    Q_OBJECT
+public:
+    MyTextEdit(QWidget* parent) : QTextEdit(parent), m_max_length(100) {}
+    void setMaxLength(int max_length) {
+        m_max_length = max_length;
+    }
+
+protected:
+    void keyPressEvent(QKeyEvent* event) override
+    {
+        if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+            emit enterPressed();
+            return;
+        }
+        QTextEdit::keyPressEvent(event);
+    }
+    
+private:
+    int m_max_length = 0;
+signals:
+    void enterPressed();
+};
+
 class MessagingAreaComponent : public QWidget {
     Q_OBJECT
 
@@ -114,6 +142,7 @@ signals:
 public slots:
     void addMessageReceived(QString msg, QString timestamp, double id);
     void addMessageSent(QString msg, QString timestamp, double id);
+    void addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg, MessagingAreaComponent* area);
 
 private slots:
     void adjustTextEditHeight();
@@ -137,7 +166,7 @@ private:
     ChatsWidget* m_chatsWidget;
 
     QString                 m_friendName;
-    QTextEdit*              m_messageInputEdit;
+    MyTextEdit*              m_messageInputEdit;
     ChatHeaderComponent*    m_header;
     QScrollArea*            m_scrollArea;  
     QWidget*                m_containerWidget;

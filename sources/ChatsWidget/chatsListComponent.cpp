@@ -156,5 +156,5 @@ void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
     chatComponent->setTheme(themeT);
     m_containerVLayout->insertWidget(0, chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
-    chatComponent->setSelected(true);
+    chatComponent->setSelected(false);
 }

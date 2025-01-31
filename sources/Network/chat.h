@@ -20,8 +20,8 @@ public:
 	const std::string& getTimestamp() const { return m_timestamp; }
 	void setTimestamp(const std::string& timestamp) { m_timestamp = timestamp; }
 
-	void setId(int id) { m_id = id; }
-	const int getId() const { return m_id; }
+	void setId(double id) { m_id = id; }
+	const double getId() const { return m_id; }
 
 
 	void setIsSend(bool isSend) { m_is_send = isSend; }
@@ -31,7 +31,7 @@ private:
 	std::string m_message;
 	std::string m_timestamp;
 	bool m_is_send;
-	int m_id;
+	double m_id;
 };
 
 class Chat {

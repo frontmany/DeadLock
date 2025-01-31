@@ -106,56 +106,66 @@ MessagesReadPacket MessagesReadPacket::deserialize(const std::string& str) {
 
 Message Message::deserialize(const std::string& str) {
     std::istringstream iss(str);
-    Message  message;
+    Message message;
+    std::string line;
 
-    std::string idStr;
-    std::string timeStampStr;
-    std::getline(iss, idStr);
-    std::getline(iss, timeStampStr);
-    message.m_id = std::stoi(idStr);
+    // Читаем ID
+    std::getline(iss, line);
+    double id = 0;
+    std::from_chars(line.data(), line.data() + line.size(), id);
+    message.m_id = id;
 
-    std::getline(iss, message.m_message);
+    // Читаем timestamp
+    std::getline(iss, message.m_timeStamp);
+
+    // Читаем сообщение с разделителем |MSG_END|
+    std::string msg;
+    while (std::getline(iss, line)) {
+        if (line == "|MSG_END|") {
+            break;
+        }
+        msg += line + "\n";
+
+    }
+    message.m_message = msg.substr(0, msg.length() - 1);
 
     std::ostringstream remainingStream1;
     std::ostringstream remainingStream2;
-    std::string line;
 
     bool fl = true;
     while (std::getline(iss, line)) {
         if (line != ":") {
             if (fl) {
-                remainingStream1 << line;
-                remainingStream1 << "\n";
+                remainingStream1 << line << "\n";
             }
             else {
-                remainingStream2 << line;
-                remainingStream2 << "\n";
+                remainingStream2 << line << "\n";
             }
         }
         else {
             fl = false;
         }
-
     }
+
     std::string remainingPart1 = remainingStream1.str();
-    UserInfoPacket packSender = UserInfoPacket::deserialize(remainingPart1);
+    UserInfoPacket packMy = UserInfoPacket::deserialize(remainingPart1);
 
     std::string remainingPart2 = remainingStream2.str();
-    UserInfoPacket packReceiver = UserInfoPacket::deserialize(remainingPart2);
+    UserInfoPacket packFriend = UserInfoPacket::deserialize(remainingPart2);
 
-    //swap buffers
-    message.setFriendInfo(packSender);
-    message.setMyInfo(packReceiver);
+    message.setMyInfo(packMy);
+    message.setFriendInfo(packFriend);
 
     return message;
 }
 
 std::string Message::serialize() {
     std::ostringstream oss;
-    oss << "MESSAGE" << "\n"
-        << m_id << '\n' 
-        << m_timeStamp << '\n' 
+    oss << "MESSAGE" << "\n";
+    oss << m_id << '\n'
+        << m_timeStamp << '\n'
         << m_message << '\n'
+        << "|MSG_END|" << '\n'
         << m_my_info.serialize() << '\n'
         << ":" << '\n'
         << m_friend_info.serialize();
@@ -241,7 +251,10 @@ StatusPacket StatusPacket::deserialize(const std::string& str) {
     if (str == "EMPTY_RESPONSE") {
         response = Response::EMPTY_RESPONSE;
     }
-    if (str == "MESSAGES_READ_PACKET") {
+    else if (str == "MESSAGE") {
+        response = Response::MESSAGE;
+    }
+    else if (str == "MESSAGES_READ_PACKET") {
         response = Response::MESSAGES_READ_PACKET;
     }
     else if (str == "AUTHORIZATION_SUCCESS") {

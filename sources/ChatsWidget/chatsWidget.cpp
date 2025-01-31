@@ -89,13 +89,20 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         return msgComp->getChatConst()->getFriendLogin() == chat->getFriendLogin();
         });
 
-    if (itMsgComp == m_vec_messagingComponents_cache.end()) {        
+    if (itMsgComp == m_vec_messagingComponents_cache.end()) {
         std::cout << "error can not find mesaging Area Component";
     }
     else {
         m_current_messagingAreaComponent = *itMsgComp;
         m_current_messagingAreaComponent->show();
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
+
+        if (chat->getNotReadReceivedMsgVec().size() > 0) {
+            m_client->sendMessagesReadPacket(chat->getFriendLogin(), chat->getNotReadReceivedMsgVec());
+            chat->getNotReadReceivedMsgVec().clear();
+
+        }
+
     }
 
     for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
@@ -108,7 +115,7 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     //TODO direct Notification about messages was read
 }
 
-void ChatsWidget::onSendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id) {
+void ChatsWidget::onSendMessageData(QString message, const QString& timeStamp, Chat* chat, double id) {
     Msg* msg = new Msg;
     msg->setId(id);
     msg->setIsSend(true);
@@ -130,6 +137,13 @@ void ChatsWidget::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 }
 
+
+void ChatsWidget::createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id) {
+    MessagingAreaComponent* newComp = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat, this);
+    newComp->setTheme(m_theme);
+    newComp->addMessageReceived(message, timeStamp, id);
+    m_vec_messagingComponents_cache.push_back(newComp);
+}
 
 void ChatsWidget::setBackGround(Theme theme) {
     if (theme == DARK) {

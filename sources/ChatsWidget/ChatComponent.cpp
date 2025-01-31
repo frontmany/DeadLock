@@ -210,6 +210,7 @@ void ChatComponent::mouseReleaseEvent(QMouseEvent* event)
 }
 
 void ChatComponent::slotToSendChatData() {
+    setUnreadMessageDot(false);
     emit sendChatData(m_chat, this);
     
 }

@@ -44,6 +44,6 @@ private:
     std::string			m_login;
     std::string			m_password;
     Photo			    m_photo;
-    std::vector<std::pair<std::string, std::string>> m_vec_user_friends_logins;
+    std::vector<std::pair<std::string, std::string>> m_vec_user_friends;
 };
  

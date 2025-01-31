@@ -4,13 +4,14 @@
 #include "chatsWidget.h"
 #include "mainWindow.h"
 #include "buttons.h"
+#include <random>
+#include <limits>
 
-
-double generateRandomNumber() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> distrib(0.0, 1.0);
-    return distrib(gen);
+int generateRandomNumber() {
+    std::random_device rd; // Инициализация генератора случайных чисел
+    std::mt19937 gen(rd()); // Используем Mersenne Twister
+    std::uniform_int_distribution<int> distribution(0, 1000000); 
+    return distribution(gen);
 }
 
 std::string getCurrentTime() {
@@ -73,7 +74,8 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_sendMessage_VLayout->addWidget(m_sendMessageButton);
 
 
-    m_messageInputEdit = new QTextEdit(this);
+    m_messageInputEdit = new MyTextEdit(this);
+    m_messageInputEdit->setMaxLength(100);
     m_messageInputEdit->setMinimumHeight(30);
     m_messageInputEdit->setPlaceholderText("Type your message...");
     m_messageInputEdit->setAcceptRichText(false);
@@ -90,8 +92,9 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_main_VLayout->setContentsMargins(10, 10, 10, 10);
     m_main_VLayout->setSpacing(5);
 
-    connect(m_messageInputEdit, &QTextEdit::textChanged, this, &MessagingAreaComponent::adjustTextEditHeight);
-    connect(m_messageInputEdit, &QTextEdit::textChanged, this, &MessagingAreaComponent::onTypeMessage);
+    connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::adjustTextEditHeight);
+    connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::onTypeMessage);
+    connect(m_messageInputEdit, &MyTextEdit::enterPressed, this, &MessagingAreaComponent::onSendMessageClicked);
 
     connect(m_sendMessageButton, &ButtonCursor::clicked, this, &MessagingAreaComponent::onSendMessageClicked);
     connect(this, &MessagingAreaComponent::sendMessageData, m_chatsWidget, &ChatsWidget::onSendMessageData);
@@ -150,9 +153,10 @@ void MessagingAreaComponent::onSendMessageClicked() {
     addMessageSent(m_messageInputEdit->toPlainText(), QString::fromStdString(getCurrentTime()), id);
     m_containerWidget->adjustSize();
     m_scrollArea->verticalScrollBar()->setValue(m_scrollArea->verticalScrollBar()->maximum());
-    m_messageInputEdit->setText("");
     onTypeMessage();
-    emit sendMessageData(m_messageInputEdit->toPlainText(), QString::fromStdString(getCurrentTime()), m_chat, id);
+    QString s = m_messageInputEdit->toPlainText();
+    m_messageInputEdit->setText("");
+    emit sendMessageData(s , QString::fromStdString(getCurrentTime()), m_chat, id);
 
 }
 
@@ -175,7 +179,14 @@ void MessagingAreaComponent::addMessageReceived(QString msg, QString timestamp, 
 
 
 void MessagingAreaComponent::addMessageSent(QString msg, QString timestamp, double id) {
-    MessageComponent* message = new MessageComponent(this, timestamp, msg, m_theme, id, true);
+    MessageComponent* message = new MessageComponent(this, timestamp, msg+'\n', m_theme, id, true);
     m_vec_messagesComponents.push_back(message);
     m_containerVLayout->addWidget(message);
 }
+
+
+void MessagingAreaComponent::addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg, MessagingAreaComponent* area) {
+    MessageComponent* comp = new MessageComponent(m_chatsWidget, QString::fromStdString(msg->getTimestamp()), QString::fromStdString(msg->getMessage()), m_chatsWidget->getTheme(), msg->getId(), false);
+    area->getMessagesComponentsVec().push_back(comp);
+}
+

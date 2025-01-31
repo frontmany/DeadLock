@@ -68,6 +68,7 @@ public:
 	bool registerClient(std::string login, std::string password, std::string name);
 	Chat* createChatWith(const std::string& friendLogin);
 	void sendMessage(Chat* chat, std::string message, std::string timeStamp, double id);
+	void sendMessagesReadPacket(std::string friendLogin, std::vector<double> messagesReadIds);
 	void updateStatusInChatsWidget(MessagingAreaComponent* messagingAreaComponent, ChatsListComponent* chatsListComponent, rcv::FriendStatePacket packet);
 
 	const User& getMyInfo() const { return m_my_user_data; }

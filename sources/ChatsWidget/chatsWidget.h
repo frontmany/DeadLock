@@ -19,7 +19,7 @@ class ClientSide;
 enum Theme;
 
 class ChatsWidget : public QWidget {
-
+	Q_OBJECT
 public:
 	ChatsWidget(QWidget* parent, ClientSide* client, Theme theme);
 	~ChatsWidget();
@@ -27,11 +27,14 @@ public:
 	const Theme getTheme() const { return m_theme; }
 	
 	MessagingAreaComponent* getMessagingArea() { return m_current_messagingAreaComponent; }
+	ClientSide* getClientSide() { return m_client; }
 	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
+	std::vector<MessagingAreaComponent*>& getMessagingComponentsCacheVec() { return m_vec_messagingComponents_cache; }
 
 
 public slots:
-	void onSendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id);
+	void onSendMessageData(QString message, const QString& timeStamp, Chat* chat, double id);
+	void createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id);
 	void onCreateChatButtonClicked(QString login);
 	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
 	

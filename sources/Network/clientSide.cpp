@@ -9,15 +9,6 @@
 #include"mainwindow.h"
 #include"chatsWidget.h"
 
-bool contains(std::vector<double>& vec, double number) {
-    for (const auto& num : vec) {
-        if (num == number) {
-            return true;
-        }
-    }
-    return false;
-}
-
 
 void ClientSide::init() {
     WSADATA wsaData;
@@ -152,12 +143,23 @@ void ClientSide::receive() {
                     msg->setTimestamp(message.getTimeStamp());
                     msg->setMessage(message.getMessage());
 
-                    newChat->setFriendLogin(message.getFriendInfo().getLogin());
-                    newChat->setFriendLastSeen(message.getFriendInfo().getLastSeen());
-                    newChat->setFriendName(message.getFriendInfo().getName());
-                    newChat->setIsFriendHasPhoto(message.getFriendInfo().getIsHasPhoto());
-                    newChat->setLastIncomeMsg(message.getMessage());
-                    newChat->setFriendPhoto(message.getFriendInfo().getPhoto());
+                    auto friendInfo = message.getFriendInfo();
+
+                    
+                    const std::string friendLogin = friendInfo.getLogin();
+                    const std::string friendLastSeen = friendInfo.getLastSeen();
+                    const std::string friendName = friendInfo.getName();
+                    const bool isFriendHasPhoto = friendInfo.getIsHasPhoto();
+                    const std::string lastIncomeMsg = message.getMessage();
+                    Photo friendPhoto = friendInfo.getPhoto();
+
+                    // Устанавливаем значения в newChat
+                    newChat->setFriendLogin(friendLogin);
+                    newChat->setFriendLastSeen(friendLastSeen);
+                    newChat->setFriendName(friendName);
+                    newChat->setIsFriendHasPhoto(isFriendHasPhoto);
+                    newChat->setLastIncomeMsg(lastIncomeMsg);
+                    newChat->setFriendPhoto(friendPhoto);
 
                     newChat->getNotReadReceivedMsgVec().push_back(msg->getId());
                     m_vec_chats.push_back(newChat);
@@ -170,8 +172,22 @@ void ClientSide::receive() {
                     else {
                         s = "LIGHT";
                     }
+
                     
-                    QMetaObject::invokeMethod(m_chatsWidget->getChatsList(), "addChatComponentSlot", Qt::QueuedConnection, Q_ARG(QString, s, Chat*, newChat));
+                    QMetaObject::invokeMethod(m_chatsWidget,
+                        "createMessagingAreaFromClientSide",
+                        Qt::QueuedConnection,
+                        Q_ARG(QString, QString::fromStdString(msg->getMessage())),
+                        Q_ARG(QString, QString::fromStdString(msg->getTimestamp())),
+                        Q_ARG(Chat*, newChat),
+                        Q_ARG(double, msg->getId()));
+
+                    
+                    QMetaObject::invokeMethod(m_chatsWidget->getChatsList(),
+                        "addChatComponentSlot",
+                        Qt::QueuedConnection,
+                        Q_ARG(QString, s),
+                        Q_ARG(Chat*, newChat));
                 }
                 else {
                     Chat* foundChat = *it;
@@ -181,9 +197,9 @@ void ClientSide::receive() {
                     msg->setId(message.getId());
                     msg->setMessage(message.getMessage());
                     msg->setIsSend(false);
-                    msg->setMessage(message.getTimeStamp());
+                    msg->setTimestamp(message.getTimeStamp());
 
-                    foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
+
                     foundChat->setLastIncomeMsg(message.getMessage());
 
                     auto& chatsComponentsVec = m_chatsWidget->getChatsList()->getChatComponentsVec();
@@ -195,12 +211,30 @@ void ClientSide::receive() {
                         if (m_chatsWidget->getMessagingArea()->getChatConst()->getFriendLogin() != foundChat->getFriendLogin()) {
                             QMetaObject::invokeMethod(*itComponent, "setUnreadMessageDot", Qt::QueuedConnection, Q_ARG(bool, true));
                             foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
+
+                            std::vector<MessagingAreaComponent*>& messagingAreasVec = m_chatsWidget->getMessagingComponentsCacheVec();
+                            auto itArea = std::find_if(messagingAreasVec.begin(), messagingAreasVec.end(), [foundChat](MessagingAreaComponent* area) {
+                                return foundChat->getFriendLogin() == area->getChatConst()->getFriendLogin();
+                                });
+                            QMetaObject::invokeMethod(*itArea, "addComponentToNotCurrentMessagingArea", Qt::QueuedConnection, 
+                                Q_ARG(Chat*, foundChat),
+                                Q_ARG(Msg*, msg),
+                                Q_ARG(MessagingAreaComponent*, *itArea));
+                            foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
                         }
                         else {
-                            QMetaObject::invokeMethod(m_chatsWidget->getMessagingArea(), "addMessageReceived", Qt::QueuedConnection, Q_ARG(QString, QString::fromStdString(msg->getMessage()), QString, QString::fromStdString(msg->getTimestamp())));
+                            std::vector<double> v;
+                            v.push_back(message.getId());
+                            sendMessagesReadPacket(message.getFriendInfo().getLogin(), v);
+
+                            QMetaObject::invokeMethod(m_chatsWidget->getMessagingArea(),
+                                "addMessageReceived",
+                                Qt::QueuedConnection,
+                                Q_ARG(QString, QString::fromStdString(msg->getMessage())),
+                                Q_ARG(QString, QString::fromStdString(msg->getTimestamp())),
+                                Q_ARG(double, msg->getId()));
                         }
                     }
-
                 }
             }
             else if (pair.first == Response::MESSAGES_READ_PACKET) {
@@ -223,7 +257,10 @@ void ClientSide::receive() {
                     
                     auto* v = *itMessageComp;
                     v->setReadStatus(true);
+                    QMetaObject::invokeMethod(v, "setReadStatus", Qt::QueuedConnection,
+                        Q_ARG(bool, true));
                 }
+                chat->getNotReadSendMsgVec().clear();
             }
 
         }
@@ -238,6 +275,20 @@ void ClientSide::receive() {
         bufferSize = 40;
         delete buffer;
     }
+}
+
+void ClientSide::sendMessagesReadPacket(std::string friendLogin, std::vector<double> messagesReadIds) {
+    rpl::MessagesReadPacket packet;
+    packet.setMyLogin(m_my_user_data.getLogin());
+    packet.setFriendLogin(friendLogin);
+    packet.getReadMessagesVec() = messagesReadIds;
+
+    std::string serializedPacket = packet.serialize();
+    SizePacket sizePacket;
+    sizePacket.setData(serializedPacket);
+    std::string serializedSizePacket = sizePacket.serialize();
+    send(m_socket, serializedSizePacket.c_str(), serializedSizePacket.size(), 0);
+    send(m_socket, serializedPacket.c_str(), serializedPacket.size(), 0);
 }
 
 void ClientSide::updateStatusInChatsWidget(MessagingAreaComponent* messagingAreaComponent, ChatsListComponent* chatsListComponent, rcv::FriendStatePacket packet) {
@@ -295,15 +346,14 @@ void ClientSide::sendMessage(Chat* chat, std::string msg, std::string timeStamp,
     friendInfo.setLogin(chat->getFriendLogin());
     friendInfo.setName(chat->getFriendName());
     friendInfo.setPhoto(chat->getFriendPhoto());
-    message.setMyInfo(friendInfo);
     message.setFriendInfo(friendInfo);
 
     std::string serializedMessage = message.serialize();
     SizePacket sizePacket;
     sizePacket.setData(serializedMessage);
     std::string serializedSizeMessage = sizePacket.serialize();
-    send(m_socket, serializedSizeMessage.c_str(), strlen(serializedSizeMessage.c_str()), 0);
-    send(m_socket, serializedMessage.c_str(), strlen(serializedMessage.c_str()), 0);
+    send(m_socket, serializedSizeMessage.c_str(), serializedSizeMessage.size(), 0);
+    send(m_socket, serializedMessage.c_str(), serializedMessage.size(), 0);
 }
 
 bool ClientSide::authorizeClient(std::string login, std::string password) {

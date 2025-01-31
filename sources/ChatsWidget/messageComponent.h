@@ -2,7 +2,9 @@
 
 #include <QWidget>
 #include <QLineEdit>
+#include <QTextEdit>
 #include <QLabel>
+#include <QSize>
 #include <QVBoxLayout>
 #include <QScrollArea>
 #include <QPainterPath>
@@ -78,7 +80,7 @@ struct StyleInnerComponent {
 
 class InnerComponent : public QWidget {
 public:
-    InnerComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme);
+    InnerComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, bool isSent);
     void setTheme(Theme theme);
 
     void setText(const QString& text) { m_textLabel->setText(text); }
@@ -92,6 +94,7 @@ protected:
 
 private:
     bool m_is_read = false;
+    bool m_isSent = false;
     StyleInnerComponent* style;
     Theme m_theme;
     QColor m_backColor;
@@ -101,6 +104,7 @@ private:
     ButtonIcon* m_readStatusBtn;
 
     QHBoxLayout* m_main_HLayout; 
+    QVBoxLayout* m_text_VLayout; 
     QVBoxLayout* m_time_VLayout; 
     QVBoxLayout* m_isRead_VLayout; 
 
@@ -116,9 +120,11 @@ public:
     void setMessage(const QString& message) { m_innerWidget->setText(message); }
     void setTimestamp(const QString& timestamp) { m_innerWidget->setTimestamp(timestamp); }
     bool getReadStatus() const { return  m_innerWidget->getIsRead(); }
-    void setReadStatus(bool isRead) { m_innerWidget->setReadStatus(isRead); }
     const double getId() const { return m_id; }
 
+
+public slots:
+    void setReadStatus(bool isRead) { m_innerWidget->setReadStatus(isRead); }
 
 private:
     Theme m_theme;
