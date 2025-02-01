@@ -188,10 +188,13 @@ void ClientSide::receive() {
                         Qt::QueuedConnection,
                         Q_ARG(QString, s),
                         Q_ARG(Chat*, newChat));
+
+
+                    auto& friendsVec = m_my_user_data.getUserFriendsVec();
+                    friendsVec.push_back(std::make_pair(friendLogin, newChat->getFriendLastSeen()));
                 }
                 else {
                     Chat* foundChat = *it;
-
 
                     Msg* msg = new Msg;
                     msg->setId(message.getId());
@@ -207,20 +210,20 @@ void ClientSide::receive() {
                         return foundChat->getFriendLogin() == chatComponent->getChatConst()->getFriendLogin();
                         });
 
+
+                    QMetaObject::invokeMethod(*itComponent, "setUnreadMessageDot", Qt::QueuedConnection, Q_ARG(bool, true));
+                    foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
+
+                    std::vector<MessagingAreaComponent*>& messagingAreasVec = m_chatsWidget->getMessagingComponentsCacheVec();
+                    auto itArea = std::find_if(messagingAreasVec.begin(), messagingAreasVec.end(), [foundChat](MessagingAreaComponent* area) {
+                        return foundChat->getFriendLogin() == area->getChatConst()->getFriendLogin();
+                        });
+
                     if (m_chatsWidget->getMessagingArea() != nullptr) {
                         if (m_chatsWidget->getMessagingArea()->getChatConst()->getFriendLogin() != foundChat->getFriendLogin()) {
-                            QMetaObject::invokeMethod(*itComponent, "setUnreadMessageDot", Qt::QueuedConnection, Q_ARG(bool, true));
-                            foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
-
-                            std::vector<MessagingAreaComponent*>& messagingAreasVec = m_chatsWidget->getMessagingComponentsCacheVec();
-                            auto itArea = std::find_if(messagingAreasVec.begin(), messagingAreasVec.end(), [foundChat](MessagingAreaComponent* area) {
-                                return foundChat->getFriendLogin() == area->getChatConst()->getFriendLogin();
-                                });
                             QMetaObject::invokeMethod(*itArea, "addComponentToNotCurrentMessagingArea", Qt::QueuedConnection, 
                                 Q_ARG(Chat*, foundChat),
-                                Q_ARG(Msg*, msg),
-                                Q_ARG(MessagingAreaComponent*, *itArea));
-                            foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
+                                Q_ARG(Msg*, msg));
                         }
                         else {
                             std::vector<double> v;
@@ -233,21 +236,48 @@ void ClientSide::receive() {
                                 Q_ARG(QString, QString::fromStdString(msg->getMessage())),
                                 Q_ARG(QString, QString::fromStdString(msg->getTimestamp())),
                                 Q_ARG(double, msg->getId()));
+
+                            QMetaObject::invokeMethod(*itComponent, "setUnreadMessageDot", Qt::QueuedConnection, Q_ARG(bool, false));
+                            foundChat->getNotReadReceivedMsgVec().push_back(msg->getId());
                         }
                     }
+                    else {
+                        QMetaObject::invokeMethod(*itArea, "addComponentToNotCurrentMessagingArea", Qt::QueuedConnection,
+                            Q_ARG(Chat*, foundChat),
+                            Q_ARG(Msg*, msg));
+                    }
+                    ChatComponent* comp = *itComponent;
+                    QMetaObject::invokeMethod(comp,
+                        "setLastMessage",
+                        Qt::QueuedConnection,
+                        Q_ARG(const QString&, QString::fromStdString(msg->getMessage())),
+                        Q_ARG(bool, true));
+
+                    QMetaObject::invokeMethod(m_chatsWidget->getChatsList(),
+                        "popUpComponent",
+                        Qt::QueuedConnection,
+                        Q_ARG(ChatComponent*, *itComponent));
                 }
             }
             else if (pair.first == Response::MESSAGES_READ_PACKET) {
+
                 rpl::MessagesReadPacket packet = rpl::MessagesReadPacket::deserialize(pair.second);
                 auto itChat = std::find_if(m_vec_chats.begin(), m_vec_chats.end(), [&packet](Chat* chat) {
                     return packet.getFriendLogin() == chat->getFriendLogin();
                     });
 
                 Chat* chat = *itChat;
-                for (auto id : chat->getNotReadSendMsgVec()) {
-                    std::vector<MessageComponent*>& vec =  m_chatsWidget->getMessagingArea()->getMessagesComponentsVec();
-                    auto itMessageComp = std::find_if(vec.begin(), vec.end(), [id](MessageComponent* component) {
-                        if ((id == component->getId()) && (component->getReadStatus() == false)) {
+                for (auto msgId : chat->getNotReadSendMsgVec()) {
+
+                    std::vector<MessagingAreaComponent*>& messagingAreasVec = m_chatsWidget->getMessagingComponentsCacheVec();
+                    auto itArea = std::find_if(messagingAreasVec.begin(), messagingAreasVec.end(), [chat](MessagingAreaComponent* area) {
+                        return chat->getFriendLogin() == area->getChatConst()->getFriendLogin();
+                        });
+                    MessagingAreaComponent* messagingArea = *itArea;
+
+                    std::vector<MessageComponent*>& vec = messagingArea->getMessagesComponentsVec();
+                    auto itMessageComp = std::find_if(vec.begin(), vec.end(), [msgId](MessageComponent* component) {
+                        if ((msgId == component->getId()) && (component->getReadStatus() == false)) {
                             return true;
                         }
                         else {

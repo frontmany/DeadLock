@@ -133,6 +133,7 @@ public slots:
     void openAddChatDialog();
     void closeAddChatDialog();
     void receiveCreateChatData(QString login);
+    void popUpComponent(ChatComponent* comp);
 
 private:
     QColor                      m_backgroundColor;

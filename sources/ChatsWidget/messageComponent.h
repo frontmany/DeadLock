@@ -87,7 +87,6 @@ public:
     void setTimestamp(const QString& text) { m_timestampLabel->setText(text); }
     bool getIsRead() const { return m_is_read; }
     void setReadStatus(bool read);
-    
 
 protected:
     void paintEvent(QPaintEvent* event) override;

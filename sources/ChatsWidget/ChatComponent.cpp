@@ -39,7 +39,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_contentsVLayout->addWidget(m_nameLabel);
     m_contentsVLayout->addWidget(m_lastMessageLabel);
 
-    
+
 
     m_UnreadDot = new ButtonIcon(this, 50, 50);
     QIcon icon1(":/resources/ChatsWidget/online.png");
@@ -112,8 +112,14 @@ void ChatComponent::setName(const QString& name) {
     m_nameLabel->setText(name);
 }
 
-void ChatComponent::setLastMessage(const QString& message) {
-    m_lastMessageLabel->setText(message);
+void ChatComponent::setLastMessage(const QString& message, bool fromAnotherThread) {
+    if (message.length() > 15) {
+        std::string s = message.toStdString().substr(0, 15) + "...";
+        m_lastMessageLabel->setText(QString::fromStdString(s));
+    }
+    else {
+        m_lastMessageLabel->setText(message);
+    }
 }
 
 void ChatComponent::setAvatar(const QPixmap& avatar) {
@@ -181,7 +187,7 @@ void ChatComponent::hoverEnter(QHoverEvent* event)
         else {
             m_currentColor = m_hoverColorLight;
         }
-        
+
     }
     else {
         if (m_isSelected == true) {
@@ -212,5 +218,5 @@ void ChatComponent::mouseReleaseEvent(QMouseEvent* event)
 void ChatComponent::slotToSendChatData() {
     setUnreadMessageDot(false);
     emit sendChatData(m_chat, this);
-    
+
 }

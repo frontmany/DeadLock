@@ -142,7 +142,7 @@ signals:
 public slots:
     void addMessageReceived(QString msg, QString timestamp, double id);
     void addMessageSent(QString msg, QString timestamp, double id);
-    void addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg, MessagingAreaComponent* area);
+    void addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg);
 
 private slots:
     void adjustTextEditHeight();

@@ -25,11 +25,9 @@ public:
     explicit ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat);
 
     void setName(const QString& name);
-    void setLastMessage(const QString& message);
     void setAvatar(const QPixmap& avatar);
     void setTheme(Theme theme);
     void setSelected(bool isSelected);
-
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
 
@@ -46,11 +44,11 @@ protected:
 
 private slots:
     void slotToSendChatData();
-    
+
 
 public slots:
     void setUnreadMessageDot(bool isUnreadMessages);
-
+    void setLastMessage(const QString& message, bool fromAnotherThread);
 
 signals:
     void clicked();
@@ -79,4 +77,5 @@ private:
     bool         m_isClicked;
     bool         m_isSelected;
     int          m_avatarSize;
+
 };

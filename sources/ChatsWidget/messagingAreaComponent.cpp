@@ -113,13 +113,14 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     if (m_theme == DARK) {
         m_backColor = QColor(25, 25, 25);
         m_messageInputEdit->setStyleSheet(style->DarkTextEditStyle);
+        m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
         update();
 
     }
     else {
         m_backColor = QColor(240, 240, 240, 200);
         m_messageInputEdit->setStyleSheet(style->LightTextEditStyle);
-
+        m_scrollArea->verticalScrollBar()->setStyleSheet(style->lightSlider);
         update();
     }
 }
@@ -185,8 +186,9 @@ void MessagingAreaComponent::addMessageSent(QString msg, QString timestamp, doub
 }
 
 
-void MessagingAreaComponent::addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg, MessagingAreaComponent* area) {
-    MessageComponent* comp = new MessageComponent(m_chatsWidget, QString::fromStdString(msg->getTimestamp()), QString::fromStdString(msg->getMessage()), m_chatsWidget->getTheme(), msg->getId(), false);
-    area->getMessagesComponentsVec().push_back(comp);
+void MessagingAreaComponent::addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg) {
+    MessageComponent* message = new MessageComponent(m_chatsWidget, QString::fromStdString(msg->getTimestamp()), QString::fromStdString(msg->getMessage()), m_chatsWidget->getTheme(), msg->getId(), false);
+    getMessagesComponentsVec().push_back(message);
+    m_containerVLayout->addWidget(message);
 }
 

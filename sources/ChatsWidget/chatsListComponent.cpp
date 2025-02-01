@@ -136,6 +136,10 @@ void ChatsListComponent::setTheme(Theme theme) {
     }
 }
 
+void ChatsListComponent::popUpComponent(ChatComponent* comp) {
+    m_containerVLayout->removeWidget(comp);
+    m_containerVLayout->insertWidget(0, comp);
+}
 
 void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
     Theme themeT;
@@ -150,7 +154,7 @@ void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
         chatComp->setSelected(false);
     }
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
-    chatComponent->setLastMessage(QString::fromStdString(chat->getLastIncomeMessage()));
+    chatComponent->setLastMessage(QString::fromStdString(chat->getLastIncomeMessage()), true);
     chatComponent->setUnreadMessageDot(true);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setTheme(themeT);

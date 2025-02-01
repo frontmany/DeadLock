@@ -109,13 +109,23 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         chatComp->setSelected(false);
     }
     component->setSelected(true);
-    
-    
-
-    //TODO direct Notification about messages was read
 }
 
 void ChatsWidget::onSendMessageData(QString message, const QString& timeStamp, Chat* chat, double id) {
+    auto& chatsComponentsVec = m_chatsListComponent->getChatComponentsVec();
+    auto itComponentsVec = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [chat](ChatComponent* chatComponent) {
+        return chat->getFriendLogin() == chatComponent->getChatConst()->getFriendLogin();
+        });
+
+    ChatComponent* comp = *itComponentsVec;
+    if (message.length() > 15) {
+        std::string s = message.toStdString().substr(0, 15) + "...";
+        comp->setLastMessage(QString::fromStdString(s), false);
+    }
+    else {
+        comp->setLastMessage(message, false);
+    }
+    
     Msg* msg = new Msg;
     msg->setId(id);
     msg->setIsSend(true);
