@@ -9,6 +9,10 @@
 #include"mainwindow.h"
 #include"chatsWidget.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QFile>
 
 void ClientSide::init() {
     WSADATA wsaData;
@@ -449,4 +453,32 @@ void ClientSide::sendPacket(Packet& packet) {
     std::string serializedSizePacket = sizePacket.serialize();
     send(m_socket, serializedSizePacket.c_str(), serializedSizePacket.size(), 0);
     send(m_socket, serializedPacket.c_str(), serializedPacket.size(), 0);
+}
+
+
+QJsonObject ClientSide::serialize() const {
+    QJsonObject clientObject;
+
+    QJsonArray chatsArray;
+    for (const auto& chat : m_vec_chats) {
+        chatsArray.append(chat->serialize());
+    }
+    clientObject["chats"] = chatsArray;
+
+    return clientObject;
+}
+
+
+ClientSide* ClientSide::deserialize(const QJsonObject& jsonObject, ChatsWidget* chatsWidget) {
+    ClientSide* client = new ClientSide(chatsWidget);
+
+    QJsonArray chatsArray = jsonObject["chats"].toArray();
+    std::vector<Chat*> chats;
+    for (const auto& chatValue : chatsArray) {
+        QJsonObject chatObject = chatValue.toObject();
+        Chat* chat = Chat::deserialize(chatObject);
+        chats.push_back(chat);
+    }
+    client->getMyChatsVec() = chats;
+    return client;
 }

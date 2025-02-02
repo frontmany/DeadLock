@@ -27,6 +27,11 @@ int main(int argc, char* argv[])
     mainWindow->show();
     mainWindow->resize(960, 540);
 
+    
 
-    return app.exec();
+    int result = app.exec();
+    delete mainWindow;
+    delete customStyle;
+
+    return result;
 }

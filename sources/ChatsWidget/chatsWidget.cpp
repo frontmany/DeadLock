@@ -30,13 +30,15 @@ ChatsWidget::ChatsWidget(QWidget* parent, ClientSide* client, Theme theme)
     m_mainHLayout->addWidget(m_helloAreaComponent);
     this->setLayout(m_mainHLayout);
 	
-
 }
 
 
 
 ChatsWidget::~ChatsWidget() {
-
+    serialize();
+    for (auto comp : m_vec_messagingComponents_cache) {
+        delete comp;
+    }
 }
 
 
@@ -184,4 +186,95 @@ void ChatsWidget::setBackGround(Theme theme) {
         }
     }
     update();
+}
+
+
+void ChatsWidget::setClient(ClientSide* client) {
+    m_client = client;
+}
+
+void ChatsWidget::serialize() {
+    QJsonObject jsonObject;
+    QJsonArray chatsArray;
+    for (const auto& messagingArea : m_vec_messagingComponents_cache) {
+        if (messagingArea) {
+            chatsArray.append(messagingArea->serialize());
+        }
+    }
+
+    jsonObject["messagingComponentsCache"] = chatsArray;
+    jsonObject["client"] = m_client->serialize();
+    // Получаем директорию для сохранения
+    QString dir = getSaveDir();
+    QString fileName = QString::fromStdString(m_client->getMyInfo().getLogin()) + ".json";
+
+    // Создаем полный путь к файлу
+    QDir saveDir(dir);
+    if (!saveDir.exists()) {
+        if (!saveDir.mkpath(".")) { // Создаем директорию, если она не существует
+            qWarning() << "Не удалось создать директорию:" << dir;
+            return;
+        }
+    }
+
+    QString fullPath = saveDir.filePath(fileName); // Полный путь к файлу
+    QFile file(fullPath);
+    if (file.open(QIODevice::WriteOnly)) {
+        QJsonDocument saveDoc(jsonObject);
+        file.write(saveDoc.toJson());
+        file.close();
+    }
+    else {
+        qWarning() << "Не удалось открыть файл для записи:" << fullPath;
+    }
+}
+
+
+ChatsWidget* ChatsWidget::deserialize(const QString& fileName, QWidget* parent, ClientSide* client, Theme theme) {
+    QString dir = getSaveDir();
+    QDir saveDir(dir);
+    QString fullPath = saveDir.filePath(fileName); // Полный путь к файлу
+
+    if (!QFile::exists(fullPath)) {
+        qWarning() << "Файл не найден: " << fullPath;
+        return new ChatsWidget(parent, client, theme);
+    }
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Не удалось открыть файл для чтения:" << file.errorString();
+        return new ChatsWidget(parent, client, theme);
+    }
+
+    QByteArray fileData = file.readAll();
+    file.close();
+
+    QJsonDocument loadDoc(QJsonDocument::fromJson(fileData));
+    if (loadDoc.isNull() || !loadDoc.isObject()) {
+        qWarning() << "Error loading JSON from a file.";
+        return new ChatsWidget(parent, client, theme);
+    }
+
+    QJsonObject jsonObject = loadDoc.object();
+    ChatsWidget* chatsWidget = new ChatsWidget(parent, client, theme);
+
+    QJsonObject clientObject = jsonObject["client"].toObject();
+    ClientSide* deserializedClient = ClientSide::deserialize(clientObject, chatsWidget);
+    chatsWidget->setClient(deserializedClient);
+
+    if (jsonObject.contains("messagingComponentsCache")) {
+        QJsonArray chatsArray = jsonObject["messagingComponentsCache"].toArray();
+        for (const auto& chatValue : chatsArray) {
+            QJsonObject chatObject = chatValue.toObject();
+            MessagingAreaComponent* messagingArea = MessagingAreaComponent::deserialize(chatObject, chatsWidget, chatsWidget);
+            if (messagingArea) {
+                chatsWidget->getMessagingComponentsCacheVec().push_back(messagingArea);
+            }
+            else {
+                qWarning() << "Ошибка десериализации messagingArea.";
+            }
+        }
+    }
+
+    return chatsWidget;
 }

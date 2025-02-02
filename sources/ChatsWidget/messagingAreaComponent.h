@@ -131,10 +131,16 @@ public:
     MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget);
     MessagingAreaComponent(Theme theme);
     void setTheme(Theme theme);
+    
 
     ChatHeaderComponent* getChatHeader() { return m_header; }
     std::vector<MessageComponent*>& getMessagesComponentsVec() { return m_vec_messagesComponents; }
     const Chat* getChatConst() const { return m_chat; }
+    Chat* getChat() { return m_chat; }
+
+    QJsonObject serialize() const;
+    static MessagingAreaComponent* deserialize(const QJsonObject& jsonObject, QWidget* parent, ChatsWidget* chatsWidget);
+
 
 signals:
     void sendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id);

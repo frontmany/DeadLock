@@ -75,7 +75,10 @@ public:
 	void setMyInfo(const User user) { m_my_user_data = user; }
 	void setChatsWidget(ChatsWidget* chatsWidget) { m_chatsWidget = chatsWidget; }
 
-	std::vector<Chat*> getMyChatsVec() { return m_vec_chats; }
+	std::vector<Chat*>& getMyChatsVec() { return m_vec_chats; }
+
+	QJsonObject serialize() const;
+	static ClientSide* deserialize(const QJsonObject& jsonObject, ChatsWidget* chatsWidget);
 
 private:
 	enum class AuthorizationState {

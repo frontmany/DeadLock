@@ -200,3 +200,46 @@ void MessagingAreaComponent::addComponentToNotCurrentMessagingArea(Chat* foundCh
     m_containerVLayout->addWidget(message);
 }
 
+
+
+
+QJsonObject MessagingAreaComponent::serialize() const {
+    QJsonObject messagingAreaObject;
+    messagingAreaObject["friendName"] = m_friendName;
+    messagingAreaObject["theme"] = static_cast<int>(m_theme);
+    messagingAreaObject["chat"] = m_chat->serialize();
+
+    QJsonArray messagesArray;
+    for (const auto& messageComponent : m_vec_messagesComponents) {
+        messagesArray.append(messageComponent->serialize());
+    }
+    messagingAreaObject["messages"] = messagesArray;
+
+    return messagingAreaObject;
+}
+
+MessagingAreaComponent* MessagingAreaComponent::deserialize(const QJsonObject& jsonObject, QWidget* parent, ChatsWidget* chatsWidget) {
+    QString friendName = jsonObject["friendName"].toString();
+    Theme theme = static_cast<Theme>(jsonObject["theme"].toInt());
+    QJsonObject chatObject = jsonObject["chat"].toObject();
+    Chat* chat = Chat::deserialize(chatObject);
+
+    MessagingAreaComponent* component = new MessagingAreaComponent(parent, friendName, theme, chat, chatsWidget);
+    component->hide();
+
+    QJsonArray messagesArray = jsonObject["messages"].toArray();
+    for (const auto& msgValue : messagesArray) {
+        QJsonObject msgObject = msgValue.toObject();
+        MessageComponent* msgComponent = MessageComponent::deserialize(msgObject);
+        component->m_vec_messagesComponents.push_back(msgComponent);
+
+        if (msgComponent->getIsSent()) {
+            component->addMessageSent(msgComponent->getMessage(), msgComponent->getTimestamp(), msgComponent->getId());
+        }
+        else {
+            component->addMessageReceived(msgComponent->getMessage(), msgComponent->getTimestamp(), msgComponent->getId());
+        }
+    }
+
+    return component;
+}

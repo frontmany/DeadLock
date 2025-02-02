@@ -139,3 +139,31 @@ MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp,
     setReadStatus(false);
     setTheme(theme);
 }
+
+
+QJsonObject MessageComponent::serialize() const {
+    QJsonObject jsonObject;
+    jsonObject["id"] = m_id;
+    jsonObject["isSent"] = m_isSent;
+    jsonObject["theme"] = static_cast<int>(m_theme);
+    jsonObject["text"] = m_innerWidget->getText();
+    jsonObject["timestamp"] = m_innerWidget->getTimestamp();
+    jsonObject["isRead"] = m_innerWidget->getIsRead();
+    return jsonObject;
+}
+
+
+MessageComponent* MessageComponent::deserialize(const QJsonObject& jsonObject) {
+
+    double id = jsonObject["id"].toInt();
+    bool isSent = jsonObject["isSent"].toBool();
+    Theme theme = static_cast<Theme>(jsonObject["theme"].toInt());
+    const QString text = jsonObject["text"].toString();
+    const QString timestamp = jsonObject["timestamp"].toString();
+    bool isRead = jsonObject["isRead"].toBool();
+
+    MessageComponent* messageComponent = new MessageComponent(nullptr, timestamp, text, theme, id, isSent);
+
+    return messageComponent;
+}
+

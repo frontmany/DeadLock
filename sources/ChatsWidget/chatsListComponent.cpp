@@ -2,7 +2,10 @@
 #include "addChatDialogComponent.h"
 #include "chatsWidget.h"
 #include "mainwindow.h"
+#include "messagingAreaComponent.h"
+#include "messageComponent.h"
 #include "buttons.h"
+#include "clientSide.h"
 
 #include <QPainter>
 #include <QPaintEvent>
@@ -22,7 +25,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
     this->setMinimumSize(200, 300);
-    this->setMaximumSize(1000, 3000);
+    this->setMaximumSize(800, 3000);
 
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
@@ -143,7 +146,6 @@ void ChatsListComponent::closeAddChatDialog() {
 }
 
 
-
 void ChatsListComponent::setTheme(Theme theme) {
     m_theme = theme;
     m_darkModeSwitch->setTheme(m_theme);
@@ -204,4 +206,26 @@ void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
     m_containerVLayout->insertWidget(0, chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
     chatComponent->setSelected(false);
+}
+
+void ChatsListComponent::recoverChatComponents(ClientSide* clientSide, ChatsWidget* chatsWidget) {
+    auto& vec = clientSide->getMyChatsVec();
+    for (auto area : chatsWidget->getMessagingComponentsCacheVec()) {
+        ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, area->getChat());
+        chatComponent->setName(QString::fromStdString(area->getChat()->getFriendName()));
+        chatComponent->setTheme(m_theme);
+
+
+        auto& messages = area->getMessagesComponentsVec();
+        auto lastMessageComponent = messages.back(); 
+        auto lastMessage = lastMessageComponent->getMessage(); 
+        chatComponent->setLastMessage(lastMessage, false);
+
+        m_containerVLayout->insertWidget(0, chatComponent);
+        m_vec_chatComponents.push_back(chatComponent);
+    }
+
+    for (auto chatComp : m_vec_chatComponents) {
+        chatComp->setSelected(false);
+    }
 }

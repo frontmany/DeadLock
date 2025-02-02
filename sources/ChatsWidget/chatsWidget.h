@@ -8,7 +8,10 @@
 
 #include "chat.h"
 
-
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QFile>
 
 class ChatsListComponent;
 class MessagingAreaComponent;
@@ -22,6 +25,7 @@ class ChatsWidget : public QWidget {
 	Q_OBJECT
 public:
 	ChatsWidget(QWidget* parent, ClientSide* client, Theme theme);
+	ChatsWidget() {}
 	~ChatsWidget();
 	void setTheme(Theme theme);
 	const Theme getTheme() const { return m_theme; }
@@ -30,7 +34,10 @@ public:
 	ClientSide* getClientSide() { return m_client; }
 	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
 	std::vector<MessagingAreaComponent*>& getMessagingComponentsCacheVec() { return m_vec_messagingComponents_cache; }
+	void setClient(ClientSide* client);
 
+	void serialize();
+	static ChatsWidget* deserialize(const QString& fileName, QWidget* parent, ClientSide* client, Theme theme);
 
 public slots:
 	void onChangeThemeClicked();
@@ -41,7 +48,7 @@ public slots:
 	
 
 private:
-	void loadChats() {/*TODO*/ }
+	void loadChats() {/*TODO*/}
 	void paintEvent(QPaintEvent* event) override;
 	void setBackGround(Theme theme);
 
@@ -56,5 +63,5 @@ private:
 	QHBoxLayout*			m_mainHLayout;
 
 	std::vector<MessagingAreaComponent*> m_vec_messagingComponents_cache;
-	bool                    m_isFirstChatSet;
+	bool m_isFirstChatSet;
 };

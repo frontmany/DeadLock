@@ -1,5 +1,7 @@
 #pragma once
 
+#include<QJsonObject>
+#include<QJsonArray>
 #include<vector>
 #include"request.h"
 #include"photo.h"
@@ -27,6 +29,24 @@ public:
 	void setIsSend(bool isSend) { m_is_send = isSend; }
 	const bool getIsSend() const { return m_is_send; }
 
+	std::string serialize() const {
+		return m_message + "|" + m_timestamp + "|" + std::to_string(m_id) + "|" + (m_is_send ? "1" : "0");
+	}
+
+	static Msg deserialize(const std::string& data) {
+		Msg msg;
+		size_t pos1 = data.find('|');
+		size_t pos2 = data.find('|', pos1 + 1);
+		size_t pos3 = data.find('|', pos2 + 1);
+
+		msg.m_message = data.substr(0, pos1);
+		msg.m_timestamp = data.substr(pos1 + 1, pos2 - pos1 - 1);
+		msg.m_id = std::stod(data.substr(pos2 + 1, pos3 - pos2 - 1));
+		msg.m_is_send = (data.substr(pos3 + 1) == "1");
+
+		return msg;
+	}
+
 private:
 	std::string m_message;
 	std::string m_timestamp;
@@ -36,7 +56,7 @@ private:
 
 class Chat {
 public:
-	Chat() : m_chat_state(ChatState::NOT_STATED){}
+	Chat() : m_chat_state(ChatState::NOT_STATED), m_is_friend_has_photo(false){}
 
 	const std::string& getFriendLogin() const;
 	void setFriendLogin(const std::string& friendLogin);
@@ -61,6 +81,9 @@ public:
 
 	void setFriendPhoto(const Photo& photo) { m_friend_photo = photo; }
 	const Photo& getFriendPhoto() const { return m_friend_photo; }
+
+	QJsonObject serialize() const;
+	static Chat* deserialize(const QJsonObject& jsonObject);
 
 private:
 	std::vector<double>	m_vec_not_read_received_messages_id;

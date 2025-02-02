@@ -11,8 +11,11 @@
 #include <QPainter>
 #include <QScrollBar>
 
-class ButtonIcon;
-enum Theme;
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QFile>
+
+
 
 struct StyleInnerComponent {
     QString labelStyleDarkMessage = R"(
@@ -78,14 +81,22 @@ struct StyleInnerComponent {
 )";
 };
 
+
+class ButtonIcon;
+class MessagingAreaComponent;
+enum Theme;
+
 class InnerComponent : public QWidget {
 public:
     InnerComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, bool isSent);
     void setTheme(Theme theme);
 
     void setText(const QString& text) { m_textLabel->setText(text); }
+    const QString& getText() const { return m_textLabel->text(); }
     void setTimestamp(const QString& text) { m_timestampLabel->setText(text); }
+    const QString& getTimestamp() { return m_timestampLabel->text(); }
     bool getIsRead() const { return m_is_read; }
+    void setIsRead(bool isRead) {m_is_read = isRead; }
     void setReadStatus(bool read);
 
 protected:
@@ -116,14 +127,25 @@ class MessageComponent : public QWidget {
 public:
     explicit MessageComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, double id, bool isSent);
     void setTheme(Theme theme) { m_innerWidget->setTheme(theme); }
-    void setMessage(const QString& message) { m_innerWidget->setText(message); }
-    void setTimestamp(const QString& timestamp) { m_innerWidget->setTimestamp(timestamp); }
-    bool getReadStatus() const { return  m_innerWidget->getIsRead(); }
-    const double getId() const { return m_id; }
 
+    void setMessage(const QString& message) { m_innerWidget->setText(message); }
+    const QString& getMessage() const{ return m_innerWidget->getText(); }
+
+    void setTimestamp(const QString& timestamp) { m_innerWidget->setTimestamp(timestamp); }
+    const QString& getTimestamp() const { return m_innerWidget->getTimestamp(); }
+
+    bool getReadStatus() const { return  m_innerWidget->getIsRead(); }
+
+    bool getIsSent() const { return  m_isSent; }
+
+    const double getId() const { return m_id; }
 
 public slots:
     void setReadStatus(bool isRead) { m_innerWidget->setReadStatus(isRead); }
+
+public:
+    QJsonObject serialize() const;
+    static MessageComponent* deserialize(const QJsonObject& jsonObject);
 
 private:
     Theme m_theme;

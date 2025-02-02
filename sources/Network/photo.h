@@ -20,11 +20,13 @@ public:
         }
     }
 
+    std::string serialize();
+    static Photo deserialize(const std::string& data);
+
+
     const std::string& getPhotoPath() const { return m_photoPath; }
     void setPhotoPath(std::string& photoPath) { m_photoPath = photoPath; updateSize(); }
     const std::size_t getSize() const { return m_size; }
-    std::string serialize();
-    static Photo deserialize(const std::string& data);
     void saveToFile() const;
 
 private:
