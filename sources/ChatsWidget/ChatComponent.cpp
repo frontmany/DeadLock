@@ -31,7 +31,6 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
         update();
     }
 
-    m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; font-family: 'Segoe UI'; ");
     m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
     m_lastMessageLabel->setText("no messages yet");
 
@@ -42,11 +41,11 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
 
 
     m_UnreadDot = new ButtonIcon(this, 50, 50);
-    QIcon icon1(":/resources/ChatsWidget/online.png");
-    QIcon iconHover1(":/resources/ChatsWidget/online.png");
+    QIcon icon1(":/resources/ChatsWidget/unreadDark.png");
+    QIcon iconHover1(":/resources/ChatsWidget/unreadDark.png");
     m_UnreadDot->uploadIconsDark(icon1, iconHover1);
-    QIcon icon2(":/resources/ChatsWidget/online.png");
-    QIcon iconHover2(":/resources/ChatsWidget/online.png");
+    QIcon icon2(":/resources/ChatsWidget/unreadLight.png");
+    QIcon iconHover2(":/resources/ChatsWidget/unreadLight.png");
     m_UnreadDot->uploadIconsLight(icon2, iconHover2);
     m_UnreadDot->hide();
     m_UnreadDot->setTheme(m_theme);
@@ -54,7 +53,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_statusVLayout = new  QVBoxLayout;
     m_statusVLayout->setAlignment(Qt::AlignBottom);
     m_statusVLayout->addWidget(m_UnreadDot);
-    m_statusVLayout->addSpacing(-10);
+    m_statusVLayout->addSpacing(-2);
 
     m_mainHLayout = new QHBoxLayout();
     m_mainHLayout->setContentsMargins(70, 10, 10, 10);
@@ -76,10 +75,13 @@ void ChatComponent::setSelected(bool isSelected) {
         if (m_theme == DARK) {
             m_backColor = QColor(135, 135, 135);
             m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(227, 227, 227); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(240, 240, 240);");
             m_currentColor = m_backColor;
         }
         else {
             m_backColor = QColor(176, 208, 255);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(232, 232, 232); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(240, 240, 240);");
             m_currentColor = m_backColor;
         }
         update();
@@ -88,12 +90,49 @@ void ChatComponent::setSelected(bool isSelected) {
         if (m_theme == DARK) {
             m_backColor = QColor(25, 25, 25);
             m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(201, 201, 201);");
             m_currentColor = m_backColor;
         }
         else {
             m_backColor = QColor(224, 224, 224);
             m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(20, 20, 20);");
             m_currentColor = m_backColor;
+        }
+        update();
+    }
+}
+
+void ChatComponent::setTheme(Theme theme) {
+    m_theme = theme;
+    m_UnreadDot->setTheme(m_theme);
+    if (m_theme == DARK) {
+        m_backColor = QColor(25, 25, 25);
+        m_currentColor = m_backColor;
+        if (m_isSelected) {
+            setSelected(true);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(227, 227, 227); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(240, 240, 240);");
+        }
+        else {
+            setSelected(false);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(161, 161, 161); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(201, 201, 201);");
+        }
+        update();
+    }
+    else {
+        m_backColor = QColor(255, 255, 255);
+        m_currentColor = m_backColor;
+        if (m_isSelected) {
+            setSelected(true);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(227, 227, 227); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(240, 240, 240);");
+        }
+        else {
+            setSelected(false);
+            m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
+            m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(20, 20, 20);");
         }
         update();
     }
@@ -101,6 +140,7 @@ void ChatComponent::setSelected(bool isSelected) {
 
 void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
     if (isUnreadMessages == true) {
+        m_UnreadDot->setTheme(m_theme);
         m_UnreadDot->show();
     }
     else {
@@ -125,21 +165,6 @@ void ChatComponent::setLastMessage(const QString& message, bool fromAnotherThrea
 void ChatComponent::setAvatar(const QPixmap& avatar) {
     m_avatar = avatar.scaled(m_avatarSize, m_avatarSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     update();
-}
-
-void ChatComponent::setTheme(Theme theme) {
-    m_theme = theme;
-    if (m_theme == DARK) {
-        m_backColor = QColor(25, 25, 25);
-        m_currentColor = m_backColor;
-        update();
-    }
-    else {
-        m_backColor = QColor(255, 255, 255);
-        m_currentColor = m_backColor;
-        m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(47, 47, 48);");
-        update();
-    }
 }
 
 void ChatComponent::paintEvent(QPaintEvent* event) {
@@ -211,6 +236,12 @@ void ChatComponent::hoverLeave(QHoverEvent* event)
 void ChatComponent::mouseReleaseEvent(QMouseEvent* event)
 {
     if (event->button() == Qt::LeftButton) {
+        if (m_isSelected) {
+            return;
+        }
+
+        m_isSelected = true;
+        setSelected(true);
         emit clicked();
     }
 }

@@ -33,6 +33,7 @@ public:
 
 
 public slots:
+	void onChangeThemeClicked();
 	void onSendMessageData(QString message, const QString& timeStamp, Chat* chat, double id);
 	void createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id);
 	void onCreateChatButtonClicked(QString login);

@@ -65,7 +65,7 @@ struct StyleChatsListComponent {
         background-color: #333;    
         color: white;               
         border: none;     
-        border-radius: 13px;         
+        border-radius: 15px;         
         padding: 5px;               
     }
     QLineEdit:focus {
@@ -78,7 +78,7 @@ struct StyleChatsListComponent {
         background-color: #ffffff;    
         color: black;                 
         border: none;       
-        border-radius: 13px;           
+        border-radius: 15px;           
         padding: 5px;                 
     }
     QLineEdit:focus {
@@ -107,6 +107,7 @@ struct StyleChatsListComponent {
 class RoundIconButton;
 class AddChatDialogComponent;
 class ButtonIcon;
+class ToggleSwitch;
 class ChatsWidget;
 enum Theme;
 
@@ -126,6 +127,7 @@ public:
 
 signals:
     void sendCreateChatData(QString login);
+    void sendChangeTheme();
 
 
 public slots:
@@ -134,6 +136,9 @@ public slots:
     void closeAddChatDialog();
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
+
+private slots:
+    void toSendChangeTheme(bool fl);
 
 private:
     QColor                      m_backgroundColor;
@@ -144,7 +149,8 @@ private:
     QHBoxLayout* m_profileHLayout;
     QHBoxLayout* m_contentsHLayout;
 
-
+    ButtonIcon*         m_moon_icon;
+    ToggleSwitch*       m_darkModeSwitch;
     ChatsWidget*        m_chatsWidget;
     QScrollArea*        m_scrollArea;
     QWidget*            m_containerWidget;

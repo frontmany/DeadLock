@@ -15,7 +15,7 @@ enum Theme;
 struct StyleChatHeaderComponent {
 
 
-    QString blueLabelStyle = R"(
+    QString purpleLabelStyle = R"(
     QLabel {
         font-family: "Segoe UI";
         background-color: transparent;  
@@ -23,6 +23,17 @@ struct StyleChatHeaderComponent {
         border: none;   
         font-size: 14px;
         color: rgb(85, 90, 250);            
+    }
+)";
+
+    QString blueLabelStyle = R"(
+    QLabel {
+        font-family: "Segoe UI";
+        background-color: transparent;  
+        font-weight: normal;
+        border: none;   
+        font-size: 14px;
+        color: rgb(104, 163, 252);            
     }
 )";
 
@@ -74,6 +85,8 @@ public slots:
 
 protected:
     void paintEvent(QPaintEvent* event) override;
+
+public:
     void setTheme(Theme theme);
 
 

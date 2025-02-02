@@ -108,7 +108,7 @@ void InnerComponent::setTheme(Theme theme) {
             m_timestampLabel->setStyleSheet(style->labelStyleLightTime);
         }
         else {
-            m_backColor = QColor(176, 182, 191);
+            m_backColor = QColor(224, 224, 224);
             m_textLabel->setStyleSheet(style->labelStyleLightMessage);
             m_timestampLabel->setStyleSheet(style->labelStyleLightTime);
         }

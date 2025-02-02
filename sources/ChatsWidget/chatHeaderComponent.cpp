@@ -46,12 +46,24 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
     }
 
     m_lastSeenLabel = new QLabel(lastSeen, this);
-    if (m_lastSeenLabel->text() == "online") {
-        m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);
+    if (m_theme == DARK) {
+
+        if (m_lastSeenLabel->text() == "online") {
+            m_lastSeenLabel->setStyleSheet(style->purpleLabelStyle);
+        }
+        else {
+            m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
+        }
     }
     else {
-        m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
+        if (m_lastSeenLabel->text() == "online") {
+            m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);
+        }
+        else {
+            m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
+        }
     }
+    
 
     m_rightLayout->addWidget(m_nameLabel);
     m_rightLayout->addWidget(m_lastSeenLabel);
@@ -91,6 +103,12 @@ void ChatHeaderComponent::setTheme(Theme theme) {
         m_rightButton->setTheme(m_theme);
         m_leftIcon->setTheme(m_theme);
         m_nameLabel->setStyleSheet(style->lightLabelStyle);
+        if (m_lastSeenLabel->text() == "online") {
+            m_lastSeenLabel->setStyleSheet(style->purpleLabelStyle);
+        }
+        else {
+            m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
+        }
         update();
     }
     else {
@@ -98,6 +116,12 @@ void ChatHeaderComponent::setTheme(Theme theme) {
         m_rightButton->setTheme(m_theme);
         m_leftIcon->setTheme(m_theme);
         m_nameLabel->setStyleSheet(style->darkLabelStyle);
+        if (m_lastSeenLabel->text() == "online") {
+            m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);
+        }
+        else {
+            m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
+        }
         update();
     }
 }

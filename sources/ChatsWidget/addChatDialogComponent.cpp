@@ -66,14 +66,15 @@ void EditComponent::setTheme(Theme theme) {
     if (theme == DARK) {
         m_color = QColor(51, 51, 51);
         m_lineEdit->setStyleSheet(style->DarkLineEditStyle);
-        update();
+        m_cancelButton->setTheme(DARK);
     }
     else {
 
         m_color = QColor(255, 255, 255);
         m_lineEdit->setStyleSheet(style->LightLineEditStyle);
-        update();
+        m_cancelButton->setTheme(LIGHT);
     }
+    update();
 }
 
 void EditComponent::paintEvent(QPaintEvent* event) {
@@ -178,8 +179,11 @@ void AddChatDialogComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (theme == DARK) {
         m_createChatButton->setStyleSheet(style->DarkButtonStyleBlue);
+        m_editComponent->setTheme(DARK);
     }
     else {
         m_createChatButton->setStyleSheet(style->LightButtonStyleBlue);
+        m_editComponent->setTheme(LIGHT);
     }
+    update();
 }

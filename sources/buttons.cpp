@@ -2,6 +2,92 @@
 #include "mainwindow.h"
 
 
+ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
+    : QWidget(parent), m_isChecked(false), m_radius(20), m_indicatorX(5) {
+    setFixedSize(52, 30); 
+    m_theme = theme;
+
+    if (m_theme == DARK) {
+        m_circleColor = QColor(102, 102, 102);
+        m_backgroundColor = QColor(52, 52, 52);
+
+    }
+    else {
+        m_circleColor = QColor(204, 234, 255);
+        m_backgroundColor = QColor(212, 212, 212);
+    }
+
+    m_animation = new QPropertyAnimation(this, "indicatorX");
+    m_animation->setDuration(200); // Длительность анимации
+    m_animation->setEasingCurve(QEasingCurve::InOutQuad); // Кривая анимации
+}
+
+bool ToggleSwitch::isChecked() const {
+    return m_isChecked;
+}
+
+void ToggleSwitch::paintEvent(QPaintEvent* event) {
+    QPainter painter(this);
+    painter.setPen(Qt::NoPen);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    painter.setBrush(m_backgroundColor);
+    painter.drawRoundedRect(0, 0, width(), height(), 15, 15);
+
+    painter.setBrush(m_circleColor);
+    painter.drawEllipse(m_indicatorX, 5, 20, 20);
+}
+
+void ToggleSwitch::mousePressEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        setTheme(m_theme == DARK ? LIGHT : DARK);
+        m_isChecked = !m_isChecked;
+        updateAnimation();
+        emit toggled(m_isChecked);
+    }
+}
+
+void ToggleSwitch::updateAnimation() {
+    if (m_isChecked) {
+        m_animation->setStartValue(m_indicatorX);
+        m_animation->setEndValue(width() - m_radius - 5);
+    }
+    else {
+        m_animation->setStartValue(m_indicatorX);
+        m_animation->setEndValue(5); 
+    }
+
+    m_animation->start(); 
+
+    connect(m_animation, &QPropertyAnimation::valueChanged, [this](const QVariant& value) {
+        m_indicatorX = value.toInt();
+        update(); 
+        });
+}
+
+void ToggleSwitch::setTheme(Theme theme) {
+    m_theme = theme;
+    if (m_theme == DARK) {
+        m_circleColor = QColor(102, 102, 102);
+        m_backgroundColor = QColor(52, 52, 52);
+
+    }
+    else {
+        m_circleColor = QColor(255, 255, 255);
+        m_backgroundColor = QColor(212, 212, 212);
+    }
+    update();
+}
+
+QColor ToggleSwitch::backgroundColor() const {
+    return m_backgroundColor;
+}
+
+void ToggleSwitch::setBackgroundColor(const QColor& color) {
+    m_backgroundColor = color;
+    update(); // Обновляем виджет
+}
+
 ButtonCursor::ButtonCursor(QWidget* parent, Theme theme)
     : QWidget(parent),  m_theme(theme){
     setAttribute(Qt::WA_Hover);

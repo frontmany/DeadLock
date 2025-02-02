@@ -114,6 +114,10 @@ void MessagingAreaComponent::setTheme(Theme theme) {
         m_backColor = QColor(25, 25, 25);
         m_messageInputEdit->setStyleSheet(style->DarkTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
+        m_header->setTheme(DARK);
+        for (auto msgComp : m_vec_messagesComponents) {
+            msgComp->setTheme(DARK);
+        }
         update();
 
     }
@@ -121,6 +125,10 @@ void MessagingAreaComponent::setTheme(Theme theme) {
         m_backColor = QColor(240, 240, 240, 200);
         m_messageInputEdit->setStyleSheet(style->LightTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->lightSlider);
+        m_header->setTheme(LIGHT);
+        for (auto msgComp : m_vec_messagesComponents) {
+            msgComp->setTheme(LIGHT);
+        }
         update();
     }
 }

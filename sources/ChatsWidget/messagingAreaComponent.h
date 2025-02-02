@@ -166,7 +166,7 @@ private:
     ChatsWidget* m_chatsWidget;
 
     QString                 m_friendName;
-    MyTextEdit*              m_messageInputEdit;
+    MyTextEdit*             m_messageInputEdit;
     ChatHeaderComponent*    m_header;
     QScrollArea*            m_scrollArea;  
     QWidget*                m_containerWidget;

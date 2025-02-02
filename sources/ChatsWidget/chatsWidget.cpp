@@ -94,6 +94,7 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     }
     else {
         m_current_messagingAreaComponent = *itMsgComp;
+        m_current_messagingAreaComponent->setTheme(m_theme);
         m_current_messagingAreaComponent->show();
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
@@ -134,10 +135,28 @@ void ChatsWidget::onSendMessageData(QString message, const QString& timeStamp, C
     m_client->sendMessage(chat, message.toStdString(), timeStamp.toStdString(), id);
 }
 
+void ChatsWidget::onChangeThemeClicked() {
+    if (m_theme == DARK) {
+        m_theme = LIGHT;
+        setTheme(LIGHT);
+    }
+    else {
+        m_theme = DARK;
+        setTheme(DARK);
+    }
+    
+}
+
 void ChatsWidget::setTheme(Theme theme) {
     m_theme = theme;
     setBackGround(theme);
     m_chatsListComponent->setTheme(theme);
+    if (m_current_messagingAreaComponent != nullptr) {
+        m_current_messagingAreaComponent->setTheme(m_theme);
+    }
+    else {
+        m_helloAreaComponent->setTheme(m_theme);
+    }
 }
 
 
@@ -164,4 +183,5 @@ void ChatsWidget::setBackGround(Theme theme) {
         if (m_background.load(":/resources/ChatsWidget/lightChatsBackground.jpg")) {
         }
     }
+    update();
 }

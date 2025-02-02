@@ -7,10 +7,53 @@
 #include <QMouseEvent>
 #include <QEvent>
 #include <QPainter>
-
+#include <QWidget>
+#include <QPropertyAnimation>
 
 
 enum Theme;
+
+
+class ToggleSwitch : public QWidget {
+    Q_OBJECT
+    Q_PROPERTY(int indicatorX READ indicatorX WRITE setIndicatorX NOTIFY indicatorXChanged)
+
+public:
+    explicit ToggleSwitch(QWidget* parent, Theme theme);
+    bool isChecked() const;
+    void setBackgroundColor(const QColor& color);
+    void setTheme(Theme theme);
+    int indicatorX() const { return m_indicatorX; }
+    void setIndicatorX(int value) {
+        if (m_indicatorX != value) {
+            m_indicatorX = value;
+            emit indicatorXChanged(m_indicatorX);
+            update();
+        }
+    }
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+    void mousePressEvent(QMouseEvent* event) override;
+
+private:
+    void updateAnimation();
+    QColor backgroundColor() const; // Метод для получения цвета фона
+
+signals:
+    void toggled(bool checked);
+    void indicatorXChanged(int newValue);
+
+private:
+    bool m_isChecked; // Состояние переключателя
+    int m_radius; // Радиус индикатора
+    QPropertyAnimation* m_animation; // Анимация индикатора
+    int m_indicatorX; // Положение индикатора по оси X
+    QColor m_backgroundColor; // Цвет фона переключателя
+    QColor m_circleColor; // Цвет фона переключателя
+    Theme m_theme;
+};
+
 
 class ButtonCursor : public QWidget
 {

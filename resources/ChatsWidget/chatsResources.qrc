@@ -29,8 +29,10 @@
         <file>menuLight.png</file>
         <file>notCheck.png</file>
         <file>check.png</file>
-        <file>online.png</file>
+        <file>unreadDark.png</file>
+        <file>unreadLight.png</file>
         <file>helloDark.jpg</file>
         <file>helloLight.jpg</file>
+        <file>moon.png</file>
     </qresource>
 </RCC>
