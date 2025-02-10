@@ -129,7 +129,6 @@ class MessagingAreaComponent : public QWidget {
 
 public:
     MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget);
-    MessagingAreaComponent(Theme theme);
     void setTheme(Theme theme);
     
 

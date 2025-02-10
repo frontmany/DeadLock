@@ -41,4 +41,6 @@ private:
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;
 
+
+
 };

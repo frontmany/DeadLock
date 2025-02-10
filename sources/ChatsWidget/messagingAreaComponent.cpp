@@ -133,20 +133,6 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     }
 }
 
-MessagingAreaComponent::MessagingAreaComponent(Theme theme) {
-    style = new StyleMessagingAreaComponent;
-    m_theme = theme;
-
-    if (m_theme == DARK) {
-        m_backColor = QColor(25, 25, 25);
-        update();
-    }
-    else {
-        m_backColor = QColor(240, 240, 240, 200);
-        update();
-    }
-}
-
 void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -231,7 +217,6 @@ MessagingAreaComponent* MessagingAreaComponent::deserialize(const QJsonObject& j
     for (const auto& msgValue : messagesArray) {
         QJsonObject msgObject = msgValue.toObject();
         MessageComponent* msgComponent = MessageComponent::deserialize(msgObject);
-        component->m_vec_messagesComponents.push_back(msgComponent);
 
         if (msgComponent->getIsSent()) {
             component->addMessageSent(msgComponent->getMessage(), msgComponent->getTimestamp(), msgComponent->getId());

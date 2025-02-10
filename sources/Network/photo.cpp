@@ -1,6 +1,12 @@
 #include "photo.h"
 
-
+Photo::Photo(const std::string& photoPath)
+    : m_photoPath(photoPath), m_size(-1) {
+    if (photoPath != "") {
+        updateSize();
+        saveToFile();
+    }
+}
 
 std::string Photo::wideStringToString(const WCHAR* wideStr) {
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, wideStr, -1, nullptr, 0, nullptr, nullptr);
@@ -23,7 +29,7 @@ void Photo::updateSize() {
 }
 
 
-std::string Photo::serialize(){
+std::string Photo::serialize() {
     if (m_photoPath != "") {
         std::ostringstream oss;
         oss.write(reinterpret_cast<const char*>(&m_size), sizeof(m_size));
@@ -59,10 +65,10 @@ Photo Photo::deserialize(const std::string& data) {
     }
 
     std::string usernameStr = wideStringToString(username);
-    std::string saveDirectory = "C:\\Users\\" + usernameStr + "\\Documents\\ReceivedFiles";
+    std::string saveDirectory = "C:\\Users\\" + usernameStr + "\\Documents\\Data_Air_Gram\\Photos";
     std::string tempPath = saveDirectory + "\\restored_photo.jpg";
 
-    
+
     std::vector<char> buffer(size);
 
     iss.read(buffer.data(), size);
@@ -76,7 +82,7 @@ Photo Photo::deserialize(const std::string& data) {
     else {
         std::cerr << "Open file Error" << std::endl;
     }
-    
+
 
     return Photo(tempPath);
 }
@@ -87,7 +93,7 @@ void Photo::saveToFile() const {
     DWORD username_len = sizeof(username) / sizeof(WCHAR);
     if (GetUserNameW(username, &username_len)) {
         std::string usernameStr = wideStringToString(username);
-        std::string saveDirectory = "C:\\Users\\" + usernameStr + "\\Documents\\MyFiles";
+        std::string saveDirectory = "C:\\Users\\" + usernameStr + "\\Documents\\Data_Air_Gram\\Photos";
         std::filesystem::path filePath(m_photoPath);
         std::string fileName = filePath.filename().string();
         std::filesystem::path fullPath = std::filesystem::path(saveDirectory) / fileName;
@@ -110,3 +116,4 @@ void Photo::saveToFile() const {
         std::cerr << "No User data" << std::endl;
     }
 }
+

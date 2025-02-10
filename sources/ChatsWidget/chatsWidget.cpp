@@ -206,6 +206,8 @@ void ChatsWidget::serialize() {
     jsonObject["client"] = m_client->serialize();
     // Получаем директорию для сохранения
     QString dir = getSaveDir();
+
+    qDebug() << m_client->getMyInfo().getLogin();
     QString fileName = QString::fromStdString(m_client->getMyInfo().getLogin()) + ".json";
 
     // Создаем полный путь к файлу
@@ -259,8 +261,9 @@ ChatsWidget* ChatsWidget::deserialize(const QString& fileName, QWidget* parent, 
     ChatsWidget* chatsWidget = new ChatsWidget(parent, client, theme);
 
     QJsonObject clientObject = jsonObject["client"].toObject();
-    ClientSide* deserializedClient = ClientSide::deserialize(clientObject, chatsWidget);
-    chatsWidget->setClient(deserializedClient);
+    auto pair =  ClientSide::deserialize(clientObject);
+    client->setMyInfo(pair.second);
+    client->getMyChatsVec() = pair.first;
 
     if (jsonObject.contains("messagingComponentsCache")) {
         QJsonArray chatsArray = jsonObject["messagingComponentsCache"].toArray();

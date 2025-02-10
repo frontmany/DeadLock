@@ -56,7 +56,6 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
 
     this->setLayout(m_main_HLayout);
     this->setMinimumSize(30, 35);
-    
     this->setMaximumSize(600, 800);
     setTheme(m_theme);
 }
@@ -138,6 +137,10 @@ MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp,
     setLayout(m_main_HLayout);
     setReadStatus(false);
     setTheme(theme);
+
+    if (text.length() <= 150) {
+        setFixedHeight(55);
+    }
 }
 
 

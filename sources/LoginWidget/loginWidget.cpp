@@ -45,6 +45,10 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client)
 }
 
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
+    auto clientPair = ClientSide::preLoad(getSaveDir() + "/" + login + "PreLoad.json");
+    m_client->setMyInfo(clientPair.second);
+    m_client->getMyChatsVec() = clientPair.first;
+
     bool isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
     if (isLog) {
         User me;

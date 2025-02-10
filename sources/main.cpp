@@ -29,9 +29,6 @@ int main(int argc, char* argv[])
 
     
 
-    int result = app.exec();
+    app.exec();
     delete mainWindow;
-    delete customStyle;
-
-    return result;
 }

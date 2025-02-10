@@ -214,6 +214,11 @@ void ChatsListComponent::recoverChatComponents(ClientSide* clientSide, ChatsWidg
         ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, area->getChat());
         chatComponent->setName(QString::fromStdString(area->getChat()->getFriendName()));
         chatComponent->setTheme(m_theme);
+        
+        Chat* chat = area->getChat();
+        if (chat->getNotReadReceivedMsgVec().size() > 0) {
+            chatComponent->setUnreadMessageDot(true);
+        }
 
 
         auto& messages = area->getMessagesComponentsVec();
