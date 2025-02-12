@@ -18,31 +18,30 @@ class MessagingAreaComponent;
 class HelloAreaComponent;
 class ChatComponent;
 class MainWindow;
-class ClientSide;
+class Client;
 enum Theme;
 
 class ChatsWidget : public QWidget {
 	Q_OBJECT
 public:
-	ChatsWidget(QWidget* parent, ClientSide* client, Theme theme);
+	ChatsWidget(QWidget* parent, Client* client, Theme theme);
 	ChatsWidget() {}
 	~ChatsWidget();
 	void setTheme(Theme theme);
 	const Theme getTheme() const { return m_theme; }
 	
 	MessagingAreaComponent* getMessagingArea() { return m_current_messagingAreaComponent; }
-	ClientSide* getClientSide() { return m_client; }
+	Client* getClientSide() { return m_client; }
 	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
 	std::vector<MessagingAreaComponent*>& getMessagingComponentsCacheVec() { return m_vec_messagingComponents_cache; }
-	void setClient(ClientSide* client);
+	void setClient(Client* client);
 
-	void serialize();
-	static ChatsWidget* deserialize(const QString& fileName, QWidget* parent, ClientSide* client, Theme theme);
+	void load();
 
 public slots:
 	void onChangeThemeClicked();
-	void onSendMessageData(QString message, const QString& timeStamp, Chat* chat, double id);
-	void createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id);
+	void onSendMessageData(Message* message, Chat* chat);
+	//void createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id);
 	void onCreateChatButtonClicked(QString login);
 	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
 	
@@ -55,7 +54,7 @@ private:
 private:
 	Theme					m_theme;
 	QPixmap					m_background;
-	ClientSide*				m_client;
+	Client*					m_client;
 	ChatsListComponent*		m_chatsListComponent;
 	MessagingAreaComponent* m_current_messagingAreaComponent;
 	HelloAreaComponent*		m_helloAreaComponent;

@@ -2,6 +2,7 @@
 #include "chatsWidget.h"
 #include "addChatDialogComponent.h"
 #include "buttons.h"
+#include "photo.h"
 #include "mainwindow.h"
 
 ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
@@ -13,10 +14,13 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     setAttribute(Qt::WA_Hover);
 
     m_nameLabel = new QLabel(this);
+    m_nameLabel->setText(QString::fromStdString(m_chat->getFriendName()));
+
     m_lastMessageLabel = new QLabel(this);
+    m_nameLabel->setText(QString::fromStdString(m_chat->getLastMessage()));
 
     if (m_chat->getIsFriendHasPhoto() == true) {
-        const Photo& photo = m_chat->getFriendPhoto();
+        const Photo& photo = *m_chat->getFriendPhoto();
         m_avatar = QPixmap(QString::fromStdString(photo.getPhotoPath()));
         update();
     }
@@ -32,7 +36,6 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     }
 
     m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
-    m_lastMessageLabel->setText("no messages yet");
 
     m_contentsVLayout = new QVBoxLayout();
     m_contentsVLayout->addWidget(m_nameLabel);
@@ -48,6 +51,9 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     QIcon iconHover2(":/resources/ChatsWidget/unreadLight.png");
     m_UnreadDot->uploadIconsLight(icon2, iconHover2);
     m_UnreadDot->hide();
+    if (m_chat->getUnreadReceiveMessagesVec().size() > 0){
+        m_UnreadDot->show();
+    }
     m_UnreadDot->setTheme(m_theme);
 
     m_statusVLayout = new  QVBoxLayout;

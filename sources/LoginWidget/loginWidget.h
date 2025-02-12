@@ -52,7 +52,7 @@ struct StyleLoginWidget {
 
 class AuthorizationComponent;
 class RegistrationComponent;
-class ClientSide;
+class Client;
 class MainWindow;
 enum Theme;
 
@@ -61,11 +61,11 @@ class LoginWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client);
+    explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client);
     void setTheme(Theme theme);
 
 signals:
-    void sendLoginStatus(bool status);
+    void sendLoginSuccess();
 
 private slots:
     void switchToAuthorize();
@@ -86,14 +86,14 @@ private:
     StyleLoginWidget*       style;
     QPixmap                 m_background;
     SwithcState             m_switchState;
-    ClientSide*             m_client;
+    Client*                 m_client;
 
     QVBoxLayout*            m_mainVLayout;
     QHBoxLayout*            m_switchersHLayout;
     QHBoxLayout*            m_FormsHLayout;
 
-    AuthorizationComponent*     m_authorizationWidget;
-    RegistrationComponent*     m_registrationWidget;
+    AuthorizationComponent* m_authorizationWidget;
+    RegistrationComponent*  m_registrationWidget;
 
     QPushButton*            m_switchToAuthorizeButton;
     QPushButton*            m_switchToRegisterButton;

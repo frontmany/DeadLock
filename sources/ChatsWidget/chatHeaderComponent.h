@@ -6,8 +6,6 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include "request.h"
-
 
 class ButtonIcon;
 enum Theme;

@@ -29,7 +29,7 @@ void Photo::updateSize() {
 }
 
 
-std::string Photo::serialize() {
+std::string Photo::serialize() const{
     if (m_photoPath != "") {
         std::ostringstream oss;
         oss.write(reinterpret_cast<const char*>(&m_size), sizeof(m_size));
@@ -43,15 +43,15 @@ std::string Photo::serialize() {
         return oss.str();
     }
     else {
-        return "no photo";
+        return "";
     }
 
 }
 
 
-Photo Photo::deserialize(const std::string& data) {
+Photo* Photo::deserialize(const std::string& data) {
     if (data == "no photo") {
-        return Photo();
+        return nullptr;
     }
 
     std::istringstream iss(data);
@@ -84,7 +84,7 @@ Photo Photo::deserialize(const std::string& data) {
     }
 
 
-    return Photo(tempPath);
+    return new Photo(tempPath);
 }
 
 

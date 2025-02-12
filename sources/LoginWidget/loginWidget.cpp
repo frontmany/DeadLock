@@ -2,9 +2,9 @@
 #include "authorizationComponent.h"
 #include "registrationComponent.h"
 #include "mainwindow.h"
-#include "clientSide.h"
+#include "client.h"
 
-LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client)
+LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
     : QWidget(parent), m_client(client){
 
     m_switchState = AUTHORIZATION;
@@ -41,37 +41,37 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client)
     connect(m_switchToRegisterButton, &QPushButton::clicked, this, &LoginWidget::switchToRegister);
     connect(m_switchToAuthorizeButton, &QPushButton::clicked, this, &LoginWidget::switchToAuthorize);
 
-    connect(this, &LoginWidget::sendLoginStatus, mw, &MainWindow::onLogin);
+    connect(this, &LoginWidget::sendLoginSuccess, mw, &MainWindow::onLogin);
 }
 
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
-    auto clientPair = ClientSide::preLoad(getSaveDir() + "/" + login + "PreLoad.json");
-    m_client->setMyInfo(clientPair.second);
-    m_client->getMyChatsVec() = clientPair.first;
-
-    bool isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
-    if (isLog) {
-        User me;
-        me.setLogin(login.toStdString());
-        me.setPassword(password.toStdString());
-        me.setLastSeen("online");
-        m_client->setMyInfo(me);
+    OperationResult isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
+    if (isLog == OperationResult::SUCCESS) {
+        m_client->load(login.toStdString());
+        m_client->setMyLogin(login.toStdString());
     }
-    emit(sendLoginStatus(isLog));
+    else if (isLog == OperationResult::FAIL) {
+        // todo DIALOG
+    }
+    else {
+        // todo DIALOG
+    }
 }
 
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
-    bool isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
-    if (isLog) {
-        User me;
-        me.setLogin(login.toStdString());
-        me.setName(name.toStdString());
-        me.setPassword(password.toStdString());
-        me.setLastSeen("online");
-        m_client->setMyInfo(me);
-        
+    OperationResult isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
+    if (isLog == OperationResult::SUCCESS) {
+        m_client->load(login.toStdString());
+        m_client->setMyLogin(login.toStdString());
+        m_client->setMyName(name.toStdString());
+        emit(sendLoginSuccess());
     }
-    emit(sendLoginStatus(isLog));
+    else if (isLog == OperationResult::FAIL){
+        // todo DIALOG
+    }
+    else {
+        // todo DIALOG
+    }
 }
 
 void LoginWidget::switchToAuthorize() {

@@ -14,12 +14,8 @@
 #include <QScrollBar>
 #include <random>
 
-#include "request.h"
 #include "chat.h"
 
-
-
-std::string getCurrentTime();
 
 struct StyleMessagingAreaComponent {
     QString darkSlider = R"(
@@ -137,17 +133,12 @@ public:
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
 
-    QJsonObject serialize() const;
-    static MessagingAreaComponent* deserialize(const QJsonObject& jsonObject, QWidget* parent, ChatsWidget* chatsWidget);
-
 
 signals:
-    void sendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id);
+    void sendMessageData(Message*, Chat* chat);
 
 public slots:
-    void addMessageReceived(QString msg, QString timestamp, double id);
-    void addMessageSent(QString msg, QString timestamp, double id);
-    void addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg);
+    void addMessage(Message* message);
 
 private slots:
     void adjustTextEditHeight();

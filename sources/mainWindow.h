@@ -7,13 +7,30 @@
 #include <QEvent>
 #include <QDir>
 
-
 #include "loginWidget.h"
 #include "chatsWidget.h"
 
-class ClientSide;
-std::string wideStringToString(const WCHAR* wideStr);
-QString getSaveDir();
+class Client;
+
+
+/*
+using asio::ip::tcp;
+
+class MyWorkerUI : public WorkerUI {
+public:
+	void onStatusReceive() override {
+		std::cout << "status received!" << std::endl;
+	}
+
+	void onMessageReceive() override {
+		std::cout << "Message received!" << std::endl;
+	}
+
+	void onMessageReadConfirmationReceive() override {
+		std::cout << "Confirmation of reading the message has been received!" << std::endl;
+	}
+};
+*/
 
 enum Theme {
 	DARK,
@@ -28,7 +45,7 @@ public:
 	~MainWindow();
 	
 public slots:
-	void onLogin(bool isLoggedIn);
+	void onLogin();
 
 private:
 	void setupLoginWidget();
@@ -37,7 +54,7 @@ private:
 
 private:
 	Theme			m_theme;
-	ClientSide*		m_client;
+	Client*			m_client;
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;
 

@@ -1,5 +1,6 @@
 #include"sender.h"
 #include"photo.h"
+#include"message.h"
 
 
 std::string SendStringsGenerator::parseTypeToStr(QueryType type) {
@@ -28,10 +29,10 @@ std::string SendStringsGenerator::get_message_ReplyStr(const std::string& myLogi
         + message + '\n' + messageEnd + '\n' + timestamp + '\n' + endPacket;
 }
 
-std::string SendStringsGenerator::get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<int>& readMessagesIdsVec) {
+std::string SendStringsGenerator::get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec) {
     std::string replyStr = rpl + '\n' + friendLogin + '\n' + parseTypeToStr(QueryType::MESSAGES_READ_CONFIRMATION) + '\n' + myLogin + '\n' + vecBegin + '\n';
-    for (auto id : readMessagesIdsVec) {
-        replyStr += std::to_string(id) + '\n';
+    for (auto message : readMessagesVec) {
+        replyStr += message->getId() + '\n';
     }
     replyStr += vecEnd + '\n';
     replyStr += endPacket;

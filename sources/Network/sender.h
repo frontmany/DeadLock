@@ -2,6 +2,7 @@
 #include<vector>
 
 class Photo;
+class Message;
 
 class SendStringsGenerator {
 public:
@@ -21,7 +22,7 @@ public:
 	std::string get_createChat_QueryStr(const std::string& myLogin, const std::string& friendLogin);
 	std::string get_message_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::string& message, const std::string& timestamp);
 	std::string get_status_ReplyStr(const std::string& status, const std::string& myLogin, std::vector<std::string>& friendsLoginsVec);
-	std::string get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<int>& readMessagesIdsVec);
+	std::string get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec);
 	std::string get_updateMyInfo_QueryStr(std::string login, std::string name, std::string password, bool isHasPhoto, Photo photo);
 	//std::string get_loadFriendInfo_QueryStr(const std::string& login);
 	//std::string get_loadAllFriendsInfo_QueryStr(const std::vector<std::string>& friendsLoginsVec);

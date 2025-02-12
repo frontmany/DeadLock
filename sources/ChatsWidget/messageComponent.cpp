@@ -1,5 +1,6 @@
 #include "MessageComponent.h"
 #include "mainwindow.h"
+#include "message.h"
 #include "buttons.h"
 
 
@@ -116,10 +117,10 @@ void InnerComponent::setTheme(Theme theme) {
 }
 
 
-MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp, 
-    const QString& text, Theme theme, double id, bool isSent)
-    : QWidget(parent), m_theme(theme), m_id(id), m_isSent(isSent){
-    m_innerWidget = new InnerComponent(this, timestamp, text, m_theme, m_isSent);
+MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme theme)
+    : QWidget(parent), m_theme(theme), m_id(QString::fromStdString(message->getId())), m_isSent(message->getIsSend()),
+    m_isRead(message->getIsRead()) {
+    m_innerWidget = new InnerComponent(this, QString::fromStdString(message->getTimestamp()), QString::fromStdString(message->getMessage()), m_theme, m_isSent);
     this->setStyleSheet("background-color: transparent;");
   
     m_main_HLayout = new QHBoxLayout(this);
@@ -138,35 +139,9 @@ MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp,
     setReadStatus(false);
     setTheme(theme);
 
-    if (text.length() <= 150) {
+    if (message->getMessage().length() <= 150) {
         setFixedHeight(55);
     }
 }
 
-
-QJsonObject MessageComponent::serialize() const {
-    QJsonObject jsonObject;
-    jsonObject["id"] = m_id;
-    jsonObject["isSent"] = m_isSent;
-    jsonObject["theme"] = static_cast<int>(m_theme);
-    jsonObject["text"] = m_innerWidget->getText();
-    jsonObject["timestamp"] = m_innerWidget->getTimestamp();
-    jsonObject["isRead"] = m_innerWidget->getIsRead();
-    return jsonObject;
-}
-
-
-MessageComponent* MessageComponent::deserialize(const QJsonObject& jsonObject) {
-
-    double id = jsonObject["id"].toInt();
-    bool isSent = jsonObject["isSent"].toBool();
-    Theme theme = static_cast<Theme>(jsonObject["theme"].toInt());
-    const QString text = jsonObject["text"].toString();
-    const QString timestamp = jsonObject["timestamp"].toString();
-    bool isRead = jsonObject["isRead"].toBool();
-
-    MessageComponent* messageComponent = new MessageComponent(nullptr, timestamp, text, theme, id, isSent);
-
-    return messageComponent;
-}
 

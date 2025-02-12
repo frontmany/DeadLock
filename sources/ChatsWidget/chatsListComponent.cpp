@@ -5,7 +5,7 @@
 #include "messagingAreaComponent.h"
 #include "messageComponent.h"
 #include "buttons.h"
-#include "clientSide.h"
+#include "client.h"
 
 #include <QPainter>
 #include <QPaintEvent>
@@ -124,7 +124,7 @@ void ChatsListComponent::addChatComponent(Theme theme, Chat* chat) {
     chatComponent->setTheme(theme);
     m_containerVLayout->insertWidget(0, chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
-    chatComponent->setSelected(true);
+    chatComponent->setSelected(false);
 }
 
 
@@ -199,38 +199,11 @@ void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
         chatComp->setSelected(false);
     }
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
-    chatComponent->setLastMessage(QString::fromStdString(chat->getLastIncomeMessage()), true);
+    chatComponent->setLastMessage(QString::fromStdString(chat->getLastMessage()), true);
     chatComponent->setUnreadMessageDot(true);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setTheme(themeT);
     m_containerVLayout->insertWidget(0, chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
     chatComponent->setSelected(false);
-}
-
-void ChatsListComponent::recoverChatComponents(ClientSide* clientSide, ChatsWidget* chatsWidget) {
-    auto& vec = clientSide->getMyChatsVec();
-    for (auto area : chatsWidget->getMessagingComponentsCacheVec()) {
-        ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, area->getChat());
-        chatComponent->setName(QString::fromStdString(area->getChat()->getFriendName()));
-        chatComponent->setTheme(m_theme);
-        
-        Chat* chat = area->getChat();
-        if (chat->getNotReadReceivedMsgVec().size() > 0) {
-            chatComponent->setUnreadMessageDot(true);
-        }
-
-
-        auto& messages = area->getMessagesComponentsVec();
-        auto lastMessageComponent = messages.back(); 
-        auto lastMessage = lastMessageComponent->getMessage(); 
-        chatComponent->setLastMessage(lastMessage, false);
-
-        m_containerVLayout->insertWidget(0, chatComponent);
-        m_vec_chatComponents.push_back(chatComponent);
-    }
-
-    for (auto chatComp : m_vec_chatComponents) {
-        chatComp->setSelected(false);
-    }
 }

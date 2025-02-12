@@ -84,6 +84,7 @@ struct StyleInnerComponent {
 
 class ButtonIcon;
 class MessagingAreaComponent;
+class Message;
 enum Theme;
 
 class InnerComponent : public QWidget {
@@ -125,7 +126,7 @@ class MessageComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit MessageComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, double id, bool isSent);
+    explicit MessageComponent(QWidget* parent, Message* message, Theme theme);
     void setTheme(Theme theme) { m_innerWidget->setTheme(theme); }
 
     void setMessage(const QString& message) { m_innerWidget->setText(message); }
@@ -138,19 +139,18 @@ public:
 
     bool getIsSent() const { return  m_isSent; }
 
-    const double getId() const { return m_id; }
+    bool getIsRead() const { return  m_isRead; }
+
+    const QString& getId() const { return m_id; }
 
 public slots:
     void setReadStatus(bool isRead) { m_innerWidget->setReadStatus(isRead); }
 
-public:
-    QJsonObject serialize() const;
-    static MessageComponent* deserialize(const QJsonObject& jsonObject);
-
 private:
     Theme m_theme;
-    double m_id;
+    QString m_id;
     bool m_isSent;
+    bool m_isRead;
     QHBoxLayout* m_main_HLayout;
     InnerComponent* m_innerWidget;
 };
