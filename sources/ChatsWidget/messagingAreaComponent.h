@@ -139,6 +139,7 @@ signals:
 
 public slots:
     void addMessage(Message* message);
+    void markMessageAsChecked(Message* message);
 
 private slots:
     void adjustTextEditHeight();
@@ -159,7 +160,7 @@ private:
     QVBoxLayout* m_sendMessage_VLayout;
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
-    ChatsWidget* m_chatsWidget;
+    
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;
@@ -169,4 +170,5 @@ private:
     ButtonCursor*           m_sendMessageButton;
 
     Chat*                   m_chat;
+    ChatsWidget*            m_chatsWidget;
 };

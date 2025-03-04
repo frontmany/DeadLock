@@ -4,9 +4,9 @@
 #include "chatsWidget.h"
 #include "utility.h"
 #include "mainWindow.h"
-#include "photo.h"
 #include "buttons.h"
 #include "message.h"
+#include "client.h"
 #include <random>
 #include <limits>
 
@@ -158,4 +158,12 @@ void MessagingAreaComponent::addMessage(Message* message) {
     MessageComponent* messageComp = new MessageComponent(this, message, m_theme);
     m_vec_messagesComponents.push_back(messageComp);
     m_containerVLayout->addWidget(messageComp);
+}
+
+void MessagingAreaComponent::markMessageAsChecked(Message* message) {
+    std::thread th([this, message]() {
+        Client* client = m_chatsWidget->getClientSide();
+        client->sendMessageReadConfirmation(m_chat->getFriendLogin(), { message });
+        });
+    th.join();
 }

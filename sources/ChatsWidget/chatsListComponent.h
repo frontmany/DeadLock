@@ -14,6 +14,7 @@
 #include <QMouseEvent>
 #include <QEvent>
 #include "ChatComponent.h"
+#include "mainwindow.h"
 
 
 
@@ -111,7 +112,6 @@ class ButtonIcon;
 class ToggleSwitch;
 class Client;
 class ChatsWidget;
-enum Theme;
 
 class ChatsListComponent : public QWidget {
     Q_OBJECT
@@ -120,7 +120,6 @@ public:
     ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme);
     ~ChatsListComponent();
     void setTheme(Theme theme);
-    void addChatComponent(Theme theme, Chat* chat);
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
@@ -133,7 +132,7 @@ signals:
 
 
 public slots:
-    void addChatComponentSlot(QString theme, Chat* chat);
+    void addChatComponent(Theme theme, Chat* chat, bool isSelected);
     void openAddChatDialog();
     void closeAddChatDialog();
     void receiveCreateChatData(QString login);
@@ -161,7 +160,7 @@ private:
     RoundIconButton*    m_profileButton;
     ButtonIcon*         m_newChatButton;
     AddChatDialogComponent* m_chatAddDialog;
-
+    ChatsWidget*        m_chats_widget;
 
     std::vector<ChatComponent*> m_vec_chatComponents;
     bool m_isChatAddDialog = false;

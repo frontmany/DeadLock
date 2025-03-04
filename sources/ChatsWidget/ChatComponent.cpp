@@ -158,7 +158,7 @@ void ChatComponent::setName(const QString& name) {
     m_nameLabel->setText(name);
 }
 
-void ChatComponent::setLastMessage(const QString& message, bool fromAnotherThread) {
+void ChatComponent::setLastMessage(const QString& message) {
     if (message.length() > 15) {
         std::string s = message.toStdString().substr(0, 15) + "...";
         m_lastMessageLabel->setText(QString::fromStdString(s));

@@ -3,6 +3,7 @@
 #include "utility.h"
 #include "client.h"
 #include "chatsListComponent.h"
+#include "workerQt.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     if (isDarkMode()) {
@@ -12,19 +13,22 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         m_theme = LIGHT;
     }
 
-
-
     m_chatsWidget = nullptr;
     m_client = new Client;
     m_client->connectTo("192.168.1.49", 8080);
     m_client->run();
-    //m_client->setWorkerUI(&workerUI);
-
+    m_client->setWorkerUI(m_worker);
+    
     setupLoginWidget();
 }
 
 
 MainWindow::~MainWindow() {
+    qDebug() << "window closing";
+    if (m_client->isAuthorized() == true) {
+        m_client->sendMyStatus(Utility::getCurrentDateTime());
+        m_client->save();
+    }
     delete m_chatsWidget;
 }
 
@@ -47,18 +51,15 @@ bool MainWindow::isDarkMode() {
     return false;
 }
 
-
 void MainWindow::onLogin() {
     setupChatsWidget();
 }
-
 
 void MainWindow::setupLoginWidget() {
     m_loginWidget = new LoginWidget(this, this, m_client);
     m_loginWidget->setTheme(m_theme);
     setCentralWidget(m_loginWidget);
 }
-
 
 void MainWindow::setupChatsWidget() {
     QString directoryPath = Utility::getSaveDir();
@@ -78,8 +79,10 @@ void MainWindow::setupChatsWidget() {
         }
     }
     m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
-    m_chatsWidget->load();
+    m_chatsWidget->setup();
     m_chatsWidget->setTheme(m_theme);
     m_chatsWidget->setTheme(m_theme);
     setCentralWidget(m_chatsWidget);
+    m_worker = new WorkerQt(m_chatsWidget, m_client);
+    m_client->setWorkerUI(m_worker);
 }

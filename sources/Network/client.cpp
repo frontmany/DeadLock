@@ -1,5 +1,6 @@
 #include "Client.h"
 #include "utility.h"
+#include "workerUI.h"
 #include <iostream>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -10,6 +11,7 @@
 Client::Client() :  m_isReceiving(true),
 sh_is_authorized(OperationResult::NOT_STATED),
 sh_is_message_send(OperationResult::NOT_STATED),
+sh_is_first_message_send(OperationResult::NOT_STATED),
 sh_is_info_updated(OperationResult::NOT_STATED),
 sh_is_message_read_confirmation_send(OperationResult::NOT_STATED),
 sh_chat_create(OperationResult::NOT_STATED),
@@ -100,11 +102,16 @@ void Client::handleResponse(const std::string& packet) {
     }
     else if (type == "AUTHORIZATION_SUCCESS") {
         sh_is_authorized = OperationResult::SUCCESS;
+        while (m_is_loaded == false) {
+            continue;
+        }
+        m_worker->onAuthorization(iss.str());
     }
     else if (type == "AUTHORIZATION_FAIL") {
         sh_is_authorized = OperationResult::FAIL;
     }
     else if (type == "CHAT_CREATE_SUCCESS") {
+        processChatCreateSuccess(iss.str());
         sh_chat_create = OperationResult::SUCCESS;
     }
     else if (type == "CHAT_CREATE_FAIL") {
@@ -122,17 +129,54 @@ void Client::handleResponse(const std::string& packet) {
     else if (type == "MESSAGE_READ_CONFIRAMTION_FAIL") {
         sh_is_message_read_confirmation_send = OperationResult::FAIL;
     }
-
+    else if (type == "LOGIN_TO_SEND_STATUS") {
+        std::string login;
+        std::getline(iss, login);
+        m_vec_friends_logins_tmp.push_back(login);
+    }
 
     else if (type == "STATUS") {
-        m_worker->onStatusReceive();
+        m_worker->onStatusReceive(iss.str());
     }
     else if (type == "MESSAGE") {
-        m_worker->onMessageReceive();
+        m_worker->onMessageReceive(iss.str());
     }
-    else if (type == "MESSAGE_READ_CONFIRMATION") {
-        m_worker->onMessageReadConfirmationReceive();
+    else if (type == "FIRST_MESSAGE") {
+        m_worker->onFirstMessageReceive(iss.str());
     }
+    else if (type == "MESSAGES_READ_CONFIRMATION") {
+        m_worker->onMessageReadConfirmationReceive(iss.str());
+    }
+}
+
+void Client::processChatCreateSuccess(const std::string& packet) {
+    std::istringstream iss(packet);
+    std::string type;
+    std::getline(iss, type);
+
+    std::string login;
+    std::getline(iss, login);
+    std::string name;
+    std::getline(iss, name);
+    std::string isHasPhoto;
+    std::getline(iss, isHasPhoto);
+    std::string photoStr;
+    std::getline(iss, photoStr);
+    std::string lastSeen;
+    std::getline(iss, lastSeen);
+
+
+    Chat* chat = new Chat;
+    chat->setFriendLogin(login);
+    chat->setFriendName(name);
+    chat->setIsFriendHasPhoto(isHasPhoto == "true");
+    Photo* photo = Photo::deserialize(photoStr);
+    chat->setFriendPhoto(photo);
+    chat->setFriendLastSeen(lastSeen);
+    chat->setLastIncomeMsg("no messages yet");
+
+
+    m_map_friend_login_to_chat[login] = chat;
 }
 
 OperationResult Client::authorizeClient(const std::string& login, const std::string& password) {
@@ -155,6 +199,7 @@ OperationResult Client::authorizeClient(const std::string& login, const std::str
         return OperationResult::SUCCESS;
     }
     else {
+        sh_is_authorized = OperationResult::NOT_STATED;
         return OperationResult::FAIL;
     }
 }
@@ -181,6 +226,7 @@ OperationResult Client::registerClient(const std::string& login, const std::stri
         return OperationResult::SUCCESS;
     }
     else {
+        sh_is_authorized = OperationResult::NOT_STATED;
         return OperationResult::FAIL;
     }
 }
@@ -192,7 +238,7 @@ OperationResult Client::createChatWith(const std::string& friendLogin) {
     sendPacket(m_sender.get_createChat_QueryStr(m_my_login, friendLogin));
 
     auto startTime = std::chrono::steady_clock::now();
-    auto timeout = std::chrono::seconds(5);
+    auto timeout = std::chrono::milliseconds(300);
 
     while (sh_chat_create == OperationResult::NOT_STATED) {
         auto currentTime = std::chrono::steady_clock::now();
@@ -205,13 +251,14 @@ OperationResult Client::createChatWith(const std::string& friendLogin) {
     }
 
     if (sh_chat_create == OperationResult::SUCCESS) {
+        sh_chat_create = OperationResult::NOT_STATED;
         return OperationResult::SUCCESS;
     }
 
     else {
+        sh_chat_create = OperationResult::NOT_STATED;
         return OperationResult::FAIL;
     }
-
 }
 
 OperationResult Client::sendMyStatus(const std::string& status) {
@@ -219,6 +266,10 @@ OperationResult Client::sendMyStatus(const std::string& status) {
     for (const auto& pair : m_map_friend_login_to_chat) {
         friendsLoginsVec.push_back(pair.first);
     }
+    for (const auto& login : m_vec_friends_logins_tmp) {
+        friendsLoginsVec.push_back(login);
+    }
+
     std::string packet = m_sender.get_status_ReplyStr(status, m_my_login, friendsLoginsVec);
     sendPacket(packet);
 
@@ -249,9 +300,11 @@ OperationResult Client::updateMyInfo(const std::string& login, const std::string
     }
 
     if (sh_is_info_updated == OperationResult::SUCCESS) {
+        sh_is_info_updated = OperationResult::NOT_STATED;
         return OperationResult::SUCCESS;
     }
     else {
+        sh_is_info_updated = OperationResult::NOT_STATED;
         return OperationResult::FAIL;
     }
 }
@@ -273,9 +326,18 @@ OperationResult Client::waitForResponse(int seconds, std::function<OperationResu
     sh_is_message_send = OperationResult::NOT_STATED;
 }
 
-OperationResult Client::sendMessage(const std::string& friendLogin, const std::string& message, std::string timestamp) {
+OperationResult Client::sendMessage(const std::string& friendLogin, const std::string& message, const std::string& id, std::string timestamp) {
     std::lock_guard<std::mutex> guard(m_mtx);
-    sendPacket(m_sender.get_message_ReplyStr(m_my_login, friendLogin, message, timestamp));
+    sendPacket(m_sender.get_message_ReplyStr(m_my_login, friendLogin, message, id, timestamp));
+    return waitForResponse(5, [this] {
+        return sh_is_message_send;
+        });
+
+}
+
+OperationResult Client::sendFirstMessage(const std::string& friendLogin, const std::string& message, const std::string& id, const std::string timestamp) {
+    std::lock_guard<std::mutex> guard(m_mtx);
+    sendPacket(m_sender.get_first_message_ReplyStr(m_my_login, m_my_name, m_is_has_photo, m_my_photo, friendLogin, message, id, timestamp));
     return waitForResponse(5, [this] {
         return sh_is_message_send;
         });
@@ -297,21 +359,30 @@ void Client::sendPacket(const std::string& packet) {
     asio::write(m_socket, asio::buffer(packet), asio::transfer_all());
 }
 
-
 void Client::save() const {
     QJsonObject jsonObject;
     QJsonArray chatsArray;
 
+    // Сериализация чатов
     for (const auto& chatPair : m_map_friend_login_to_chat) {
         chatsArray.append(chatPair.second->serialize(m_db));
     }
     jsonObject["chatsArray"] = chatsArray;
 
+    // Сохранение информации о клиенте
     jsonObject["my_login"] = QString::fromStdString(m_my_login);
     jsonObject["my_name"] = QString::fromStdString(m_my_name);
     jsonObject["is_has_photo"] = m_is_has_photo;
     jsonObject["my_photo"] = QString::fromStdString(m_my_photo.getPhotoPath());
 
+    // Сохранение вектора логинов друзей
+    QJsonArray friendsLoginsArray;
+    for (const auto& login : m_vec_friends_logins_tmp) {
+        friendsLoginsArray.append(QString::fromStdString(login));
+    }
+    jsonObject["friends_logins"] = friendsLoginsArray;
+
+    // Определение директории для сохранения
     QString dir = Utility::getSaveDir();
     QString fileName = QString::fromStdString(m_my_login) + ".json";
 
@@ -335,10 +406,17 @@ void Client::save() const {
     }
 }
 
+
 void Client::load(const std::string& fileName) {
-    QFile file(QString::fromStdString(fileName));
+    QString dir = Utility::getSaveDir();
+    QString fileNameFinal = QString::fromStdString(fileName) + ".json";
+    QDir saveDir(dir);
+    QString fullPath = saveDir.filePath(fileNameFinal);
+
+    QFile file(fullPath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "Couldn't open the file:" << QString::fromStdString(fileName);
+        return; // Добавляем return, чтобы избежать дальнейших операций, если файл не открыт
     }
 
     QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
@@ -346,6 +424,7 @@ void Client::load(const std::string& fileName) {
 
     if (!loadDoc.isObject()) {
         qWarning() << "Invalid JSON in the file:" << QString::fromStdString(fileName);
+        return; // Добавляем return для обработки ошибки
     }
 
     QJsonObject jsonObject = loadDoc.object();
@@ -354,7 +433,7 @@ void Client::load(const std::string& fileName) {
     m_is_has_photo = jsonObject["is_has_photo"].toBool();
 
     if (jsonObject.contains("my_photo")) {
-        m_my_photo = Photo(jsonObject["my_photo"].toString().toStdString()); 
+        m_my_photo = Photo(jsonObject["my_photo"].toString().toStdString());
     }
 
     if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].isArray()) {
@@ -362,8 +441,26 @@ void Client::load(const std::string& fileName) {
         for (const QJsonValue& value : chatsArray) {
             Chat* chat = Chat::deserialize(value.toObject(), m_db);
             if (chat) {
-                m_map_friend_login_to_chat[chat->getFriendLogin()] = chat; 
+                m_map_friend_login_to_chat[chat->getFriendLogin()] = chat;
             }
         }
-    } 
+    }
+
+    // Чтение вектора логинов друзей
+    if (jsonObject.contains("friends_logins") && jsonObject["friends_logins"].isArray()) {
+        QJsonArray friendsLoginsArray = jsonObject["friends_logins"].toArray();
+        m_vec_friends_logins_tmp.clear(); // Очищаем вектор перед загрузкой
+        for (const QJsonValue& value : friendsLoginsArray) {
+            m_vec_friends_logins_tmp.push_back(value.toString().toStdString());
+        }
+    }
+}
+
+bool Client::isAuthorized() {
+    if (sh_is_authorized == OperationResult::SUCCESS) {
+        return true;
+    }
+    else {
+        return false;
+    }
 }

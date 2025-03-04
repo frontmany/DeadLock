@@ -60,19 +60,19 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
     else {
         m_mainHLayout->removeWidget(m_current_messagingAreaComponent);
         m_current_messagingAreaComponent->hide();
-        m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
     }
 
     Chat* chat = m_client->getMyChatsMap()[login.toStdString()];
+    chat->setLastIncomeMsg("no messages yet");
 
-    auto messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat, this);
+    MessagingAreaComponent* messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat, this);
     m_current_messagingAreaComponent = messagingAreaComponent;
     m_current_messagingAreaComponent->setTheme(m_theme);
-    m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
     m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
-    m_chatsListComponent->addChatComponent(m_theme, chat);
+    m_chatsListComponent->addChatComponent(m_theme, chat, true);
     m_chatsListComponent->closeAddChatDialog();
+    m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
 }
 
 void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
@@ -95,7 +95,6 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     }
     else {
         m_current_messagingAreaComponent = *itMsgComp;
-        m_current_messagingAreaComponent->setTheme(m_theme);
         m_current_messagingAreaComponent->show();
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
@@ -121,13 +120,23 @@ void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
     ChatComponent* comp = *itComponentsVec;
     if (message->getMessage().length() > 15) {
         std::string s = message->getMessage().substr(0, 15) + "...";
-        comp->setLastMessage(QString::fromStdString(s), false);
+        comp->setLastMessage(QString::fromStdString(s));
     }
     else {
-        comp->setLastMessage(QString::fromStdString(message->getMessage()), false);
+        comp->setLastMessage(QString::fromStdString(message->getMessage()));
     }
 
-    m_client->sendMessage(chat->getFriendLogin(), message->getMessage(), message->getTimestamp());
+    chat->setLastIncomeMsg(message->getMessage());
+
+
+    if (chat->getMessagesVec().size() == 0) {
+        m_client->sendFirstMessage(chat->getFriendLogin(), message->getMessage(), message->getId(), message->getTimestamp());
+    }
+    else {
+        m_client->sendMessage(chat->getFriendLogin(), message->getMessage(), message->getId(), message->getTimestamp());
+    }
+
+    chat->getMessagesVec().push_back(message);
 }
 
 void ChatsWidget::onChangeThemeClicked() {
@@ -140,6 +149,12 @@ void ChatsWidget::onChangeThemeClicked() {
         setTheme(DARK);
     }
     
+} 
+
+void ChatsWidget::createMessagingComponent(std::string friendName, Chat* chat) {
+    MessagingAreaComponent* newComp = new MessagingAreaComponent(nullptr, QString::fromStdString(friendName), m_theme, chat, this);
+    newComp->hide();
+    m_vec_messagingComponents_cache.push_back(newComp);
 }
 
 void ChatsWidget::setTheme(Theme theme) {
@@ -161,16 +176,6 @@ void ChatsWidget::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 }
 
-/*
-void ChatsWidget::createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id) {
-    MessagingAreaComponent* newComp = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat, this);
-    newComp->setTheme(m_theme);
-    Message* m = new Message(message.toStdString(), timeStamp.toStdString(), )
-    newComp->addMessage(message, timeStamp, id);
-    m_vec_messagingComponents_cache.push_back(newComp);
-}
-*/
-
 void ChatsWidget::setBackGround(Theme theme) {
     if (theme == DARK) {
         if (m_background.load(":/resources/ChatsWidget/darkChatsBackground.jpg")) {
@@ -188,9 +193,9 @@ void ChatsWidget::setClient(Client* client) {
     m_client = client;
 }
 
-void ChatsWidget::load() {
+void ChatsWidget::setup() {
     for (auto chatPair : m_client->getMyChatsMap()) {
-        m_chatsListComponent->addChatComponent(m_theme, chatPair.second);
+        m_chatsListComponent->addChatComponent(m_theme, chatPair.second, false);
         MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
         m_vec_messagingComponents_cache.push_back(area);
     }

@@ -50,7 +50,7 @@ std::string Photo::serialize() const{
 
 
 Photo* Photo::deserialize(const std::string& data) {
-    if (data == "no photo") {
+    if (data == "") {
         return nullptr;
     }
 

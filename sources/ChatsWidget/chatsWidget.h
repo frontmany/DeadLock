@@ -25,23 +25,23 @@ class ChatsWidget : public QWidget {
 	Q_OBJECT
 public:
 	ChatsWidget(QWidget* parent, Client* client, Theme theme);
-	ChatsWidget() {}
+	ChatsWidget() = default;
 	~ChatsWidget();
 	void setTheme(Theme theme);
 	const Theme getTheme() const { return m_theme; }
 	
-	MessagingAreaComponent* getMessagingArea() { return m_current_messagingAreaComponent; }
+	MessagingAreaComponent* getCurrentMessagingArea() { return m_current_messagingAreaComponent; }
 	Client* getClientSide() { return m_client; }
 	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
 	std::vector<MessagingAreaComponent*>& getMessagingComponentsCacheVec() { return m_vec_messagingComponents_cache; }
 	void setClient(Client* client);
 
-	void load();
+	void setup(); //have to be called after loading m_client
 
 public slots:
+	void createMessagingComponent(std::string friendName, Chat* chat);
 	void onChangeThemeClicked();
 	void onSendMessageData(Message* message, Chat* chat);
-	//void createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id);
 	void onCreateChatButtonClicked(QString login);
 	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
 	

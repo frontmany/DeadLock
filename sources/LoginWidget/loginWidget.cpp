@@ -49,6 +49,8 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
     if (isLog == OperationResult::SUCCESS) {
         m_client->load(login.toStdString());
         m_client->setMyLogin(login.toStdString());
+        m_client->sendMyStatus("online");
+        emit(sendLoginSuccess());
     }
     else if (isLog == OperationResult::FAIL) {
         // todo DIALOG

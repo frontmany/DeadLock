@@ -22,9 +22,10 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
     m_textLabel->setWordWrap(true); 
     m_textLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_textLabel->setMaximumWidth(400); 
+    m_textLabel->setMinimumHeight(38); 
     m_textLabel->adjustSize();
+    m_text_VLayout->addSpacing(-3);
     m_text_VLayout->addWidget(m_textLabel);
-    m_text_VLayout->addSpacing(-15);
 
     m_time_VLayout = new QVBoxLayout;
     m_time_VLayout->setAlignment(Qt::AlignBottom);
@@ -136,8 +137,9 @@ MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme them
 
    
     setLayout(m_main_HLayout);
-    setReadStatus(false);
+    setIsRead(false);
     setTheme(theme);
+    m_innerWidget->setReadStatus(false);
 
     if (message->getMessage().length() <= 150) {
         setFixedHeight(55);

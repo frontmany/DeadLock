@@ -48,7 +48,7 @@ private slots:
 
 public slots:
     void setUnreadMessageDot(bool isUnreadMessages);
-    void setLastMessage(const QString& message, bool fromAnotherThread);
+    void setLastMessage(const QString& message);
 
 signals:
     void clicked();

@@ -61,6 +61,10 @@ void Database::init() {
 
 
 void Database::saveMessages(const std::string& login, std::vector<Message*> messages) const {
+    if (messages.size() == 0) {
+        return;
+    }
+
     std::string text;
     for (auto& message : messages) {
         text += message->serialize() + ',';

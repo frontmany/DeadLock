@@ -11,6 +11,7 @@
 #include "chatsWidget.h"
 
 class Client;
+class WorkerQt;
 
 
 /*
@@ -43,7 +44,8 @@ class MainWindow : public QMainWindow {
 public:
 	explicit MainWindow(QWidget* parent);
 	~MainWindow();
-	
+
+
 public slots:
 	void onLogin();
 
@@ -53,6 +55,7 @@ private:
 	bool isDarkMode();
 
 private:
+	WorkerQt*		m_worker;
 	Theme			m_theme;
 	Client*			m_client;
 	LoginWidget*	m_loginWidget;

@@ -15,7 +15,7 @@
 
 ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme)
     : QWidget(parent), m_backgroundColor(Qt::transparent),
-    m_chatsWidget(chatsWidget), m_chatAddDialog(nullptr) {
+    m_chatsWidget(chatsWidget), m_chatAddDialog(nullptr), m_chats_widget(chatsWidget){
 
     style = new StyleChatsListComponent;
     m_backgroundColor = QColor(20, 20, 20, 200);
@@ -115,16 +115,17 @@ void ChatsListComponent::receiveCreateChatData(QString login) {
     emit sendCreateChatData(login2);
 }
 
-void ChatsListComponent::addChatComponent(Theme theme, Chat* chat) {
+void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelected) {
     for (auto chatComp : m_vec_chatComponents) {
         chatComp->setSelected(false);
     }
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
+    chatComponent->setLastMessage(QString::fromStdString(chat->getLastMessage()));
     chatComponent->setTheme(theme);
+    chatComponent->setSelected(isSelected);
     m_containerVLayout->insertWidget(0, chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
-    chatComponent->setSelected(false);
 }
 
 
@@ -186,24 +187,3 @@ void ChatsListComponent::popUpComponent(ChatComponent* comp) {
     m_containerVLayout->insertWidget(0, comp);
 }
 
-void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
-    Theme themeT;
-    if (theme == "DARK") {
-        themeT = DARK;
-    }
-    else {
-        themeT = LIGHT;
-    }
-
-    for (auto chatComp : m_vec_chatComponents) {
-        chatComp->setSelected(false);
-    }
-    ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
-    chatComponent->setLastMessage(QString::fromStdString(chat->getLastMessage()), true);
-    chatComponent->setUnreadMessageDot(true);
-    chatComponent->setName(QString::fromStdString(chat->getFriendName()));
-    chatComponent->setTheme(themeT);
-    m_containerVLayout->insertWidget(0, chatComponent);
-    m_vec_chatComponents.push_back(chatComponent);
-    chatComponent->setSelected(false);
-}

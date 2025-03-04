@@ -127,7 +127,8 @@ class MessageComponent : public QWidget {
 
 public:
     explicit MessageComponent(QWidget* parent, Message* message, Theme theme);
-    void setTheme(Theme theme) { m_innerWidget->setTheme(theme); }
+    void setTheme(Theme theme) { m_innerWidget->setTheme(theme);
+    }
 
     void setMessage(const QString& message) { m_innerWidget->setText(message); }
     const QString& getMessage() const{ return m_innerWidget->getText(); }
@@ -140,11 +141,15 @@ public:
     bool getIsSent() const { return  m_isSent; }
 
     bool getIsRead() const { return  m_isRead; }
-
+   
     const QString& getId() const { return m_id; }
 
 public slots:
-    void setReadStatus(bool isRead) { m_innerWidget->setReadStatus(isRead); }
+    void setIsRead(bool isRead) {
+        m_innerWidget->setIsRead(isRead);
+        m_innerWidget->setReadStatus(isRead);
+        m_isRead = isRead;
+    }
 
 private:
     Theme m_theme;
