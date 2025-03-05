@@ -61,20 +61,22 @@ void Database::init() {
 
 
 void Database::saveMessages(const std::string& login, std::vector<Message*> messages) const {
-    if (messages.size() == 0) {
+    if (messages.empty()) {
         return;
     }
 
-    std::string text;
-    for (auto& message : messages) {
-        text += message->serialize() + ',';
+    std::ostringstream oss;
+    for (size_t i = 0; i < messages.size(); ++i) {
+        oss << messages[i]->serialize();
+        if (i < messages.size() - 1) {
+            oss << ',';
+        }
     }
-    text.pop_back();
+    std::string text = oss.str();
 
-    const char* sql = "INSERT INTO USER (LOGIN, MESSAGES) "
-        "VALUES (?, ?);";
+    const char* sql = "INSERT INTO MESSAGES (LOGIN, MESSAGES) VALUES (?, ?);";
 
-    sqlite3_stmt* stmt = nullptr;;
+    sqlite3_stmt* stmt = nullptr;
     int rc;
 
     rc = sqlite3_prepare_v2(m_db, sql, -1, (void**)&stmt, nullptr);
@@ -83,7 +85,8 @@ void Database::saveMessages(const std::string& login, std::vector<Message*> mess
         return;
     }
 
-    std::string time = Utility::getCurrentDateTime().c_str();
+
+    std::string time = Utility::getCurrentDateTime();
     sqlite3_bind_text(stmt, 1, login.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, text.c_str(), -1, SQLITE_STATIC);
 
@@ -92,16 +95,17 @@ void Database::saveMessages(const std::string& login, std::vector<Message*> mess
         std::cerr << "Execution failed: " << sqlite3_errmsg(m_db) << std::endl;
     }
     else {
-        std::cout << "User  added successfully" << std::endl;
+        std::cout << "Messages added successfully" << std::endl;
     }
 
     sqlite3_finalize(stmt);
 }
 
+
 std::vector<Message*> Database::loadMessages(const std::string& login) const {
     std::vector<Message*> messages;
 
-    const char* sql = "SELECT MESSAGES FROM USER WHERE LOGIN = ?;";
+    const char* sql = "SELECT MESSAGES FROM MESSAGES WHERE LOGIN = ?;";
     sqlite3_stmt* stmt = nullptr;
     int rc;
 

@@ -62,18 +62,6 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
     setTheme(m_theme);
 }
 
-void InnerComponent::setReadStatus(bool read) {
-    
-    if (read) {
-        m_is_read = true;
-        m_readStatusBtn->setTheme(LIGHT);
-    }
-    else {
-        m_is_read = false;
-        m_readStatusBtn->setTheme(DARK);
-    }
-}
-
 void InnerComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -86,6 +74,17 @@ void InnerComponent::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event); // Вызываем базовый метод
 }
 
+void InnerComponent::setReadStatus(bool read) {
+
+    if (read) {
+        m_is_read = true;
+        m_readStatusBtn->setTheme(LIGHT);
+    }
+    else {
+        m_is_read = false;
+        m_readStatusBtn->setTheme(DARK);
+    }
+}
 
 void InnerComponent::setTheme(Theme theme) {
     m_theme = theme;

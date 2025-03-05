@@ -47,8 +47,7 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
     OperationResult isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
     if (isLog == OperationResult::SUCCESS) {
-        m_client->load(login.toStdString());
-        m_client->setMyLogin(login.toStdString());
+        m_client->load(login.toStdString() + ".json");
         m_client->sendMyStatus("online");
         emit(sendLoginSuccess());
     }
@@ -63,9 +62,8 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
     OperationResult isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
     if (isLog == OperationResult::SUCCESS) {
-        m_client->load(login.toStdString());
-        m_client->setMyLogin(login.toStdString());
-        m_client->setMyName(name.toStdString());
+        m_client->load(login.toStdString() + ".json");
+        m_client->sendMyStatus("online");
         emit(sendLoginSuccess());
     }
     else if (isLog == OperationResult::FAIL){

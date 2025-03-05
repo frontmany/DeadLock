@@ -124,6 +124,8 @@ void WorkerQt::onMessageReceive(std::string packet) {
 			"markMessageAsChecked",
 			Qt::QueuedConnection,
 			Q_ARG(Message*, msg));
+
+		chat->getMessagesVec().back()->setIsRead(true);
 	}
 }
 

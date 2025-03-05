@@ -51,7 +51,7 @@ std::string Photo::serialize() const{
 
 Photo* Photo::deserialize(const std::string& data) {
     if (data == "") {
-        return nullptr;
+        return new Photo;
     }
 
     std::istringstream iss(data);

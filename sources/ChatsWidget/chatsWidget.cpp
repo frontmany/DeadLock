@@ -31,14 +31,11 @@ ChatsWidget::ChatsWidget(QWidget* parent, Client* client, Theme theme)
 	
 }
 
-
-
 ChatsWidget::~ChatsWidget() {
     for (auto comp : m_vec_messagingComponents_cache) {
         delete comp;
     }
 }
-
 
 void ChatsWidget::onCreateChatButtonClicked(QString login) {
     OperationResult res = m_client->createChatWith(login.toStdString());
@@ -101,6 +98,9 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         auto unreadVec = chat->getUnreadReceiveMessagesVec();
         if (unreadVec.size() > 0) {
             m_client->sendMessageReadConfirmation(chat->getFriendLogin(), unreadVec);
+            for (auto msg : unreadVec) {
+                msg->setIsRead(true);
+            }
         }
 
     }
@@ -169,7 +169,6 @@ void ChatsWidget::setTheme(Theme theme) {
     }
 }
 
-
 void ChatsWidget::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.drawPixmap(this->rect(), m_background);
@@ -188,15 +187,24 @@ void ChatsWidget::setBackGround(Theme theme) {
     update();
 }
 
-
 void ChatsWidget::setClient(Client* client) {
     m_client = client;
 }
 
 void ChatsWidget::setup() {
     for (auto chatPair : m_client->getMyChatsMap()) {
-        m_chatsListComponent->addChatComponent(m_theme, chatPair.second, false);
         MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
+        area->hide();
         m_vec_messagingComponents_cache.push_back(area);
+    }
+}
+
+void ChatsWidget::setupChatComponents() {
+    for (auto chatPair : m_client->getMyChatsMap()) {
+        m_chatsListComponent->addChatComponent(m_theme, chatPair.second, false);
+        ChatComponent* comp = m_chatsListComponent->getChatComponentsVec().back();
+        comp->setUnreadMessageDot(false);
+        comp->setLastMessage(QString::fromStdString(chatPair.second->getLastMessage()));
+
     }
 }

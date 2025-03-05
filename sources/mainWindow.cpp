@@ -62,26 +62,12 @@ void MainWindow::setupLoginWidget() {
 }
 
 void MainWindow::setupChatsWidget() {
-    QString directoryPath = Utility::getSaveDir();
-
-    QDir dir(directoryPath);
-    if (!dir.exists()) {
-        qWarning() << "The directory was not found:" << directoryPath;
-    }
-    QStringList fileList = dir.entryList(QDir::Files);
-
-    if (fileList.size() > 0) {
-        for (const QString& fileName : fileList) {
-            if (fileName.left(fileName.length() - 5) == QString::fromStdString(m_client->getMyLogin())) {
-                m_client->load(fileName.toStdString());
-
-            }
-        }
-    }
     m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
+    m_chatsWidget->setTheme(m_theme);
+
     m_chatsWidget->setup();
-    m_chatsWidget->setTheme(m_theme);
-    m_chatsWidget->setTheme(m_theme);
+    m_chatsWidget->setupChatComponents();
+
     setCentralWidget(m_chatsWidget);
     m_worker = new WorkerQt(m_chatsWidget, m_client);
     m_client->setWorkerUI(m_worker);

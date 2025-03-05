@@ -36,7 +36,9 @@ public:
 	std::vector<MessagingAreaComponent*>& getMessagingComponentsCacheVec() { return m_vec_messagingComponents_cache; }
 	void setClient(Client* client);
 
-	void setup(); //have to be called after loading m_client
+	//have to be called after loading m_client
+	void setup(); 
+	void setupChatComponents();
 
 public slots:
 	void createMessagingComponent(std::string friendName, Chat* chat);
@@ -47,7 +49,6 @@ public slots:
 	
 
 private:
-	void loadChats() {/*TODO*/}
 	void paintEvent(QPaintEvent* event) override;
 	void setBackGround(Theme theme);
 

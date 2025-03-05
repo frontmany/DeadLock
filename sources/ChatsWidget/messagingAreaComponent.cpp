@@ -132,7 +132,7 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
 
 
 void MessagingAreaComponent::onSendMessageClicked() {
-    Message* message = new Message(m_messageInputEdit->toPlainText().toStdString(), Utility::getCurrentTime(), Utility::generateId(), true);
+    Message* message = new Message(m_messageInputEdit->toPlainText().toStdString(), Utility::getCurrentTime(), Utility::generateId(), true, false);
     addMessage(message);
     m_containerWidget->adjustSize();
     m_scrollArea->verticalScrollBar()->setValue(m_scrollArea->verticalScrollBar()->maximum());
@@ -156,6 +156,15 @@ void MessagingAreaComponent::onTypeMessage() {
 
 void MessagingAreaComponent::addMessage(Message* message) {
     MessageComponent* messageComp = new MessageComponent(this, message, m_theme);
+    if (message->getIsSend()) {
+        if (message->getIsRead()) {
+            messageComp->setIsRead(true);
+        }
+        else {
+            messageComp->setIsRead(false);
+        }
+    }
+    
     m_vec_messagesComponents.push_back(messageComp);
     m_containerVLayout->addWidget(messageComp);
 }

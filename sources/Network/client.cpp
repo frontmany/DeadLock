@@ -409,7 +409,7 @@ void Client::save() const {
 
 void Client::load(const std::string& fileName) {
     QString dir = Utility::getSaveDir();
-    QString fileNameFinal = QString::fromStdString(fileName) + ".json";
+    QString fileNameFinal = QString::fromStdString(fileName);
     QDir saveDir(dir);
     QString fullPath = saveDir.filePath(fileNameFinal);
 
