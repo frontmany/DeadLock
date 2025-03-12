@@ -101,11 +101,8 @@ void Client::handleResponse(const std::string& packet) {
         sh_is_authorized = OperationResult::FAIL;
     }
     else if (type == "AUTHORIZATION_SUCCESS") {
+        sh_packet_auth = iss.str();
         sh_is_authorized = OperationResult::SUCCESS;
-        while (m_is_loaded == false) {
-            continue;
-        }
-        m_worker->onAuthorization(iss.str());
     }
     else if (type == "AUTHORIZATION_FAIL") {
         sh_is_authorized = OperationResult::FAIL;
@@ -196,6 +193,7 @@ OperationResult Client::authorizeClient(const std::string& login, const std::str
     }
 
     if (sh_is_authorized == OperationResult::SUCCESS) {
+        m_worker->onAuthorization(sh_packet_auth);
         return OperationResult::SUCCESS;
     }
     else {

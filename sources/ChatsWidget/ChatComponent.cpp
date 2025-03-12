@@ -146,8 +146,8 @@ void ChatComponent::setTheme(Theme theme) {
 
 void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
     if (isUnreadMessages == true) {
-        m_UnreadDot->setTheme(m_theme);
         m_UnreadDot->show();
+        //m_UnreadDot->setTheme(m_theme);
     }
     else {
         m_UnreadDot->hide();

@@ -5,6 +5,7 @@
 #include <thread>
 #include <QLayout>
 #include <algorithm>
+#include <mutex>
 
 #include "chat.h"
 
@@ -61,6 +62,8 @@ private:
 	HelloAreaComponent*		m_helloAreaComponent;
 	QVBoxLayout*			m_leftVLayout;
 	QHBoxLayout*			m_mainHLayout;
+
+	std::mutex				m_mtx;
 
 	std::vector<MessagingAreaComponent*> m_vec_messagingComponents_cache;
 	bool m_isFirstChatSet;

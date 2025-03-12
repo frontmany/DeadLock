@@ -13,15 +13,19 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         m_theme = LIGHT;
     }
 
-    m_chatsWidget = nullptr;
     m_client = new Client;
     m_client->connectTo("192.168.1.49", 8080);
     m_client->run();
     m_client->setWorkerUI(m_worker);
     
+    m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
+    m_chatsWidget->hide();
+
+    m_worker = new WorkerQt(m_chatsWidget, m_client);
+    m_client->setWorkerUI(m_worker);
+
     setupLoginWidget();
 }
-
 
 MainWindow::~MainWindow() {
     qDebug() << "window closing";
@@ -31,7 +35,6 @@ MainWindow::~MainWindow() {
     }
     delete m_chatsWidget;
 }
-
 
 bool MainWindow::isDarkMode() {
     HKEY hKey;
@@ -62,13 +65,10 @@ void MainWindow::setupLoginWidget() {
 }
 
 void MainWindow::setupChatsWidget() {
-    m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
+    m_chatsWidget->show();
     m_chatsWidget->setTheme(m_theme);
-
     m_chatsWidget->setup();
     m_chatsWidget->setupChatComponents();
-
+    m_client->chatsWidgetState = true;
     setCentralWidget(m_chatsWidget);
-    m_worker = new WorkerQt(m_chatsWidget, m_client);
-    m_client->setWorkerUI(m_worker);
 }

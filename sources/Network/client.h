@@ -5,6 +5,7 @@
 #include <thread>
 #include <string>
 #include <unordered_map>
+#include <memory>
 
 #include "sender.h"
 #include "database.h"
@@ -53,6 +54,9 @@ public:
     const SendStringsGenerator& getSender() const { return m_sender; }
     std::unordered_map<std::string, Chat*>& getMyChatsMap() { return m_map_friend_login_to_chat; }
     std::vector<std::string>& getVecToSendStatusTmp() { return m_vec_friends_logins_tmp; }
+
+    std::string sh_packet_auth = "";
+    bool chatsWidgetState = false;
 
 private:
     void startAsyncReceive();

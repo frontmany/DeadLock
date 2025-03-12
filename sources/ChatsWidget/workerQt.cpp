@@ -50,6 +50,10 @@ void WorkerQt::onStatusReceive(std::string packet) {
 }
 
 void WorkerQt::onMessageReceive(std::string packet) {
+	while (m_client->chatsWidgetState == false) {
+
+	}
+
 	std::istringstream iss(packet);
 	std::string type;
 	std::getline(iss, type);
@@ -91,12 +95,6 @@ void WorkerQt::onMessageReceive(std::string packet) {
 	Chat* chat = chatPair->second;
 	chat->getMessagesVec().push_back(msg);
 
-	auto& compsVec = m_chats_widget->getMessagingComponentsCacheVec();
-	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
-		return comp->getChat()->getFriendLogin() == friendLogin;
-		});
-
-
 	ChatsListComponent* chatsList = m_chats_widget->getChatsList();
 	auto& vec = chatsList->getChatComponentsVec();
 	auto it = std::find_if(vec.begin(), vec.end(), [&friendLogin](ChatComponent* chatComp) {
@@ -109,9 +107,27 @@ void WorkerQt::onMessageReceive(std::string packet) {
 			"setLastMessage", 
 			Qt::QueuedConnection,
 			Q_ARG(const QString&, QString::fromStdString(message)));
+
+		if (m_chats_widget->getCurrentMessagingArea() == nullptr) {
+			QMetaObject::invokeMethod(chatComp,
+				"setUnreadMessageDot",
+				Qt::QueuedConnection,
+				Q_ARG(bool, true));
+		}
+		else if (m_chats_widget->getCurrentMessagingArea()->getChat()->getFriendLogin() != chat->getFriendLogin()) {
+			QMetaObject::invokeMethod(chatComp,
+				"setUnreadMessageDot",
+				Qt::QueuedConnection,
+				Q_ARG(bool, true));
+		}
 	}
 
+	auto& compsVec = m_chats_widget->getMessagingComponentsCacheVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+		});
 	MessagingAreaComponent* areaComp = *comp;
+
 	QMetaObject::invokeMethod(areaComp,
 		"addMessage",
 		Qt::QueuedConnection,
@@ -120,6 +136,7 @@ void WorkerQt::onMessageReceive(std::string packet) {
 	if (m_chats_widget->getCurrentMessagingArea() == nullptr) {}
 	else if (m_chats_widget->getCurrentMessagingArea()->getChat()->getFriendLogin() == chat->getFriendLogin()) {
 		MessagingAreaComponent* areaComp = *comp;
+
 		QMetaObject::invokeMethod(areaComp,
 			"markMessageAsChecked",
 			Qt::QueuedConnection,
@@ -130,6 +147,8 @@ void WorkerQt::onMessageReceive(std::string packet) {
 }
 
 void WorkerQt::onFirstMessageReceive(std::string packet) {
+	std::unordered_map<std::string, Chat*>& chatsMap = m_client->getMyChatsMap();
+
 	std::istringstream iss(packet);
 	std::string type;
 	std::getline(iss, type);
@@ -162,6 +181,21 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 	std::string timestamp;
 	std::getline(iss, timestamp);
 
+
+	auto itChat = chatsMap.find(friendLogin);
+
+	if (itChat != chatsMap.end()) {
+		std::vector<std::string>& tmpLoginsVec = m_client->getVecToSendStatusTmp();
+		auto it = std::find(tmpLoginsVec.begin(), tmpLoginsVec.end(), friendLogin);
+		if (it != tmpLoginsVec.end()) {
+			tmpLoginsVec.erase(it);
+		}
+		std::string packet2 = "RPL" + '\n' + friendLogin + '\n' + "MESSAGE" + '\n' + myLogin + '\n' + messageBegin + '\n' + message + '\n' + "MESSAGE_END" + '\n' + id + '\n' + timestamp + '\n' + "endPacket";
+		onMessageReceive(packet2);
+		return;
+	}
+
+
 	std::string friendName;
 	std::getline(iss, friendName);
 
@@ -186,7 +220,7 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 	auto& msgsVec = chat->getMessagesVec();
 	msgsVec.push_back(msg);
 
-	std::unordered_map<std::string, Chat*>& chatsMap = m_client->getMyChatsMap();
+	
 	chatsMap[friendLogin] = chat;
 
 	std::vector<std::string>& tmpLoginsVec = m_client->getVecToSendStatusTmp();
@@ -212,6 +246,10 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 }
 
 void WorkerQt::onAuthorization(std::string packet) {
+	if (packet == "") {
+		return;
+	}
+
 	std::unordered_map<std::string, Chat*>& chatsMap = m_client->getMyChatsMap();
 
 	std::istringstream iss(packet);

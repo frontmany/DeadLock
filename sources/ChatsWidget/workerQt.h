@@ -1,10 +1,9 @@
-#include "workerUI.h"
 #include<vector>
+#include "workerUI.h"
 
 class ChatsWidget;
 class Client;
 class Message;
-
 
 class WorkerQt : public WorkerUI {
 public:
@@ -15,9 +14,8 @@ public:
 	void onFirstMessageReceive(std::string packet) override;
 	void onMessageReadConfirmationReceive(std::string packet) override;
 	void onAuthorization(std::string packet) override;
-	
 
 private:
-	ChatsWidget*		  m_chats_widget;
-	Client*				  m_client;
+	ChatsWidget* m_chats_widget;
+	Client*		 m_client;
 };

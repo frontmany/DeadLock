@@ -62,7 +62,6 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
     OperationResult isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
     if (isLog == OperationResult::SUCCESS) {
-        m_client->load(login.toStdString() + ".json");
         m_client->sendMyStatus("online");
         emit(sendLoginSuccess());
     }

@@ -60,7 +60,4 @@ private:
 	Client*			m_client;
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;
-
-
-
 };

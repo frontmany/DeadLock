@@ -192,6 +192,8 @@ void ChatsWidget::setClient(Client* client) {
 }
 
 void ChatsWidget::setup() {
+    std::lock_guard<std::mutex> guard(m_mtx);
+
     for (auto chatPair : m_client->getMyChatsMap()) {
         MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
         area->hide();
@@ -200,6 +202,8 @@ void ChatsWidget::setup() {
 }
 
 void ChatsWidget::setupChatComponents() {
+    std::lock_guard<std::mutex> guard(m_mtx);
+
     for (auto chatPair : m_client->getMyChatsMap()) {
         m_chatsListComponent->addChatComponent(m_theme, chatPair.second, false);
         ChatComponent* comp = m_chatsListComponent->getChatComponentsVec().back();
