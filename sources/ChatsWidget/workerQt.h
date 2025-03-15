@@ -1,4 +1,5 @@
 #include<vector>
+#include<mutex>
 #include "workerUI.h"
 
 class ChatsWidget;
@@ -16,6 +17,7 @@ public:
 	void onAuthorization(std::string packet) override;
 
 private:
+	std::mutex	 m_mtx;
 	ChatsWidget* m_chats_widget;
 	Client*		 m_client;
 };

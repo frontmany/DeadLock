@@ -69,6 +69,6 @@ void MainWindow::setupChatsWidget() {
     m_chatsWidget->setTheme(m_theme);
     m_chatsWidget->setup();
     m_chatsWidget->setupChatComponents();
-    m_client->chatsWidgetState = true;
     setCentralWidget(m_chatsWidget);
+    m_client->chatsWidgetState = true;
 }

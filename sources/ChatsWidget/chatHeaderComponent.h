@@ -13,14 +13,14 @@ enum Theme;
 struct StyleChatHeaderComponent {
 
 
-    QString purpleLabelStyle = R"(
+    QString deepBlueLabelStyle = R"(
     QLabel {
         font-family: "Segoe UI";
         background-color: transparent;  
         font-weight: normal;
         border: none;   
         font-size: 14px;
-        color: rgb(85, 90, 250);            
+        color: rgb(64, 140, 255);            
     }
 )";
 

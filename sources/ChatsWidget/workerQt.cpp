@@ -7,6 +7,7 @@
 #include "chatsListComponent.h"
 #include "chatHeaderComponent.h"
 #include "mainwindow.h"
+#include "utility.h"
 #include "chat.h"
 #include<chrono>
 #include<string>
@@ -17,6 +18,8 @@ WorkerQt::WorkerQt(ChatsWidget* chatsWidget, Client* client)
 }
 
 void WorkerQt::onStatusReceive(std::string packet) {
+	std::lock_guard<std::mutex> guard(m_mtx);
+
 	std::istringstream iss(packet);
 	std::string type;
 	std::getline(iss, type);
@@ -27,17 +30,22 @@ void WorkerQt::onStatusReceive(std::string packet) {
 
 	auto& compsVec = m_chats_widget->getMessagingComponentsCacheVec();
 
-	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&login](MessagingAreaComponent* comp) {
+	auto itComp = std::find_if(compsVec.begin(), compsVec.end(), [&login](MessagingAreaComponent* comp) {
 		return comp->getChat()->getFriendLogin() == login;
 		});
 
-	MessagingAreaComponent* areaComp = *comp;
+	if (itComp == compsVec.end()) {
+		return;
+	}
+	MessagingAreaComponent* areaComp = *itComp;
 	auto chatHeader  = areaComp->getChatHeader();
+
+	QString date = Utility::parseDate(QString::fromStdString(status));
 
 	QMetaObject::invokeMethod(chatHeader,
 		"setLastSeen",
 		Qt::QueuedConnection,
-		Q_ARG(QString, QString::fromStdString(status)));
+		Q_ARG(QString, date));
 
 
 	std::unordered_map<std::string, Chat*>& chatsMap = m_client->getMyChatsMap();
@@ -50,6 +58,9 @@ void WorkerQt::onStatusReceive(std::string packet) {
 }
 
 void WorkerQt::onMessageReceive(std::string packet) {
+
+	bool isLocked = m_mtx.try_lock();
+
 	while (m_client->chatsWidgetState == false) {
 
 	}
@@ -144,9 +155,19 @@ void WorkerQt::onMessageReceive(std::string packet) {
 
 		chat->getMessagesVec().back()->setIsRead(true);
 	}
+
+	if (isLocked) {
+		m_mtx.unlock();
+	}
 }
 
 void WorkerQt::onFirstMessageReceive(std::string packet) {
+	while (m_client->chatsWidgetState == false) {
+
+	}
+
+	std::lock_guard<std::mutex> guard(m_mtx);
+
 	std::unordered_map<std::string, Chat*>& chatsMap = m_client->getMyChatsMap();
 
 	std::istringstream iss(packet);
@@ -190,8 +211,7 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 		if (it != tmpLoginsVec.end()) {
 			tmpLoginsVec.erase(it);
 		}
-		std::string packet2 = "RPL" + '\n' + friendLogin + '\n' + "MESSAGE" + '\n' + myLogin + '\n' + messageBegin + '\n' + message + '\n' + "MESSAGE_END" + '\n' + id + '\n' + timestamp + '\n' + "endPacket";
-		onMessageReceive(packet2);
+		onMessageReceive(packet);
 		return;
 	}
 
@@ -274,6 +294,8 @@ void WorkerQt::onAuthorization(std::string packet) {
 }
 
 void WorkerQt::onMessageReadConfirmationReceive(std::string packet) {
+	std::lock_guard<std::mutex> guard(m_mtx);
+
 	std::istringstream iss(packet);
 
 	std::string type;

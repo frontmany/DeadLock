@@ -2,7 +2,11 @@
 #include <Windows.h> 
 #include <guiddef.h>
 #include <objbase.h>
+
 #include <QString>
+#include <QDateTime>
+#include <QStringList>
+
 #include <iostream>
 #include <ctime>
 #include <sstream>
@@ -24,7 +28,9 @@ namespace Utility {
 
 	std::string getCurrentDateTime();
 	std::string byteArrayToHexString(const BYTE* data, size_t dataLength);
-	QString getSaveDir();
 	std::string getCurrentTime();
 	std::string generateId();
+
+	QString getSaveDir();
+	QString parseDate(QString fulldate);
 }

@@ -93,6 +93,7 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     else {
         m_current_messagingAreaComponent = *itMsgComp;
         m_current_messagingAreaComponent->show();
+        m_current_messagingAreaComponent->setTheme(m_theme);
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
         auto unreadVec = chat->getUnreadReceiveMessagesVec();
@@ -194,7 +195,7 @@ void ChatsWidget::setClient(Client* client) {
 void ChatsWidget::setup() {
     std::lock_guard<std::mutex> guard(m_mtx);
 
-    for (auto chatPair : m_client->getMyChatsMap()) {
+    for (auto& chatPair : m_client->getMyChatsMap()) {
         MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
         area->hide();
         m_vec_messagingComponents_cache.push_back(area);

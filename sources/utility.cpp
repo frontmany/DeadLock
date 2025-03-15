@@ -1,7 +1,6 @@
 #include"utility.h"
 
 
-
 bool Utility::verifyPassword(const std::string& password, const std::string& storedHash) {
 
     try {
@@ -188,4 +187,51 @@ std::string Utility::generateId() {
         *(reinterpret_cast<const unsigned long long*>(guid.Data4 + 2)));
     CoUninitialize();
     return std::string(buffer);
+}
+
+QString Utility::parseDate(QString fullDate) {
+    if (fullDate == "online") {
+        return fullDate;
+    }
+
+    // Проверяем, содержит ли строка "last seen:"
+    if (!fullDate.startsWith("last seen:")) {
+        return "Invalid date format";
+    }
+
+    // Удаляем "last seen:" из строки
+    fullDate = fullDate.mid(10).trimmed();
+
+    // Получаем текущую дату и время
+    QDateTime now = QDateTime::currentDateTime();
+    int currentYear = now.date().year();
+
+    // Разделяем входную строку на части
+    QStringList dateParts = fullDate.split(" ");
+    if (dateParts.size() < 2) {
+        return "Invalid date format";
+    }
+
+    QString datePart = dateParts[0]; // Год, месяц, день
+    QString timePart = dateParts[1]; // Время
+
+    // Разделяем дату на год, месяц и день
+    QStringList ymd = datePart.split("-");
+    if (ymd.size() < 3) {
+        return "Invalid date format";
+    }
+
+    int year = ymd[0].toInt();
+    int month = ymd[1].toInt();
+    int day = ymd[2].toInt();
+
+    // Проверяем, совпадает ли год с текущим
+    if (year == currentYear) {
+        // Если год совпадает, возвращаем только время с секундами
+        return "last seen: " + timePart;
+    }
+    else {
+        // Если год не совпадает, возвращаем только год, месяц и день
+        return "last seen: " + QString("%1-%2-%3").arg(year).arg(month, 2, 10, QChar('0')).arg(day, 2, 10, QChar('0'));
+    }
 }
