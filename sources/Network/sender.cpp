@@ -14,7 +14,7 @@ std::string SendStringsGenerator::parseTypeToStr(QueryType type) const {
     case QueryType::STATUS:                     return "STATUS";
     case QueryType::MESSAGES_READ_CONFIRMATION: return "MESSAGES_READ_CONFIRMATION";
     case QueryType::LOAD_FRIEND_INFO:           return "LOAD_FRIEND_INFO";
-    //case QueryType::LOAD_ALL_FRIENDS_STATUSES: return "LOAD_ALL_FRIENDS_STATUSES";
+    case QueryType::LOAD_ALL_FRIENDS_STATUSES:  return "LOAD_ALL_FRIENDS_STATUSES";
     }
 }
 
@@ -73,23 +73,14 @@ std::string SendStringsGenerator::get_updateMyInfo_QueryStr(std::string login, s
         + name + '\n' + password + '\n' + (isHasPhoto == true ? "true" : "false") + '\n' + photo.serialize() + '\n' + endPacket;
 }
 
-/*
-std::string Sender::get_updateMyInfo_QueryStr(std::string login, std::string name, std::string password, Photo photo) {
-    return get + '\n' + parseTypeToStr(QueryType::UPDATE_MY_INFO) + '\n' + login + '\n'
-        + name + '\n' + password + '\n' + photo.serialize() + '\n' + endPacket;
-}
-
-std::string Sender::get_loadFriendInfo_QueryStr(const std::string& login) {
-    return get + '\n' + parseTypeToStr(QueryType::LOAD_FRIEND_INFO) + '\n' + endPacket;
-}
-
-std::string Sender::get_loadAllFriendsInfo_QueryStr(const std::vector<std::string>& friendsLoginsVec) {
-    std::string queryStr = get + '\n' + parseTypeToStr(QueryType::LOAD_ALL_FRIENDS_INFO) + '\n' + vecBegin + '\n';
+std::string SendStringsGenerator::get_loadAllFriendsStatuses_QueryStr(std::vector<std::string>& friendsLoginsVec) {
+    std::string queryStr = get + '\n' + parseTypeToStr(QueryType::LOAD_ALL_FRIENDS_STATUSES) + '\n' + vecBegin + '\n';
     for (auto login : friendsLoginsVec) {
-        queryStr += login = '\n';
+        queryStr += login;
+        queryStr += '\n';
     }
+
     queryStr += vecEnd + '\n';
     queryStr += endPacket;
     return queryStr;
 }
-*/

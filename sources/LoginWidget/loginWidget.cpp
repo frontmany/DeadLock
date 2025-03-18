@@ -47,7 +47,35 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
     OperationResult isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
     if (isLog == OperationResult::SUCCESS) {
-        m_client->load(login.toStdString() + ".json");
+        bool res = m_client->load(login.toStdString() + ".json");
+
+        if (!res) {
+            m_client->setMyLogin(login.toStdString());
+            OperationResult isInfo = m_client->getMyInfoFromServer(login.toStdString());
+            if (isInfo == OperationResult::SUCCESS) {
+            }
+            else if (isInfo == OperationResult::FAIL) {
+                return;
+                // todo DIALOG
+            }
+
+        }
+
+        auto& map = m_client->getMyChatsMap();
+        std::vector<std::string> logins;
+        logins.reserve(map.size());
+        for (auto [login, chat] : map) {
+            logins.emplace_back(login);
+        }
+
+        OperationResult isStatuses = m_client->getFriendsStatuses(logins);
+        if (isStatuses == OperationResult::SUCCESS) {
+        }
+        else if (isStatuses == OperationResult::FAIL) {
+            return;
+            // todo DIALOG
+        }
+
         m_client->sendMyStatus("online");
         emit(sendLoginSuccess());
     }

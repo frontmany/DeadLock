@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     else {
         m_theme = LIGHT;
     }
-
+     
     m_client = new Client;
     m_client->connectTo("192.168.1.49", 8080);
     m_client->run();
@@ -31,6 +31,7 @@ MainWindow::~MainWindow() {
     qDebug() << "window closing";
     if (m_client->isAuthorized() == true) {
         m_client->sendMyStatus(Utility::getCurrentDateTime());
+        std::cout << "saving\n";
         m_client->save();
     }
     delete m_chatsWidget;

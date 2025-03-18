@@ -104,7 +104,19 @@ void WorkerQt::onMessageReceive(std::string packet) {
 	msg->setIsRead(false);
 	
 	Chat* chat = chatPair->second;
+	chat->setLastIncomeMsg(msg->getMessage());
 	chat->getMessagesVec().push_back(msg);
+	
+	for (auto pair : chatsMap) {
+		Chat* chatTmp = pair.second;
+		if (chatTmp->getFriendLogin() == chat->getFriendLogin()) {
+			continue;
+		}
+		else if (chatTmp->getLayoutIndex() < chat->getLayoutIndex()){
+			chatTmp->setLayoutIndex(chatTmp->getLayoutIndex() + 1);
+		}
+	}
+	chat->setLayoutIndex(0);
 
 	ChatsListComponent* chatsList = m_chats_widget->getChatsList();
 	auto& vec = chatsList->getChatComponentsVec();
@@ -114,6 +126,12 @@ void WorkerQt::onMessageReceive(std::string packet) {
 
 	if (it != vec.end()) {
 		ChatComponent* chatComp = *it;
+
+		QMetaObject::invokeMethod(chatsList,
+			"popUpComponent",
+			Qt::QueuedConnection,
+			Q_ARG(ChatComponent*, chatComp));
+
 		QMetaObject::invokeMethod(chatComp,
 			"setLastMessage", 
 			Qt::QueuedConnection,
@@ -237,9 +255,15 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 	chat->setIsFriendHasPhoto(isHasPhoto);
 	chat->setFriendPhoto(ph);
 	chat->setLastIncomeMsg(message);
+	chat->setLayoutIndex(0);
+
 	auto& msgsVec = chat->getMessagesVec();
 	msgsVec.push_back(msg);
 
+	for (auto& pair : chatsMap) {
+		Chat* chat = pair.second;
+		chat->setLayoutIndex(chat->getLayoutIndex() + 1);
+	}
 	
 	chatsMap[friendLogin] = chat;
 

@@ -38,6 +38,15 @@ ChatsWidget::~ChatsWidget() {
 }
 
 void ChatsWidget::onCreateChatButtonClicked(QString login) {
+    auto it = std::find_if(m_client->getMyChatsMap().begin(), m_client->getMyChatsMap().end(), [&login](std::pair<std::string, Chat*> pair) {
+        return pair.second->getFriendLogin() == login.toStdString();
+        });
+
+    if (it != m_client->getMyChatsMap().end()) {
+        m_chatsListComponent->getAddChatDialogComponent()->getEditComponent()->setRedBorderToChatAddDialog();
+        return;
+    }
+
     OperationResult res = m_client->createChatWith(login.toStdString());
     if (res == OperationResult::FAIL) {
         m_chatsListComponent->getAddChatDialogComponent()->getEditComponent()->setRedBorderToChatAddDialog();
@@ -68,7 +77,7 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
     m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
     m_chatsListComponent->addChatComponent(m_theme, chat, true);
-    m_chatsListComponent->closeAddChatDialog();
+    //m_chatsListComponent->closeAddChatDialog();
     m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
 }
 
@@ -88,7 +97,7 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         });
 
     if (itMsgComp == m_vec_messagingComponents_cache.end()) {
-        std::cout << "error can not find mesaging Area Component";
+        std::cout << "error can not find messaging Area Component";
     }
     else {
         m_current_messagingAreaComponent = *itMsgComp;
@@ -135,6 +144,25 @@ void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
     }
     else {
         m_client->sendMessage(chat->getFriendLogin(), message->getMessage(), message->getId(), message->getTimestamp());
+    }
+
+    for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
+        if (chatComp->getChat()->getFriendLogin() == chat->getFriendLogin() && chat->getLayoutIndex() != 0) {
+            m_chatsListComponent->popUpComponent(chatComp);
+            for (auto& pair : m_client->getMyChatsMap()) {
+                Chat* chatTmp = pair.second;
+                if (chatTmp->getFriendLogin() == chat->getFriendLogin()) {
+                    continue;
+                }
+                else if (chatTmp->getLayoutIndex() < chat->getLayoutIndex()) {
+                    chatTmp->setLayoutIndex(chatTmp->getLayoutIndex() + 1);
+                }
+            }
+            chat->setLayoutIndex(0);
+        }
+        if (chatComp != comp) {
+            chatComp->setSelected(false);
+        }
     }
 
     chat->getMessagesVec().push_back(message);
@@ -205,11 +233,23 @@ void ChatsWidget::setup() {
 void ChatsWidget::setupChatComponents() {
     std::lock_guard<std::mutex> guard(m_mtx);
 
-    for (auto chatPair : m_client->getMyChatsMap()) {
+    auto& map = m_client->getMyChatsMap();
+    for (int i = 0; i < m_client->getMyChatsMap().size(); i++) {
+        auto it = std::find_if(map.begin(), map.end(), [i](std::pair<std::string, Chat*> chatPair) {
+            return chatPair.second->getLayoutIndex() == i;
+            });
+        
+        std::pair<std::string, Chat*> chatPair = *it;
+
         m_chatsListComponent->addChatComponent(m_theme, chatPair.second, false);
         ChatComponent* comp = m_chatsListComponent->getChatComponentsVec().back();
-        comp->setUnreadMessageDot(false);
+        auto& vec = chatPair.second->getMessagesVec();
+        if (vec.size() == 0) {
+            comp->setUnreadMessageDot(false);
+        }
+        else {
+            comp->setUnreadMessageDot(!vec.back()->getIsRead() && !vec.back()->getIsSend());
+        }
         comp->setLastMessage(QString::fromStdString(chatPair.second->getLastMessage()));
-
     }
 }

@@ -22,13 +22,10 @@ int main(int argc, char* argv[])
     app.setStyle(customStyle);
 
     MainWindow* mainWindow = new MainWindow(nullptr);
-    
 
 
     mainWindow->show();
     mainWindow->resize(960, 540);
-
-    
 
     app.exec();
     delete mainWindow;

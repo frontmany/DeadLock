@@ -10,7 +10,7 @@ class Photo;
 
 class Chat {
 public:
-	Chat() : m_is_friend_has_photo(false) {}
+	Chat() : m_is_friend_has_photo(false), m_index_at_layout(std::numeric_limits<int>::max()) {}
 
 	std::vector<Message*>& getMessagesVec() { return m_vec_messages; }
 	const std::vector<Message*> getUnreadSendMessagesVec() const;
@@ -34,6 +34,9 @@ public:
 	void setFriendPhoto(Photo* photo) { m_friend_photo = photo; }
 	const Photo* getFriendPhoto() const { return m_friend_photo; }
 
+	void setLayoutIndex(int index) { m_index_at_layout = index; }
+	const int getLayoutIndex() const { return m_index_at_layout; }
+
 	QJsonObject serialize(const Database& db) const;
 	static Chat* deserialize(const QJsonObject& jsonObject, const Database& db);
 
@@ -45,4 +48,5 @@ private:
 	std::string				 m_last_incoming_message;
 	bool					 m_is_friend_has_photo;
 	Photo*					 m_friend_photo;
+	int						 m_index_at_layout;
 };

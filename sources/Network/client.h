@@ -36,7 +36,7 @@ public:
     void close();
 
     void save() const;
-    void load(const std::string& fileName);
+    bool load(const std::string& fileName);
 
     OperationResult authorizeClient(const std::string& login, const std::string& password);
     OperationResult registerClient(const std::string& login, const std::string& password, const std::string& name);
@@ -46,6 +46,8 @@ public:
     OperationResult sendFirstMessage(const std::string& friendLogin, const std::string& message, const std::string& id, const std::string timestamp);
     OperationResult sendMyStatus(const std::string& status);
     OperationResult sendMessageReadConfirmation(const std::string& friendLogin, const std::vector<Message*>& messagesReadIdsVec);
+    OperationResult getMyInfoFromServer(const std::string& myLogin);
+    OperationResult getFriendsStatuses(std::vector<std::string> vecFriends);
 
     void setMyLogin(const std::string& login) { m_my_login = login; }
     const std::string& getMyLogin() const { return m_my_login; }
@@ -61,6 +63,8 @@ public:
 private:
     void startAsyncReceive();
     void processChatCreateSuccess(const std::string& packet);
+    void processFriendsStatusesSuccess(const std::string& packet);
+    void processUserInfoSuccess(const std::string& packet);
     void handleAsyncReceive(const std::error_code& error, std::size_t bytes_transferred);
     void handleResponse(const std::string& packet);
     OperationResult waitForResponse(int seconds, std::function<OperationResult()> checkFunction);
@@ -91,9 +95,11 @@ private:
     //shared variables (main thread await until state changed on FAIL, SUCCESS or REQUEST_TIMEOUT)
 private:
     OperationResult     sh_is_authorized;
+    OperationResult     sh_is_user_info;
     OperationResult     sh_is_info_updated;
     OperationResult     sh_chat_create;
     OperationResult     sh_is_status_send;
+    OperationResult     sh_is_statuses;
     OperationResult     sh_is_message_send;
     OperationResult     sh_is_first_message_send;
     OperationResult     sh_is_message_read_confirmation_send;

@@ -8,7 +8,7 @@
 #include <QDir>
 #include <QFile>
 
-Client::Client() :  m_isReceiving(true),
+Client::Client() : m_isReceiving(true),
 sh_is_authorized(OperationResult::NOT_STATED),
 sh_is_message_send(OperationResult::NOT_STATED),
 sh_is_first_message_send(OperationResult::NOT_STATED),
@@ -16,6 +16,8 @@ sh_is_info_updated(OperationResult::NOT_STATED),
 sh_is_message_read_confirmation_send(OperationResult::NOT_STATED),
 sh_chat_create(OperationResult::NOT_STATED),
 sh_is_status_send(OperationResult::NOT_STATED),
+sh_is_user_info(OperationResult::NOT_STATED),
+sh_is_statuses(OperationResult::NOT_STATED),
 m_my_photo(Photo()), m_is_has_photo(false), m_io_context(asio::io_context()),
 m_worker(nullptr), m_db(Database()), m_buffer(std::array<char, 1024>()), m_socket(m_io_context) {}
 
@@ -92,10 +94,17 @@ void Client::handleResponse(const std::string& packet) {
     std::istringstream iss(packet);
 
     std::string type;
-    std::getline(iss, type);
+    std::getline(iss, type); 
     
     if (type == "REGISTRATION_SUCCESS") {
         sh_is_authorized = OperationResult::SUCCESS;
+    }
+    else if (type == "USER_INFO_SUCCESS") {
+        processUserInfoSuccess(iss.str());
+        sh_is_user_info = OperationResult::SUCCESS;
+    }
+    else if (type == "USER_INFO_FAIL") {
+        sh_is_user_info = OperationResult::FAIL;
     }
     else if (type == "REGISTRATION_FAIL") {
         sh_is_authorized = OperationResult::FAIL;
@@ -110,6 +119,10 @@ void Client::handleResponse(const std::string& packet) {
     else if (type == "CHAT_CREATE_SUCCESS") {
         processChatCreateSuccess(iss.str());
         sh_chat_create = OperationResult::SUCCESS;
+    }
+    else if (type == "FRIENDS_STATUSES") {
+        processFriendsStatusesSuccess(iss.str());
+        sh_is_statuses = OperationResult::SUCCESS;
     }
     else if (type == "CHAT_CREATE_FAIL") {
         sh_chat_create = OperationResult::FAIL;
@@ -146,6 +159,45 @@ void Client::handleResponse(const std::string& packet) {
     }
 }
 
+void Client::processFriendsStatusesSuccess(const std::string& packet) {
+    std::istringstream iss(packet);
+    std::string type;
+    std::getline(iss, type);
+
+    std::string vecBegin;
+    std::getline(iss, vecBegin);
+
+    std::string line;
+    while (std::getline(iss, line)) {
+        if (line != "VEC_END") {
+            int index = line.find(',');
+            std::string login = line.substr(0, index);
+            std::string status = line.substr(++index);
+            Chat* chat = m_map_friend_login_to_chat[login];
+            chat->setFriendLastSeen(status);
+        }
+    }
+}
+
+void Client::processUserInfoSuccess(const std::string& packet) {
+    std::istringstream iss(packet);
+    std::string type;
+    std::getline(iss, type);
+
+    std::string login;
+    std::getline(iss, login);
+
+    std::getline(iss, m_my_name);
+
+    std::string isHasPhoto;
+    std::getline(iss, isHasPhoto);
+    m_is_has_photo = isHasPhoto == "true";
+
+    std::string photoStr;
+    std::getline(iss, photoStr);
+    m_my_photo = *Photo::deserialize(photoStr);
+}
+
 void Client::processChatCreateSuccess(const std::string& packet) {
     std::istringstream iss(packet);
     std::string type;
@@ -167,6 +219,13 @@ void Client::processChatCreateSuccess(const std::string& packet) {
     chat->setFriendLogin(login);
     chat->setFriendName(name);
     chat->setIsFriendHasPhoto(isHasPhoto == "true");
+    chat->setLayoutIndex(0);
+
+    for (auto& pair : m_map_friend_login_to_chat) {
+        Chat* chatTmp = pair.second;
+        chatTmp->setLayoutIndex(chatTmp->getLayoutIndex() + 1);
+    }
+
     Photo* photo = Photo::deserialize(photoStr);
     chat->setFriendPhoto(photo);
     chat->setFriendLastSeen(lastSeen);
@@ -180,7 +239,7 @@ OperationResult Client::authorizeClient(const std::string& login, const std::str
     sendPacket(m_sender.get_authorization_QueryStr(login, password));
 
     auto startTime = std::chrono::steady_clock::now(); 
-    auto timeout = std::chrono::seconds(5); 
+    auto timeout = std::chrono::seconds(2); 
 
     while (sh_is_authorized == OperationResult::NOT_STATED) {
         auto currentTime = std::chrono::steady_clock::now();
@@ -208,7 +267,7 @@ OperationResult Client::registerClient(const std::string& login, const std::stri
     sendPacket(m_sender.get_registration_QueryStr(login, name, password));
 
     auto startTime = std::chrono::steady_clock::now();
-    auto timeout = std::chrono::seconds(5);
+    auto timeout = std::chrono::seconds(2);
 
     while (sh_is_authorized == OperationResult::NOT_STATED) {
         auto currentTime = std::chrono::steady_clock::now();
@@ -342,10 +401,30 @@ OperationResult Client::sendFirstMessage(const std::string& friendLogin, const s
 }
 
 OperationResult Client::sendMessageReadConfirmation(const std::string& friendLogin, const std::vector<Message*>& messagesReadIdsVec) {
+    for (auto msg : messagesReadIdsVec) {
+        msg->setIsRead(true);
+    }
+
     std::lock_guard<std::mutex> guard(m_mtx);
     sendPacket(m_sender.get_messageReadConfirmation_ReplyStr(m_my_login, friendLogin, messagesReadIdsVec));
     return waitForResponse(5, [this] {
         return sh_is_message_read_confirmation_send;
+        });
+}
+
+OperationResult Client::getMyInfoFromServer(const std::string& myLogin) {
+    std::lock_guard<std::mutex> guard(m_mtx);
+    sendPacket(m_sender.get_loadFriendInfo_QueryStr(myLogin));
+    return waitForResponse(5, [this] {
+        return sh_is_user_info;
+        });
+}
+
+OperationResult Client::getFriendsStatuses(std::vector<std::string> vecFriends) {
+    std::lock_guard<std::mutex> guard(m_mtx);
+    sendPacket(m_sender.get_loadAllFriendsStatuses_QueryStr(vecFriends));
+    return waitForResponse(5, [this] {
+        return sh_is_statuses;
         });
 }
 
@@ -405,7 +484,7 @@ void Client::save() const {
 }
 
 
-void Client::load(const std::string& fileName) {
+bool Client::load(const std::string& fileName) {
     QString dir = Utility::getSaveDir();
     QString fileNameFinal = QString::fromStdString(fileName);
     QDir saveDir(dir);
@@ -414,7 +493,7 @@ void Client::load(const std::string& fileName) {
     QFile file(fullPath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "Couldn't open the file:" << QString::fromStdString(fileName);
-        return; // Добавляем return, чтобы избежать дальнейших операций, если файл не открыт
+        return false; // Добавляем return, чтобы избежать дальнейших операций, если файл не открыт
     }
 
     QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
@@ -422,7 +501,7 @@ void Client::load(const std::string& fileName) {
 
     if (!loadDoc.isObject()) {
         qWarning() << "Invalid JSON in the file:" << QString::fromStdString(fileName);
-        return; // Добавляем return для обработки ошибки
+        return false; // Добавляем return для обработки ошибки
     }
 
     QJsonObject jsonObject = loadDoc.object();
@@ -452,6 +531,8 @@ void Client::load(const std::string& fileName) {
             m_vec_friends_logins_tmp.push_back(value.toString().toStdString());
         }
     }
+
+    return true;
 }
 
 bool Client::isAuthorized() {

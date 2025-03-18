@@ -159,6 +159,7 @@ void AddChatDialogComponent::closeDialog() {
 
 void AddChatDialogComponent::setupUI() {
     m_createChatButton = new QPushButton("Create Chat", this);
+    m_createChatButton->setMinimumSize(80, 30);
     m_editComponent = new EditComponent(this, m_chatsListComponent, m_theme);
 
     m_dialogVLayout = new QVBoxLayout(this);

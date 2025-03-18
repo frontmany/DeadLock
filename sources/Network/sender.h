@@ -15,8 +15,8 @@ public:
 		FIRST_MESSAGE,
 		MESSAGES_READ_CONFIRMATION,
 		STATUS,
-		LOAD_FRIEND_INFO
-		//LOAD_ALL_FRIENDS_STATUSES
+		LOAD_FRIEND_INFO,
+		LOAD_ALL_FRIENDS_STATUSES
 	};
 
 	std::string get_authorization_QueryStr(const std::string& login, const std::string& password) const;
@@ -28,7 +28,7 @@ public:
 	std::string get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec) const;
 	std::string get_updateMyInfo_QueryStr(std::string login, std::string name, std::string password, bool isHasPhoto, Photo photo) const;
 	std::string get_loadFriendInfo_QueryStr(const std::string& login) const;
-	//std::string get_loadAllFriendsInfo_QueryStr(const std::vector<std::string>& friendsLoginsVec);
+	std::string get_loadAllFriendsStatuses_QueryStr(std::vector<std::string>& friendsLoginsVec);
 
 private:
 	std::string parseTypeToStr(QueryType type) const;

@@ -116,15 +116,18 @@ void ChatsListComponent::receiveCreateChatData(QString login) {
 }
 
 void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelected) {
-    for (auto chatComp : m_vec_chatComponents) {
-        chatComp->setSelected(false);
+    if (isSelected) {
+        for (auto chatComp : m_vec_chatComponents) {
+            chatComp->setSelected(false);
+        }
     }
+    
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setLastMessage(QString::fromStdString(chat->getLastMessage()));
     chatComponent->setTheme(theme);
     chatComponent->setSelected(isSelected);
-    m_containerVLayout->insertWidget(0, chatComponent);
+    m_containerVLayout->insertWidget(chatComponent->getChat()->getLayoutIndex(), chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
 }
 
@@ -183,6 +186,7 @@ void ChatsListComponent::setTheme(Theme theme) {
 }
 
 void ChatsListComponent::popUpComponent(ChatComponent* comp) {
+    std::cout << "call popUpComponent";
     m_containerVLayout->removeWidget(comp);
     m_containerVLayout->insertWidget(0, comp);
 }

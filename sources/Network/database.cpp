@@ -41,7 +41,7 @@ void Database::init() {
     char* zErrMsg = nullptr;
     const char* sql = "CREATE TABLE IF NOT EXISTS MESSAGES("
         "LOGIN          TEXT              NOT NULL,"
-        "MESSAGES       TEXT              NOT NULL);";
+        "MSGS           TEXT              NOT NULL);";
 
     rc = sqlite3_exec(m_db, sql, 0, 0, &zErrMsg);
     if (rc != SQLITE_OK) {
@@ -61,10 +61,12 @@ void Database::init() {
 
 
 void Database::saveMessages(const std::string& login, std::vector<Message*> messages) const {
-    if (messages.empty()) {
+    if (messages.empty() || login.empty()) {
+        std::cerr << "No messages to save or login is empty" << std::endl;
         return;
     }
 
+    // Сериализация сообщений
     std::ostringstream oss;
     for (size_t i = 0; i < messages.size(); ++i) {
         oss << messages[i]->serialize();
@@ -74,28 +76,81 @@ void Database::saveMessages(const std::string& login, std::vector<Message*> mess
     }
     std::string text = oss.str();
 
-    const char* sql = "INSERT INTO MESSAGES (LOGIN, MESSAGES) VALUES (?, ?);";
+    // Проверка наличия записи
+    const char* selectSql = "SELECT MSGS FROM MESSAGES WHERE LOGIN = ?;";
+    sqlite3_stmt* selectStmt = nullptr;
+
+    int rc = sqlite3_prepare_v2(m_db, selectSql, -1, (void**)&selectStmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to prepare SELECT statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return;
+    }
+
+    rc = sqlite3_bind_text(selectStmt, 1, login.c_str(), -1, SQLITE_TRANSIENT);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to bind login in SELECT statement: " << sqlite3_errmsg(m_db) << std::endl;
+        sqlite3_finalize(selectStmt);
+        return;
+    }
+
+    bool recordExists = (sqlite3_step(selectStmt) == SQLITE_ROW);
+    sqlite3_finalize(selectStmt);
+
+    // Выбор SQL-запроса в зависимости от наличия записи
+    const char* sql;
+    if (recordExists) {
+        sql = "UPDATE MESSAGES SET MSGS = ? WHERE LOGIN = ?;";
+    }
+    else {
+        sql = "INSERT INTO MESSAGES (LOGIN, MSGS) VALUES (?, ?);";
+    }
 
     sqlite3_stmt* stmt = nullptr;
-    int rc;
-
     rc = sqlite3_prepare_v2(m_db, sql, -1, (void**)&stmt, nullptr);
     if (rc != SQLITE_OK) {
         std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
         return;
     }
 
+    // Привязка параметров
+    if (recordExists) {
+        rc = sqlite3_bind_text(stmt, 1, text.c_str(), -1, SQLITE_TRANSIENT);
+        if (rc != SQLITE_OK) {
+            std::cerr << "Failed to bind messages: " << sqlite3_errmsg(m_db) << std::endl;
+            sqlite3_finalize(stmt);
+            return;
+        }
 
-    std::string time = Utility::getCurrentDateTime();
-    sqlite3_bind_text(stmt, 1, login.c_str(), -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, text.c_str(), -1, SQLITE_STATIC);
+        rc = sqlite3_bind_text(stmt, 2, login.c_str(), -1, SQLITE_TRANSIENT);
+        if (rc != SQLITE_OK) {
+            std::cerr << "Failed to bind login: " << sqlite3_errmsg(m_db) << std::endl;
+            sqlite3_finalize(stmt);
+            return;
+        }
+    }
+    else {
+        rc = sqlite3_bind_text(stmt, 1, login.c_str(), -1, SQLITE_TRANSIENT);
+        if (rc != SQLITE_OK) {
+            std::cerr << "Failed to bind login: " << sqlite3_errmsg(m_db) << std::endl;
+            sqlite3_finalize(stmt);
+            return;
+        }
 
+        rc = sqlite3_bind_text(stmt, 2, text.c_str(), -1, SQLITE_TRANSIENT);
+        if (rc != SQLITE_OK) {
+            std::cerr << "Failed to bind messages: " << sqlite3_errmsg(m_db) << std::endl;
+            sqlite3_finalize(stmt);
+            return;
+        }
+    }
+
+    // Выполнение запроса
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE) {
         std::cerr << "Execution failed: " << sqlite3_errmsg(m_db) << std::endl;
     }
     else {
-        std::cout << "Messages added successfully" << std::endl;
+        std::cout << (recordExists ? "Messages updated successfully" : "Messages added successfully") << std::endl;
     }
 
     sqlite3_finalize(stmt);
@@ -105,7 +160,7 @@ void Database::saveMessages(const std::string& login, std::vector<Message*> mess
 std::vector<Message*> Database::loadMessages(const std::string& login) const {
     std::vector<Message*> messages;
 
-    const char* sql = "SELECT MESSAGES FROM MESSAGES WHERE LOGIN = ?;";
+    const char* sql = "SELECT MSGS FROM MESSAGES WHERE LOGIN = ?;";
     sqlite3_stmt* stmt = nullptr;
     int rc;
 
