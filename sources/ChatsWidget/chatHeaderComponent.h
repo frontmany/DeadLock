@@ -8,6 +8,7 @@
 
 
 class ButtonIcon;
+class AvatarIcon;
 enum Theme;
 
 struct StyleChatHeaderComponent {
@@ -93,7 +94,7 @@ private:
     Theme m_theme;
     QColor m_backColor;
     
-    ButtonIcon*     m_leftIcon;
+    AvatarIcon*     m_leftIcon;
     ButtonIcon*     m_rightButton;
 
     QHBoxLayout* m_mainLayout;

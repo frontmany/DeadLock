@@ -177,6 +177,7 @@ void Client::processFriendsStatusesSuccess(const std::string& packet) {
             chat->setFriendLastSeen(status);
         }
     }
+    isStatuses = true;
 }
 
 void Client::processUserInfoSuccess(const std::string& packet) {
@@ -233,6 +234,7 @@ void Client::processChatCreateSuccess(const std::string& packet) {
 
 
     m_map_friend_login_to_chat[login] = chat;
+    std::cout << "statuses received\n";
 }
 
 OperationResult Client::authorizeClient(const std::string& login, const std::string& password) {
@@ -423,9 +425,29 @@ OperationResult Client::getMyInfoFromServer(const std::string& myLogin) {
 OperationResult Client::getFriendsStatuses(std::vector<std::string> vecFriends) {
     std::lock_guard<std::mutex> guard(m_mtx);
     sendPacket(m_sender.get_loadAllFriendsStatuses_QueryStr(vecFriends));
-    return waitForResponse(5, [this] {
-        return sh_is_statuses;
-        });
+    
+    auto startTime = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(5);
+
+    while (sh_is_statuses == OperationResult::NOT_STATED) {
+        auto currentTime = std::chrono::steady_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
+
+        if (elapsedTime >= timeout) {
+            return OperationResult::REQUEST_TIMEOUT;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    if (sh_is_statuses == OperationResult::SUCCESS) {
+        sh_is_statuses = OperationResult::NOT_STATED;
+        return OperationResult::SUCCESS;
+    }
+
+    else {
+        sh_is_statuses = OperationResult::NOT_STATED;
+        return OperationResult::FAIL;
+    } 
 }
 
 void Client::setWorkerUI(WorkerUI* workerImpl) {

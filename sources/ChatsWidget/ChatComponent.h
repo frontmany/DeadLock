@@ -17,6 +17,7 @@
 enum Theme;
 class ChatsWidget;
 class ButtonIcon;
+class AvatarIcon;
 
 class ChatComponent : public QWidget {
     Q_OBJECT
@@ -66,6 +67,7 @@ private:
     QVBoxLayout* m_statusVLayout;
 
     ButtonIcon*  m_UnreadDot;
+    AvatarIcon*   m_avatar_ico;
     QLabel*      m_lastMessageLabel;
     QLabel*      m_nameLabel;
     QPixmap      m_avatar;

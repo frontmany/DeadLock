@@ -32,9 +32,9 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->setAlignment(Qt::AlignLeft);
 
 
-    m_profileButton = new RoundIconButton(this);
-    m_profileButton->setStyleSheet(style->transparentButtonStyle);
-    m_profileButton->setFixedSize(40, 40);
+    m_profileButton = new AvatarIcon(this, 0, 0, 32, true);
+    QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
+    m_profileButton->setIcon(avatarIcon);
     m_profileHLayout->addWidget(m_profileButton);
 
     m_newChatButton = new ButtonIcon(this, 50, 50);
@@ -156,7 +156,6 @@ void ChatsListComponent::setTheme(Theme theme) {
     if (theme == DARK) {
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
-        m_profileButton->setTheme(theme);
         m_newChatButton->setTheme(theme);
         for (auto comp : m_vec_chatComponents) {
             comp->setTheme(DARK);
@@ -172,7 +171,6 @@ void ChatsListComponent::setTheme(Theme theme) {
     else {
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->lightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
-        m_profileButton->setTheme(theme);
         m_newChatButton->setTheme(theme);
         for (auto comp : m_vec_chatComponents) {
             comp->setTheme(LIGHT);

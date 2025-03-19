@@ -26,10 +26,10 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     }
     else {
         if (m_theme == DARK) {
-            m_avatar = QPixmap(":/resources/LoginWidget/lightLoginBackground.jpg");
+            m_avatar = QPixmap(":/resources/ChatsWidget/userFiend.png");
         }
         else {
-            m_avatar = QPixmap(":/resources/LoginWidget/lightLoginBackground.jpg");
+            m_avatar = QPixmap(":/resources/ChatsWidget/userFiend.png");
 
         }
         update();
@@ -41,9 +41,11 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_contentsVLayout->addWidget(m_nameLabel);
     m_contentsVLayout->addWidget(m_lastMessageLabel);
 
+    AvatarIcon* m_avatar_ico = new AvatarIcon(this, 0, 0, 50, false);
+    QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
+    m_avatar_ico->setIcon(avatarIcon);
 
-
-    m_UnreadDot = new ButtonIcon(this, 50, 50);
+    m_UnreadDot = new ButtonIcon(this, 40, 40);
     QIcon icon1(":/resources/ChatsWidget/unreadDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/unreadDark.png");
     m_UnreadDot->uploadIconsDark(icon1, iconHover1);
@@ -62,7 +64,9 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_statusVLayout->addSpacing(-2);
 
     m_mainHLayout = new QHBoxLayout();
-    m_mainHLayout->setContentsMargins(70, 10, 10, 10);
+    m_mainHLayout->setContentsMargins(10, 10, 10, 10);
+    m_mainHLayout->addWidget(m_avatar_ico);
+    m_mainHLayout->addSpacing(5);
     m_mainHLayout->addLayout(m_contentsVLayout);
     m_mainHLayout->addSpacing(500);
     m_mainHLayout->addLayout(m_statusVLayout);
@@ -176,21 +180,10 @@ void ChatComponent::setAvatar(const QPixmap& avatar) {
 void ChatComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
 
-
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setBrush(m_currentColor);
     painter.setPen(Qt::NoPen);
     painter.drawRoundedRect(rect(), 5, 5);
-
-
-    if (!m_avatar.isNull()) {
-        QPainterPath path;
-        QRectF avatarRect(10, (height() - m_avatarSize) / 2, m_avatarSize, m_avatarSize);
-        path.addEllipse(avatarRect);
-        painter.setClipPath(path);
-        painter.drawPixmap(avatarRect.toRect(), m_avatar);
-        painter.setClipPath(QPainterPath());
-    }
 }
 
 bool ChatComponent::event(QEvent* event)

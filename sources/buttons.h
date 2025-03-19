@@ -87,6 +87,122 @@ private:
     Theme m_theme;
 };
 
+class AvatarIcon : public QWidget
+{
+    Q_OBJECT
+
+public:
+    AvatarIcon(QWidget* parent, int x, int y, int iconSize, bool needHover)
+        : QWidget(parent), m_iconSize(iconSize, iconSize), m_size(iconSize), m_needHover(needHover)
+    {
+        setFixedSize(50, 50);
+        setGeometry(x, y, iconSize, iconSize);
+        setAttribute(Qt::WA_Hover); // Включаем отслеживание hover-событий
+    }
+
+    QSize sizeHint() const override { return QSize(32, 32); }
+
+    void setIcon(const QIcon& icon)
+    {
+        m_icon = icon;
+        update();
+    }
+
+    void setIconSize(QSize size)
+    {
+        m_iconSize = size;
+        update();
+    }
+
+signals:
+    void clicked();
+
+protected:
+    void paintEvent(QPaintEvent* event) override
+    {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+
+        // Рисуем круглый фон
+        QRectF circleRect = rect().adjusted(5, 5, -5, -5); // Круг с отступом
+        painter.setBrush(Qt::transparent);
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(circleRect);
+
+        // Рисуем иконку в центре
+        QPixmap pixmap = m_icon.pixmap(m_size, m_size);
+        int x = (width() - pixmap.width()) / 2;
+        int y = (height() - pixmap.height()) / 2;
+        painter.drawPixmap(x, y, pixmap);
+
+        // Если кнопка в состоянии hover, рисуем мягкую белую подсветку
+        if (m_hovered && m_needHover)
+        {
+            // Создаем радиальный градиент для эффекта свечения
+            QRadialGradient gradient(circleRect.center(), circleRect.width() / 2);
+            gradient.setColorAt(0, QColor(255, 255, 255, 100)); // Белый цвет с прозрачностью в центре
+            gradient.setColorAt(1, QColor(255, 255, 255, 0));   // Полностью прозрачный на краях
+
+            // Настраиваем кисть с градиентом
+            painter.setBrush(gradient);
+            painter.setPen(Qt::NoPen);
+
+            // Рисуем круг с градиентом
+            painter.drawEllipse(circleRect);
+        }
+    }
+    
+
+    bool event(QEvent* event) override
+    {
+        switch (event->type())
+        {
+        case QEvent::HoverEnter:
+            hoverEnter(static_cast<QHoverEvent*>(event));
+            return true;
+        case QEvent::HoverLeave:
+            hoverLeave(static_cast<QHoverEvent*>(event));
+            return true;
+        case QEvent::HoverMove:
+            hoverMove(static_cast<QHoverEvent*>(event));
+            return true;
+        default:
+            return QWidget::event(event);
+        }
+    }
+
+    void hoverEnter(QHoverEvent* event)
+    {
+        m_hovered = true;
+        update();
+    }
+
+    void hoverLeave(QHoverEvent* event)
+    {
+        m_hovered = false;
+        update();
+    }
+
+    void hoverMove(QHoverEvent* event)
+    {
+        update();
+    }
+
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
+        if (event->button() == Qt::LeftButton) {
+            emit clicked();
+        }
+    }
+
+private:
+    QIcon m_icon;
+    QSize m_iconSize;
+    int   m_size;
+    bool m_hovered = false;
+    bool m_needHover = false;
+};
+
 
 class ButtonIcon : public QWidget
 {

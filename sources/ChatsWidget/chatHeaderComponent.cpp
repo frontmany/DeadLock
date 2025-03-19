@@ -23,18 +23,12 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
 
 
     m_mainLayout = new QHBoxLayout(this);
-    m_leftIcon = new ButtonIcon(this, 50, 50);
+    m_leftIcon = new AvatarIcon(this, 0, 0, 32, true);
 
-    QIcon icon1(":/resources/ChatsWidget/userFriend.png");
-    QIcon iconHover1(":/resources/ChatsWidget/userFriend.png");
-    m_leftIcon->uploadIconsDark(icon1, iconHover1);
+    QIcon icon(":/resources/ChatsWidget/userFriend.png");
+    m_leftIcon->setIcon(icon);
 
-    QIcon icon2(":/resources/ChatsWidget/userFriend.png");
-    QIcon iconHover2(":/resources/ChatsWidget/userFriend.png");
-    m_leftIcon->uploadIconsLight(icon2, iconHover2);
-    m_leftIcon->setTheme(m_theme);
     m_mainLayout->addWidget(m_leftIcon);
-
 
     m_rightLayout = new QVBoxLayout();
 
@@ -108,7 +102,6 @@ void ChatHeaderComponent::setTheme(Theme theme) {
     if (m_theme == DARK) {
         m_backColor = QColor(36, 36, 36);
         m_rightButton->setTheme(m_theme);
-        m_leftIcon->setTheme(m_theme);
         m_nameLabel->setStyleSheet(style->lightLabelStyle);
         if (m_lastSeenLabel->text() == "online") {
             m_lastSeenLabel->setStyleSheet(style->deepBlueLabelStyle);
@@ -121,7 +114,6 @@ void ChatHeaderComponent::setTheme(Theme theme) {
     else {
         m_backColor = QColor(224, 224, 224);
         m_rightButton->setTheme(m_theme);
-        m_leftIcon->setTheme(m_theme);
         m_nameLabel->setStyleSheet(style->darkLabelStyle);
         if (m_lastSeenLabel->text() == "online") {
             m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);

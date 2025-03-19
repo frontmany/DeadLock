@@ -59,6 +59,7 @@ public:
 
     std::string sh_packet_auth = "";
     bool chatsWidgetState = false;
+    bool isStatuses = false;
 
 private:
     void startAsyncReceive();

@@ -70,12 +70,17 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
 
         OperationResult isStatuses = m_client->getFriendsStatuses(logins);
         if (isStatuses == OperationResult::SUCCESS) {
+            std::cout << "easy statatuses\n";
         }
         else if (isStatuses == OperationResult::FAIL) {
             return;
             // todo DIALOG
         }
-
+        else if (isStatuses == OperationResult::NOT_STATED) {
+            std::cout << "dont easy statatuses\n";
+            return;
+            // todo DIALOG
+        }
         m_client->sendMyStatus("online");
         emit(sendLoginSuccess());
     }

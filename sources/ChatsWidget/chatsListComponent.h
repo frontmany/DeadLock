@@ -105,7 +105,7 @@ struct StyleChatsListComponent {
 
 };
 
-class RoundIconButton;
+class AvatarIcon;
 class AddChatDialogComponent;
 class MessagingAreaComponent;
 class ButtonIcon;
@@ -157,7 +157,7 @@ private:
     QWidget*            m_containerWidget;
     QVBoxLayout*        m_containerVLayout;
     QLineEdit*          m_searchLineEdit;
-    RoundIconButton*    m_profileButton;
+    AvatarIcon*         m_profileButton;
     ButtonIcon*         m_newChatButton;
     AddChatDialogComponent* m_chatAddDialog;
     ChatsWidget*        m_chats_widget;
