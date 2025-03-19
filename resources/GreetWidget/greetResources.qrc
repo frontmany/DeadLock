@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/resources/GreetWidget">
+        <file>loadPhoto.png</file>
+    </qresource>
+</RCC>

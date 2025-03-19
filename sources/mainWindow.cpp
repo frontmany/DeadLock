@@ -18,6 +18,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     m_client->run();
     m_client->setWorkerUI(m_worker);
     
+    m_greetWidget = new GreetWidget(this, this, m_client, m_theme);
+    m_greetWidget->hide();
+
     m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
     m_chatsWidget->hide();
 
@@ -55,9 +58,22 @@ bool MainWindow::isDarkMode() {
     return false;
 }
 
-void MainWindow::onLogin() {
-    setupChatsWidget();
+void MainWindow::onLogin(bool isRegistration) {
+    if (isRegistration) {
+        setupGreetWidget();
+    }
+    else {
+        setupChatsWidget();
+    }
+    
 }
+
+void MainWindow::setupGreetWidget() {
+    m_greetWidget->show();
+    m_greetWidget->startWelcomeAnimation();
+    setCentralWidget(m_greetWidget);
+}
+
 
 void MainWindow::setupLoginWidget() {
     m_loginWidget = new LoginWidget(this, this, m_client);

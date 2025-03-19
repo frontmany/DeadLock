@@ -65,7 +65,7 @@ public:
     void setTheme(Theme theme);
 
 signals:
-    void sendLoginSuccess();
+    void sendLoginSuccess(bool isRegistaration);
 
 private slots:
     void switchToAuthorize();

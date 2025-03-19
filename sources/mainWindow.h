@@ -9,6 +9,7 @@
 
 #include "loginWidget.h"
 #include "chatsWidget.h"
+#include "greetWidget.h"
 
 class Client;
 class WorkerQt;
@@ -47,17 +48,20 @@ public:
 
 
 public slots:
-	void onLogin();
+	void onLogin(bool isRegistration);
 
 private:
 	void setupLoginWidget();
 	void setupChatsWidget();
+	void setupGreetWidget();
 	bool isDarkMode();
 
 private:
 	WorkerQt*		m_worker;
 	Theme			m_theme;
 	Client*			m_client;
+	
+	GreetWidget*	m_greetWidget;
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;
 };

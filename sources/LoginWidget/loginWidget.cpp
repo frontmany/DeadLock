@@ -82,7 +82,7 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
             // todo DIALOG
         }
         m_client->sendMyStatus("online");
-        emit(sendLoginSuccess());
+        emit(sendLoginSuccess(false));
     }
     else if (isLog == OperationResult::FAIL) {
         // todo DIALOG
@@ -96,7 +96,7 @@ void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QSt
     OperationResult isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
     if (isLog == OperationResult::SUCCESS) {
         m_client->sendMyStatus("online");
-        emit(sendLoginSuccess());
+        emit(sendLoginSuccess(true));
     }
     else if (isLog == OperationResult::FAIL){
         // todo DIALOG
