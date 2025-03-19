@@ -1,12 +1,15 @@
 #include "greetWidget.h"
 #include "mainwindow.h"
 #include "client.h"
+#include "utility.h"
 #include <QWheelEvent>
 #include <QPainter>
 #include <QGraphicsBlurEffect>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
 #include <QPainterPath>
 
-GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme)
+GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login)
     : QWidget(parent), m_client(client), style(new StyleGreetWidget()),
     m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100) {
 
@@ -17,9 +20,10 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
     QHBoxLayout* labelLayout = new QHBoxLayout();
     labelLayout->setAlignment(Qt::AlignCenter);
-    m_welcomeLabel = new QLabel("Добро пожаловать!", this);
+    QString s = "Welcome " + QString::fromStdString(login) + "!";
+    m_welcomeLabel = new QLabel(s, this);
     m_welcomeLabel->setAlignment(Qt::AlignCenter);
-    m_welcomeLabel->setStyleSheet("font-size: 32px; font-weight: bold;");
+    m_welcomeLabel->setStyleSheet("font-size: 42px; font-weight: bold;");
     labelLayout->addSpacing(35);
     labelLayout->addWidget(m_welcomeLabel);
 
@@ -28,7 +32,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_imageLabel->setAlignment(Qt::AlignCenter);
     m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
-    m_selectImageButton = new QPushButton("Выбрать фото", this);
+    m_selectImageButton = new QPushButton("Choose a photo", this);
     m_selectImageButton->setMinimumSize(200, 60);
     m_selectImageButton->setMaximumSize(200, 60);
     m_selectImageButton->setStyleSheet(style->DarkButtonStyle);
@@ -39,8 +43,10 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_continueButton->setEnabled(false);
     m_continueButton->setMinimumSize(200, 60);
     m_continueButton->setMaximumSize(350, 60);
-    connect(m_continueButton, &QPushButton::clicked, this, []() {
-        // Действие при нажатии на кнопку continue
+    connect(m_continueButton, &QPushButton::clicked, this, [this]() {
+        saveCroppedImage();
+        //TODO
+
         });
 
     QHBoxLayout* sliderXLayout = new QHBoxLayout();
@@ -48,6 +54,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
     m_cropXSlider->setStyleSheet(style->DarkSliderStyle);
     m_cropXSlider->setFixedSize(400, 20);
+    m_cropXSlider->hide();
     m_cropXSlider->setRange(0, 500);
     m_cropXSlider->setValue(m_cropX);
     connect(m_cropXSlider, &QSlider::valueChanged, this, &GreetWidget::adjustCropArea);
@@ -56,13 +63,14 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
     m_cropYSlider = new QSlider(Qt::Vertical, this);
     m_cropYSlider->setRange(0, 330);
+
     m_cropYSlider->setStyleSheet(style->DarkSliderStyle);
     m_cropYSlider->setInvertedAppearance(true);
     m_cropYSlider->setValue(m_cropY);
    
     m_cropYSlider->setFixedSize(20, 330);
     connect(m_cropYSlider, &QSlider::valueChanged, this, &GreetWidget::adjustCropArea);
-
+    m_cropYSlider->hide();
     m_buttonsHLayout = new QHBoxLayout();
     m_buttonsHLayout->setAlignment(Qt::AlignCenter);
     m_buttonsHLayout->addWidget(m_selectImageButton);
@@ -136,43 +144,113 @@ void GreetWidget::openImagePicker() {
         // Устанавливаем масштабированное изображение в QLabel
         m_imageLabel->setPixmap(m_selectedImage);
 
+        // Инициализация маски
+        m_cropSize = qMin(imageWidth, imageHeight) / 2; // Начальный размер маски (половина меньшей стороны)
+        m_cropX = (imageWidth - m_cropSize) / 2; // Центрируем маску по X
+        m_cropY = (imageHeight - m_cropSize) / 2; // Центрируем маску по Y
+
+        // Обновляем слайдеры
+        m_cropXSlider->setRange(0, imageWidth - m_cropSize);
+        m_cropYSlider->setRange(0, imageHeight - m_cropSize);
+        m_cropXSlider->setValue(m_cropX);
+        m_cropYSlider->setValue(m_cropY);
+
         // Активируем кнопку continue
         m_continueButton->setEnabled(true);
 
-        // Обрезаем изображение до круга (если это необходимо)
+        // Показываем маску сразу после загрузки изображения
         cropImageToCircle();
+
+        // Показываем слайдеры
+        m_cropXSlider->show();
+        m_cropYSlider->show();
     }
+}
+
+void GreetWidget::setName(std::string name) {
+    QString s = "Welcome " + QString::fromStdString(name) + "!";
+    m_welcomeLabel->setText(s);
 }
 
 void GreetWidget::cropImageToCircle() {
     if (m_selectedImage.isNull()) return;
 
-    // Создание круглой маски (только контур)
-    QPixmap circularImage(m_cropWidth, m_cropHeight);
-    circularImage.fill(Qt::transparent);
+    // Размеры изображения
+    QSize imageSize = m_imageLabel->size();
 
-    QPainter circularPainter(&circularImage);
+    // Размытие изображения
+    QPixmap blurredImage = m_selectedImage.scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QGraphicsBlurEffect* blurEffect = new QGraphicsBlurEffect;
+    blurEffect->setBlurRadius(10); // Устанавливаем радиус размытия
+    QGraphicsScene scene;
+    QGraphicsPixmapItem item;
+    item.setPixmap(blurredImage);
+    item.setGraphicsEffect(blurEffect);
+    scene.addItem(&item);
+    QImage blurredImageResult(blurredImage.size(), QImage::Format_ARGB32);
+    blurredImageResult.fill(Qt::transparent);
+    QPainter painter(&blurredImageResult);
+    scene.render(&painter);
+    painter.end();
+
+    // Затемнение размытого изображения (делаем его серым)
+    QPixmap darkenedBlurredImage = QPixmap::fromImage(blurredImageResult);
+    QPainter darkenPainter(&darkenedBlurredImage);
+    darkenPainter.setCompositionMode(QPainter::CompositionMode_Multiply); // Режим наложения
+    darkenPainter.fillRect(darkenedBlurredImage.rect(), QColor(100, 100, 100, 150)); // Серый цвет с прозрачностью
+    darkenPainter.end();
+
+    // Создание круглой маски с белой рамкой
+    QPixmap circularMask(m_cropSize, m_cropSize); // Используем m_cropSize для ширины и высоты
+    circularMask.fill(Qt::transparent);
+
+    QPainter circularPainter(&circularMask);
     circularPainter.setRenderHint(QPainter::Antialiasing);
-    circularPainter.setPen(QPen(Qt::white, 3)); // Красный контур толщиной 2 пикселя
-    circularPainter.setBrush(Qt::NoBrush); // Без заливки
-    circularPainter.drawEllipse(0, 0, m_cropWidth, m_cropHeight);
-    circularPainter.end(); // Завершаем работу с circularPainter
 
-    // Создание фона с изображением
-    QPixmap background(m_imageLabel->size());
+    // Рисуем белую рамку
+    circularPainter.setPen(QPen(Qt::NoPen));
+    circularPainter.setBrush(Qt::NoBrush); // Без заливки
+    circularPainter.drawEllipse(1, 1, m_cropSize - 2, m_cropSize - 2); // Учитываем толщину рамки
+    circularPainter.end();
+
+    // Создание фона с размытым и затемненным изображением
+    QPixmap background(imageSize);
     background.fill(Qt::transparent);
 
     QPainter backgroundPainter(&background);
     backgroundPainter.setRenderHint(QPainter::Antialiasing);
-    backgroundPainter.drawPixmap(0, 0, m_selectedImage.scaled(m_imageLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
-    // Наложение контура маски на изображение с учетом m_cropX и m_cropY
-    int maskX = m_cropX; // Позиция маски по X
-    int maskY = m_cropY; // Позиция маски по Y
-    backgroundPainter.drawPixmap(maskX, maskY, circularImage);
-    backgroundPainter.end(); // Завершаем работу с backgroundPainter
+    // Рисуем размытое и затемненное изображение
+    backgroundPainter.drawPixmap(0, 0, darkenedBlurredImage);
 
-    m_imageLabel->setPixmap(background); // Устанавливаем изображение с контуром маски
+    // Рисуем исходное изображение внутри маски
+    QPixmap originalImage = m_selectedImage.scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    // Создаем круглую область для исходного изображения
+    QPixmap circularArea(m_cropSize, m_cropSize); // Используем m_cropSize для ширины и высоты
+    circularArea.fill(Qt::transparent);
+
+    QPainter circularAreaPainter(&circularArea);
+    circularAreaPainter.setRenderHint(QPainter::Antialiasing);
+    circularAreaPainter.setBrush(Qt::white); // Заливка белым цветом для маски
+    circularAreaPainter.setPen(Qt::NoPen); // Без контура
+    circularAreaPainter.drawEllipse(0, 0, m_cropSize, m_cropSize);
+    circularAreaPainter.end();
+
+    // Наложение круглой области на исходное изображение
+    QPixmap maskedOriginalImage = originalImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
+    maskedOriginalImage.setMask(circularArea.createMaskFromColor(Qt::transparent));
+
+    // Рисуем исходное изображение внутри маски
+    backgroundPainter.drawPixmap(m_cropX, m_cropY, maskedOriginalImage);
+
+    // Рисуем белую рамку поверх
+    backgroundPainter.drawPixmap(m_cropX, m_cropY, circularMask);
+
+    backgroundPainter.end();
+
+    // Устанавливаем изображение с размытием, затемнением, круглой маской и белой рамкой
+    m_imageLabel->setPixmap(background);
 }
 
 void GreetWidget::adjustCropArea(int value) {
@@ -181,12 +259,11 @@ void GreetWidget::adjustCropArea(int value) {
     int imageHeight = m_imageLabel->height();
 
     // Ограничиваем размер маски, чтобы она не превышала размеры изображения
-    m_cropWidth = qMin(m_cropWidth, imageWidth);
-    m_cropHeight = qMin(m_cropHeight, imageHeight);
+    m_cropSize = qMin(m_cropSize, qMin(imageWidth, imageHeight));
 
     // Ограничиваем перемещение маски в пределах изображения
-    int maxX = imageWidth - m_cropWidth;
-    int maxY = imageHeight - m_cropHeight;
+    int maxX = imageWidth - m_cropSize;
+    int maxY = imageHeight - m_cropSize;
 
     // Ограничиваем значения m_cropX и m_cropY
     m_cropX = qBound(0, m_cropXSlider->value(), maxX);
@@ -202,14 +279,13 @@ void GreetWidget::wheelEvent(QWheelEvent* event) {
 
     // Изменение размера маски с помощью колесика мыши
     int delta = event->angleDelta().y(); // Получаем значение прокрутки
-    int newSize = m_cropWidth + (delta > 0 ? 10 : -10); // Увеличиваем или уменьшаем размер
+    int newSize = m_cropSize + (delta > 0 ? 10 : -10); // Увеличиваем или уменьшаем размер
 
     // Ограничиваем минимальный и максимальный размер маски
     newSize = qBound(50, newSize, 500);
 
     // Обновляем размер маски
-    m_cropWidth = newSize;
-    m_cropHeight = newSize;
+    m_cropSize = newSize;
 
     // Ограничиваем положение маски, чтобы она не выходила за пределы изображения
     adjustCropArea(0); // Пересчитываем положение маски
@@ -258,5 +334,43 @@ void GreetWidget::setBackGround(Theme theme) {
     else {
         if (m_background.load(":/resources/LoginWidget/lightLoginBackground.jpg")) {
         }
+    }
+}
+
+void GreetWidget::saveCroppedImage() {
+    if (m_selectedImage.isNull()) return;
+
+    // Создаем круглую маску
+    QPixmap circularMask(m_cropSize, m_cropSize);
+    circularMask.fill(Qt::transparent);
+
+    QPainter maskPainter(&circularMask);
+    maskPainter.setRenderHint(QPainter::Antialiasing);
+    maskPainter.setBrush(Qt::white); // Заливка белым цветом для маски
+    maskPainter.setPen(Qt::NoPen); // Без контура
+    maskPainter.drawEllipse(0, 0, m_cropSize, m_cropSize);
+    maskPainter.end();
+
+    // Обрезаем изображение по маске
+    QPixmap croppedImage = m_selectedImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
+    croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
+
+    // Получаем путь для сохранения
+    QString saveDir = Utility::getSaveDir();
+    if (saveDir.isEmpty()) {
+        qWarning() << "Не удалось получить директорию для сохранения.";
+        return;
+    }
+
+    // Генерируем имя файла
+    QString fileName = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") + ".png";
+    QString filePath = QDir(saveDir).filePath(fileName);
+
+    // Сохраняем обрезанное изображение
+    if (croppedImage.save(filePath, "PNG")) {
+        qDebug() << "Изображение успешно сохранено:" << filePath;
+    }
+    else {
+        qWarning() << "Не удалось сохранить изображение.";
     }
 }

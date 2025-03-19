@@ -3,6 +3,8 @@
 #include "registrationComponent.h"
 #include "mainwindow.h"
 #include "client.h"
+#include <QGraphicsBlurEffect>
+#include <QPainterPath>
 
 LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
     : QWidget(parent), m_client(client){
@@ -122,6 +124,29 @@ void LoginWidget::switchToRegister() {
 
 void LoginWidget::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
+
+    // 2. Рисуем размытый скруглённый прямоугольник
+    QPainterPath roundedRectPath;
+    int cornerRadius = 0; // Радиус скругления углов
+    QRect rect(0, 0, width(), height()); // Прямоугольник с отступами 50 пикселей от краёв
+
+    // Создаём скруглённый прямоугольник
+    roundedRectPath.addRoundedRect(rect, cornerRadius, cornerRadius);
+
+    // Применяем размытие
+    QGraphicsBlurEffect blurEffect;
+    blurEffect.setBlurRadius(10); // Уровень размытия
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    // Рисуем скруглённый прямоугольник с размытием
+    painter.save();
+    painter.setClipPath(roundedRectPath);
+    painter.setOpacity(0.7); // Прозрачность
+    painter.fillPath(roundedRectPath, QColor(26, 26, 26, 200)); // Цвет прямоугольника
+    painter.restore();
+
+    
     painter.drawPixmap(this->rect(), m_background); 
     QWidget::paintEvent(event);
 }

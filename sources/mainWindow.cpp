@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     m_client->run();
     m_client->setWorkerUI(m_worker);
     
-    m_greetWidget = new GreetWidget(this, this, m_client, m_theme);
+    m_greetWidget = new GreetWidget(this, this, m_client, m_theme, "");
     m_greetWidget->hide();
 
     m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
@@ -69,6 +69,7 @@ void MainWindow::onLogin(bool isRegistration) {
 }
 
 void MainWindow::setupGreetWidget() {
+    m_greetWidget->setName(m_client->getMyName());
     m_greetWidget->show();
     m_greetWidget->startWelcomeAnimation();
     setCentralWidget(m_greetWidget);

@@ -125,9 +125,10 @@ class GreetWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme);
+    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login);
     void startWelcomeAnimation();
     void setBackGround(Theme theme);
+    void setName(std::string name);
 
 protected:
     void wheelEvent(QWheelEvent* event) override; // Переопределение метода для обработки колесика мыши
@@ -137,6 +138,9 @@ private slots:
     void openImagePicker();
     void cropImageToCircle();
     void adjustCropArea(int value);
+
+private:
+    void saveCroppedImage();
 
 private:
     StyleGreetWidget* style;
@@ -157,6 +161,7 @@ private:
     int m_cropX;
     int m_cropY;
     int m_cropWidth;
+    int m_cropSize;
     int m_cropHeight;
 
     QPixmap m_selectedImage;
