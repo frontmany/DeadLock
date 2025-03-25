@@ -37,7 +37,7 @@ std::string SendStringsGenerator::get_message_ReplyStr(const std::string& myLogi
 
 std::string SendStringsGenerator::get_first_message_ReplyStr(const std::string& myLogin, const std::string& myName, bool isHAsPhoto, Photo ph, const std::string& friendLogin, const std::string& message, const std::string& id, const std::string& timestamp) const {
     return rpl + '\n' + friendLogin + '\n' + parseTypeToStr(QueryType::FIRST_MESSAGE) + '\n' + myLogin + '\n' + messageBegin + '\n'
-        + message + '\n' + messageEnd + '\n' + id + '\n' + timestamp + '\n' + myName + '\n' + (isHAsPhoto? "true" : "false") + '\n' + ph.serialize() + '\n' + endPacket;
+        + message + '\n' + messageEnd + '\n' + id + '\n' + timestamp + '\n' + myName + '\n' + (isHAsPhoto? "true" : "false") + '\n' + std::to_string(ph.getSize()) + '\n' + ph.serialize() + '\n' + endPacket;
 }
 
 std::string SendStringsGenerator::get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec) const {
@@ -68,9 +68,35 @@ std::string SendStringsGenerator::get_createChat_QueryStr(const std::string& myL
         + friendLogin + '\n' + endPacket;
 }
 
-std::string SendStringsGenerator::get_updateMyInfo_QueryStr(std::string login, std::string name, std::string password, bool isHasPhoto, Photo photo) const {
-    return get + '\n' + parseTypeToStr(QueryType::UPDATE_MY_INFO) + '\n' + login + '\n'
-        + name + '\n' + password + '\n' + (isHasPhoto == true ? "true" : "false") + '\n' + photo.serialize() + '\n' + endPacket;
+std::string SendStringsGenerator::get_updateMyInfo_QueryStr(
+    const std::string& login,
+    const std::string& name,
+    const std::string& password,
+    bool isHasPhoto,
+    const Photo& photo,
+    std::vector<std::string>& friendsLoginsVec) const
+{
+    std::ostringstream oss;
+    oss << get << '\n'
+        << parseTypeToStr(QueryType::UPDATE_MY_INFO) << '\n'
+        << login << '\n'
+        << name << '\n'
+        << password << '\n';
+
+    oss << vecBegin << '\n';
+    for (const auto& login : friendsLoginsVec) {
+        oss << login << '\n';
+    }
+    oss << vecEnd << '\n';
+    oss << (isHasPhoto ? "true" : "false") << '\n';
+    oss << std::to_string(photo.getSize()) << '\n';
+
+    std::string photoString = photo.serialize(); // serialize() возвращает Base64-кодированную строку
+    oss << photoString << '\n';
+
+    oss << endPacket;
+    std::string debugStr = oss.str();
+    return debugStr;
 }
 
 std::string SendStringsGenerator::get_loadAllFriendsStatuses_QueryStr(std::vector<std::string>& friendsLoginsVec) {

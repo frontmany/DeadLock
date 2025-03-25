@@ -123,24 +123,15 @@ protected:
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        // Рисуем круглый фон
-        QRectF circleRect = rect().adjusted(5, 5, -5, -5); // Круг с отступом
-        painter.setBrush(Qt::transparent);
-        painter.setPen(Qt::NoPen);
-        painter.drawEllipse(circleRect);
-
-        // Рисуем иконку в центре
-        QPixmap pixmap = m_icon.pixmap(m_size, m_size);
-        int x = (width() - pixmap.width()) / 2;
-        int y = (height() - pixmap.height()) / 2;
-        painter.drawPixmap(x, y, pixmap);
-
-        // Если кнопка в состоянии hover, рисуем мягкую белую подсветку
+        // Если кнопка в состоянии hover, рисуем мягкую белую подсветку ПОД иконкой
         if (m_hovered && m_needHover)
         {
+            QRectF circleRect = rect().adjusted(2, 2, -2, -2); // Увеличиваем область подсветки (меньше отступ)
+
             // Создаем радиальный градиент для эффекта свечения
-            QRadialGradient gradient(circleRect.center(), circleRect.width() / 2);
-            gradient.setColorAt(0, QColor(255, 255, 255, 100)); // Белый цвет с прозрачностью в центре
+            QRadialGradient gradient(circleRect.center(), circleRect.width() / 1.5); // Увеличиваем радиус градиента
+            gradient.setColorAt(0, QColor(255, 255, 255, 150)); // Ярче и менее прозрачный в центре
+            gradient.setColorAt(0.7, QColor(255, 255, 255, 50)); // Плавнее спад прозрачности
             gradient.setColorAt(1, QColor(255, 255, 255, 0));   // Полностью прозрачный на краях
 
             // Настраиваем кисть с градиентом
@@ -150,8 +141,23 @@ protected:
             // Рисуем круг с градиентом
             painter.drawEllipse(circleRect);
         }
+
+        // Рисуем круглый фон (если нужен, иначе можно убрать)
+        QRectF circleRect = rect().adjusted(5, 5, -5, -5); // Круг с отступом
+        painter.setBrush(Qt::transparent);
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(circleRect);
+
+        // Рисуем иконку в центре (поверх всего)
+        if (!m_icon.isNull()) // Проверяем, что иконка загружена
+        {
+            QPixmap pixmap = m_icon.pixmap(m_size, m_size);
+            int x = (width() - pixmap.width()) / 2;
+            int y = (height() - pixmap.height()) / 2;
+            painter.drawPixmap(x, y, pixmap);
+        }
     }
-    
+
 
     bool event(QEvent* event) override
     {

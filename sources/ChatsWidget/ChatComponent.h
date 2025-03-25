@@ -26,7 +26,6 @@ public:
     explicit ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat);
 
     void setName(const QString& name);
-    void setAvatar(const QPixmap& avatar);
     void setTheme(Theme theme);
     void setSelected(bool isSelected);
     const Chat* getChatConst() const { return m_chat; }
@@ -48,6 +47,7 @@ private slots:
 
 
 public slots:
+    void setAvatar(const QPixmap& avatar);
     void setUnreadMessageDot(bool isUnreadMessages);
     void setLastMessage(const QString& message);
 

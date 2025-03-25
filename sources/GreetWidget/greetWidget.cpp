@@ -2,21 +2,26 @@
 #include "mainwindow.h"
 #include "client.h"
 #include "utility.h"
+#include "chatsWidget.h"
+#include "chatsListComponent.h"
 #include <QWheelEvent>
 #include <QPainter>
 #include <QGraphicsBlurEffect>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
 #include <QPainterPath>
+#include <QBuffer>
 
-GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login)
+GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv)
     : QWidget(parent), m_client(client), style(new StyleGreetWidget()),
-    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100) {
+    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv) {
 
     setBackGround(theme);
 
+    m_sender = new SendStringsGenerator;
+
     m_mainVLayout = new QVBoxLayout(this);
-    m_mainVLayout->setAlignment(Qt::AlignTop);
+    m_mainVLayout->setAlignment(Qt::AlignCenter);
 
     QHBoxLayout* labelLayout = new QHBoxLayout();
     labelLayout->setAlignment(Qt::AlignCenter);
@@ -26,6 +31,14 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_welcomeLabel->setStyleSheet("font-size: 42px; font-weight: bold;");
     labelLayout->addSpacing(35);
     labelLayout->addWidget(m_welcomeLabel);
+
+    m_skipButton = new QPushButton("skip", this);
+    m_skipButton->setStyleSheet(style->buttonSkipStyle);
+    m_skipButton->setMinimumSize(100, 60);
+    m_skipButton->setMaximumSize(350, 60);
+    connect(m_skipButton, &QPushButton::clicked, this, [this]() {
+        m_mainWindow->setupChatsWidget();
+        });
 
     m_imageLabel = new QLabel(this);
     m_imageLabel->setFixedSize(500, 500);
@@ -45,8 +58,23 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_continueButton->setMaximumSize(350, 60);
     connect(m_continueButton, &QPushButton::clicked, this, [this]() {
         saveCroppedImage();
-        //TODO
+        m_mainWindow->setupChatsWidget();
+        Photo photo(m_filePath.toStdString());
+        m_client->setPhoto(photo);
+        auto chatsList = m_chatsWidget->getChatsList();
+        chatsList->SetAvatar(photo);
 
+        auto& map = m_client->getMyChatsMap();
+        std::vector<std::string> logins;
+        logins.reserve(map.size());
+        for (auto [login, Chat] : map) {
+            logins.emplace_back(login);
+        }
+        for (auto login : m_client->getVecToSendStatusTmp()) {
+            logins.emplace_back(login);
+        }
+        
+        m_client->sendPacket(m_sender->get_updateMyInfo_QueryStr(m_client->getMyLogin(), m_client->getMyName(), m_client->getPassword(), true, photo, logins));
         });
 
     QHBoxLayout* sliderXLayout = new QHBoxLayout();
@@ -76,7 +104,8 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_buttonsHLayout->addWidget(m_selectImageButton);
     m_buttonsHLayout->addSpacing(60);
     m_buttonsHLayout->addWidget(m_continueButton);
-
+    m_buttonsHLayout->addWidget(m_skipButton);
+    m_buttonsHLayout->addSpacing(-140);
     
     QHBoxLayout* imageAndSliderLayout = new QHBoxLayout();
     imageAndSliderLayout->setAlignment(Qt::AlignCenter);
@@ -96,8 +125,9 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     // Добавление виджетов в основной layout
     m_mainVLayout->addSpacing(85);
     m_mainVLayout->addLayout(labelLayout);
+    m_mainVLayout->addSpacing(25);
     m_mainVLayout->addWidget(widgetContainer);
-    m_mainVLayout->addSpacing(50);
+    m_mainVLayout->addSpacing(25);
     m_mainVLayout->addLayout(m_buttonsHLayout);
     m_mainVLayout->addSpacing(150);
 
@@ -167,9 +197,13 @@ void GreetWidget::openImagePicker() {
     }
 }
 
-void GreetWidget::setName(std::string name) {
+void GreetWidget::setName(const std::string& name) {
     QString s = "Welcome " + QString::fromStdString(name) + "!";
     m_welcomeLabel->setText(s);
+}
+
+void GreetWidget::setLogin(const std::string& login) {
+    m_login = login;
 }
 
 void GreetWidget::cropImageToCircle() {
@@ -283,7 +317,6 @@ void GreetWidget::wheelEvent(QWheelEvent* event) {
 
     // Ограничиваем минимальный и максимальный размер маски
     newSize = qBound(50, newSize, 500);
-
     // Обновляем размер маски
     m_cropSize = newSize;
 
@@ -338,7 +371,11 @@ void GreetWidget::setBackGround(Theme theme) {
 }
 
 void GreetWidget::saveCroppedImage() {
-    if (m_selectedImage.isNull()) return;
+    // Проверяем, есть ли изображение для обработки
+    if (m_selectedImage.isNull()) {
+        qWarning() << "Нет изображения для сохранения";
+        return;
+    }
 
     // Создаем круглую маску
     QPixmap circularMask(m_cropSize, m_cropSize);
@@ -346,8 +383,8 @@ void GreetWidget::saveCroppedImage() {
 
     QPainter maskPainter(&circularMask);
     maskPainter.setRenderHint(QPainter::Antialiasing);
-    maskPainter.setBrush(Qt::white); // Заливка белым цветом для маски
-    maskPainter.setPen(Qt::NoPen); // Без контура
+    maskPainter.setBrush(Qt::white);
+    maskPainter.setPen(Qt::NoPen);
     maskPainter.drawEllipse(0, 0, m_cropSize, m_cropSize);
     maskPainter.end();
 
@@ -363,14 +400,52 @@ void GreetWidget::saveCroppedImage() {
     }
 
     // Генерируем имя файла
-    QString fileName = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") + ".png";
-    QString filePath = QDir(saveDir).filePath(fileName);
+    QString fileName = QString::fromStdString(m_login) + "myMainPhoto.png";
+    m_filePath = QDir(saveDir).filePath(fileName);
 
-    // Сохраняем обрезанное изображение
-    if (croppedImage.save(filePath, "PNG")) {
-        qDebug() << "Изображение успешно сохранено:" << filePath;
+    // Конвертируем в QImage для обработки
+    QImage image = croppedImage.toImage();
+
+    // Первый этап сжатия: уменьшаем размер изображения, если оно слишком большое
+    while (image.sizeInBytes() > 64 * 1024 && image.width() > 10 && image.height() > 10) {
+        image = image.scaled(image.width() * 0.9, image.height() * 0.9,
+            Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+
+    // Второй этап: регулируем качество сжатия
+    double quality = 50;
+    QByteArray imageData;
+    QBuffer buffer(&imageData);
+    buffer.open(QIODevice::WriteOnly);
+
+    // Пробуем разные уровни качества, пока не достигнем нужного размера
+    do {
+        std::cout << imageData.size() << std::endl;
+        imageData.clear();
+        if (!image.save(&buffer, "PNG", quality)) {
+            qWarning() << "Ошибка при сохранении изображения в буфер";
+            return;
+        }
+        quality -= 1;
+    } while (imageData.size() > 64 * 1024 && quality > 0);
+
+    // Проверяем, удалось ли сжать
+    if (imageData.size() > 64 * 1024) {
+        qWarning() << "Не удалось сжать изображение до 64 КБ. Фактический размер:"
+            << imageData.size() / 1024 << "КБ";
+        return;
+    }
+
+    // Сохраняем в файл
+    QFile file(m_filePath);
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(imageData);
+        qDebug() << "Изображение успешно сохранено:" << m_filePath
+            << "Размер:" << imageData.size() / 1024 << "КБ"
+            << "Качество:" << quality + 5; // +5 потому что последняя итерация уменьшила quality
+        file.close();
     }
     else {
-        qWarning() << "Не удалось сохранить изображение.";
+        qWarning() << "Ошибка при открытии файла для записи:" << file.errorString();
     }
 }

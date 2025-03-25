@@ -23,11 +23,16 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
 
 
     m_mainLayout = new QHBoxLayout(this);
+
     m_leftIcon = new AvatarIcon(this, 0, 0, 32, true);
-
-    QIcon icon(":/resources/ChatsWidget/userFriend.png");
-    m_leftIcon->setIcon(icon);
-
+    if (avatar.isNull()) {
+        QIcon icon(":/resources/ChatsWidget/userFriend.png");
+        m_leftIcon->setIcon(icon);
+    }
+    else {
+        QIcon icon(avatar);
+        m_leftIcon->setIcon(icon);
+    }
     m_mainLayout->addWidget(m_leftIcon);
 
     m_rightLayout = new QVBoxLayout();
@@ -79,6 +84,11 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
     m_mainLayout->addSpacing(5);
 
     setLayout(m_mainLayout);
+}
+
+void ChatHeaderComponent::setAvatar(const QPixmap& pixMap) {
+    QIcon icon(pixMap);
+    m_leftIcon->setIcon(icon);
 }
 
 void ChatHeaderComponent::setLastSeen(const QString& lastSeen) {

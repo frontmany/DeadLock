@@ -21,7 +21,7 @@ struct StyleGreetWidget {
                 border: none;                  
                 padding: 5px 10px;            
                 font-family: 'Arial';          
-                font-size: 14px;               
+                font-size: 20px;               
             }
             QPushButton:hover {
                 color: rgb(26, 133, 255);       
@@ -31,7 +31,7 @@ struct StyleGreetWidget {
             }
         )";
 
-    QString buttonStyleGray = R"(
+    QString buttonSkipStyle = R"(
             QPushButton {
                 background-color: transparent;     
                 color: rgb(153, 150, 150);              
@@ -42,10 +42,10 @@ struct StyleGreetWidget {
                 font-size: 14px;                 
             }
             QPushButton:hover {
-                color: rgb(153, 150, 150);      
+                color: rgb(26, 133, 255);      
             }
             QPushButton:pressed {
-                color: rgb(153, 150, 150);      
+                color: rgb(26, 133, 255);      
             }
         )";
 
@@ -119,16 +119,19 @@ QSlider::sub-page:vertical {
 
 class Client;
 class MainWindow;
+class ChatsWidget;
 enum Theme;
+class SendStringsGenerator;
 
 class GreetWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login);
+    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv);
     void startWelcomeAnimation();
     void setBackGround(Theme theme);
-    void setName(std::string name);
+    void setName(const std::string& name);
+    void setLogin(const std::string& login);
 
 protected:
     void wheelEvent(QWheelEvent* event) override; // Переопределение метода для обработки колесика мыши
@@ -143,17 +146,25 @@ private:
     void saveCroppedImage();
 
 private:
+    MainWindow*        m_mainWindow;
     StyleGreetWidget* style;
     QPixmap           m_background;
     Client*           m_client;
+    ChatsWidget*      m_chatsWidget;
+    SendStringsGenerator* m_sender;
+
 
     QVBoxLayout* m_mainVLayout;
     QHBoxLayout* m_buttonsHLayout;
 
+    std::string m_login;
+
     QLabel* m_welcomeLabel;
     QLabel* m_imageLabel;
     QPushButton* m_selectImageButton;
+    QPushButton* m_skipButton;
     QPushButton* m_continueButton;
+    QString m_filePath;
 
     QSlider* m_cropXSlider;
     QSlider* m_cropYSlider;

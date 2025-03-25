@@ -10,7 +10,7 @@ QJsonObject Chat::serialize(const Database& db) const {
     jsonObject["friend_name"] = QString::fromStdString(m_friend_name);
     jsonObject["last_incoming_message"] = QString::fromStdString(m_last_incoming_message);
     jsonObject["is_friend_has_photo"] = m_is_friend_has_photo;
-    jsonObject["friend_photo"] = QString::fromStdString(m_friend_photo->serialize());
+    jsonObject["friend_photo"] = QString::fromStdString(m_friend_photo->getPhotoPath());
     jsonObject["index_at_layout"] = QString::fromStdString(std::to_string(m_index_at_layout));
     return jsonObject;
 }
@@ -22,7 +22,11 @@ Chat* Chat::deserialize(const QJsonObject& jsonObject, const Database& db) {
     chat->m_friend_name = jsonObject["friend_name"].toString().toStdString();
     chat->m_last_incoming_message = jsonObject["last_incoming_message"].toString().toStdString();
     chat->m_is_friend_has_photo = jsonObject["is_friend_has_photo"].toBool();
-    chat->m_friend_photo = Photo::deserialize(jsonObject["friend_photo"].toString().toStdString());
+
+    std::string photoPath = jsonObject["friend_photo"].toString().toStdString();
+    Photo* photo = new Photo(photoPath);
+    chat->m_friend_photo = photo;
+
     chat->m_index_at_layout =jsonObject["index_at_layout"].toString().toInt();
     return chat;
 }

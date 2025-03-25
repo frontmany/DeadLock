@@ -45,14 +45,13 @@ class MainWindow : public QMainWindow {
 public:
 	explicit MainWindow(QWidget* parent);
 	~MainWindow();
-
+	void setupChatsWidget();
 
 public slots:
 	void onLogin(bool isRegistration);
 
 private:
 	void setupLoginWidget();
-	void setupChatsWidget();
 	void setupGreetWidget();
 	bool isDarkMode();
 

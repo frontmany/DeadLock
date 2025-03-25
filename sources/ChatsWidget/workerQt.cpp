@@ -5,15 +5,88 @@
 #include "messageComponent.h"
 #include "mainwindow.h"
 #include "chatsListComponent.h"
+#include "chatComponent.h"
 #include "chatHeaderComponent.h"
 #include "mainwindow.h"
 #include "utility.h"
+#include "base64.h"
 #include "chat.h"
 #include<chrono>
 #include<string>
 
 WorkerQt::WorkerQt(ChatsWidget* chatsWidget, Client* client) 
 	: m_chats_widget(chatsWidget), m_client(client) {
+
+}
+
+void WorkerQt::onFriendInfoReceive(std::string packet) {
+	while (m_client->chatsWidgetState == false) {
+
+	}
+	std::lock_guard<std::mutex> guard(m_mtx);
+
+	std::istringstream iss(packet);
+	std::string type;
+	std::getline(iss, type);
+
+
+	std::string login;
+	std::getline(iss, login);
+
+	std::string name;
+	std::getline(iss, name);
+
+	std::string isHasPhotoStr;
+	std::getline(iss, isHasPhotoStr);
+	bool isHasPhoto = isHasPhotoStr == "true";
+
+	std::string photoSizeStr;
+	std::getline(iss, photoSizeStr);
+	size_t size = std::stoi(photoSizeStr);
+
+	if (isHasPhoto) {
+		std::string photoStr;
+		std::getline(iss, photoStr);
+		Photo* photo = Photo::deserialize(photoStr, size, login);
+
+		auto& map = m_client->getMyChatsMap();
+		auto it = map.find(login);
+		if (it != map.end()) {
+			Chat* chat = it->second;
+			chat->setFriendPhoto(photo);
+			chat->setIsFriendHasPhoto(true);
+		}
+		else {
+			std::cout << "unexisting friend";
+		}
+
+		auto chatsList = m_chats_widget->getChatsList();
+		auto& vec = chatsList->getChatComponentsVec();
+		auto itComp = std::find_if(vec.begin(), vec.end(), [&login](ChatComponent* comp) {
+			return comp->getChat()->getFriendLogin() == login;
+			});
+		
+		if (itComp != vec.end()) {
+			ChatComponent* chatComp = *itComp;
+			QMetaObject::invokeMethod(chatComp,
+				"setAvatar",
+				Qt::QueuedConnection,
+				Q_ARG(const QPixmap&, QPixmap(QString::fromStdString(photo->getPhotoPath()))));
+		}
+
+		auto& areasVec = m_chats_widget->getMessagingComponentsCacheVec();
+		auto itArea = std::find_if(areasVec.begin(), areasVec.end(), [&login](MessagingAreaComponent* area) {
+			return area->getChat()->getFriendLogin() == login;
+			});
+
+		if (itArea != areasVec.end()) {
+			MessagingAreaComponent* area = *itArea;
+			QMetaObject::invokeMethod(area,
+				"setAvatar",
+				Qt::QueuedConnection,
+				Q_ARG(const QPixmap&, QPixmap(QString::fromStdString(photo->getPhotoPath()))));
+		}
+	}
 
 }
 
@@ -241,9 +314,13 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 	std::getline(iss, isHasPhotoStr);
 	bool isHasPhoto = isHasPhotoStr == "true" ? true : false;
 
+	std::string photoSizeStr;
+	std::getline(iss, photoSizeStr);
+	size_t size = std::stoi(photoSizeStr);
+
 	std::string photoStr;
 	std::getline(iss, photoStr);
-	Photo* ph = Photo::deserialize(photoStr);
+	Photo* ph = Photo::deserialize(base64_decode(photoStr), size, friendLogin);
 
 	Message* msg = new Message(message, timestamp, id, false);
 	msg->setIsRead(false);
@@ -252,7 +329,14 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 	chat->setFriendLastSeen("online");
 	chat->setFriendLogin(friendLogin);
 	chat->setFriendName(friendName);
-	chat->setIsFriendHasPhoto(isHasPhoto);
+
+	if (size > 0) {
+		chat->setIsFriendHasPhoto(true);
+	}
+	else {
+		chat->setIsFriendHasPhoto(false);
+	}
+
 	chat->setFriendPhoto(ph);
 	chat->setLastIncomeMsg(message);
 	chat->setLayoutIndex(0);

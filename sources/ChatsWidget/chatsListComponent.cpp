@@ -5,6 +5,7 @@
 #include "messagingAreaComponent.h"
 #include "messageComponent.h"
 #include "buttons.h"
+#include "utility.h"
 #include "client.h"
 
 #include <QPainter>
@@ -12,6 +13,20 @@
 
 
 
+
+void ChatsListComponent::loadAvatarFromPC(const std::string & login) {
+    QString dir = Utility::getSaveDir();
+    QString fileNameFinal = QString::fromStdString(login) + "myMainPhoto.png";
+    QDir saveDir(dir);
+    QString fullPath = saveDir.filePath(fileNameFinal);
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Couldn't open the file:" << fileNameFinal.toStdString();
+        return;
+    }
+    SetAvatar(Photo(fullPath.toStdString()));
+}
 
 ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme)
     : QWidget(parent), m_backgroundColor(Qt::transparent),
@@ -189,3 +204,7 @@ void ChatsListComponent::popUpComponent(ChatComponent* comp) {
     m_containerVLayout->insertWidget(0, comp);
 }
 
+void ChatsListComponent::SetAvatar(const Photo& photo) {
+    QIcon avatarIcon(QString::fromStdString(photo.getPhotoPath()));
+    m_profileButton->setIcon(avatarIcon);
+}

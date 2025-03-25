@@ -1,5 +1,6 @@
 #include "Client.h"
 #include "utility.h"
+#include "base64.h"
 #include "workerUI.h"
 #include <iostream>
 #include <QJsonDocument>
@@ -8,77 +9,87 @@
 #include <QDir>
 #include <QFile>
 
-Client::Client() : m_isReceiving(true),
-sh_is_authorized(OperationResult::NOT_STATED),
-sh_is_message_send(OperationResult::NOT_STATED),
-sh_is_first_message_send(OperationResult::NOT_STATED),
-sh_is_info_updated(OperationResult::NOT_STATED),
-sh_is_message_read_confirmation_send(OperationResult::NOT_STATED),
-sh_chat_create(OperationResult::NOT_STATED),
-sh_is_status_send(OperationResult::NOT_STATED),
-sh_is_user_info(OperationResult::NOT_STATED),
-sh_is_statuses(OperationResult::NOT_STATED),
-m_my_photo(Photo()), m_is_has_photo(false), m_io_context(asio::io_context()),
-m_worker(nullptr), m_db(Database()), m_buffer(std::array<char, 1024>()), m_socket(m_io_context) {}
+Client::Client() :
+    m_isReceiving(true),
+    sh_is_authorized(OperationResult::NOT_STATED),
+    sh_is_message_send(OperationResult::NOT_STATED),
+    sh_is_first_message_send(OperationResult::NOT_STATED),
+    sh_is_info_updated(OperationResult::NOT_STATED),
+    sh_is_message_read_confirmation_send(OperationResult::NOT_STATED),
+    sh_chat_create(OperationResult::NOT_STATED),
+    sh_is_status_send(OperationResult::NOT_STATED),
+    sh_is_user_info(OperationResult::NOT_STATED),
+    sh_is_statuses(OperationResult::NOT_STATED),
+    m_my_photo(Photo()),
+    m_is_has_photo(false),
+    m_io_context(asio::io_context()),
+    m_worker(nullptr),
+    m_db(Database()),
+    m_buffer(std::make_shared<asio::streambuf>()), 
+    m_delimiter("_+14?bb5HmR;%@`7[S^?!#sL8"),
+    m_socket(m_io_context) {
+}
 
 void Client::run() {
     m_db.init();
-    m_isReceiving = true; // Убедитесь, что флаг инициализирован
+    m_isReceiving = true;
     startAsyncReceive();
     m_io_contextThread = std::thread([this]() { m_io_context.run(); });
 }
 
-void Client::startAsyncReceive() {
-    if (m_isReceiving) {
-        // Начинаем асинхронное чтение
-        m_socket.async_read_some(asio::buffer(m_buffer),
-            [this](std::error_code error, std::size_t bytes_transferred) {
-                handleAsyncReceive(error, bytes_transferred);
-            });
-    }
-}
+
 
 void Client::connectTo(const std::string& ipAddress, int port) {
     try {
         m_endpoint = asio::ip::tcp::endpoint(asio::ip::make_address(ipAddress), port);
-        m_socket.connect(m_endpoint); 
-        std::cout << "Подключение успешно!" << std::endl;
+        m_socket.connect(m_endpoint);
+        std::cout << "Connection established successfully!" << std::endl;
     }
     catch (const asio::system_error& e) {
-        std::cerr << "Ошибка подключения: " << e.what() << " (код ошибки: " << e.code() << ")" << std::endl;
+        std::cerr << "Connection failed: " << e.what()
+            << " (code: " << e.code() << ")" << std::endl;
+        throw;
     }
 }
 
-void Client::handleAsyncReceive(const std::error_code& error, std::size_t bytes_transferred) {
-    if (error) {
-        if (error == asio::error::eof) {
-            std::cout << "Connection closed by server." << std::endl;
-        }
-        else if (error == asio::error::connection_reset) {
-            std::cerr << "Connection reset by server." << std::endl;
-        }
-        else {
-            std::cerr << "Receive error: " << error.message() << std::endl;
-        }
+void Client::startAsyncReceive() {
+    if (m_isReceiving) {
+        // Подготавливаем буфер для новых данных
+        m_buffer->prepare(1024 * 1024 * 20); // Подготовка 1KB пространства
+
+        asio::async_read_until(m_socket, *m_buffer, m_delimiter,
+            [this](const std::error_code& ec, std::size_t bytes_transferred) {
+                handleAsyncReceive(ec, bytes_transferred);
+            });
+    }
+}
+
+void Client::handleAsyncReceive(const std::error_code& ec, std::size_t bytes_transferred) {
+    if (ec) {
+        std::cerr << "Error during receive: " << ec.message() << std::endl;
         return; // Завершаем обработку в случае ошибки
     }
 
-    // Обрабатываем полученные данные
-    m_accumulated_data.append(m_buffer.data(), bytes_transferred);
+    // Извлекаем данные из буфера
+    std::istream is(m_buffer.get());
+    std::string message;
 
-    // Проверяем, есть ли завершение пакета
-    size_t pos = m_accumulated_data.find(c_endPacket);
-    while (pos != std::string::npos) {
-        std::string packet = m_accumulated_data.substr(0, pos);
-        std::cout << "Received: " << packet << std::endl;
-        handleResponse(packet);
+    // Читаем весь буфер
+    std::string buffer_content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
 
-        m_accumulated_data.erase(0, pos + c_endPacket.length());
-        pos = m_accumulated_data.find(c_endPacket);
+    // Если буфер не пустой, обрабатываем сообщение
+    if (!buffer_content.empty()) {
+        std::cout << "Received complete message: " << buffer_content << std::endl;
+        handleResponse(buffer_content);
     }
 
-    // Запускаем следующее асинхронное чтение
-    startAsyncReceive();
+    // Удаляем обработанные данные из буфера
+    m_buffer->consume(bytes_transferred);
+
+    // Продолжаем чтение, если еще получаем данные
+    if (m_isReceiving) {
+        startAsyncReceive();
+    }
 }
 
 void Client::close() {
@@ -145,6 +156,10 @@ void Client::handleResponse(const std::string& packet) {
         m_vec_friends_logins_tmp.push_back(login);
     }
 
+
+    else if (type == "FRIEND_INFO") {
+        m_worker->onFriendInfoReceive(iss.str());
+    }
     else if (type == "STATUS") {
         m_worker->onStatusReceive(iss.str());
     }
@@ -176,6 +191,9 @@ void Client::processFriendsStatusesSuccess(const std::string& packet) {
             Chat* chat = m_map_friend_login_to_chat[login];
             chat->setFriendLastSeen(status);
         }
+        else if (line == "VEC_END"){
+            break;
+        }
     }
     isStatuses = true;
 }
@@ -194,9 +212,16 @@ void Client::processUserInfoSuccess(const std::string& packet) {
     std::getline(iss, isHasPhoto);
     m_is_has_photo = isHasPhoto == "true";
 
-    std::string photoStr;
+
+    std::string sizeStr;
+    std::getline(iss, sizeStr);
+    size_t size = std::stoi(sizeStr);
+
+    std::string photoStr; 
     std::getline(iss, photoStr);
-    m_my_photo = *Photo::deserialize(photoStr);
+
+
+    m_my_photo = *Photo::deserialize(photoStr, size, login);
 }
 
 void Client::processChatCreateSuccess(const std::string& packet) {
@@ -210,10 +235,17 @@ void Client::processChatCreateSuccess(const std::string& packet) {
     std::getline(iss, name);
     std::string isHasPhoto;
     std::getline(iss, isHasPhoto);
-    std::string photoStr;
-    std::getline(iss, photoStr);
+
+    std::string sizeStr;
+    std::getline(iss, sizeStr);
+    size_t size = std::stoi(sizeStr);
+
     std::string lastSeen;
     std::getline(iss, lastSeen);
+
+    std::string photoStr;
+    std::getline(iss, photoStr);
+
 
 
     Chat* chat = new Chat;
@@ -227,7 +259,7 @@ void Client::processChatCreateSuccess(const std::string& packet) {
         chatTmp->setLayoutIndex(chatTmp->getLayoutIndex() + 1);
     }
 
-    Photo* photo = Photo::deserialize(photoStr);
+    Photo* photo = Photo::deserialize(base64_decode(photoStr), size, login);
     chat->setFriendPhoto(photo);
     chat->setFriendLastSeen(lastSeen);
     chat->setLastIncomeMsg("no messages yet");
@@ -342,7 +374,20 @@ OperationResult Client::updateMyInfo(const std::string& login, const std::string
     m_my_name = name;
     m_is_has_photo = isHasPhoto;
     m_my_photo = photo;
-    std::string packet = m_sender.get_updateMyInfo_QueryStr(login, name, password, isHasPhoto, photo);
+
+    std::vector<std::string> logins;
+    logins.reserve(m_map_friend_login_to_chat.size());
+    for (auto [login, chat] : m_map_friend_login_to_chat) {
+        logins.emplace_back(login);
+    }
+
+    for (auto login : m_vec_friends_logins_tmp) {
+        if (std::find(logins.begin(), logins.end(), login) != logins.end()) {
+            logins.push_back(login);
+        }
+    }
+
+    std::string packet = m_sender.get_updateMyInfo_QueryStr(login, name, password, isHasPhoto, photo, logins);
     sendPacket(packet);
 
     auto startTime = std::chrono::steady_clock::now();
@@ -555,6 +600,21 @@ bool Client::load(const std::string& fileName) {
     }
 
     return true;
+}
+
+void Client::loadAvatarFromPC(const std::string& login) {
+    QString dir = Utility::getSaveDir();
+    QString fileNameFinal = QString::fromStdString(login) + "myMainPhoto.png";
+    QDir saveDir(dir);
+    QString fullPath = saveDir.filePath(fileNameFinal);
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Couldn't open the file:" << fileNameFinal.toStdString();
+        return;
+    }
+    m_my_photo.setPhotoPath(fullPath.toStdString());
+    m_is_has_photo = true;
 }
 
 bool Client::isAuthorized() {

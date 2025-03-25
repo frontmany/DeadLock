@@ -50,7 +50,7 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
     OperationResult isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
     if (isLog == OperationResult::SUCCESS) {
         bool res = m_client->load(login.toStdString() + ".json");
-
+        m_client->setPassword(password.toStdString());
         if (!res) {
             m_client->setMyLogin(login.toStdString());
             OperationResult isInfo = m_client->getMyInfoFromServer(login.toStdString());
@@ -62,6 +62,8 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
             }
 
         }
+
+        m_client->loadAvatarFromPC(login.toStdString());
 
         auto& map = m_client->getMyChatsMap();
         std::vector<std::string> logins;

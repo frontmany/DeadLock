@@ -3,7 +3,7 @@ set(CMAKE_CXX_STANDARD 20)
 project(app)
 
 
-file(GLOB SOURCES "sources/*.cpp" "sources/*.h")
+file(GLOB SOURCES "sources/*.cpp" "sources/*.h" "vendor/base_64/base64.h" "vendor/base_64/base64.cpp")
 source_group("Source Files" FILES ${SOURCES})
 
 # Создание группы Login
@@ -25,7 +25,7 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 qt_standard_project_setup()
 set(CMAKE_AUTOMOC ON)
 
-include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Network" "sources/GreetWidget" "vendor")
+include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Network" "sources/GreetWidget" "vendor" "vendor/base_64")
 link_directories("vendor/sqlite")
 
 qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/ChatsWidget/chatsResources.qrc resources/GreetWidget/greetResources.qrc)

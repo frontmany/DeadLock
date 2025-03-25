@@ -121,6 +121,7 @@ public:
     ~ChatsListComponent();
     void setTheme(Theme theme);
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
+    void SetAvatar(const Photo& photo);
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
     AddChatDialogComponent* getAddChatDialogComponent() { return m_chatAddDialog; }
@@ -137,6 +138,7 @@ public slots:
     void closeAddChatDialog();
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
+    void loadAvatarFromPC(const std::string& login);
 
 private slots:
     void toSendChangeTheme(bool fl);

@@ -15,14 +15,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
      
     m_client = new Client;
     m_client->connectTo("192.168.1.49", 8080);
-    m_client->run();
     m_client->setWorkerUI(m_worker);
+    m_client->run();
     
-    m_greetWidget = new GreetWidget(this, this, m_client, m_theme, "");
-    m_greetWidget->hide();
 
     m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
     m_chatsWidget->hide();
+
+    m_greetWidget = new GreetWidget(this, this, m_client, m_theme, "", m_chatsWidget);
+    m_greetWidget->hide();
 
     m_worker = new WorkerQt(m_chatsWidget, m_client);
     m_client->setWorkerUI(m_worker);
@@ -70,6 +71,7 @@ void MainWindow::onLogin(bool isRegistration) {
 
 void MainWindow::setupGreetWidget() {
     m_greetWidget->setName(m_client->getMyName());
+    m_greetWidget->setLogin(m_client->getMyLogin());
     m_greetWidget->show();
     m_greetWidget->startWelcomeAnimation();
     setCentralWidget(m_greetWidget);
@@ -83,10 +85,11 @@ void MainWindow::setupLoginWidget() {
 }
 
 void MainWindow::setupChatsWidget() {
-    m_chatsWidget->show();
     m_chatsWidget->setTheme(m_theme);
     m_chatsWidget->setup();
     m_chatsWidget->setupChatComponents();
+    m_chatsWidget->getChatsList()->loadAvatarFromPC(m_client->getMyLogin());
     setCentralWidget(m_chatsWidget);
+    m_chatsWidget->show();
     m_client->chatsWidgetState = true;
 }

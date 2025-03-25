@@ -42,9 +42,15 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_contentsVLayout->addWidget(m_lastMessageLabel);
 
     AvatarIcon* m_avatar_ico = new AvatarIcon(this, 0, 0, 50, false);
-    QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
-    m_avatar_ico->setIcon(avatarIcon);
-
+    if (chat->getIsFriendHasPhoto()) {
+        QIcon avatarIcon(m_avatar);
+        m_avatar_ico->setIcon(avatarIcon);
+    }
+    else {
+        QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
+        m_avatar_ico->setIcon(avatarIcon);
+    }
+    
     m_UnreadDot = new ButtonIcon(this, 40, 40);
     QIcon icon1(":/resources/ChatsWidget/unreadDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/unreadDark.png");

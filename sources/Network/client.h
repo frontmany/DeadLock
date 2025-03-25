@@ -34,7 +34,7 @@ public:
     void sendPacket(const std::string& packet);
     bool isAuthorized();
     void close();
-
+    void loadAvatarFromPC(const std::string& login);
     void save() const;
     bool load(const std::string& fileName);
 
@@ -51,8 +51,16 @@ public:
 
     void setMyLogin(const std::string& login) { m_my_login = login; }
     const std::string& getMyLogin() const { return m_my_login; }
+
     void setMyName(const std::string& name) { m_my_name = name; }
     const std::string& getMyName() const { return m_my_name; }
+
+    void setPhoto(const Photo& photo) { m_my_photo = photo; }
+    const Photo& getPhoto() const { return m_my_photo; }
+
+    void setPassword(const std::string& password) { m_my_password = password; }
+    const std::string& getPassword() const { return m_my_password; }
+
     const SendStringsGenerator& getSender() const { return m_sender; }
     std::unordered_map<std::string, Chat*>& getMyChatsMap() { return m_map_friend_login_to_chat; }
     std::vector<std::string>& getVecToSendStatusTmp() { return m_vec_friends_logins_tmp; }
@@ -66,17 +74,19 @@ private:
     void processChatCreateSuccess(const std::string& packet);
     void processFriendsStatusesSuccess(const std::string& packet);
     void processUserInfoSuccess(const std::string& packet);
-    void handleAsyncReceive(const std::error_code& error, std::size_t bytes_transferred);
+    void handleAsyncReceive(const std::error_code& ec, std::size_t bytes_transferred);
     void handleResponse(const std::string& packet);
     OperationResult waitForResponse(int seconds, std::function<OperationResult()> checkFunction);
 
 private:
+    static constexpr size_t DEFAULT_BUFFER_SIZE = 20971520;
+
     const std::string       c_endPacket = "_+14?bb5HmR;%@`7[S^?!#sL8";
     asio::io_context        m_io_context;
     asio::ip::tcp::socket   m_socket;
     asio::ip::tcp::endpoint m_endpoint;
     std::string             m_accumulated_data;
-    std::array<char, 1024>  m_buffer;
+    std::shared_ptr<asio::streambuf> m_buffer;
     bool                    m_isReceiving;
     bool                    m_is_loaded = false;
     std::thread             m_io_contextThread;
@@ -88,10 +98,13 @@ private:
 
     std::string m_my_login = "";
     std::string m_my_name = "";
+    std::string m_my_password = "";
     bool m_is_has_photo;
     Photo m_my_photo;
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;
     std::vector<std::string>               m_vec_friends_logins_tmp;
+
+    const std::string m_delimiter;
 
     //shared variables (main thread await until state changed on FAIL, SUCCESS or REQUEST_TIMEOUT)
 private:

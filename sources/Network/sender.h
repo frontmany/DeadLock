@@ -26,7 +26,7 @@ public:
 	std::string get_first_message_ReplyStr(const std::string& myLogin, const std::string& myName, bool isHAsPhoto, Photo ph, const std::string& friendLogin, const std::string& message, const std::string& id, const std::string& timestamp) const;
 	std::string get_status_ReplyStr(const std::string& status, const std::string& myLogin, std::vector<std::string>& friendsLoginsVec) const;
 	std::string get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec) const;
-	std::string get_updateMyInfo_QueryStr(std::string login, std::string name, std::string password, bool isHasPhoto, Photo photo) const;
+	std::string get_updateMyInfo_QueryStr(const std::string& login, const std::string& name, const std::string& password, bool isHasPhoto, const Photo& photo, std::vector<std::string>& friendsLoginsVec) const;
 	std::string get_loadFriendInfo_QueryStr(const std::string& login) const;
 	std::string get_loadAllFriendsStatuses_QueryStr(std::vector<std::string>& friendsLoginsVec);
 
@@ -38,6 +38,8 @@ private:
 	const std::string rpl = "RPL";
 	const std::string broadcast = "BROADCAST";
 	const std::string messageBegin = "MESSAGE_BEGIN";
+	const std::string photoBegin = "PHOTO_BEGIN";
+	const std::string photoEnd = "PHOTO_END";
 	const std::string messageEnd = "MESSAGE_END";
 	const std::string vecBegin = "VEC_BEGIN";
 	const std::string vecEnd = "VEC_END";

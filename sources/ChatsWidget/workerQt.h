@@ -1,5 +1,6 @@
 #include<vector>
 #include<mutex>
+#include<QPixmap>
 #include "workerUI.h"
 
 class ChatsWidget;
@@ -15,6 +16,7 @@ public:
 	void onFirstMessageReceive(std::string packet) override;
 	void onMessageReadConfirmationReceive(std::string packet) override;
 	void onAuthorization(std::string packet) override;
+	void onFriendInfoReceive(std::string packet);
 
 private:
 	std::mutex	 m_mtx;
