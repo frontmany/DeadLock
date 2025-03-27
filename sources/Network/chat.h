@@ -10,7 +10,7 @@ class Photo;
 
 class Chat {
 public:
-	Chat() : m_is_friend_has_photo(false), m_index_at_layout(std::numeric_limits<int>::max()) {}
+	Chat() : m_is_friend_has_photo(false), m_index_at_layout(10000) {}
 
 	std::vector<Message*>& getMessagesVec() { return m_vec_messages; }
 	const std::vector<Message*> getUnreadSendMessagesVec() const;

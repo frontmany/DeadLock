@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     m_client->run();
     
 
-    m_chatsWidget = new ChatsWidget(this, m_client, m_theme);
+    m_chatsWidget = new ChatsWidget(this, this, m_client, m_theme);
     m_chatsWidget->hide();
 
     m_greetWidget = new GreetWidget(this, this, m_client, m_theme, "", m_chatsWidget);

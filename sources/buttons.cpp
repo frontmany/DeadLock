@@ -1,6 +1,54 @@
 #include "buttons.h"
 #include "mainwindow.h"
 
+void AvatarIcon::paintEvent(QPaintEvent* event)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Если кнопка в состоянии hover, рисуем мягкую белую подсветку ПОД иконкой
+    if (m_hovered && m_needHover)
+    {
+        QRectF circleRect = rect().adjusted(2, 2, -2, -2); // Увеличиваем область подсветки (меньше отступ)
+
+        // Создаем радиальный градиент для эффекта свечения
+
+        QRadialGradient gradient(circleRect.center(), circleRect.width() / 1.5);
+        if (m_theme == Theme::LIGHT) {
+            gradient.setColorAt(0, QColor(63, 139, 252, 150)); // Ярче и менее прозрачный в центре
+            gradient.setColorAt(0.7, QColor(63, 139, 252, 50)); // Плавнее спад прозрачности
+            gradient.setColorAt(1, QColor(63, 139, 252, 0));   // Полностью прозрачный на краях
+        }
+        else {
+            gradient.setColorAt(0, QColor(255, 255, 255, 150)); // Ярче и менее прозрачный в центре
+            gradient.setColorAt(0.7, QColor(255, 255, 255, 50)); // Плавнее спад прозрачности
+            gradient.setColorAt(1, QColor(255, 255, 255, 0));   // Полностью прозрачный на краях
+        }
+
+        // Настраиваем кисть с градиентом
+        painter.setBrush(gradient);
+        painter.setPen(Qt::NoPen);
+
+        // Рисуем круг с градиентом
+        painter.drawEllipse(circleRect);
+    }
+
+    // Рисуем круглый фон (если нужен, иначе можно убрать)
+    QRectF circleRect = rect().adjusted(0, 0, 0, 0); // Круг с отступом
+    painter.setBrush(Qt::transparent);
+    painter.setPen(Qt::NoPen);
+    painter.drawEllipse(circleRect);
+
+    // Рисуем иконку в центре (поверх всего)
+    if (!m_icon.isNull()) // Проверяем, что иконка загружена
+    {
+        QPixmap pixmap = m_icon.pixmap(m_size, m_size);
+        int x = (width() - pixmap.width()) / 2;
+        int y = (height() - pixmap.height()) / 2;
+        painter.drawPixmap(x, y, pixmap);
+    }
+}
+
 
 ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
     : QWidget(parent), m_isChecked(false), m_radius(20), m_indicatorX(5) {

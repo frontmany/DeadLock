@@ -45,6 +45,7 @@ public:
     OperationResult sendMessage(const std::string& friendLogin, const std::string& message, const std::string& id, const std::string timestamp);
     OperationResult sendFirstMessage(const std::string& friendLogin, const std::string& message, const std::string& id, const std::string timestamp);
     OperationResult sendMyStatus(const std::string& status);
+    OperationResult checkIsLoginAvailable(const std::string& newLogin);
     OperationResult sendMessageReadConfirmation(const std::string& friendLogin, const std::vector<Message*>& messagesReadIdsVec);
     OperationResult getMyInfoFromServer(const std::string& myLogin);
     OperationResult getFriendsStatuses(std::vector<std::string> vecFriends);
@@ -60,6 +61,9 @@ public:
 
     void setPassword(const std::string& password) { m_my_password = password; }
     const std::string& getPassword() const { return m_my_password; }
+
+    void setIsHasPhoto(bool isHasPhoto) { m_is_has_photo = isHasPhoto; }
+    const bool getIsHasPhoto() const { return m_is_has_photo; }
 
     const SendStringsGenerator& getSender() const { return m_sender; }
     std::unordered_map<std::string, Chat*>& getMyChatsMap() { return m_map_friend_login_to_chat; }
@@ -104,8 +108,6 @@ private:
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;
     std::vector<std::string>               m_vec_friends_logins_tmp;
 
-    const std::string m_delimiter;
-
     //shared variables (main thread await until state changed on FAIL, SUCCESS or REQUEST_TIMEOUT)
 private:
     OperationResult     sh_is_authorized;
@@ -117,4 +119,5 @@ private:
     OperationResult     sh_is_message_send;
     OperationResult     sh_is_first_message_send;
     OperationResult     sh_is_message_read_confirmation_send;
+    OperationResult     sh_new_login;
 };

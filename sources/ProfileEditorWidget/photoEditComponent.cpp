@@ -1,0 +1,319 @@
+#include "photoEditComponent.h"
+#include "mainwindow.h"
+#include "fieldsEditComponent.h"
+#include "profileEditorWidget.h"
+#include "client.h"
+#include "utility.h"
+#include "chatsWidget.h"
+#include "chatsListComponent.h"
+#include <QWheelEvent>
+#include <QPainter>
+#include <QGraphicsBlurEffect>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QPainterPath>
+#include <QBuffer>
+
+PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
+    : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme),
+    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100) {
+
+    m_style = new StylePhotoEditComponent;
+    m_mainVLayout = new QVBoxLayout(this);
+    m_mainVLayout->setAlignment(Qt::AlignCenter);
+
+    m_cancelButton = new QPushButton("cancel", this);
+    m_cancelButton->setStyleSheet(m_style->buttonSkipStyle);
+    m_cancelButton->setMinimumSize(100, 60);
+    m_cancelButton->setMaximumSize(150, 60);
+    connect(m_cancelButton, &QPushButton::clicked, [this]() {
+        m_profile_editor_widget->setFieldsEditor();
+        });
+
+    m_imageLabel = new QLabel(this);
+    m_imageLabel->setFixedSize(400, 400);
+    m_imageLabel->setAlignment(Qt::AlignCenter);
+    m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(400, 400, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+
+    m_selectImageButton = new QPushButton("Choose a photo", this);
+    m_selectImageButton->setMinimumSize(200, 60);
+    m_selectImageButton->setMaximumSize(250, 60);
+    m_selectImageButton->setStyleSheet(m_style->DarkButtonStyle);
+    connect(m_selectImageButton, &QPushButton::clicked, this, &PhotoEditComponent::openImagePicker);
+
+    m_continueButton = new QPushButton("Save", this);
+    m_continueButton->setStyleSheet(m_style->DarkButtonStyle);
+    m_continueButton->setEnabled(false);
+    m_continueButton->setMinimumSize(200, 60);
+    m_continueButton->setMaximumSize(250, 60);
+    connect(m_continueButton, &QPushButton::clicked, [this]() {
+        Photo photo(m_filePath.toStdString());
+        saveCroppedImage();
+
+        m_profile_editor_widget->setFieldsEditor();
+        m_profile_editor_widget->updateAvatar(photo);
+
+ 
+        m_client->setPhoto(photo);
+        m_client->setIsHasPhoto(true);
+
+        m_client->updateMyInfo(m_client->getMyLogin(), m_client->getMyName(), m_client->getPassword(), true, photo);
+        });
+
+    m_cropXSlider = new QSlider(Qt::Horizontal, this);
+    m_cropXSlider->setStyleSheet(m_style->DarkSliderStyle);
+    m_cropXSlider->setFixedSize(200, 20);
+    m_cropXSlider->hide();
+    m_cropXSlider->setRange(0, 500);
+    m_cropXSlider->setValue(m_cropX);
+    connect(m_cropXSlider, &QSlider::valueChanged, this, &PhotoEditComponent::adjustCropArea);
+
+    m_sliderXLayout = new QHBoxLayout();
+    m_sliderXLayout->setAlignment(Qt::AlignCenter);
+    m_sliderXLayout->addSpacing(40);
+    m_sliderXLayout->addWidget(m_cropXSlider);
+
+
+    m_cropYSlider = new QSlider(Qt::Vertical, this);
+    m_cropYSlider->setRange(0, 330);
+    m_cropYSlider->setStyleSheet(m_style->DarkSliderStyle);
+    m_cropYSlider->setInvertedAppearance(true);
+    m_cropYSlider->setValue(m_cropY);
+
+    m_cropYSlider->setFixedSize(20, 200);
+    connect(m_cropYSlider, &QSlider::valueChanged, this, &PhotoEditComponent::adjustCropArea);
+    m_cropYSlider->hide();
+    m_buttonsHLayout = new QHBoxLayout();
+    m_buttonsHLayout->setAlignment(Qt::AlignCenter);
+    m_buttonsHLayout->addWidget(m_selectImageButton);
+    m_buttonsHLayout->addSpacing(30);
+    m_buttonsHLayout->addWidget(m_continueButton);
+    m_buttonsHLayout->addWidget(m_cancelButton);
+    m_buttonsHLayout->addSpacing(-110);
+
+    m_imageAndYSliderLayout = new QHBoxLayout();
+    m_imageAndYSliderLayout->setAlignment(Qt::AlignCenter);
+    m_imageAndYSliderLayout->addWidget(m_cropYSlider);
+    m_imageAndYSliderLayout->addSpacing(20);
+    m_imageAndYSliderLayout->addWidget(m_imageLabel);
+
+    m_bothSlidersVLayout = new QVBoxLayout();
+    m_bothSlidersVLayout->setAlignment(Qt::AlignTop);
+    m_bothSlidersVLayout->addLayout(m_imageAndYSliderLayout);
+    m_bothSlidersVLayout->addLayout(m_sliderXLayout);
+
+    m_photoAndSlidersWidgetContainer = new QWidget;
+    m_photoAndSlidersWidgetContainer->setLayout(m_bothSlidersVLayout);
+    m_photoAndSlidersWidgetContainer->setFixedHeight(550);
+
+
+    m_mainVLayout->addSpacing(-140);
+    m_mainVLayout->addWidget(m_photoAndSlidersWidgetContainer);
+    m_mainVLayout->addSpacing(25);
+    m_mainVLayout->addLayout(m_buttonsHLayout);
+
+    setLayout(m_mainVLayout);
+    setMouseTracking(true);
+}
+
+void PhotoEditComponent::openImagePicker() {
+    QString imagePath = QFileDialog::getOpenFileName(this, "Âûבונטעו פמעמ", "", "Images (*.png *.jpg *.jpeg)");
+    if (!imagePath.isEmpty()) {
+        m_selectedImage.load(imagePath);
+        m_selectedImage = m_selectedImage.scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        int imageWidth = m_selectedImage.width();
+        int imageHeight = m_selectedImage.height();
+
+        if (imageWidth < 500 || imageHeight < 500) {
+            m_imageLabel->setFixedSize(imageWidth, imageHeight);
+            m_cropXSlider->setFixedSize(imageWidth, 30);
+            m_cropYSlider->setFixedSize(30, imageHeight);
+        }
+        else {
+            m_imageLabel->setFixedSize(400, 400);
+        }
+
+        m_imageLabel->setPixmap(m_selectedImage);
+
+        m_cropSize = qMin(imageWidth, imageHeight) / 2; 
+        m_cropX = (imageWidth - m_cropSize) / 2;
+        m_cropY = (imageHeight - m_cropSize) / 2; 
+
+        m_cropXSlider->setRange(0, imageWidth - m_cropSize);
+        m_cropYSlider->setRange(0, imageHeight - m_cropSize);
+        m_cropXSlider->setValue(m_cropX);
+        m_cropYSlider->setValue(m_cropY);
+
+        m_continueButton->setEnabled(true);
+        cropImageToCircle();
+
+        m_cropXSlider->show();
+        m_cropYSlider->show();
+    }
+}
+
+void PhotoEditComponent::cropImageToCircle() {
+    if (m_selectedImage.isNull()) return;
+
+    QSize imageSize = m_imageLabel->size();
+
+    QPixmap blurredImage = m_selectedImage.scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QGraphicsBlurEffect* blurEffect = new QGraphicsBlurEffect;
+    blurEffect->setBlurRadius(10);
+    QGraphicsScene scene;
+    QGraphicsPixmapItem item;
+    item.setPixmap(blurredImage);
+    item.setGraphicsEffect(blurEffect);
+    scene.addItem(&item);
+    QImage blurredImageResult(blurredImage.size(), QImage::Format_ARGB32);
+    blurredImageResult.fill(Qt::transparent);
+    QPainter painter(&blurredImageResult);
+    scene.render(&painter);
+    painter.end();
+
+    QPixmap darkenedBlurredImage = QPixmap::fromImage(blurredImageResult);
+    QPainter darkenPainter(&darkenedBlurredImage);
+    darkenPainter.setCompositionMode(QPainter::CompositionMode_Multiply);
+    darkenPainter.fillRect(darkenedBlurredImage.rect(), QColor(100, 100, 100, 150)); 
+    darkenPainter.end();
+
+    QPixmap circularMask(m_cropSize, m_cropSize);
+    circularMask.fill(Qt::transparent);
+
+    QPainter circularPainter(&circularMask);
+    circularPainter.setRenderHint(QPainter::Antialiasing);
+
+    circularPainter.setPen(QPen(Qt::NoPen));
+    circularPainter.setBrush(Qt::NoBrush);
+    circularPainter.drawEllipse(1, 1, m_cropSize - 2, m_cropSize - 2);
+    circularPainter.end();
+
+    QPixmap background(imageSize);
+    background.fill(Qt::transparent);
+
+    QPainter backgroundPainter(&background);
+    backgroundPainter.setRenderHint(QPainter::Antialiasing);
+
+    backgroundPainter.drawPixmap(0, 0, darkenedBlurredImage);
+
+    QPixmap originalImage = m_selectedImage.scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    QPixmap circularArea(m_cropSize, m_cropSize);
+    circularArea.fill(Qt::transparent);
+
+    QPainter circularAreaPainter(&circularArea);
+    circularAreaPainter.setRenderHint(QPainter::Antialiasing);
+    circularAreaPainter.setBrush(Qt::white);
+    circularAreaPainter.setPen(Qt::NoPen); 
+    circularAreaPainter.drawEllipse(0, 0, m_cropSize, m_cropSize);
+    circularAreaPainter.end();
+
+    QPixmap maskedOriginalImage = originalImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
+    maskedOriginalImage.setMask(circularArea.createMaskFromColor(Qt::transparent));
+
+    backgroundPainter.drawPixmap(m_cropX, m_cropY, maskedOriginalImage);
+    backgroundPainter.drawPixmap(m_cropX, m_cropY, circularMask);
+
+    backgroundPainter.end();
+
+    m_imageLabel->setPixmap(background);
+}
+
+void PhotoEditComponent::adjustCropArea() {
+    int imageWidth = m_imageLabel->width();
+    int imageHeight = m_imageLabel->height();
+
+    m_cropSize = qMin(m_cropSize, qMin(imageWidth, imageHeight));
+
+    int maxX = imageWidth - m_cropSize;
+    int maxY = imageHeight - m_cropSize;
+
+    m_cropX = qBound(0, m_cropXSlider->value(), maxX);
+    m_cropY = qBound(0, m_cropYSlider->value(), maxY);
+
+    if (!m_selectedImage.isNull()) {
+        cropImageToCircle();
+    }
+}
+
+void PhotoEditComponent::wheelEvent(QWheelEvent* event) {
+    if (m_selectedImage.isNull()) return;
+
+    int delta = event->angleDelta().y(); 
+    int newSize = m_cropSize + (delta > 0 ? 10 : -10);
+
+    newSize = qBound(50, newSize, 500);
+    m_cropSize = newSize;
+
+    adjustCropArea();
+    cropImageToCircle();
+}
+
+void PhotoEditComponent::saveCroppedImage() {
+    if (m_selectedImage.isNull()) {
+        qWarning() << "No image to save";
+        return;
+    }
+
+    QPixmap circularMask(m_cropSize, m_cropSize);
+    circularMask.fill(Qt::transparent);
+
+    QPainter maskPainter(&circularMask);
+    maskPainter.setRenderHint(QPainter::Antialiasing);
+    maskPainter.setBrush(Qt::white);
+    maskPainter.setPen(Qt::NoPen);
+    maskPainter.drawEllipse(0, 0, m_cropSize, m_cropSize);
+    maskPainter.end();
+
+    QPixmap croppedImage = m_selectedImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
+    croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
+
+    QString saveDir = Utility::getSaveDir();
+    if (saveDir.isEmpty()) {
+        qWarning() << "Couldn't get the directory to save.";
+        return;
+    }
+
+    QString fileName = QString::fromStdString(m_client->getMyLogin()) + "myMainPhoto.png";
+    m_filePath = QDir(saveDir).filePath(fileName);
+
+    QImage image = croppedImage.toImage();
+
+    while (image.sizeInBytes() > 64 * 1024 && image.width() > 10 && image.height() > 10) {
+        image = image.scaled(image.width() * 0.9, image.height() * 0.9,
+            Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+
+    double quality = 50;
+    QByteArray imageData;
+    QBuffer buffer(&imageData);
+    buffer.open(QIODevice::WriteOnly);
+
+    do {
+        std::cout << imageData.size() << std::endl;
+        imageData.clear();
+        if (!image.save(&buffer, "PNG", quality)) {
+            qWarning() << "Error saving the image to the buffer";
+            return;
+        }
+        quality -= 1;
+    } while (imageData.size() > 64 * 1024 && quality > 0);
+
+    if (imageData.size() > 64 * 1024) {
+        qWarning() << "The image could not be compressed to 64 KB. Actual size:"
+            << imageData.size() / 1024 << "ÊÁ";
+        return;
+    }
+
+    QFile file(m_filePath);
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(imageData);
+        qDebug() << "The image was saved successfully:" << m_filePath
+            << "Size:" << imageData.size() / 1024 << "ÊÁ"
+            << "Quality:" << quality + 5;
+        file.close();
+    }
+    else {
+        qWarning() << "Error when opening a file for writing:" << file.errorString();
+    }
+}

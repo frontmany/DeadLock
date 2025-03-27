@@ -103,6 +103,15 @@ struct StyleChatsListComponent {
     }
 )";
 
+    QString DialogStyle = R"(
+    QLineEdit {
+        background-color: #ffffff;                    
+        border: none;       
+        border-radius: 15px;           
+        padding: 5px;                 
+    }
+)";
+
 };
 
 class AvatarIcon;
@@ -126,6 +135,9 @@ public:
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
     AddChatDialogComponent* getAddChatDialogComponent() { return m_chatAddDialog; }
     QLineEdit* getSearchLineEdit() { return m_searchLineEdit; }
+    void setIsEditDialogFlag(bool isEditDialog) { m_isEditDialog = isEditDialog; }
+
+    ChatsWidget* getChatsWidget() const;
 
 signals:
     void sendCreateChatData(QString login);
@@ -142,6 +154,7 @@ public slots:
 
 private slots:
     void toSendChangeTheme(bool fl);
+    void openEditUserDialogWidnow();
 
 private:
     QColor                      m_backgroundColor;
@@ -166,5 +179,6 @@ private:
 
     std::vector<ChatComponent*> m_vec_chatComponents;
     bool m_isChatAddDialog = false;
+    bool m_isEditDialog = false;
     bool m_ableToCreateChat = true;
 };

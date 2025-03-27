@@ -20,13 +20,13 @@ Client::Client() :
     sh_is_status_send(OperationResult::NOT_STATED),
     sh_is_user_info(OperationResult::NOT_STATED),
     sh_is_statuses(OperationResult::NOT_STATED),
+    sh_new_login(OperationResult::NOT_STATED),
     m_my_photo(Photo()),
     m_is_has_photo(false),
     m_io_context(asio::io_context()),
     m_worker(nullptr),
     m_db(Database()),
     m_buffer(std::make_shared<asio::streambuf>()), 
-    m_delimiter("_+14?bb5HmR;%@`7[S^?!#sL8"),
     m_socket(m_io_context) {
 }
 
@@ -57,7 +57,7 @@ void Client::startAsyncReceive() {
         // Подготавливаем буфер для новых данных
         m_buffer->prepare(1024 * 1024 * 20); // Подготовка 1KB пространства
 
-        asio::async_read_until(m_socket, *m_buffer, m_delimiter,
+        asio::async_read_until(m_socket, *m_buffer, c_endPacket,
             [this](const std::error_code& ec, std::size_t bytes_transferred) {
                 handleAsyncReceive(ec, bytes_transferred);
             });
@@ -149,6 +149,12 @@ void Client::handleResponse(const std::string& packet) {
     }
     else if (type == "MESSAGE_READ_CONFIRAMTION_FAIL") {
         sh_is_message_read_confirmation_send = OperationResult::FAIL;
+    }
+    else if (type == "NEW_LOGIN_SUCCESS") {
+        sh_new_login = OperationResult::SUCCESS;
+    }
+    else if (type == "NEW_LOGIN_FAIL") {
+        sh_new_login = OperationResult::FAIL;
     }
     else if (type == "LOGIN_TO_SEND_STATUS") {
         std::string login;
@@ -269,6 +275,31 @@ void Client::processChatCreateSuccess(const std::string& packet) {
     std::cout << "statuses received\n";
 }
 
+OperationResult Client::checkIsLoginAvailable(const std::string& newLogin) {
+    std::string queryStr = m_sender.get_checkNewLogin_QueryStr(newLogin);
+    auto startTime = std::chrono::steady_clock::now();
+    auto timeout = std::chrono::seconds(2);
+
+    while (sh_new_login == OperationResult::NOT_STATED) {
+        auto currentTime = std::chrono::steady_clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime);
+
+        if (elapsedTime >= timeout) {
+            return OperationResult::REQUEST_TIMEOUT;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    if (sh_new_login == OperationResult::SUCCESS) {
+        m_worker->onAuthorization(sh_packet_auth);
+        return OperationResult::SUCCESS;
+    }
+    else {
+        sh_new_login = OperationResult::NOT_STATED;
+        return OperationResult::FAIL;
+    }
+}
+
 OperationResult Client::authorizeClient(const std::string& login, const std::string& password) {
     sendPacket(m_sender.get_authorization_QueryStr(login, password));
 
@@ -296,6 +327,7 @@ OperationResult Client::authorizeClient(const std::string& login, const std::str
 }
 
 OperationResult Client::registerClient(const std::string& login, const std::string& password, const std::string& name) {
+    m_my_password = password;
     m_my_login = login;
     m_my_name = name;
     sendPacket(m_sender.get_registration_QueryStr(login, name, password));

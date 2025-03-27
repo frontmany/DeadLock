@@ -25,12 +25,13 @@ enum Theme;
 class ChatsWidget : public QWidget {
 	Q_OBJECT
 public:
-	ChatsWidget(QWidget* parent, Client* client, Theme theme);
+	ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, Theme theme);
 	ChatsWidget() = default;
 	~ChatsWidget();
 	void setTheme(Theme theme);
 	const Theme getTheme() const { return m_theme; }
 	
+	MainWindow* getMainWindow();
 	MessagingAreaComponent* getCurrentMessagingArea() { return m_current_messagingAreaComponent; }
 	Client* getClientSide() { return m_client; }
 	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
@@ -62,7 +63,7 @@ private:
 	HelloAreaComponent*		m_helloAreaComponent;
 	QVBoxLayout*			m_leftVLayout;
 	QHBoxLayout*			m_mainHLayout;
-
+	MainWindow*				m_main_window;
 	std::mutex				m_mtx;
 
 	std::vector<MessagingAreaComponent*> m_vec_messagingComponents_cache;

@@ -13,24 +13,21 @@
 #include <QGraphicsOpacityEffect>
 #include <QWheelEvent>
 
-struct StyleGreetWidget {
-    QString buttonStyleGray = R"(
+struct StylePhotoEditComponent {
+    QString buttonStyleBlue = R"(
             QPushButton {
-                background-color: rgb(145, 145, 145); 
-                color: rgb(255, 255, 255);   
+                background-color: transparent; 
+                color: rgb(21, 119, 232);   
                 border: none;                  
-                padding: 5px 10px;   
-                border-radius: 5px;           
+                padding: 5px 10px;            
                 font-family: 'Arial';          
                 font-size: 20px;               
             }
             QPushButton:hover {
-                color: rgb(255, 255, 255);     
-                background-color: rgb( 173, 173, 173 ); 
+                color: rgb(26, 133, 255);       
             }
             QPushButton:pressed {
-                background-color: rgb( 173, 173, 173 ); 
-                color: rgb(255, 255, 255);                  
+                color: rgb(26, 133, 255);                  
             }
         )";
 
@@ -120,66 +117,54 @@ QSlider::sub-page:vertical {
 
 };
 
-class Client;
-class MainWindow;
-class ChatsWidget;
-enum Theme;
-class SendStringsGenerator;
 
-class GreetWidget : public QWidget {
+class ProfileEditorWidget;
+class Client;
+enum Theme;
+
+class PhotoEditComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv);
-    void startWelcomeAnimation();
-    void setBackGround(Theme theme);
-    void setName(const std::string& name);
-    void setLogin(const std::string& login);
+    explicit PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme);
 
 protected:
-    void wheelEvent(QWheelEvent* event) override; // Переопределение метода для обработки колесика мыши
-    void paintEvent(QPaintEvent* event) override;
+    void wheelEvent(QWheelEvent* event) override;
+    void saveCroppedImage();
 
 private slots:
     void openImagePicker();
     void cropImageToCircle();
-    void adjustCropArea(int value);
+    void adjustCropArea();
 
 private:
-    int saveCroppedImage();
+    ProfileEditorWidget* m_profile_editor_widget;
+    Client* m_client;
 
-private:
-    MainWindow*             m_mainWindow;
-    StyleGreetWidget*       m_style;
-    Client*                 m_client;
-    ChatsWidget*            m_chatsWidget;
-    SendStringsGenerator*   m_sender;
+    StylePhotoEditComponent* m_style;
+    Theme m_theme;
 
     QVBoxLayout* m_mainVLayout;
     QHBoxLayout* m_buttonsHLayout;
-    QHBoxLayout* m_greetLabelLayout;
     QHBoxLayout* m_sliderXLayout;
     QHBoxLayout* m_imageAndYSliderLayout;
     QVBoxLayout* m_bothSlidersVLayout;
     QWidget*     m_photoAndSlidersWidgetContainer;
 
-    QPixmap         m_background;
-    std::string     m_login;
     QString         m_filePath;
     QPixmap         m_selectedImage;
 
-    QLabel*         m_welcomeLabel;
-    QLabel*         m_imageLabel;
-    QPushButton*    m_selectImageButton;
-    QPushButton*    m_skipButton;
-    QPushButton*    m_continueButton;
-    QSlider*        m_cropXSlider;
-    QSlider*        m_cropYSlider;
+    QLabel* m_imageLabel;
+    QPushButton* m_selectImageButton;
+    QPushButton* m_cancelButton;
+    QPushButton* m_continueButton;
+    QSlider* m_cropXSlider;
+    QSlider* m_cropYSlider;
 
     int m_cropX;
     int m_cropY;
-    int m_cropWidth;
     int m_cropSize;
+    int m_cropWidth;
     int m_cropHeight;
 
 

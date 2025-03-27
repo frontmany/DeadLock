@@ -15,6 +15,7 @@ public:
 		FIRST_MESSAGE,
 		MESSAGES_READ_CONFIRMATION,
 		STATUS,
+		CHECK_NEW_LOGIN,
 		LOAD_FRIEND_INFO,
 		LOAD_ALL_FRIENDS_STATUSES
 	};
@@ -28,6 +29,7 @@ public:
 	std::string get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec) const;
 	std::string get_updateMyInfo_QueryStr(const std::string& login, const std::string& name, const std::string& password, bool isHasPhoto, const Photo& photo, std::vector<std::string>& friendsLoginsVec) const;
 	std::string get_loadFriendInfo_QueryStr(const std::string& login) const;
+	std::string get_checkNewLogin_QueryStr(const std::string& newLogin) const;
 	std::string get_loadAllFriendsStatuses_QueryStr(std::vector<std::string>& friendsLoginsVec);
 
 private:

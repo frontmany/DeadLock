@@ -10,6 +10,9 @@ source_group("Source Files" FILES ${SOURCES})
 file(GLOB LOGIN_FILES "sources/LoginWidget/*.cpp" "sources/LoginWidget/*.h")
 source_group("Source Files\\LoginUI Files" FILES ${LOGIN_FILES})
 
+file(GLOB PROFILE_EDITOR_FILES "sources/ProfileEditorWidget/*.cpp" "sources/ProfileEditorWidget/*.h")
+source_group("Source Files\\ProfileEditor Files" FILES ${PROFILE_EDITOR_FILES})
+
 file(GLOB CHATS_FILES "sources/ChatsWidget/*.cpp" "sources/ChatsWidget/*.h")
 source_group("Source Files\\ChatsUI Files" FILES ${CHATS_FILES})
 
@@ -25,11 +28,11 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 qt_standard_project_setup()
 set(CMAKE_AUTOMOC ON)
 
-include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Network" "sources/GreetWidget" "vendor" "vendor/base_64")
+include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Network" "sources/GreetWidget" "sources/ProfileEditorWidget" "vendor" "vendor/base_64")
 link_directories("vendor/sqlite")
 
 qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/ChatsWidget/chatsResources.qrc resources/GreetWidget/greetResources.qrc)
 
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${CHATS_FILES} ${NETWORK_FILES} ${QRC_FILES} ${GREET_FILES})
+add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${CHATS_FILES} ${NETWORK_FILES} ${QRC_FILES} ${GREET_FILES} ${PROFILE_EDITOR_FILES})
 target_link_libraries(${PROJECT_NAME} Qt6::Widgets ws2_32 sqlite.lib)

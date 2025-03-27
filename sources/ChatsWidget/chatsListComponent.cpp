@@ -1,5 +1,6 @@
 #include "chatsListComponent.h"
 #include "addChatDialogComponent.h"
+#include "fieldsEditComponent.h"
 #include "chatsWidget.h"
 #include "mainwindow.h"
 #include "messagingAreaComponent.h"
@@ -7,6 +8,7 @@
 #include "buttons.h"
 #include "utility.h"
 #include "client.h"
+#include"profileEditorWidget.h"
 
 #include <QPainter>
 #include <QPaintEvent>
@@ -69,8 +71,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     QIcon iconHover4(":/resources/ChatsWidget/moon.png");
     m_moon_icon->uploadIconsLight(icon4, iconHover4);
     m_moon_icon->setTheme(DARK);
-    
-
 
     m_darkModeSwitch = new ToggleSwitch(this, m_theme);
     m_darkModeSwitch->setTheme(m_theme);
@@ -112,9 +112,22 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
 
     m_mainVLayout->addWidget(m_scrollArea);
 
+    connect(m_profileButton, &AvatarIcon::clicked, this, &ChatsListComponent::openEditUserDialogWidnow);
     connect(m_newChatButton, &ButtonIcon::clicked, this, &ChatsListComponent::openAddChatDialog);
     connect(this, &ChatsListComponent::sendCreateChatData, m_chatsWidget, &ChatsWidget::onCreateChatButtonClicked);
     connect(this, &ChatsListComponent::sendChangeTheme, m_chatsWidget, &ChatsWidget::onChangeThemeClicked);
+}
+
+void ChatsListComponent::openEditUserDialogWidnow() {
+    if (m_isEditDialog) {
+        return;
+    }
+    else {
+        m_isEditDialog = true;
+        ProfileEditorWidget* profileEditorWidget = new ProfileEditorWidget(this, this, m_chatsWidget->getClientSide(), m_theme);
+        m_mainVLayout->insertWidget(1, profileEditorWidget);
+    }
+     
 }
 
 void ChatsListComponent::toSendChangeTheme(bool fl) {
@@ -164,6 +177,9 @@ void ChatsListComponent::closeAddChatDialog() {
     m_isChatAddDialog = false;
 }
 
+ChatsWidget* ChatsListComponent::getChatsWidget() const {
+    return m_chats_widget;
+}
 
 void ChatsListComponent::setTheme(Theme theme) {
     m_theme = theme;

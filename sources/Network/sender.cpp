@@ -15,6 +15,7 @@ std::string SendStringsGenerator::parseTypeToStr(QueryType type) const {
     case QueryType::MESSAGES_READ_CONFIRMATION: return "MESSAGES_READ_CONFIRMATION";
     case QueryType::LOAD_FRIEND_INFO:           return "LOAD_FRIEND_INFO";
     case QueryType::LOAD_ALL_FRIENDS_STATUSES:  return "LOAD_ALL_FRIENDS_STATUSES";
+    case QueryType::CHECK_NEW_LOGIN:            return "CHECK_NEW_LOGIN";
     }
 }
 
@@ -38,6 +39,10 @@ std::string SendStringsGenerator::get_message_ReplyStr(const std::string& myLogi
 std::string SendStringsGenerator::get_first_message_ReplyStr(const std::string& myLogin, const std::string& myName, bool isHAsPhoto, Photo ph, const std::string& friendLogin, const std::string& message, const std::string& id, const std::string& timestamp) const {
     return rpl + '\n' + friendLogin + '\n' + parseTypeToStr(QueryType::FIRST_MESSAGE) + '\n' + myLogin + '\n' + messageBegin + '\n'
         + message + '\n' + messageEnd + '\n' + id + '\n' + timestamp + '\n' + myName + '\n' + (isHAsPhoto? "true" : "false") + '\n' + std::to_string(ph.getSize()) + '\n' + ph.serialize() + '\n' + endPacket;
+}
+
+std::string SendStringsGenerator::get_checkNewLogin_QueryStr(const std::string& newLogin) const {
+    return get + '\n' + parseTypeToStr(QueryType::CHECK_NEW_LOGIN) + '\n' + newLogin + '\n' + endPacket;
 }
 
 std::string SendStringsGenerator::get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec) const {

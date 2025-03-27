@@ -10,8 +10,8 @@
 #include"mainWindow.h"
 
 
-ChatsWidget::ChatsWidget(QWidget* parent, Client* client, Theme theme) 
-    : QWidget(parent), m_client(client), m_theme(theme) {
+ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, Theme theme) 
+    : QWidget(parent), m_client(client), m_theme(theme), m_main_window(mainWindow) {
 
     m_mainHLayout = new QHBoxLayout;
     m_mainHLayout->setAlignment(Qt::AlignLeft);
@@ -35,6 +35,10 @@ ChatsWidget::~ChatsWidget() {
     for (auto comp : m_vec_messagingComponents_cache) {
         delete comp;
     }
+}
+
+MainWindow* ChatsWidget::getMainWindow() {
+    return m_main_window;
 }
 
 void ChatsWidget::onCreateChatButtonClicked(QString login) {
