@@ -30,6 +30,22 @@ struct StyleFieldsEditComponent {
     }
         )";
 
+    QString buttonStyleRedBorderDark = R"(
+            QPushButton {
+        background-color: rgb(21, 119, 232);   
+        color: white;             
+        border-color: rgb(255, 77, 77);
+        border-radius: 5px;       
+        padding: 5px 10px;        
+    }
+    QPushButton:hover {
+        background-color: rgb(26, 133, 255);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(26, 133, 255);      
+    }
+        )";
+
     QString buttonStyleGrayDark = R"(
             QPushButton {
         background-color: rgb(115, 115, 115);   

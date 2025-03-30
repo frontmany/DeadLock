@@ -47,8 +47,9 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_continueButton->setMinimumSize(200, 60);
     m_continueButton->setMaximumSize(250, 60);
     connect(m_continueButton, &QPushButton::clicked, [this]() {
-        Photo photo(m_filePath.toStdString());
         saveCroppedImage();
+        Photo photo(m_filePath.toStdString());
+
 
         m_profile_editor_widget->setFieldsEditor();
         m_profile_editor_widget->updateAvatar(photo);
@@ -58,6 +59,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
         m_client->setIsHasPhoto(true);
 
         m_client->updateMyInfo(m_client->getMyLogin(), m_client->getMyName(), m_client->getPassword(), true, photo);
+        m_profile_editor_widget->setFieldsEditor();
         });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
@@ -279,41 +281,42 @@ void PhotoEditComponent::saveCroppedImage() {
 
     QImage image = croppedImage.toImage();
 
-    while (image.sizeInBytes() > 64 * 1024 && image.width() > 10 && image.height() > 10) {
+    // Уменьшаем размер изображения, если оно слишком большое
+    while (image.sizeInBytes() > 58 * 1024 && image.width() > 10 && image.height() > 10) {
         image = image.scaled(image.width() * 0.9, image.height() * 0.9,
             Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
 
-    double quality = 50;
     QByteArray imageData;
     QBuffer buffer(&imageData);
     buffer.open(QIODevice::WriteOnly);
 
-    do {
-        std::cout << imageData.size() << std::endl;
-        imageData.clear();
-        if (!image.save(&buffer, "PNG", quality)) {
-            qWarning() << "Error saving the image to the buffer";
-            return;
-        }
-        quality -= 1;
-    } while (imageData.size() > 64 * 1024 && quality > 0);
 
-    if (imageData.size() > 64 * 1024) {
-        qWarning() << "The image could not be compressed to 64 KB. Actual size:"
+    int quality = 60;
+    if (!image.save(&buffer, "PNG", quality)) {
+        qWarning() << "Error saving the image to the buffer";
+        return;
+    }
+
+    // Проверяем, удалось ли сжать
+    if (imageData.size() > 58 * 1024) {
+        qWarning() << "Не удалось сжать изображение до 64 КБ. Фактический размер:"
             << imageData.size() / 1024 << "КБ";
         return;
     }
 
+    // Сохраняем в файл
     QFile file(m_filePath);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(imageData);
         qDebug() << "The image was saved successfully:" << m_filePath
-            << "Size:" << imageData.size() / 1024 << "КБ"
-            << "Quality:" << quality + 5;
+            << "Size" << imageData.size() / 1024 << "КБ"
+            << "Quality:" << quality + 5; // +5 потому что последняя итерация уменьшила quality
         file.close();
+        return;
     }
     else {
         qWarning() << "Error when opening a file for writing:" << file.errorString();
+        return;
     }
 }

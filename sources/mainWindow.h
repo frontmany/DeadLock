@@ -15,25 +15,6 @@ class Client;
 class WorkerQt;
 
 
-/*
-using asio::ip::tcp;
-
-class MyWorkerUI : public WorkerUI {
-public:
-	void onStatusReceive() override {
-		std::cout << "status received!" << std::endl;
-	}
-
-	void onMessageReceive() override {
-		std::cout << "Message received!" << std::endl;
-	}
-
-	void onMessageReadConfirmationReceive() override {
-		std::cout << "Confirmation of reading the message has been received!" << std::endl;
-	}
-};
-*/
-
 enum Theme {
 	DARK,
 	LIGHT

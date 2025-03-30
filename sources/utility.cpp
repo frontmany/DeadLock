@@ -1,20 +1,6 @@
 #include"utility.h"
 
 
-bool Utility::verifyPassword(const std::string& password, const std::string& storedHash) {
-
-    try {
-        std::string salt = extractSalt(storedHash);
-        std::string storedHashedPassword = extractHash(storedHash);
-        std::string hashedPassword = hashPassword(password, salt);
-
-        return hashedPassword == storedHashedPassword;
-    }
-    catch (const std::runtime_error& e) {
-        std::cerr << "Error verifying password: " << e.what() << std::endl;
-        return false; // Or handle the error differently
-    }
-}
 
 
 std::string Utility::getCurrentDateTime() {
@@ -40,88 +26,6 @@ std::string Utility::byteArrayToHexString(const BYTE* data, size_t dataLength) {
         ss << std::setw(2) << static_cast<int>(data[i]);
     }
     return ss.str();
-}
-
-// New generateSalt function (generates 16 bytes = 32 hex characters)
-std::string Utility::generateSalt() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distribution(0, 255);
-
-    BYTE saltBytes[16]; // 16 bytes = 128 bits
-    for (int i = 0; i < 16; ++i) {
-        saltBytes[i] = static_cast<BYTE>(distribution(gen));
-    }
-
-    return byteArrayToHexString(saltBytes, 16); // Convert byte array to hex string
-}
-
-// Function to extract the salt from the stored hash (assuming salt is stored as the first 32 characters = 16 bytes hex)
-std::string Utility::extractSalt(const std::string& storedHash) {
-    if (storedHash.length() < 33) {
-        throw std::runtime_error("Invalid stored hash format (salt missing)");
-    }
-    return storedHash.substr(0, 32); // Salt is the first 32 characters
-}
-
-// Function to extract the hash from the stored hash (assuming salt is stored as the first 32 characters, and then ':' and then hash)
-std::string Utility::extractHash(const std::string& storedHash) {
-
-    size_t delimiterPos = storedHash.find(':');
-    if (delimiterPos == std::string::npos) {
-        throw std::runtime_error("Invalid stored hash format (delimiter missing)");
-    }
-    if (delimiterPos + 1 >= storedHash.length()) {
-        throw std::runtime_error("Invalid stored hash format (hash missing)");
-    }
-    return storedHash.substr(delimiterPos + 1); // Hash is after the salt and ':'
-}
-
-
-// Rewritten bcryptHash function (still doesn't truly use bcrypt but uses SHA256 with a salt)
-std::string Utility::hashPassword(const std::string& password, const std::string& salt) {
-    // **WARNING: This is NOT true bcrypt!  It's SHA256 with a salt.**
-    // Proper bcrypt implementation requires using a dedicated bcrypt library.
-
-    BCRYPT_ALG_HANDLE hAlg = nullptr;
-    BCRYPT_HASH_HANDLE hHash = nullptr;
-    DWORD hashLength = 0;
-    BYTE* hash = nullptr;
-
-    std::string saltedPassword = salt + password; // Salt before the password
-
-    // Open the algorithm provider for SHA256
-    NTSTATUS status = BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, nullptr, 0);
-
-
-    // Create the hash object
-    status = BCryptCreateHash(hAlg, &hHash, nullptr, 0, nullptr, 0, 0); // No salt to BCryptCreateHash
-
-
-    // Hash the data (salted password)
-    status = BCryptHashData(hHash, (PBYTE)saltedPassword.c_str(), saltedPassword.length(), 0);
-
-
-    // Get the hash length
-    status = BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PBYTE)&hashLength, sizeof(DWORD), nullptr, 0);
-
-
-    // Allocate memory for the hash
-    hash = new BYTE[hashLength];
-
-    // Finish the hash
-    status = BCryptFinishHash(hHash, hash, hashLength, 0);
-
-
-    // Convert hash to hex string
-    std::string hashedPassword = byteArrayToHexString(hash, hashLength);
-
-    // Clean up
-    delete[] hash;
-    BCryptDestroyHash(hHash);
-    BCryptCloseAlgorithmProvider(hAlg, 0);
-
-    return hashedPassword;
 }
 
 std::string Utility::wideStringToString(const WCHAR* wideStr) {

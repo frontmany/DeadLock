@@ -41,6 +41,21 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_save_button->setStyleSheet(m_style->buttonStyleBlueDark);
     connect(m_save_button, &QPushButton::clicked, [this]() {
 
+        std::string login = m_login_edit->text().toStdString();
+        std::string name = m_name_edit->text().toStdString();
+        std::string password = m_password_edit->text().toStdString();
+
+        if (login != m_client->getMyLogin()) {
+            OperationResult res = m_client->checkIsLoginAvailable(login);
+            if (res == OperationResult::FAIL) {
+                m_login_edit->setStyleSheet(m_style->buttonStyleRedBorderDark);
+                std::cout << "new_login_fail\n";
+                return;
+            }
+        }
+
+        m_client->updateMyInfo(login, name, password, true, m_client->getPhoto());
+        m_profile_editor_widget->close();
         });
 
     m_cancel_button = new QPushButton("Cancel");
@@ -79,4 +94,5 @@ void FieldsEditComponent::setRedBorderOnLoginEdit() {
 void FieldsEditComponent::updateAvatar() {
     QPixmap currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto().getPhotoPath()));
     m_avatar_label->setPixmap(currentAvatar);
+    update();
 }

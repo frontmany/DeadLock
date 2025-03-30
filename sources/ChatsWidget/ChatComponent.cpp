@@ -41,7 +41,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_contentsVLayout->addWidget(m_nameLabel);
     m_contentsVLayout->addWidget(m_lastMessageLabel);
 
-    AvatarIcon* m_avatar_ico = new AvatarIcon(this, 0, 0, 50, false);
+    m_avatar_ico = new AvatarIcon(this, 0, 0, 50, false);
     if (chat->getIsFriendHasPhoto()) {
         QIcon avatarIcon(m_avatar);
         m_avatar_ico->setIcon(avatarIcon);
@@ -157,7 +157,6 @@ void ChatComponent::setTheme(Theme theme) {
 void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
     if (isUnreadMessages == true) {
         m_UnreadDot->show();
-        //m_UnreadDot->setTheme(m_theme);
     }
     else {
         m_UnreadDot->hide();
@@ -165,7 +164,9 @@ void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
 }
 
 void ChatComponent::setName(const QString& name) {
+    std::cout << "---------------------------------------label changed\n";
     m_nameLabel->setText(name);
+    update();
 }
 
 void ChatComponent::setLastMessage(const QString& message) {
@@ -179,7 +180,10 @@ void ChatComponent::setLastMessage(const QString& message) {
 }
 
 void ChatComponent::setAvatar(const QPixmap& avatar) {
+    std::cout << "---------------------------------------photo changed\n";
     m_avatar = avatar.scaled(m_avatarSize, m_avatarSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QIcon avatarIcon(m_avatar);
+    m_avatar_ico->setIcon(avatarIcon);
     update();
 }
 

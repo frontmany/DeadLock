@@ -1,10 +1,9 @@
 #include "photo.h"
 
 Photo::Photo(const std::string& photoPath)
-    : m_photoPath(photoPath), m_size(-1) {
+    : m_photoPath(photoPath), m_size(0) {
     if (photoPath != "") {
         updateSize();
-        saveToFile();
     }
 }
 
@@ -60,6 +59,23 @@ std::string Photo::serialize() const {
     return base64_encode(std::string(buffer.data(), m_size), false);
 }
 
+void Photo::updateNameOnPC(const std::string& oldLogin, const std::string& newLogin) const {
+    WCHAR username[256];
+    DWORD username_len = sizeof(username) / sizeof(WCHAR);
+    if (!GetUserNameW(username, &username_len)) {
+        std::cout << "No User data" << std::endl;
+        return; 
+    }
+
+    std::string usernameStr = wideStringToString(username);
+    std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
+    std::string oldPath = saveDirectory + "/" + oldLogin + "myMainPhoto.png";
+    std::string newPath = saveDirectory + "/" + newLogin + "myMainPhoto.png";
+
+    if (rename(oldPath.c_str(), newPath.c_str()) != 0) {
+        std::cout << "Failed to rename photo file from " << oldPath << " to " << newPath << std::endl;
+    }
+}
 
 Photo* Photo::deserialize(const std::string& data, size_t size, std::string login) {
     if (data == "") {
@@ -77,7 +93,6 @@ Photo* Photo::deserialize(const std::string& data, size_t size, std::string logi
     std::string usernameStr = wideStringToString(username);
     std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
     std::string tempPath = saveDirectory + "/" + login + "Photo.png";
-
 
     std::vector<char> buffer(size);
 
@@ -97,33 +112,47 @@ Photo* Photo::deserialize(const std::string& data, size_t size, std::string logi
     return new Photo(tempPath);
 }
 
+Photo* Photo::updateOnPC(const std::string& data, size_t size, std::string oldLogin, std::string newLogin) {
+    if (data == "") {
+        return new Photo;
+    }
+    std::istringstream iss(data);
 
-void Photo::saveToFile() const {
     WCHAR username[256];
     DWORD username_len = sizeof(username) / sizeof(WCHAR);
-    if (GetUserNameW(username, &username_len)) {
-        std::string usernameStr = wideStringToString(username);
-        std::string saveDirectory = "C:\\Users\\" + usernameStr + "\\Documents\\Data_Air_Gram\\Photos";
-        std::filesystem::path filePath(m_photoPath);
-        std::string fileName = filePath.filename().string();
-        std::filesystem::path fullPath = std::filesystem::path(saveDirectory) / fileName;
-        std::filesystem::path dir = fullPath.parent_path();
+    if (!GetUserNameW(username, &username_len)) {
+        std::cout << "No User data" << std::endl;
+    }
 
-        if (!dir.empty() && !std::filesystem::exists(dir)) {
-            std::filesystem::create_directories(dir);
-        }
+    std::string usernameStr = wideStringToString(username);
+    std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
+    std::string oldPath = saveDirectory + "/" + oldLogin + "Photo.png";
+    std::string newPath = saveDirectory + "/" + newLogin + "Photo.png";
 
-        std::ifstream src(m_photoPath, std::ios::binary);
-        std::ofstream dst(fullPath.string(), std::ios::binary);
-        if (src && dst) {
-            dst << src.rdbuf();
+
+    if (std::filesystem::exists(oldPath)) {
+        try {
+            std::filesystem::remove(oldPath);
+            std::cout << "Old login photo deleted: " << oldPath << std::endl;
         }
-        else {
-            std::cerr << "Open file Error" << std::endl;
+        catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Failed to delete old login photo: " << e.what() << std::endl;
         }
+    }
+
+    std::vector<char> buffer(size);
+
+    iss.read(buffer.data(), size);
+    std::filesystem::create_directories(saveDirectory);
+    std::ofstream outFile(newPath, std::ios::binary);
+    if (outFile) {
+        outFile.write(buffer.data(), size);
+        outFile.close();
+        std::cout << newPath << std::endl;
     }
     else {
-        std::cerr << "No User data" << std::endl;
+        std::cerr << "Open file Error" << std::endl;
     }
-}
 
+    return new Photo(newPath);
+}

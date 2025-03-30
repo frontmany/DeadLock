@@ -1,6 +1,7 @@
 #include "workerQt.h"
 #include "chatsWidget.h"
 #include "client.h"
+#include "base64.h"
 #include "messagingAreaComponent.h"
 #include "messageComponent.h"
 #include "mainwindow.h"
@@ -30,8 +31,12 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 	std::getline(iss, type);
 
 
-	std::string login;
-	std::getline(iss, login);
+	std::string oldLogin;
+	std::getline(iss, oldLogin);
+
+
+	std::string newLogin;
+	std::getline(iss, newLogin);
 
 	std::string name;
 	std::getline(iss, name);
@@ -42,17 +47,34 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 
 	std::string photoSizeStr;
 	std::getline(iss, photoSizeStr);
-	size_t size = std::stoi(photoSizeStr);
+
+	size_t size = 0;
+	if (photoSizeStr != "") {
+		size = std::stoi(photoSizeStr);
+	}
+
+	auto chatsList = m_chats_widget->getChatsList();
+	auto& vec = chatsList->getChatComponentsVec();
+	auto itComp = std::find_if(vec.begin(), vec.end(), [&oldLogin](ChatComponent* comp) {
+		return comp->getChat()->getFriendLogin() == oldLogin;
+		});
+	ChatComponent* chatComp = *itComp;
 
 	if (isHasPhoto) {
 		std::string photoStr;
 		std::getline(iss, photoStr);
-		Photo* photo = Photo::deserialize(photoStr, size, login);
+		Photo* photo = Photo::updateOnPC(base64_decode(photoStr), size, oldLogin, newLogin);
 
 		auto& map = m_client->getMyChatsMap();
-		auto it = map.find(login);
+		auto it = map.find(oldLogin);
 		if (it != map.end()) {
 			Chat* chat = it->second;
+
+			map.erase(it);
+
+			map[newLogin] = chat;
+			chat->setFriendLogin(newLogin);
+			chat->setFriendName(name);
 			chat->setFriendPhoto(photo);
 			chat->setIsFriendHasPhoto(true);
 		}
@@ -60,14 +82,7 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 			std::cout << "unexisting friend";
 		}
 
-		auto chatsList = m_chats_widget->getChatsList();
-		auto& vec = chatsList->getChatComponentsVec();
-		auto itComp = std::find_if(vec.begin(), vec.end(), [&login](ChatComponent* comp) {
-			return comp->getChat()->getFriendLogin() == login;
-			});
-		
 		if (itComp != vec.end()) {
-			ChatComponent* chatComp = *itComp;
 			QMetaObject::invokeMethod(chatComp,
 				"setAvatar",
 				Qt::QueuedConnection,
@@ -75,8 +90,8 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 		}
 
 		auto& areasVec = m_chats_widget->getMessagingComponentsCacheVec();
-		auto itArea = std::find_if(areasVec.begin(), areasVec.end(), [&login](MessagingAreaComponent* area) {
-			return area->getChat()->getFriendLogin() == login;
+		auto itArea = std::find_if(areasVec.begin(), areasVec.end(), [&oldLogin](MessagingAreaComponent* area) {
+			return area->getChat()->getFriendLogin() == oldLogin;
 			});
 
 		if (itArea != areasVec.end()) {
@@ -87,6 +102,11 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 				Q_ARG(const QPixmap&, QPixmap(QString::fromStdString(photo->getPhotoPath()))));
 		}
 	}
+
+	QMetaObject::invokeMethod(chatComp,
+		"setName",
+		Qt::QueuedConnection,
+		Q_ARG(const QString&, QString::fromStdString(name)));
 
 }
 
@@ -293,7 +313,6 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 	std::string timestamp;
 	std::getline(iss, timestamp);
 
-
 	auto itChat = chatsMap.find(friendLogin);
 
 	if (itChat != chatsMap.end()) {
@@ -306,7 +325,6 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 		return;
 	}
 
-
 	std::string friendName;
 	std::getline(iss, friendName);
 
@@ -316,7 +334,11 @@ void WorkerQt::onFirstMessageReceive(std::string packet) {
 
 	std::string photoSizeStr;
 	std::getline(iss, photoSizeStr);
-	size_t size = std::stoi(photoSizeStr);
+
+	size_t size = 0;
+	if (photoSizeStr != "") {
+		size = std::stoi(photoSizeStr);
+	}
 
 	std::string photoStr;
 	std::getline(iss, photoStr);

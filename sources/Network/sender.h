@@ -27,7 +27,7 @@ public:
 	std::string get_first_message_ReplyStr(const std::string& myLogin, const std::string& myName, bool isHAsPhoto, Photo ph, const std::string& friendLogin, const std::string& message, const std::string& id, const std::string& timestamp) const;
 	std::string get_status_ReplyStr(const std::string& status, const std::string& myLogin, std::vector<std::string>& friendsLoginsVec) const;
 	std::string get_messageReadConfirmation_ReplyStr(const std::string& myLogin, const std::string& friendLogin, const std::vector<Message*>& readMessagesVec) const;
-	std::string get_updateMyInfo_QueryStr(const std::string& login, const std::string& name, const std::string& password, bool isHasPhoto, const Photo& photo, std::vector<std::string>& friendsLoginsVec) const;
+	std::string get_updateMyInfo_QueryStr(const std::string& oldLogin, const std::string& newLogin, const std::string& name, const std::string& password, bool isHasPhoto, const Photo& photo, std::vector<std::string>& friendsLoginsVec) const;
 	std::string get_loadFriendInfo_QueryStr(const std::string& login) const;
 	std::string get_checkNewLogin_QueryStr(const std::string& newLogin) const;
 	std::string get_loadAllFriendsStatuses_QueryStr(std::vector<std::string>& friendsLoginsVec);

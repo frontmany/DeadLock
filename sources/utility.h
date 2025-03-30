@@ -20,11 +20,6 @@
 
 namespace Utility {
 	std::string wideStringToString(const WCHAR* wideStr);
-	bool verifyPassword(const std::string& password, const std::string& storedHash);
-	std::string extractHash(const std::string& storedHash);
-	std::string extractSalt(const std::string& storedHash);
-	std::string hashPassword(const std::string& password, const std::string& salt);
-	std::string generateSalt();
 
 	std::string getCurrentDateTime();
 	std::string byteArrayToHexString(const BYTE* data, size_t dataLength);

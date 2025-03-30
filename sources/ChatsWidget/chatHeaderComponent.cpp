@@ -89,6 +89,7 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
 void ChatHeaderComponent::setAvatar(const QPixmap& pixMap) {
     QIcon icon(pixMap);
     m_leftIcon->setIcon(icon);
+    update();
 }
 
 void ChatHeaderComponent::setLastSeen(const QString& lastSeen) {

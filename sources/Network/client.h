@@ -75,6 +75,7 @@ public:
 
 private:
     void startAsyncReceive();
+    void updateConfig(const std::string& oldLogin, const std::string& newLogin);
     void processChatCreateSuccess(const std::string& packet);
     void processFriendsStatusesSuccess(const std::string& packet);
     void processUserInfoSuccess(const std::string& packet);

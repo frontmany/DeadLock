@@ -120,7 +120,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
                 logins.emplace_back(login);
             }
             m_client->setIsHasPhoto(true);
-            m_client->sendPacket(m_sender->get_updateMyInfo_QueryStr(m_client->getMyLogin(), m_client->getMyName(), m_client->getPassword(), true, photo, logins));
+            m_client->sendPacket(m_sender->get_updateMyInfo_QueryStr(m_client->getMyLogin(), m_client->getMyLogin(), m_client->getMyName(), m_client->getPassword(), true, photo, logins));
         }
        
         });
@@ -453,35 +453,24 @@ int GreetWidget::saveCroppedImage() {
     QImage image = croppedImage.toImage();
 
     // Уменьшаем размер изображения, если оно слишком большое
-    while (image.sizeInBytes() > 64 * 1024 && image.width() > 10 && image.height() > 10) {
+    while (image.sizeInBytes() > 58 * 1024 && image.width() > 10 && image.height() > 10) {
         image = image.scaled(image.width() * 0.9, image.height() * 0.9,
             Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
 
-    // Сохраняем изображение с заданным качеством
     QByteArray imageData;
     QBuffer buffer(&imageData);
     buffer.open(QIODevice::WriteOnly);
 
-    // Устанавливаем начальное качество
-    int quality = 90; // Начальное качество 90
+
+    int quality = 60;
     if (!image.save(&buffer, "PNG", quality)) {
         qWarning() << "Ошибка при сохранении изображения в буфер";
         return 1;
     }
 
-    // Если размер больше 64 КБ, уменьшаем качество
-    while (imageData.size() > 64 * 1024 && quality > 0) {
-        imageData = QByteArray();
-        if (!image.save(&buffer, "PNG", quality)) {
-            qWarning() << "Ошибка при сохранении изображения в буфер";
-            return 1;
-        }
-        quality -= 5; // Уменьшаем качество на 5
-    }
-
     // Проверяем, удалось ли сжать
-    if (imageData.size() > 64 * 1024) {
+    if (imageData.size() > 58 * 1024) {
         qWarning() << "Не удалось сжать изображение до 64 КБ. Фактический размер:"
             << imageData.size() / 1024 << "КБ";
         return 1;

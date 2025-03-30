@@ -139,6 +139,7 @@ signals:
 
 public slots:
     void addMessage(Message* message);
+    void setAvatar(const QPixmap& pixMap);
     void markMessageAsChecked(Message* message);
 
 private slots:

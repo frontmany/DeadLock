@@ -112,7 +112,7 @@ void Client::handleResponse(const std::string& packet) {
     }
     else if (type == "USER_INFO_SUCCESS") {
         processUserInfoSuccess(iss.str());
-        sh_is_user_info = OperationResult::SUCCESS;
+        sh_is_user_info = OperationResult::SUCCESS; 
     }
     else if (type == "USER_INFO_FAIL") {
         sh_is_user_info = OperationResult::FAIL;
@@ -142,7 +142,7 @@ void Client::handleResponse(const std::string& packet) {
         sh_is_message_send = OperationResult::SUCCESS;
     }
     else if (type == "MESSAGE_FAIL") {
-        sh_is_message_send = OperationResult::FAIL;
+        sh_is_message_send = OperationResult::FAIL; 
     }
     else if (type == "MESSAGE_READ_CONFIRAMTION_SUCESS") {
         sh_is_message_read_confirmation_send = OperationResult::SUCCESS;
@@ -160,6 +160,12 @@ void Client::handleResponse(const std::string& packet) {
         std::string login;
         std::getline(iss, login);
         m_vec_friends_logins_tmp.push_back(login);
+    }
+    else if (type == "USER_INFO_UPDATED_SUCCESS") {
+        sh_is_info_updated = OperationResult::SUCCESS;
+    }
+    else if (type == "USER_INFO_UPDATED_FAIL") {
+        sh_is_info_updated = OperationResult::FAIL;
     }
 
 
@@ -277,6 +283,8 @@ void Client::processChatCreateSuccess(const std::string& packet) {
 
 OperationResult Client::checkIsLoginAvailable(const std::string& newLogin) {
     std::string queryStr = m_sender.get_checkNewLogin_QueryStr(newLogin);
+    sendPacket(queryStr);
+
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(2);
 
@@ -402,11 +410,6 @@ OperationResult Client::sendMyStatus(const std::string& status) {
 }
 
 OperationResult Client::updateMyInfo(const std::string& login, const std::string& name, const std::string& password, bool isHasPhoto, Photo photo) {
-    m_my_login = login;
-    m_my_name = name;
-    m_is_has_photo = isHasPhoto;
-    m_my_photo = photo;
-
     std::vector<std::string> logins;
     logins.reserve(m_map_friend_login_to_chat.size());
     for (auto [login, chat] : m_map_friend_login_to_chat) {
@@ -419,8 +422,16 @@ OperationResult Client::updateMyInfo(const std::string& login, const std::string
         }
     }
 
-    std::string packet = m_sender.get_updateMyInfo_QueryStr(login, name, password, isHasPhoto, photo, logins);
+    std::string packet = m_sender.get_updateMyInfo_QueryStr(m_my_login, login, name, password, isHasPhoto, photo, logins);
     sendPacket(packet);
+
+    m_my_photo.updateNameOnPC(m_my_login, login);
+    updateConfig(m_my_login, login);
+
+    m_my_login = login;
+    m_my_name = name;
+    m_is_has_photo = isHasPhoto;
+    m_my_photo = photo;
 
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(5);
@@ -442,6 +453,24 @@ OperationResult Client::updateMyInfo(const std::string& login, const std::string
     else {
         sh_is_info_updated = OperationResult::NOT_STATED;
         return OperationResult::FAIL;
+    }
+}
+
+void Client::updateConfig(const std::string& oldLogin, const std::string& newLogin) {
+    WCHAR username[256];
+    DWORD username_len = sizeof(username) / sizeof(WCHAR);
+    if (!GetUserNameW(username, &username_len)) {
+        std::cout << "No User data" << std::endl;
+        return;
+    }
+
+    std::string usernameStr = Photo::wideStringToString(username);
+    std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
+    std::string oldPath = saveDirectory + "/" + oldLogin + ".json";
+    std::string newPath = saveDirectory + "/" + newLogin + ".json";
+
+    if (rename(oldPath.c_str(), newPath.c_str()) != 0) {
+        std::cout << "Failed to rename photo file from " << oldPath << " to " << newPath << std::endl;
     }
 }
 

@@ -73,8 +73,9 @@ std::string SendStringsGenerator::get_createChat_QueryStr(const std::string& myL
         + friendLogin + '\n' + endPacket;
 }
 
-std::string SendStringsGenerator::get_updateMyInfo_QueryStr(
-    const std::string& login,
+std::string SendStringsGenerator::get_updateMyInfo_QueryStr (
+    const std::string& oldLogin,
+    const std::string& newLogin,
     const std::string& name,
     const std::string& password,
     bool isHasPhoto,
@@ -84,7 +85,8 @@ std::string SendStringsGenerator::get_updateMyInfo_QueryStr(
     std::ostringstream oss;
     oss << get << '\n'
         << parseTypeToStr(QueryType::UPDATE_MY_INFO) << '\n'
-        << login << '\n'
+        << oldLogin << '\n'
+        << newLogin << '\n'
         << name << '\n'
         << password << '\n';
 

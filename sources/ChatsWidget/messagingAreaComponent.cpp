@@ -92,6 +92,11 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     }
 }
 
+void MessagingAreaComponent::setAvatar(const QPixmap& pixMap) {
+    m_header->setAvatar(pixMap);
+    update();
+}
+
 void MessagingAreaComponent::adjustTextEditHeight() {
     m_messageInputEdit->setFixedHeight(m_messageInputEdit->document()->size().height() + 12); 
 }
