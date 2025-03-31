@@ -7,12 +7,10 @@
 
 ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, Theme theme)
     : QWidget(parent), m_client(client), m_theme(theme), m_chats_list_component(chatsListComponent) {
-    setFixedHeight(500);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_fields_edit_component = new FieldsEditComponent(parent, this, client, m_theme);
     m_fields_edit_component->setMaximumSize(400, 500);
+
     m_photo_edit_component = new PhotoEditComponent(parent, this, client, m_theme);
-    m_photo_edit_component->setMinimumSize(600, 800);
     m_photo_edit_component->hide();
 
     m_mainVLayout = new QVBoxLayout();
@@ -24,7 +22,6 @@ ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* ch
     m_mainHLayout->setAlignment(Qt::AlignCenter);
 
     setLayout(m_mainHLayout);
-
     setFieldsEditor();
 }
 
@@ -43,26 +40,27 @@ void ProfileEditorWidget::setFieldsEditor() {
     m_photo_edit_component->hide();
     m_mainVLayout->addWidget(m_fields_edit_component);
     m_fields_edit_component->show();
+    m_fields_edit_component->update();
 }
 
-void ProfileEditorWidget::saveChangedPhoto() {
+void ProfileEditorWidget::onImagePicker() {
+    setFixedHeight(800);
+}
 
+void ProfileEditorWidget::setTheme(Theme theme) {
+    m_theme = theme;
+    m_fields_edit_component->setTheme(theme);
+    m_photo_edit_component->setTheme(theme);
+    update();
 }
 
 void ProfileEditorWidget::save(const std::string& newLogin, const std::string& newName, const std::string& newPassword) {
-    if (newLogin != m_client->getMyLogin()) {
-        OperationResult isAvailable = m_client->checkIsLoginAvailable(newLogin);
-        if (isAvailable == OperationResult::FAIL) {
-            m_fields_edit_component->setRedBorderOnLoginEdit();
-            return;
-        }
-    }
     OperationResult res = m_client->updateMyInfo(newLogin, newName, newPassword, m_client->getIsHasPhoto(), m_client->getPhoto());
 }
 
 void ProfileEditorWidget::close() {
     m_chats_list_component->setIsEditDialogFlag(false);
-    hide();
+    m_chats_list_component->closeEditUserDialogWidnow();
 }
 
 void ProfileEditorWidget::updateAvatar(const Photo& photo) {
@@ -72,9 +70,15 @@ void ProfileEditorWidget::updateAvatar(const Photo& photo) {
 
 void ProfileEditorWidget::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
-
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.setBrush(QColor(26, 26, 26, 200));
+
+    if (m_theme == DARK) {
+        painter.setBrush(QColor(26, 26, 26, 200));
+    }
+    if (m_theme == LIGHT) {
+        painter.setBrush(QColor(212, 212, 212, 200));
+    }
+
     painter.setPen(Qt::NoPen);
     painter.drawRoundedRect(rect(), 20, 20);
 }

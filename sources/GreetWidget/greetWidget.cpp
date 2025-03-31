@@ -46,7 +46,13 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_imageLabel = new QLabel(this);
     m_imageLabel->setFixedSize(500, 500);
     m_imageLabel->setAlignment(Qt::AlignCenter);
-    m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+
+    if (theme == Theme::DARK) {
+        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
+    if (theme == Theme::LIGHT) {
+        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhotoLight.png").scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
 
     m_selectImageButton = new QPushButton("Choose a photo", this);
     m_selectImageButton->setMinimumSize(200, 60);

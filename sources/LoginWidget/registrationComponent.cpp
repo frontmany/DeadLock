@@ -3,6 +3,7 @@
 
 
 #include <QDebug>
+#include <QRegularExpressionValidator>
 
 
 RegistrationComponent::RegistrationComponent(QWidget* parent, LoginWidget* loginWidget)
@@ -29,6 +30,14 @@ RegistrationComponent::RegistrationComponent(QWidget* parent, LoginWidget* login
     m_nameEdit->setPlaceholderText("Name");
     m_nameEdit->setMaximumSize(500, 40);
 
+    QRegularExpressionValidator* validator = new QRegularExpressionValidator(
+        QRegularExpression("^[a-zA-Z0-9_!@#$%^&*()-+=;:'\",.<>?/\\\\|`~\\[\\]{} ]*$"),
+        this
+    );
+
+    m_loginEdit->setValidator(validator);
+    m_passwordEdit->setValidator(validator);
+    m_password2Edit->setValidator(validator);
 
     m_registerButton = new QPushButton("Register", this);
     m_registerButton->setMaximumSize(500, 40);

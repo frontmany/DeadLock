@@ -1,4 +1,5 @@
 #include"fieldsEditComponent.h"
+#include"mainwindow.h"
 #include"profileEditorWidget.h"
 #include"client.h"
 
@@ -20,47 +21,41 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_avatar_label->setPixmap(currentAvatar.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     m_change_photo_button = new QPushButton("Change Photo");
-    m_change_photo_button->setStyleSheet(m_style->buttonToChoosePhotoStyleDark);
     connect(m_change_photo_button, &QPushButton::clicked, [this]() {m_profile_editor_widget->setPhotoEditor(); });
 
     m_login_label = new QLabel("Login:");
     m_login_edit = new QLineEdit(QString::fromStdString(m_client->getMyLogin()));
-    m_login_edit->setStyleSheet(m_style->DarkLineEditStyle);
+    m_login_edit->setDisabled(true);
 
     m_name_label = new QLabel("Name:");
     m_name_edit = new QLineEdit(QString::fromStdString(m_client->getMyName()));
-    m_name_edit->setStyleSheet(m_style->DarkLineEditStyle);
 
     m_password_label = new QLabel("Password:");
     m_password_edit = new QLineEdit(QString::fromStdString(m_client->getPassword()));
-    m_password_edit->setStyleSheet(m_style->DarkLineEditStyle);
     m_password_edit->setEchoMode(QLineEdit::Password);
+
+    QRegularExpressionValidator* validator = new QRegularExpressionValidator(
+        QRegularExpression("^[a-zA-Z0-9_!@#$%^&*()-+=;:'\",.<>?/\\\\|`~\\[\\]{} ]*$"),
+        this
+    );
+
+    m_login_edit->setValidator(validator);
+    m_password_edit->setValidator(validator);
 
     m_save_button = new QPushButton("Save");
     m_save_button->setMinimumHeight(30);
-    m_save_button->setStyleSheet(m_style->buttonStyleBlueDark);
     connect(m_save_button, &QPushButton::clicked, [this]() {
 
         std::string login = m_login_edit->text().toStdString();
         std::string name = m_name_edit->text().toStdString();
         std::string password = m_password_edit->text().toStdString();
 
-        if (login != m_client->getMyLogin()) {
-            OperationResult res = m_client->checkIsLoginAvailable(login);
-            if (res == OperationResult::FAIL) {
-                m_login_edit->setStyleSheet(m_style->buttonStyleRedBorderDark);
-                std::cout << "new_login_fail\n";
-                return;
-            }
-        }
-
-        m_client->updateMyInfo(login, name, password, true, m_client->getPhoto());
+        m_client->updateMyInfo(login, name, password, m_client->getIsHasPhoto(), m_client->getPhoto());
         m_profile_editor_widget->close();
         });
 
     m_cancel_button = new QPushButton("Cancel");
     m_cancel_button->setMinimumHeight(30);
-    m_cancel_button->setStyleSheet(m_style->buttonStyleGrayDark);
     connect(m_cancel_button, &QPushButton::clicked, m_profile_editor_widget, &ProfileEditorWidget::close);
      
     m_buttonsHLayout = new QHBoxLayout();
@@ -85,10 +80,34 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_mainVLayout->addLayout(m_buttonsHLayout);
 
     setLayout(m_mainVLayout);
+
+    setTheme(m_theme);
 }
 
-void FieldsEditComponent::setRedBorderOnLoginEdit() {
-    m_login_edit->setStyleSheet(m_style->DarkLineEditStyleRedBorder);
+
+void FieldsEditComponent::setTheme(Theme theme) {
+    if (theme == Theme::DARK) {
+        m_login_label->setStyleSheet(m_style->DarkLabelStyle);
+        m_name_label->setStyleSheet(m_style->DarkLabelStyle);
+        m_password_label->setStyleSheet(m_style->DarkLabelStyle);
+        m_cancel_button->setStyleSheet(m_style->buttonStyleGrayDark);
+        m_save_button->setStyleSheet(m_style->DarkButtonStyleBlue);
+        m_change_photo_button->setStyleSheet(m_style->buttonToChoosePhotoStyleDark);
+        m_login_edit->setStyleSheet(m_style->DarkLineEditDisabledStyle);
+        m_name_edit->setStyleSheet(m_style->DarkLineEditStyle);
+        m_password_edit->setStyleSheet(m_style->DarkLineEditStyle);
+    }
+    else {
+        m_login_label->setStyleSheet(m_style->LightLabelStyle);
+        m_name_label->setStyleSheet(m_style->LightLabelStyle);
+        m_password_label->setStyleSheet(m_style->LightLabelStyle);
+        m_cancel_button->setStyleSheet(m_style->buttonStyleGrayLight);
+        m_save_button->setStyleSheet(m_style->LightButtonStyleBlue);
+        m_change_photo_button->setStyleSheet(m_style->buttonToChoosePhotoStyleLight);
+        m_login_edit->setStyleSheet(m_style->LightLineEditDisabledStyle);
+        m_name_edit->setStyleSheet(m_style->LightLineEditStyle);
+        m_password_edit->setStyleSheet(m_style->LightLineEditStyle);
+    }
 }
 
 void FieldsEditComponent::updateAvatar() {

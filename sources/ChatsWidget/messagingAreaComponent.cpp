@@ -97,6 +97,10 @@ void MessagingAreaComponent::setAvatar(const QPixmap& pixMap) {
     update();
 }
 
+void MessagingAreaComponent::setName(const QString& name) {
+    m_header->setName(name);
+}
+
 void MessagingAreaComponent::adjustTextEditHeight() {
     m_messageInputEdit->setFixedHeight(m_messageInputEdit->document()->size().height() + 12); 
 }

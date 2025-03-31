@@ -10,17 +10,35 @@
 #include <QPixmap>
 #include <QFileDialog>
 #include <QPropertyAnimation>
+#include <QRegularExpressionValidator>
 #include <QGraphicsOpacityEffect>
 #include <QWheelEvent>
 
 struct StyleFieldsEditComponent {
-    QString buttonStyleBlueDark = R"(
-            QPushButton {
+
+    QString DarkLabelStyle = R"(
+    QLabel {
+        background-color: transparent;   
+        color: white;             
+    }
+)";
+
+    QString LightLabelStyle = R"(
+    QLabel {
+        background-color: transparent;   
+        color: rgb(38, 38, 38);             
+    }
+)";
+
+    QString DarkButtonStyleBlue = R"(
+    QPushButton {
         background-color: rgb(21, 119, 232);   
         color: white;             
         border: none;   
         border-radius: 5px;       
         padding: 5px 10px;        
+        font-family: "Segoe UI";  
+        font-size: 14px;          
     }
     QPushButton:hover {
         background-color: rgb(26, 133, 255);   
@@ -28,23 +46,25 @@ struct StyleFieldsEditComponent {
     QPushButton:pressed {
         background-color: rgb(26, 133, 255);      
     }
-        )";
+)";
 
-    QString buttonStyleRedBorderDark = R"(
-            QPushButton {
-        background-color: rgb(21, 119, 232);   
+    QString LightButtonStyleBlue = R"(
+    QPushButton {
+        background-color: rgb(26, 133, 255);   
         color: white;             
-        border-color: rgb(255, 77, 77);
+        border: none;   
         border-radius: 5px;       
         padding: 5px 10px;        
+        font-family: "Segoe UI";  
+        font-size: 14px;          
     }
     QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
+        background-color: rgb(21, 119, 232);   
     }
     QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
+        background-color: rgb(21, 119, 232);      
     }
-        )";
+)";
 
     QString buttonStyleGrayDark = R"(
             QPushButton {
@@ -62,6 +82,22 @@ struct StyleFieldsEditComponent {
     }
         )";
 
+    QString buttonStyleGrayLight = R"(
+            QPushButton {
+        background-color: rgb(173, 173, 173);   
+        color: white;             
+        border: none;   
+        border-radius: 5px;       
+        padding: 5px 10px;        
+    }
+    QPushButton:hover {
+        background-color: rgb(158, 158, 158);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(158, 158, 158);      
+    }
+        )";
+
     QString buttonToChoosePhotoStyleDark = "QPushButton {"
         "background-color: #2b2b2b;"
         "color: white;"
@@ -72,91 +108,48 @@ struct StyleFieldsEditComponent {
         "background-color: #3a3a3a;"
         "}";
 
-    QString buttonCancelStyleDark = R"(
-            QPushButton {
-                background-color: transparent;     
-                color: rgb(153, 150, 150);              
-                border: none;        
-                border-radius: 5px;             
-                padding: 5px 10px;              
-                font-family: 'Arial';            
-                font-size: 14px;                 
-            }
-            QPushButton:hover {
-                color: rgb(26, 133, 255);      
-            }
-            QPushButton:pressed {
-                color: rgb(26, 133, 255);      
-            }
-        )";
+    QString buttonToChoosePhotoStyleLight = "QPushButton {"
+        "background-color: rgb(201, 201, 201);"
+        "color: rgb(48, 48, 48);"
+        "border-radius: 10px;"
+        "padding: 8px;"
+        "}"
+        "QPushButton:hover {"
+        "background-color: rgb(163, 163, 163);"
+        "}";
 
-    QString DarkSliderStyle = R"(
-QSlider::groove:horizontal {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
-    height: 8px; /* Высота полосы */
-    border-radius: 4px; /* Закругление углов полосы */
-}
-
-QSlider::handle:horizontal {
-    background-color: white; /* Цвет ручки */
-    width: 16px; /* Ширина ручки */
-    height: 16px; /* Высота ручки */
-    border-radius: 8px; /* Круглая форма ручки */
-    margin: -4px 0; /* Смещение ручки относительно полосы */
-}
-
-QSlider::add-page:horizontal {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
-
-QSlider::sub-page:horizontal {
-    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
-
-QSlider::groove:vertical {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
-    width: 8px; /* Ширина полосы */
-    border-radius: 4px; /* Закругление углов полосы */
-}
-
-QSlider::handle:vertical {
-    background-color: white; /* Цвет ручки */
-    width: 16px; /* Ширина ручки */
-    height: 16px; /* Высота ручки */
-    border-radius: 8px; /* Круглая форма ручки */
-    margin: 0 -4px; /* Смещение ручки относительно полосы */
-}
-
-QSlider::add-page:vertical {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
-
-QSlider::sub-page:vertical {
-    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
+    QString DarkLineEditStyle = R"(
+    QLineEdit {
+        background-color: #333;    
+        color: white;     
+        font-size: 12px;           
+        border: none;     
+        border-radius: 5px;         
+        padding: 5px;               
+    }
+    QLineEdit:focus {
+        border: none;     
+    }
 )";
 
     QString LightLineEditStyle = R"(
     QLineEdit {
         background-color: #ffffff;    
-        color: black;                 
+        color: rgb(51, 51, 51);      
+        font-size: 12px;            
         border: none;       
         border-radius: 5px;           
         padding: 5px;                 
     }
     QLineEdit:focus {
-        border: 2px solid rgb(237, 237, 237);        
+        border: none;     
     }
 )";
 
-    QString DarkLineEditStyle = R"(
+    QString DarkLineEditDisabledStyle = R"(
     QLineEdit {
-        background-color: #333;    
-        color: white;               
+        background-color: rgb(89, 89, 89);    
+        color: rgb(140, 140, 140);               
         border: none;     
         border-radius: 5px;         
         padding: 5px;               
@@ -166,17 +159,16 @@ QSlider::sub-page:vertical {
     }
 )";
 
-    QString DarkLineEditStyleRedBorder = R"(
+    QString LightLineEditDisabledStyle = R"(
     QLineEdit {
-        background-color: #333;    
-        color: white;               
+        background-color: rgb(207, 207, 207);    
+        color: rgb(143, 143, 143);               
         border: none;     
-        border: color rgb(255, 64, 64);     
         border-radius: 5px;         
         padding: 5px;               
     }
     QLineEdit:focus {
-        border: 2px solid rgb(255, 64, 64);    
+        border: 2px solid #888;    
     }
 )";
 
@@ -196,7 +188,7 @@ class FieldsEditComponent : public QWidget {
 
 public:
     FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget,  Client* client, Theme theme);
-    void setRedBorderOnLoginEdit();
+    void setTheme(Theme theme);
     void updateAvatar();
 
 

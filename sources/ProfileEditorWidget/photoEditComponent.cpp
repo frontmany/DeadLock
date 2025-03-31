@@ -17,32 +17,41 @@
 PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
     : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme),
     m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100) {
-
     m_style = new StylePhotoEditComponent;
     m_mainVLayout = new QVBoxLayout(this);
-    m_mainVLayout->setAlignment(Qt::AlignCenter);
-
+    m_mainVLayout->setAlignment(Qt::AlignTop);
+    
     m_cancelButton = new QPushButton("cancel", this);
-    m_cancelButton->setStyleSheet(m_style->buttonSkipStyle);
     m_cancelButton->setMinimumSize(100, 60);
     m_cancelButton->setMaximumSize(150, 60);
     connect(m_cancelButton, &QPushButton::clicked, [this]() {
         m_profile_editor_widget->setFieldsEditor();
+
+
+        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhotoLight.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        
+
+        m_imageLabel->setFixedSize(450, 450);
+        m_cropXSlider->hide();
+        m_cropYSlider->hide();
+        setFixedHeight(650);
         });
 
     m_imageLabel = new QLabel(this);
-    m_imageLabel->setFixedSize(400, 400);
+    m_imageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_imageLabel->setAlignment(Qt::AlignCenter);
-    m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(400, 400, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+
+
+    m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhotoLight.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    
+
 
     m_selectImageButton = new QPushButton("Choose a photo", this);
     m_selectImageButton->setMinimumSize(200, 60);
     m_selectImageButton->setMaximumSize(250, 60);
-    m_selectImageButton->setStyleSheet(m_style->DarkButtonStyle);
     connect(m_selectImageButton, &QPushButton::clicked, this, &PhotoEditComponent::openImagePicker);
 
     m_continueButton = new QPushButton("Save", this);
-    m_continueButton->setStyleSheet(m_style->DarkButtonStyle);
     m_continueButton->setEnabled(false);
     m_continueButton->setMinimumSize(200, 60);
     m_continueButton->setMaximumSize(250, 60);
@@ -63,7 +72,6 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
         });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
-    m_cropXSlider->setStyleSheet(m_style->DarkSliderStyle);
     m_cropXSlider->setFixedSize(200, 20);
     m_cropXSlider->hide();
     m_cropXSlider->setRange(0, 500);
@@ -78,13 +86,12 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
 
     m_cropYSlider = new QSlider(Qt::Vertical, this);
     m_cropYSlider->setRange(0, 330);
-    m_cropYSlider->setStyleSheet(m_style->DarkSliderStyle);
     m_cropYSlider->setInvertedAppearance(true);
     m_cropYSlider->setValue(m_cropY);
-
     m_cropYSlider->setFixedSize(20, 200);
-    connect(m_cropYSlider, &QSlider::valueChanged, this, &PhotoEditComponent::adjustCropArea);
     m_cropYSlider->hide();
+    connect(m_cropYSlider, &QSlider::valueChanged, this, &PhotoEditComponent::adjustCropArea);
+
     m_buttonsHLayout = new QHBoxLayout();
     m_buttonsHLayout->setAlignment(Qt::AlignCenter);
     m_buttonsHLayout->addWidget(m_selectImageButton);
@@ -102,23 +109,46 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_bothSlidersVLayout = new QVBoxLayout();
     m_bothSlidersVLayout->setAlignment(Qt::AlignTop);
     m_bothSlidersVLayout->addLayout(m_imageAndYSliderLayout);
+    m_bothSlidersVLayout->addSpacing(20);
     m_bothSlidersVLayout->addLayout(m_sliderXLayout);
 
     m_photoAndSlidersWidgetContainer = new QWidget;
+    m_photoAndSlidersWidgetContainer->setMaximumSize(2000, 600);
     m_photoAndSlidersWidgetContainer->setLayout(m_bothSlidersVLayout);
-    m_photoAndSlidersWidgetContainer->setFixedHeight(550);
 
-
-    m_mainVLayout->addSpacing(-140);
     m_mainVLayout->addWidget(m_photoAndSlidersWidgetContainer);
-    m_mainVLayout->addSpacing(25);
+    m_mainVLayout->addSpacing(20);
     m_mainVLayout->addLayout(m_buttonsHLayout);
-
+    m_mainVLayout->addSpacing(30);
     setLayout(m_mainVLayout);
     setMouseTracking(true);
+
+    setTheme(m_theme);
+} 
+
+void PhotoEditComponent::setTheme(Theme theme) {
+    m_theme = theme;
+    if (theme == Theme::DARK) {
+        m_cancelButton->setStyleSheet(m_style->buttonSkipStyleBothTheme);
+        m_selectImageButton->setStyleSheet(m_style->DarkButtonStyleBlue);
+        m_continueButton->setStyleSheet(m_style->DarkButtonStyleBlue);
+        m_cropXSlider->setStyleSheet(m_style->DarkSliderStyle);
+        m_cropYSlider->setStyleSheet(m_style->DarkSliderStyle);
+
+    }
+    if (theme == Theme::LIGHT) {
+        m_cancelButton->setStyleSheet(m_style->buttonSkipStyleBothTheme);
+        m_selectImageButton->setStyleSheet(m_style->LightButtonStyleBlue);
+        m_continueButton->setStyleSheet(m_style->LightButtonStyleBlue);
+        m_cropXSlider->setStyleSheet(m_style->LightSliderStyle);
+        m_cropYSlider->setStyleSheet(m_style->LightSliderStyle);
+    }
 }
 
 void PhotoEditComponent::openImagePicker() {
+    setFixedHeight(700);
+    m_profile_editor_widget->onImagePicker();
+
     QString imagePath = QFileDialog::getOpenFileName(this, "Выберите фото", "", "Images (*.png *.jpg *.jpeg)");
     if (!imagePath.isEmpty()) {
         m_selectedImage.load(imagePath);
@@ -156,7 +186,6 @@ void PhotoEditComponent::openImagePicker() {
 
 void PhotoEditComponent::cropImageToCircle() {
     if (m_selectedImage.isNull()) return;
-
     QSize imageSize = m_imageLabel->size();
 
     QPixmap blurredImage = m_selectedImage.scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);

@@ -124,10 +124,15 @@ void ChatsListComponent::openEditUserDialogWidnow() {
     }
     else {
         m_isEditDialog = true;
-        ProfileEditorWidget* profileEditorWidget = new ProfileEditorWidget(this, this, m_chatsWidget->getClientSide(), m_theme);
-        m_mainVLayout->insertWidget(1, profileEditorWidget);
+        m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClientSide(), m_theme);
+        m_containerVLayout->insertWidget(0, m_profile_editor_widget);
     }
      
+}
+
+void ChatsListComponent::closeEditUserDialogWidnow() {
+    m_containerVLayout->removeWidget(m_profile_editor_widget);
+    delete m_profile_editor_widget;
 }
 
 void ChatsListComponent::toSendChangeTheme(bool fl) {
@@ -184,6 +189,10 @@ ChatsWidget* ChatsListComponent::getChatsWidget() const {
 void ChatsListComponent::setTheme(Theme theme) {
     m_theme = theme;
     m_darkModeSwitch->setTheme(m_theme);
+    if (m_profile_editor_widget != nullptr) {
+        m_profile_editor_widget->setTheme(theme);
+    }
+
     if (theme == DARK) {
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);

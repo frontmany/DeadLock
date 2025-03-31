@@ -97,6 +97,9 @@ QString Utility::parseDate(QString fullDate) {
     if (fullDate == "online") {
         return fullDate;
     }
+    if (fullDate == "recently") {
+        return fullDate;
+    }
 
     // Проверяем, содержит ли строка "last seen:"
     if (!fullDate.startsWith("last seen:")) {

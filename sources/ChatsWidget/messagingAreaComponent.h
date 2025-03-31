@@ -140,6 +140,7 @@ signals:
 public slots:
     void addMessage(Message* message);
     void setAvatar(const QPixmap& pixMap);
+    void setName(const QString& name);
     void markMessageAsChecked(Message* message);
 
 private slots:

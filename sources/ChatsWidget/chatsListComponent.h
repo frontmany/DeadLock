@@ -116,6 +116,7 @@ struct StyleChatsListComponent {
 
 class AvatarIcon;
 class AddChatDialogComponent;
+class ProfileEditorWidget;
 class MessagingAreaComponent;
 class ButtonIcon;
 class ToggleSwitch;
@@ -151,6 +152,7 @@ public slots:
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
     void loadAvatarFromPC(const std::string& login);
+    void closeEditUserDialogWidnow();
 
 private slots:
     void toSendChangeTheme(bool fl);
@@ -176,6 +178,7 @@ private:
     ButtonIcon*         m_newChatButton;
     AddChatDialogComponent* m_chatAddDialog;
     ChatsWidget*        m_chats_widget;
+    ProfileEditorWidget* m_profile_editor_widget = nullptr;
 
     std::vector<ChatComponent*> m_vec_chatComponents;
     bool m_isChatAddDialog = false;

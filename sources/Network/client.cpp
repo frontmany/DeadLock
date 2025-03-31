@@ -8,6 +8,8 @@
 #include <QJsonArray>
 #include <QDir>
 #include <QFile>
+#include <codecvt>
+#include <locale>
 
 Client::Client() :
     m_isReceiving(true),
@@ -423,15 +425,20 @@ OperationResult Client::updateMyInfo(const std::string& login, const std::string
     }
 
     std::string packet = m_sender.get_updateMyInfo_QueryStr(m_my_login, login, name, password, isHasPhoto, photo, logins);
-    sendPacket(packet);
-
     m_my_photo.updateNameOnPC(m_my_login, login);
     updateConfig(m_my_login, login);
+    sendPacket(packet);
 
     m_my_login = login;
     m_my_name = name;
+    m_my_password = password;
     m_is_has_photo = isHasPhoto;
-    m_my_photo = photo;
+
+    std::string strDir = Utility::getSaveDir().toStdString();
+    
+    if (m_is_has_photo) {
+        m_my_photo = Photo(strDir + "/" + login + "myMainPhoto.png");
+    }
 
     auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(5);
@@ -561,7 +568,12 @@ void Client::setWorkerUI(WorkerUI* workerImpl) {
 }
 
 void Client::sendPacket(const std::string& packet) {
-    asio::write(m_socket, asio::buffer(packet), asio::transfer_all());
+    // Конвертируем в UTF-8 (предполагая, что исходная строка в системной кодировке)
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring wide_packet = converter.from_bytes(packet);
+    std::string utf8_packet = converter.to_bytes(wide_packet);
+
+    asio::write(m_socket, asio::buffer(utf8_packet), asio::transfer_all());
 }
 
 void Client::save() const {

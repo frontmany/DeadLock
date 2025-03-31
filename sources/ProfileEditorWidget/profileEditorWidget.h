@@ -20,11 +20,12 @@ class ProfileEditorWidget : public QWidget {
 public:
     explicit ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, Theme theme);
     void updateAvatar(const Photo& photo);
+    void setTheme(Theme theme);
 
 public slots:
+    void onImagePicker();
     void setPhotoEditor();
     void setFieldsEditor();
-    void saveChangedPhoto();
     void save(const std::string& newLogin, const std::string& newName, const std::string& newPassword);
     void close();
     

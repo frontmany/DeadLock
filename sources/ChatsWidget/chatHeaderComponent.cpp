@@ -92,6 +92,11 @@ void ChatHeaderComponent::setAvatar(const QPixmap& pixMap) {
     update();
 }
 
+void ChatHeaderComponent::setName(const QString& name) {
+    m_nameLabel->setText(name);
+    update();
+}
+
 void ChatHeaderComponent::setLastSeen(const QString& lastSeen) {
     m_lastSeenLabel->setText(lastSeen);
     if (m_lastSeenLabel->text() == "online") {

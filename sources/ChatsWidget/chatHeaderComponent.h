@@ -82,6 +82,7 @@ public:
 public slots:
     void setLastSeen(const QString& lastSeen);
     void setAvatar(const QPixmap& pixMap);
+    void setName(const QString& name);
 
 protected:
     void paintEvent(QPaintEvent* event) override;

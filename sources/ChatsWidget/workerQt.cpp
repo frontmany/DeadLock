@@ -60,6 +60,11 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 		});
 	ChatComponent* chatComp = *itComp;
 
+	auto& areasVec = m_chats_widget->getMessagingComponentsCacheVec();
+	auto itArea = std::find_if(areasVec.begin(), areasVec.end(), [&oldLogin](MessagingAreaComponent* area) {
+		return area->getChat()->getFriendLogin() == oldLogin;
+		});
+
 	if (isHasPhoto) {
 		std::string photoStr;
 		std::getline(iss, photoStr);
@@ -89,10 +94,7 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 				Q_ARG(const QPixmap&, QPixmap(QString::fromStdString(photo->getPhotoPath()))));
 		}
 
-		auto& areasVec = m_chats_widget->getMessagingComponentsCacheVec();
-		auto itArea = std::find_if(areasVec.begin(), areasVec.end(), [&oldLogin](MessagingAreaComponent* area) {
-			return area->getChat()->getFriendLogin() == oldLogin;
-			});
+		
 
 		if (itArea != areasVec.end()) {
 			MessagingAreaComponent* area = *itArea;
@@ -101,6 +103,14 @@ void WorkerQt::onFriendInfoReceive(std::string packet) {
 				Qt::QueuedConnection,
 				Q_ARG(const QPixmap&, QPixmap(QString::fromStdString(photo->getPhotoPath()))));
 		}
+	}
+
+	if (itArea != areasVec.end()) {
+		MessagingAreaComponent* area = *itArea;
+		QMetaObject::invokeMethod(area,
+			"setName",
+			Qt::QueuedConnection,
+			Q_ARG(const QString&, QString::fromStdString(name)));
 	}
 
 	QMetaObject::invokeMethod(chatComp,
