@@ -14,10 +14,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     }
      
     m_client = new Client;
-    m_client->connectTo("192.168.1.49", 8080);
+    m_client->connectTo("185.177.219.117", 8080);
     m_client->setWorkerUI(m_worker);
     m_client->run();
     
+    setWindowTitle("Ilock");
+    setWindowIcon(QIcon(":/resources/GreetWidget/Ilock.ico"));
 
     m_chatsWidget = new ChatsWidget(this, this, m_client, m_theme);
     m_chatsWidget->hide();
@@ -41,7 +43,7 @@ MainWindow::~MainWindow() {
     delete m_chatsWidget;
 }
 
-bool MainWindow::isDarkMode() {
+bool MainWindow::isDarkMode() { 
     HKEY hKey;
     const TCHAR* subKey = TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize");
     const TCHAR* valueNameApps = TEXT("AppsUseLightTheme");
@@ -73,6 +75,7 @@ void MainWindow::setupGreetWidget() {
     m_greetWidget->setName(m_client->getMyName());
     m_greetWidget->setLogin(m_client->getMyLogin());
     m_greetWidget->show();
+    m_greetWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
     m_greetWidget->startWelcomeAnimation();
     setCentralWidget(m_greetWidget);
 }

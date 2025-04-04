@@ -156,6 +156,7 @@ private:
     SendStringsGenerator*   m_sender;
 
     QVBoxLayout* m_mainVLayout;
+    QVBoxLayout* m_containerVLayout;
     QHBoxLayout* m_buttonsHLayout;
     QHBoxLayout* m_greetLabelLayout;
     QHBoxLayout* m_sliderXLayout;
@@ -175,6 +176,9 @@ private:
     QPushButton*    m_continueButton;
     QSlider*        m_cropXSlider;
     QSlider*        m_cropYSlider;
+    
+    QVBoxLayout* m_containerLayout;
+    QWidget*        m_container;
 
     int m_cropX;
     int m_cropY;

@@ -28,7 +28,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
         m_profile_editor_widget->setFieldsEditor();
 
 
-        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhotoLight.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         
 
         m_imageLabel->setFixedSize(450, 450);
@@ -42,7 +42,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_imageLabel->setAlignment(Qt::AlignCenter);
 
 
-    m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhotoLight.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     
 
 

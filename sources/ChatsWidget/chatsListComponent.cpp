@@ -133,6 +133,7 @@ void ChatsListComponent::openEditUserDialogWidnow() {
 void ChatsListComponent::closeEditUserDialogWidnow() {
     m_containerVLayout->removeWidget(m_profile_editor_widget);
     delete m_profile_editor_widget;
+    m_profile_editor_widget = nullptr;
 }
 
 void ChatsListComponent::toSendChangeTheme(bool fl) {

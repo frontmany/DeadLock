@@ -140,9 +140,7 @@ MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme them
     setTheme(theme);
     m_innerWidget->setReadStatus(false);
 
-    if (message->getMessage().length() <= 150) {
-        setFixedHeight(55);
-    }
+   
 }
 
 

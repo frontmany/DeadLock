@@ -14,6 +14,17 @@
 #include <QApplication>
 #include <QStyle>
 
+// Получаем масштаб для текущего экрана
+qreal getQtScaleFactor() {
+    QScreen* screen = QApplication::primaryScreen();
+    return screen->devicePixelRatio(); // Возвращает 1.0, 1.25, 1.5 и т.д.
+}
+
+// Или в процентах:
+int getQtZoomPercent() {
+    return static_cast<int>(getQtScaleFactor() * 100);
+}
+
 GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv)
     : QWidget(parent), m_client(client), m_style(new StyleGreetWidget()),
     m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv) {
@@ -44,15 +55,24 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
         });
 
     m_imageLabel = new QLabel(this);
-    m_imageLabel->setFixedSize(500, 500);
+
+    
+    if (getQtZoomPercent() <= 100) {
+        m_imageLabel->setFixedSize(500, 500);
+    }
+    else {
+        m_imageLabel->setFixedSize(200, 200);
+    }
+
     m_imageLabel->setAlignment(Qt::AlignCenter);
 
-    if (theme == Theme::DARK) {
-        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    }
-    if (theme == Theme::LIGHT) {
-        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhotoLight.png").scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    }
+    QPixmap pixmap(":/resources/GreetWidget/loadPhoto.png");
+    pixmap.setDevicePixelRatio(devicePixelRatioF());
+    m_imageLabel->setPixmap(pixmap.scaled(
+        m_imageLabel->size() * devicePixelRatioF(),
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+    ));
 
     m_selectImageButton = new QPushButton("Choose a photo", this);
     m_selectImageButton->setMinimumSize(200, 60);
@@ -186,7 +206,19 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_mainVLayout->addLayout(m_buttonsHLayout);
     m_mainVLayout->addSpacing(150);
 
-    setLayout(m_mainVLayout);
+    m_container = new QWidget;
+    m_container->setLayout(m_mainVLayout);
+    if (getQtZoomPercent() <= 100) {
+        m_container->setMaximumSize(5000, 5000);
+    }
+    else {
+        m_container->setMaximumSize(5000, 700);
+    }
+
+    m_containerLayout = new QVBoxLayout;
+    m_containerLayout->addWidget(m_container);
+
+    setLayout(m_containerLayout);
     setMouseTracking(true);
 }
 
@@ -209,17 +241,27 @@ void GreetWidget::openImagePicker() {
         m_selectedImage.load(imagePath);
 
         // Масштабируем изображение до 500x500 с сохранением пропорций
-        m_selectedImage = m_selectedImage.scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+        int paramScale = 0;
+        if (getQtZoomPercent() <= 100) {
+            paramScale = 500;
+        }
+        else {
+            paramScale = 200;
+        }
+
+        m_selectedImage = m_selectedImage.scaled(paramScale * devicePixelRatioF(), paramScale * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
         // Получаем размеры масштабированного изображения
         int imageWidth = m_selectedImage.width();
         int imageHeight = m_selectedImage.height();
 
         // Если изображение меньше 500x500, изменяем размер QLabel
-        if (imageWidth < 500 || imageHeight < 500) {
+        if (imageWidth < paramScale * devicePixelRatioF() || imageHeight < paramScale * devicePixelRatioF()) {
             m_imageLabel->setFixedSize(imageWidth, imageHeight);
             m_cropXSlider->setFixedSize(imageWidth, 30);
             m_cropYSlider->setFixedSize(30, imageHeight);
+            m_mainVLayout->insertSpacing(0, -100);
         }
         else {
             // Иначе устанавливаем размер 500x500

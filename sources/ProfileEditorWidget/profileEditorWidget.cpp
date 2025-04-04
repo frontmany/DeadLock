@@ -49,8 +49,13 @@ void ProfileEditorWidget::onImagePicker() {
 
 void ProfileEditorWidget::setTheme(Theme theme) {
     m_theme = theme;
-    m_fields_edit_component->setTheme(theme);
-    m_photo_edit_component->setTheme(theme);
+    if (m_fields_edit_component != nullptr) {
+        m_fields_edit_component->setTheme(theme);
+    }
+    if (m_photo_edit_component != nullptr) {
+        m_photo_edit_component->setTheme(theme);
+    }
+
     update();
 }
 
