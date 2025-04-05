@@ -69,15 +69,7 @@ std::string Photo::serialize() const {
 }
 
 void Photo::updateNameOnPC(const std::string& oldLogin, const std::string& newLogin) const {
-    WCHAR username[256];
-    DWORD username_len = sizeof(username) / sizeof(WCHAR);
-    if (!GetUserNameW(username, &username_len)) {
-        std::cout << "No User data" << std::endl;
-        return; 
-    }
-
-    std::string usernameStr = wideStringToString(username);
-    std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
+    std::string saveDirectory = "./Data_Air_Gram";
     std::string oldPath = saveDirectory + "/" + oldLogin + "myMainPhoto.png";
     std::string newPath = saveDirectory + "/" + newLogin + "myMainPhoto.png";
 
@@ -93,14 +85,7 @@ Photo* Photo::deserialize(const std::string& data, size_t size, std::string logi
 
     std::istringstream iss(data);
 
-    WCHAR username[256];
-    DWORD username_len = sizeof(username) / sizeof(WCHAR);
-    if (!GetUserNameW(username, &username_len)) {
-        std::cout << "No User data" << std::endl;
-    }
-
-    std::string usernameStr = wideStringToString(username);
-    std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
+    std::string saveDirectory = "./Data_Air_Gram";
     std::string tempPath = saveDirectory + "/" + login + "Photo.png";
 
     std::vector<char> buffer(size);
@@ -127,14 +112,7 @@ Photo* Photo::updateOnPC(const std::string& data, size_t size, std::string oldLo
     }
     std::istringstream iss(data);
 
-    WCHAR username[256];
-    DWORD username_len = sizeof(username) / sizeof(WCHAR);
-    if (!GetUserNameW(username, &username_len)) {
-        std::cout << "No User data" << std::endl;
-    }
-
-    std::string usernameStr = wideStringToString(username);
-    std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
+    std::string saveDirectory = "./Data_Air_Gram";
     std::string oldPath = saveDirectory + "/" + oldLogin + "Photo.png";
     std::string newPath = saveDirectory + "/" + newLogin + "Photo.png";
 

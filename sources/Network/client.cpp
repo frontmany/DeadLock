@@ -464,15 +464,7 @@ OperationResult Client::updateMyInfo(const std::string& login, const std::string
 }
 
 void Client::updateConfig(const std::string& oldLogin, const std::string& newLogin) {
-    WCHAR username[256];
-    DWORD username_len = sizeof(username) / sizeof(WCHAR);
-    if (!GetUserNameW(username, &username_len)) {
-        std::cout << "No User data" << std::endl;
-        return;
-    }
-
-    std::string usernameStr = Photo::wideStringToString(username);
-    std::string saveDirectory = "C:/Users/" + usernameStr + "/Documents/Data_Air_Gram";
+    std::string saveDirectory = "./Data_Air_Gram";
     std::string oldPath = saveDirectory + "/" + oldLogin + ".json";
     std::string newPath = saveDirectory + "/" + newLogin + ".json";
 

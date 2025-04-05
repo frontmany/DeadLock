@@ -36,19 +36,7 @@ std::string Utility::wideStringToString(const WCHAR* wideStr) {
 }
 
 QString Utility::getSaveDir() {
-    WCHAR username[256];
-    DWORD username_len = sizeof(username) / sizeof(username[0]);
-
-    if (!GetUserNameW(username, &username_len)) {
-        std::cout << "No User data" << std::endl;
-        return QString();
-    }
-
-    std::string usernameStr = wideStringToString(username);
-    usernameStr.erase(std::remove(usernameStr.begin(), usernameStr.end(), '\0'), usernameStr.end());
-
-    std::string saveDirectory = "C:\\Users\\" + usernameStr + "\\Documents\\Data_Air_Gram";
-
+    std::string saveDirectory = "./Data_Air_Gram";
 
     if (!std::filesystem::exists(saveDirectory)) {
         std::filesystem::create_directories(saveDirectory);
