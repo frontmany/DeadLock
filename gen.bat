@@ -1,2 +1,2 @@
-cd C:\prj\Air_Gram\build
+cd C:\Users\arsen\Programing\Projects\DeadLock\build
 cmake ..

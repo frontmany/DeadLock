@@ -21,7 +21,7 @@ source_group("Source Files\\GreetUI Files" FILES ${GREET_FILES})
 file(GLOB CORE_FILES "sources/Core/*.cpp" "sources/Core/*.h" "vendor/base_64/base64.h" "vendor/base_64/base64.cpp")
 source_group("Source Files\\Core Files" FILES ${CORE_FILES})
 
-set(CMAKE_PREFIX_PATH "C:/Qt/6.5.1")
+set(CMAKE_PREFIX_PATH "C:/Program Files/Qt/6.5.1")
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 qt_standard_project_setup()
 set(CMAKE_AUTOMOC ON)

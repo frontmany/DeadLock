@@ -25,13 +25,12 @@ int main(int argc, char* argv[])
     app.setStyle(customStyle);
 
     Client* client = new Client;
-    client->connectTo("192.168.1.49", 8080);
+    client->connectTo("192.168.0.2", 8080);
     client->run();
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);
     mainWindow->setupLoginWidget();
     
-    mainWindow->resize(960, 540);
     mainWindow->showMaximized();
 
     app.exec();
