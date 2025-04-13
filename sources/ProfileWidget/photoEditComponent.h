@@ -12,6 +12,11 @@
 #include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
 #include <QWheelEvent>
+#include <QGraphicsBlurEffect>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QPainterPath>
+#include <QBuffer>
 
 struct StylePhotoEditComponent {
 

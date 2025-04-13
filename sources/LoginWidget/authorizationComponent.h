@@ -7,72 +7,20 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QVBoxLayout>
+#include <QRegularExpression>
 
 #include "loginWidget.h"
 
 
 struct StyleAuthorizationComponent {
+    StyleAuthorizationComponent();
 
-    QString DarkButtonStyle = R"(
-    QPushButton {
-        background-color: rgb(21, 119, 232);   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
-
-    QString DarkLineEditStyle = R"(
-    QLineEdit {
-        background-color: #333;    
-        color: white;               
-        border: none;     
-        border-radius: 5px;         
-        padding: 5px;               
-    }
-    QLineEdit:focus {
-        border: 2px solid #888;    
-    }
-)";
-
-    QString LightButtonStyle = R"(
-    QPushButton {
-        background-color: rgb(21, 119, 232);    
-        color: white;                
-        border: none;      
-        border-radius: 5px;          
-        padding: 5px 10px;           
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);     
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
-
-    QString LightLineEditStyle = R"(
-    QLineEdit {
-        background-color: #ffffff;    
-        color: black;                 
-        border: none;       
-        border-radius: 5px;           
-        padding: 5px;                 
-    }
-    QLineEdit:focus {
-        border: 2px solid rgb(237, 237, 237);        
-    }
-)";
-
-
-
+    QString DarkButtonStyle;
+    QString DarkLineEditStyle;
+    QString LightButtonStyle;
+    QString LightLineEditStyle;
+    QString DarkLineEditStyleRedBorder;
+    QString LightLineEditStyleRedBorder;
 };
 
 class LoginWidget;
@@ -83,8 +31,10 @@ class AuthorizationComponent : public QWidget {
 
 public:
     explicit AuthorizationComponent(QWidget* parent, LoginWidget* loginWidget);
-    void setTheme(Theme theme);
+    void setTheme(Theme& theme);
 
+    void setRedBorderToLoginEdit();
+    void setRedBorderToPasswordEdit();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -92,6 +42,8 @@ protected:
 
 private slots:
     void SlotToSendLoginData();
+    void resetLoginEditStyle();
+    void resetPasswordEditStyle();
 
 signals:
     void sendLoginData(QString& login, QString& password);
@@ -109,4 +61,6 @@ private:
     QPushButton*                m_loginButton;
     QLineEdit*                  m_loginEdit;
     QLineEdit*                  m_passwordEdit;
+
+    Theme* m_theme = nullptr;
 };

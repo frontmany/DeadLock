@@ -1,7 +1,9 @@
-#include"database.h" 
+#include "database.h" 
 #include "photo.h" 
-#include"utility.h" 
+#include "utility.h" 
+#include "Windows.h" 
 
+HINSTANCE m_sqlite3_dll;
 
 void Database::init() {
     m_sqlite3_dll = LoadLibrary(L"sqlite3.dll");

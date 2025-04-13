@@ -2,25 +2,18 @@
 #include "mainwindow.h"
 #include "client.h"
 #include "utility.h"
+#include "photo.h"
 #include "chatsWidget.h"
+#include "packetsBuilder.h"
 #include "chatsListComponent.h"
-#include <QWheelEvent>
-#include <QPainter>
-#include <QGraphicsBlurEffect>
-#include <QGraphicsPixmapItem>
-#include <QGraphicsScene>
-#include <QPainterPath>
-#include <QBuffer>
-#include <QApplication>
-#include <QStyle>
 
-// Получаем масштаб для текущего экрана
+
+
 qreal getQtScaleFactor() {
     QScreen* screen = QApplication::primaryScreen();
     return screen->devicePixelRatio(); // Возвращает 1.0, 1.25, 1.5 и т.д.
 }
 
-// Или в процентах:
 int getQtZoomPercent() {
     return static_cast<int>(getQtScaleFactor() * 100);
 }
@@ -31,7 +24,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
     setBackGround(theme);
 
-    m_sender = new SendStringsGenerator;
+    m_sender = new PacketsBuilder();
 
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setAlignment(Qt::AlignCenter);
@@ -111,14 +104,12 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
             );
             textLabel->setAlignment(Qt::AlignCenter);
 
-            // Добавляем кнопку
             QPushButton* okButton = new QPushButton("OK", errorDialog);
             okButton->setFixedHeight(30);
             okButton->setFixedWidth(140);
             okButton->setStyleSheet(m_style->buttonStyleGray);
             connect(okButton, &QPushButton::clicked, errorDialog, &QDialog::accept);
 
-            // Компоновка
             layout->addWidget(textLabel);
 
             QHBoxLayout* hla = new QHBoxLayout;
@@ -127,26 +118,23 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
             layout->addLayout(hla);
 
-            errorDialog->exec();  // Показываем как модальное окно
+            errorDialog->exec();
         }
         else {
-            m_mainWindow->setupChatsWidget();
-            Photo photo(m_filePath.toStdString());
+            Photo* photo = new Photo(m_filePath.toStdString());
             m_client->setPhoto(photo);
-            auto chatsList = m_chatsWidget->getChatsList();
-            chatsList->SetAvatar(photo);
+            m_mainWindow->setupChatsWidget();
 
             auto& map = m_client->getMyChatsMap();
+
             std::vector<std::string> logins;
             logins.reserve(map.size());
             for (auto [login, Chat] : map) {
                 logins.emplace_back(login);
             }
-            for (auto login : m_client->getVecToSendStatusTmp()) {
-                logins.emplace_back(login);
-            }
+
             m_client->setIsHasPhoto(true);
-            m_client->sendPacket(m_sender->get_updateMyInfo_QueryStr(m_client->getMyLogin(), m_client->getMyLogin(), m_client->getMyName(), m_client->getPassword(), true, photo, logins));
+            m_client->updateMyPhoto(*photo);
         }
        
         });
@@ -197,7 +185,6 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_photoAndSlidersWidgetContainer->setLayout(m_bothSlidersVLayout);
     m_photoAndSlidersWidgetContainer->setFixedHeight(550);
 
-    // Добавление виджетов в основной layout
     m_mainVLayout->addSpacing(85);
     m_mainVLayout->addLayout(m_greetLabelLayout);
     m_mainVLayout->addSpacing(25);
@@ -237,10 +224,7 @@ void GreetWidget::startWelcomeAnimation() {
 void GreetWidget::openImagePicker() {
     QString imagePath = QFileDialog::getOpenFileName(this, "Выберите фото", "", "Images (*.png *.jpg *.jpeg)");
     if (!imagePath.isEmpty()) {
-        // Загружаем изображение
         m_selectedImage.load(imagePath);
-
-        // Масштабируем изображение до 500x500 с сохранением пропорций
 
         int paramScale = 0;
         if (getQtZoomPercent() <= 100) {
@@ -252,11 +236,9 @@ void GreetWidget::openImagePicker() {
 
         m_selectedImage = m_selectedImage.scaled(paramScale * devicePixelRatioF(), paramScale * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-        // Получаем размеры масштабированного изображения
         int imageWidth = m_selectedImage.width();
         int imageHeight = m_selectedImage.height();
 
-        // Если изображение меньше 500x500, изменяем размер QLabel
         if (imageWidth < paramScale * devicePixelRatioF() || imageHeight < paramScale * devicePixelRatioF()) {
             m_imageLabel->setFixedSize(imageWidth, imageHeight);
             m_cropXSlider->setFixedSize(imageWidth, 30);
@@ -264,31 +246,25 @@ void GreetWidget::openImagePicker() {
             m_mainVLayout->insertSpacing(0, -100);
         }
         else {
-            // Иначе устанавливаем размер 500x500
             m_imageLabel->setFixedSize(500, 500);
         }
 
-        // Устанавливаем масштабированное изображение в QLabel
         m_imageLabel->setPixmap(m_selectedImage);
 
-        // Инициализация маски
-        m_cropSize = qMin(imageWidth, imageHeight) / 2; // Начальный размер маски (половина меньшей стороны)
-        m_cropX = (imageWidth - m_cropSize) / 2; // Центрируем маску по X
-        m_cropY = (imageHeight - m_cropSize) / 2; // Центрируем маску по Y
+        m_cropSize = qMin(imageWidth, imageHeight) / 2;
+        m_cropX = (imageWidth - m_cropSize) / 2;
+        m_cropY = (imageHeight - m_cropSize) / 2;
 
-        // Обновляем слайдеры
         m_cropXSlider->setRange(0, imageWidth - m_cropSize);
         m_cropYSlider->setRange(0, imageHeight - m_cropSize);
         m_cropXSlider->setValue(m_cropX);
         m_cropYSlider->setValue(m_cropY);
 
-        // Активируем кнопку continue
+
         m_continueButton->setEnabled(true);
 
-        // Показываем маску сразу после загрузки изображения
         cropImageToCircle();
 
-        // Показываем слайдеры
         m_cropXSlider->show();
         m_cropYSlider->show();
     }
@@ -488,7 +464,7 @@ int GreetWidget::saveCroppedImage() {
     croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
 
     // Получаем путь для сохранения
-    QString saveDir = Utility::getSaveDir();
+    QString saveDir = QString::fromStdString(utility::getSaveDir());
     if (saveDir.isEmpty()) {
         qWarning() << "Не удалось получить директорию для сохранения.";
         return 1;

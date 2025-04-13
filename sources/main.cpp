@@ -4,10 +4,12 @@
 #include <QPainter>
 #include <QMainWindow>
 #include <QStyleFactory>
-
-#include "mainWindow.h"
-#include "windows.h"
 #include <iostream>
+
+
+#include "client.h"
+#include "mainWindow.h"
+
 
 class CustomStyle : public QProxyStyle {
 public:
@@ -18,16 +20,16 @@ int main(int argc, char* argv[])
 {
     setlocale(LC_ALL, "ru");
 
-    QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
-    qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", "0");
-    qputenv("QT_SCALE_FACTOR", "1");
-
     QApplication app(argc, argv);
     CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
     app.setStyle(customStyle);
 
-    MainWindow* mainWindow = new MainWindow(nullptr);
+    Client* client = new Client;
+    client->connectTo("192.168.1.49", 8080);
+    client->run();
 
+    MainWindow* mainWindow = new MainWindow(nullptr, client);
+    mainWindow->setupLoginWidget();
     
     mainWindow->resize(960, 540);
     mainWindow->showMaximized();

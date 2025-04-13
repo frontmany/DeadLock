@@ -59,10 +59,6 @@ void ProfileEditorWidget::setTheme(Theme theme) {
     update();
 }
 
-void ProfileEditorWidget::save(const std::string& newLogin, const std::string& newName, const std::string& newPassword) {
-    OperationResult res = m_client->updateMyInfo(newLogin, newName, newPassword, m_client->getIsHasPhoto(), m_client->getPhoto());
-}
-
 void ProfileEditorWidget::close() {
     m_chats_list_component->setIsEditDialogFlag(false);
     m_chats_list_component->closeEditUserDialogWidnow();

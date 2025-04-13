@@ -2,6 +2,8 @@
 #include"mainwindow.h"
 #include"profileEditorWidget.h"
 #include"client.h"
+#include"utility.h"
+#include"photo.h"
 
 FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
     : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme)
@@ -10,8 +12,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
     QPixmap currentAvatar;
     if (m_client->getIsHasPhoto()) {
-        currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto().getPhotoPath()));
-        
+        currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto()->getPhotoPath())); 
     }
     else {
         currentAvatar = QPixmap(":/resources/ChatsWidget/userFriend.png");
@@ -31,8 +32,16 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_name_edit = new QLineEdit(QString::fromStdString(m_client->getMyName()));
 
     m_password_label = new QLabel("Password:");
-    m_password_edit = new QLineEdit(QString::fromStdString(m_client->getPassword()));
-    m_password_edit->setEchoMode(QLineEdit::Password);
+    m_password_edit = new QLineEdit();
+    m_password_edit->setPlaceholderText("Leave empty if no changes");
+    connect(m_password_edit, &QLineEdit::textChanged, [this](const QString& text) {
+        if (!text.isEmpty()) {
+            m_password_edit->setEchoMode(QLineEdit::Password);
+        }
+        else {
+            m_password_edit->setEchoMode(QLineEdit::Normal);
+        }
+    });
 
     QRegularExpressionValidator* validator = new QRegularExpressionValidator(
         QRegularExpression("^[a-zA-Z0-9_!@#$%^&*()-+=;:'\",.<>?/\\\\|`~\\[\\]{} ]*$"),
@@ -45,12 +54,15 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_save_button = new QPushButton("Save");
     m_save_button->setMinimumHeight(30);
     connect(m_save_button, &QPushButton::clicked, [this]() {
-
-        std::string login = m_login_edit->text().toStdString();
         std::string name = m_name_edit->text().toStdString();
         std::string password = m_password_edit->text().toStdString();
 
-        m_client->updateMyInfo(login, name, password, m_client->getIsHasPhoto(), m_client->getPhoto());
+        if (m_client->getMyName() != name) {
+            m_client->updateMyName(name);
+        }
+        if (password != "") {
+            m_client->updateMyPassword(utility::hashPassword(password));
+        }
         m_profile_editor_widget->close();
         });
 
@@ -111,7 +123,7 @@ void FieldsEditComponent::setTheme(Theme theme) {
 }
 
 void FieldsEditComponent::updateAvatar() {
-    QPixmap currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto().getPhotoPath()));
+    QPixmap currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto()->getPhotoPath()));
     m_avatar_label->setPixmap(currentAvatar);
     update();
 }

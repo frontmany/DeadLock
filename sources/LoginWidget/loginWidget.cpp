@@ -3,8 +3,47 @@
 #include "registrationComponent.h"
 #include "mainwindow.h"
 #include "client.h"
+#include "utility.h"
 #include <QGraphicsBlurEffect>
 #include <QPainterPath>
+
+StyleLoginWidget::StyleLoginWidget() {
+    buttonStyleBlue = R"(
+        QPushButton {
+            background-color: transparent; 
+            color: rgb(21, 119, 232);   
+            border: none;                  
+            padding: 5px 10px;            
+            font-family: 'Arial';          
+            font-size: 14px;               
+        }
+        QPushButton:hover {
+            color: rgb(26, 133, 255);       
+        }
+        QPushButton:pressed {
+            color: rgb(26, 133, 255);                  
+        }
+    )";
+
+    buttonStyleGray = R"(
+        QPushButton {
+            background-color: transparent;     
+            color: rgb(153, 150, 150);              
+            border: none;        
+            border-radius: 5px;             
+            padding: 5px 10px;              
+            font-family: 'Arial';            
+            font-size: 14px;                 
+        }
+        QPushButton:hover {
+            color: rgb(153, 150, 150);      
+        }
+        QPushButton:pressed {
+            color: rgb(153, 150, 150);      
+        }
+    )";
+}
+
 
 LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
     : QWidget(parent), m_client(client){
@@ -42,72 +81,17 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
     
     connect(m_switchToRegisterButton, &QPushButton::clicked, this, &LoginWidget::switchToRegister);
     connect(m_switchToAuthorizeButton, &QPushButton::clicked, this, &LoginWidget::switchToAuthorize);
-
-    connect(this, &LoginWidget::sendLoginSuccess, mw, &MainWindow::onLogin);
 }
 
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
-    OperationResult isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
-    if (isLog == OperationResult::SUCCESS) {
-        bool res = m_client->load(login.toStdString() + ".json");
-        m_client->setPassword(password.toStdString());
-        if (!res) {
-            m_client->setMyLogin(login.toStdString());
-            OperationResult isInfo = m_client->getMyInfoFromServer(login.toStdString());
-            if (isInfo == OperationResult::SUCCESS) {
-            }
-            else if (isInfo == OperationResult::FAIL) {
-                return;
-                // todo DIALOG
-            }
-
-        }
-
-        m_client->loadAvatarFromPC(login.toStdString());
-
-        auto& map = m_client->getMyChatsMap();
-        std::vector<std::string> logins;
-        logins.reserve(map.size());
-        for (auto [login, chat] : map) {
-            logins.emplace_back(login);
-        }
-
-        OperationResult isStatuses = m_client->getFriendsStatuses(logins);
-        if (isStatuses == OperationResult::SUCCESS) {
-            std::cout << "easy statatuses\n";
-        }
-        else if (isStatuses == OperationResult::FAIL) {
-            return;
-            // todo DIALOG
-        }
-        else if (isStatuses == OperationResult::NOT_STATED) {
-            std::cout << "dont easy statatuses\n";
-            return;
-            // todo DIALOG
-        }
-        m_client->sendMyStatus("online");
-        emit(sendLoginSuccess(false));
-    }
-    else if (isLog == OperationResult::FAIL) {
-        // todo DIALOG
-    }
-    else {
-        // todo DIALOG
-    }
+    m_client->authorizeClient(login.toStdString(), utility::hashPassword(password.toStdString()));
+    m_client->setMyLogin(login.toStdString());
 }
 
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
-    OperationResult isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
-    if (isLog == OperationResult::SUCCESS) {
-        m_client->sendMyStatus("online");
-        emit(sendLoginSuccess(true));
-    }
-    else if (isLog == OperationResult::FAIL){
-        // todo DIALOG
-    }
-    else {
-        // todo DIALOG
-    }
+    m_client->registerClient(login.toStdString(), utility::hashPassword(password.toStdString()), name.toStdString());
+    m_client->setMyLogin(login.toStdString());
+    m_client->setMyName(name.toStdString());
 }
 
 void LoginWidget::switchToAuthorize() {
@@ -153,7 +137,7 @@ void LoginWidget::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 }
 
-void LoginWidget::setTheme(Theme theme) {
+void LoginWidget::setTheme(Theme& theme) {
     swapSwitchStyles();
     m_authorizationWidget->setTheme(theme);
     m_registrationWidget->setTheme(theme);
@@ -181,4 +165,13 @@ void LoginWidget::swapSwitchStyles() {
         m_switchToAuthorizeButton->setStyleSheet(style->buttonStyleGray);
         m_switchToRegisterButton->setStyleSheet(style->buttonStyleBlue);
     }
+}
+
+
+AuthorizationComponent* LoginWidget::getAuthorizationComponent() {
+    return m_authorizationWidget;
+}
+
+RegistrationComponent* LoginWidget::getRegistrationComponent() {
+    return m_registrationWidget;
 }

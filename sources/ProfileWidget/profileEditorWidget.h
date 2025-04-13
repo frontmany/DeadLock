@@ -26,7 +26,6 @@ public slots:
     void onImagePicker();
     void setPhotoEditor();
     void setFieldsEditor();
-    void save(const std::string& newLogin, const std::string& newName, const std::string& newPassword);
     void close();
     
 protected:

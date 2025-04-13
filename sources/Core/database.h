@@ -1,12 +1,8 @@
 #pragma once
-
 #include <iostream>
 #include <unordered_map>
 #include <string>
 #include <vector>
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h> 
 
 #include"sqlite/sqlite3.h" 
 #include"message.h" 
@@ -53,6 +49,5 @@ private:
 	sqlite3_finalize_t sqlite3_finalize;
 
 private:
-	HINSTANCE m_sqlite3_dll;
 	void* m_db;
 };

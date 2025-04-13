@@ -1,14 +1,12 @@
 #pragma once
-
-#include <QWidget>
 #include <vector>
 #include <thread>
-#include <QLayout>
 #include <algorithm>
 #include <mutex>
+#include <iostream>
 
-#include "chat.h"
-
+#include <QWidget>
+#include <QLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -20,29 +18,49 @@ class HelloAreaComponent;
 class ChatComponent;
 class MainWindow;
 class Client;
-enum Theme;
+class Chat;
+class Message;
+enum  Theme;
 
 class ChatsWidget : public QWidget {
 	Q_OBJECT
 public:
 	ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, Theme theme);
-	ChatsWidget() = default;
 	~ChatsWidget();
-	void setTheme(Theme theme);
-	const Theme getTheme() const { return m_theme; }
-	
-	MainWindow* getMainWindow();
-	MessagingAreaComponent* getCurrentMessagingArea() { return m_current_messagingAreaComponent; }
-	Client* getClientSide() { return m_client; }
-	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
-	std::vector<MessagingAreaComponent*>& getMessagingComponentsCacheVec() { return m_vec_messagingComponents_cache; }
-	void setClient(Client* client);
 
 	//have to be called after loading m_client
-	void setup(); 
-	void setupChatComponents();
+	void restoreMessagingAreaComponents();
+	void restoreChatComponents();
+
+
+	void setClient(Client* client);
+	Client* getClient() { return m_client; }
+
+	void setTheme(Theme theme);
+	const Theme getTheme() const { return m_theme; }
+
+	void setIsHelloAreaComponent(bool isHelloComponent) { m_is_hello_component = isHelloComponent; }
+	bool getIsHelloAreaComponent() { return m_is_hello_component; }
+	
+	HelloAreaComponent* getHelloAreaComponent() { return m_helloAreaComponent; }
+
+	void setCurrentMessagingAreaComponent(MessagingAreaComponent* messagingAreaComponent) { m_current_messagingAreaComponent = messagingAreaComponent; }
+	MessagingAreaComponent* getCurrentMessagingAreaComponent() { return m_current_messagingAreaComponent; }
+
+	MainWindow* getMainWindow();
+
+	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
+	std::vector<MessagingAreaComponent*>& getMessagingAreasVec() { return m_vec_messaging_components; }
+
+
+	QHBoxLayout* getMainHLayout() { return m_mainHLayout; }
 
 public slots:
+	void createAndAddChatComponentToList(Chat* chat);
+	void createAndSetMessagingAreaComponent(Chat* chat);
+	void removeRightComponent();
+	void closeAddChatDialog();
+	void selectChatComponent(ChatComponent* component);
 	void createMessagingComponent(std::string friendName, Chat* chat);
 	void onChangeThemeClicked();
 	void onSendMessageData(Message* message, Chat* chat);
@@ -51,6 +69,7 @@ public slots:
 	
 
 private:
+	bool isValidChatCreation(const std::string& loginToCheck);
 	void paintEvent(QPaintEvent* event) override;
 	void setBackGround(Theme theme);
 
@@ -61,11 +80,14 @@ private:
 	ChatsListComponent*		m_chatsListComponent;
 	MessagingAreaComponent* m_current_messagingAreaComponent;
 	HelloAreaComponent*		m_helloAreaComponent;
-	QVBoxLayout*			m_leftVLayout;
-	QHBoxLayout*			m_mainHLayout;
 	MainWindow*				m_main_window;
 	std::mutex				m_mtx;
 
-	std::vector<MessagingAreaComponent*> m_vec_messagingComponents_cache;
-	bool m_isFirstChatSet;
+	QVBoxLayout*			m_leftVLayout;
+	QHBoxLayout*			m_mainHLayout;
+
+
+
+	std::vector<MessagingAreaComponent*> m_vec_messaging_components;
+	bool m_is_hello_component;
 };

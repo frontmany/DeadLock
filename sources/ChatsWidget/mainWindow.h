@@ -7,11 +7,10 @@
 #include <QEvent>
 #include <QDir>
 
-#include "loginWidget.h"
-#include "chatsWidget.h"
-#include "greetWidget.h"
-
 class Client;
+class GreetWidget;
+class LoginWidget;
+class ChatsWidget;
 class WorkerQt;
 
 
@@ -24,24 +23,25 @@ class MainWindow : public QMainWindow {
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget* parent);
+	MainWindow(QWidget* parent, Client* client);
 	~MainWindow();
-	void setupChatsWidget();
 
 public slots:
-	void onLogin(bool isRegistration);
-
-private:
+	void updateRegistrationUIRedBorder();
+	void updateAuthorizationUIRedBorder();
+	void setupChatsWidget();
 	void setupLoginWidget();
 	void setupGreetWidget();
-	bool isDarkMode();
+
+	LoginWidget* getLoginWidget();
+	ChatsWidget* getChatsWidget();
+
 
 private:
-	WorkerQt*		m_worker;
-	Theme			m_theme;
+	WorkerQt*		m_worker_Qt;
 	Client*			m_client;
-	
 	GreetWidget*	m_greetWidget;
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;
+	Theme			m_theme;
 };

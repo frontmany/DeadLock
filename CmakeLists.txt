@@ -3,15 +3,14 @@ set(CMAKE_CXX_STANDARD 20)
 project(Deadlock)
 
 
-file(GLOB SOURCES "sources/*.cpp" "sources/*.h" "vendor/base_64/base64.h" "vendor/base_64/base64.cpp")
+file(GLOB SOURCES "sources/*.cpp" "sources/*.h")
 source_group("Source Files" FILES ${SOURCES})
 
-# Создание группы Login
 file(GLOB LOGIN_FILES "sources/LoginWidget/*.cpp" "sources/LoginWidget/*.h")
 source_group("Source Files\\LoginUI Files" FILES ${LOGIN_FILES})
 
-file(GLOB PROFILE_EDITOR_FILES "sources/ProfileEditorWidget/*.cpp" "sources/ProfileEditorWidget/*.h")
-source_group("Source Files\\ProfileEditor Files" FILES ${PROFILE_EDITOR_FILES})
+file(GLOB PROFILE_FILES "sources/ProfileWidget/*.cpp" "sources/ProfileWidget/*.h")
+source_group("Source Files\\ProfileUI Files" FILES ${PROFILE_FILES})
 
 file(GLOB CHATS_FILES "sources/ChatsWidget/*.cpp" "sources/ChatsWidget/*.h")
 source_group("Source Files\\ChatsUI Files" FILES ${CHATS_FILES})
@@ -19,16 +18,15 @@ source_group("Source Files\\ChatsUI Files" FILES ${CHATS_FILES})
 file(GLOB GREET_FILES "sources/GreetWidget/*.cpp" "sources/GreetWidget/*.h")
 source_group("Source Files\\GreetUI Files" FILES ${GREET_FILES})
 
-# Создание группы Network
-file(GLOB NETWORK_FILES "sources/Network/*.cpp" "sources/Network/*.h")
-source_group("Source Files\\Network Files" FILES ${NETWORK_FILES})
+file(GLOB CORE_FILES "sources/Core/*.cpp" "sources/Core/*.h" "vendor/base_64/base64.h" "vendor/base_64/base64.cpp")
+source_group("Source Files\\Core Files" FILES ${CORE_FILES})
 
 set(CMAKE_PREFIX_PATH "C:/Qt/6.5.1")
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 qt_standard_project_setup()
 set(CMAKE_AUTOMOC ON)
 
-include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Network" "sources/GreetWidget" "sources/ProfileEditorWidget" "vendor" "vendor/base_64")
+include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Core" "sources/GreetWidget" "sources/ProfileWidget" "vendor" "vendor/base_64")
 link_directories("vendor/sqlite")
 
 qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/GreetWidget/greetResources.qrc resources/ChatsWidget/chatsResources.qrc)
@@ -37,5 +35,5 @@ qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/G
 set(RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.rc")
 
 
-add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${LOGIN_FILES} ${CHATS_FILES} ${NETWORK_FILES} ${QRC_FILES} ${GREET_FILES} ${PROFILE_EDITOR_FILES} ${RC_FILE})
+add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${CHATS_FILES} ${CORE_FILES} ${QRC_FILES} ${GREET_FILES} ${PROFILE_FILES} ${RC_FILE})
 target_link_libraries(${PROJECT_NAME} Qt6::Widgets ws2_32 sqlite.lib)

@@ -17,7 +17,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_nameLabel->setText(QString::fromStdString(m_chat->getFriendName()));
 
     m_lastMessageLabel = new QLabel(this);
-    m_nameLabel->setText(QString::fromStdString(m_chat->getLastMessage()));
+    m_nameLabel->setText(QString::fromStdString(m_chat->getLastReceivedOrSentMessage()));
 
     if (m_chat->getIsFriendHasPhoto() == true) {
         const Photo& photo = *m_chat->getFriendPhoto();

@@ -7,6 +7,7 @@
 #include "buttons.h"
 #include "message.h"
 #include "client.h"
+#include "photo.h"
 #include <random>
 #include <limits>
 
@@ -141,7 +142,7 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
 
 
 void MessagingAreaComponent::onSendMessageClicked() {
-    Message* message = new Message(m_messageInputEdit->toPlainText().toStdString(), Utility::getCurrentTime(), Utility::generateId(), true, false);
+    Message* message = new Message(m_messageInputEdit->toPlainText().toStdString(), utility::getTimeStamp(), utility::generateId(), true, false);
     addMessage(message);
     m_containerWidget->adjustSize();
     m_scrollArea->verticalScrollBar()->setValue(m_scrollArea->verticalScrollBar()->maximum());
@@ -179,9 +180,8 @@ void MessagingAreaComponent::addMessage(Message* message) {
 }
 
 void MessagingAreaComponent::markMessageAsChecked(Message* message) {
-    std::thread th([this, message]() {
-        Client* client = m_chatsWidget->getClientSide();
-        client->sendMessageReadConfirmation(m_chat->getFriendLogin(), { message });
-        });
-    th.join();
+    Client* client = m_chatsWidget->getClient();
+    client->sendMessageReadConfirmation(m_chat->getFriendLogin(), { message });
+
+    m_chat->getMessagesVec().back()->setIsRead(true);
 }

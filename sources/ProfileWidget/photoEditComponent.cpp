@@ -4,15 +4,10 @@
 #include "profileEditorWidget.h"
 #include "client.h"
 #include "utility.h"
+#include "photo.h"
 #include "chatsWidget.h"
 #include "chatsListComponent.h"
-#include <QWheelEvent>
-#include <QPainter>
-#include <QGraphicsBlurEffect>
-#include <QGraphicsPixmapItem>
-#include <QGraphicsScene>
-#include <QPainterPath>
-#include <QBuffer>
+
 
 PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
     : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme),
@@ -57,17 +52,17 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_continueButton->setMaximumSize(250, 60);
     connect(m_continueButton, &QPushButton::clicked, [this]() {
         saveCroppedImage();
-        Photo photo(m_filePath.toStdString());
+        Photo* photo = new Photo(m_filePath.toStdString());
 
 
         m_profile_editor_widget->setFieldsEditor();
-        m_profile_editor_widget->updateAvatar(photo);
+        m_profile_editor_widget->updateAvatar(*photo);
 
  
         m_client->setPhoto(photo);
         m_client->setIsHasPhoto(true);
 
-        m_client->updateMyInfo(m_client->getMyLogin(), m_client->getMyName(), m_client->getPassword(), true, photo);
+        m_client->updateMyPhoto(*photo);
         m_profile_editor_widget->setFieldsEditor();
         });
 
@@ -299,7 +294,7 @@ void PhotoEditComponent::saveCroppedImage() {
     QPixmap croppedImage = m_selectedImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
     croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
 
-    QString saveDir = Utility::getSaveDir();
+    QString saveDir = QString::fromStdString(utility::getSaveDir());
     if (saveDir.isEmpty()) {
         qWarning() << "Couldn't get the directory to save.";
         return;

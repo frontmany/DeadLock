@@ -1,25 +1,43 @@
-#include<vector>
-#include<mutex>
-#include<QPixmap>
+#include <vector>
+#include <mutex>
+#include <QPixmap>
+#include <QHBoxLAyout>
+#include <QWidget>
+#include <QString>
+#include <QMessageBox>
+#include <chrono>
+#include <string>
+
 #include "workerUI.h"
 
+class MainWindow;
 class ChatsWidget;
-class Client;
-class Message;
+class Chat;
 
 class WorkerQt : public WorkerUI {
 public:
-	WorkerQt(ChatsWidget* chatsWidget, Client* client);
+	WorkerQt(MainWindow* mainWindow);
 
-	void onStatusReceive(std::string packet) override;
-	void onMessageReceive(std::string packet) override;
-	void onFirstMessageReceive(std::string packet) override;
-	void onMessageReadConfirmationReceive(std::string packet) override;
-	void onAuthorization(std::string packet) override;
-	void onFriendInfoReceive(std::string packet);
+	void onRegistrationSuccess() override;
+	void onRegistrationFail() override;
+
+	void onAuthorizationSuccess() override;
+	void onAuthorizationFail() override;
+
+	void onChatCreateSuccess(Chat* chat) override;
+	void onChatCreateFail() override;
+
+	void updateFriendsStatuses(const std::vector<std::pair<std::string, std::string>>& loginToStatusPairsVec) override;
+	void showConfigLoadErrorDialog() override;
+	void onMessageReceive(const std::string& friendLogin, Message* message) override;
+	void showNewChatOrUpdateExisting(Chat* chat) override;
+	void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) override;
+	void onStatusReceive(const std::string& friendLogin, const std::string& status);
 
 private:
-	std::mutex	 m_mtx;
-	ChatsWidget* m_chats_widget;
-	Client*		 m_client;
+	bool updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat);
+	bool updateExistingMessagingAreaComp(ChatsWidget* chatsWidget, Chat* chat);
+	
+private:
+	MainWindow*  m_main_window;
 };

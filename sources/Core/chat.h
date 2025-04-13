@@ -10,7 +10,7 @@ class Photo;
 
 class Chat {
 public:
-	Chat() : m_is_friend_has_photo(false), m_index_at_layout(10000) {}
+	Chat() : m_is_friend_has_photo(false), m_index_at_layout(100000), m_friend_photo(nullptr) {}
 
 	std::vector<Message*>& getMessagesVec() { return m_vec_messages; }
 	const std::vector<Message*> getUnreadSendMessagesVec() const;
@@ -19,8 +19,8 @@ public:
 	void setFriendLogin(const std::string& friendLogin) { m_friend_login = friendLogin; }
 	const std::string& getFriendLogin() const { return m_friend_login; }
 
-	void setLastIncomeMsg(const std::string& lastIncomeMessage) { m_last_incoming_message = lastIncomeMessage; }
-	const std::string& getLastMessage() const { return m_last_incoming_message; }
+	void setLastReceivedOrSentMessage(const std::string& lastReceivedOrSentMessage) { m_last_received_or_sent_message = lastReceivedOrSentMessage; }
+	const std::string& getLastReceivedOrSentMessage() const { return m_last_received_or_sent_message; }
 
 	void setFriendName(const std::string& name) { m_friend_name = name; }
 	const std::string& getFriendName() const { return m_friend_name; }
@@ -45,7 +45,7 @@ private:
 	std::string				 m_friend_last_seen;
 	std::string				 m_friend_login;
 	std::string				 m_friend_name;
-	std::string				 m_last_incoming_message;
+	std::string				 m_last_received_or_sent_message;
 	bool					 m_is_friend_has_photo;
 	Photo*					 m_friend_photo;
 	int						 m_index_at_layout;

@@ -12,6 +12,15 @@
 #include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
 #include <QWheelEvent>
+#include <QGraphicsBlurEffect>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
+#include <QPainterPath>
+#include <QBuffer>
+#include <QApplication>
+#include <QStyle>
+
+
 
 struct StyleGreetWidget {
     QString buttonStyleGray = R"(
@@ -123,8 +132,8 @@ QSlider::sub-page:vertical {
 class Client;
 class MainWindow;
 class ChatsWidget;
-enum Theme;
-class SendStringsGenerator;
+enum  Theme;
+class PacketsBuilder;
 
 class GreetWidget : public QWidget {
     Q_OBJECT
@@ -153,7 +162,7 @@ private:
     StyleGreetWidget*       m_style;
     Client*                 m_client;
     ChatsWidget*            m_chatsWidget;
-    SendStringsGenerator*   m_sender;
+    PacketsBuilder*   m_sender;
 
     QVBoxLayout* m_mainVLayout;
     QVBoxLayout* m_containerVLayout;

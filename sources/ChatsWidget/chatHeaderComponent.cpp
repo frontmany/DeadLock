@@ -18,9 +18,7 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
         update();
     }
 
-    //TODO QPIXMAP set avatar
     style = new StyleChatHeaderComponent;
-
 
     m_mainLayout = new QHBoxLayout(this);
 
@@ -45,7 +43,7 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
         m_nameLabel->setStyleSheet(style->darkLabelStyle);
     }
 
-    m_lastSeenLabel = new QLabel(Utility::parseDate(lastSeen), this);
+    m_lastSeenLabel = new QLabel(QString::fromStdString(utility::parseDate(lastSeen.toStdString())), this);
     if (m_theme == DARK) {
 
         if (m_lastSeenLabel->text() == "online") {

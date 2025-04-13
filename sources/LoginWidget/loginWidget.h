@@ -9,46 +9,13 @@
 #include <QPixmap>
 
 
-
-
-
 struct StyleLoginWidget {
-    QString buttonStyleBlue = R"(
-            QPushButton {
-                background-color: transparent; 
-                color: rgb(21, 119, 232);   
-                border: none;                  
-                padding: 5px 10px;            
-                font-family: 'Arial';          
-                font-size: 14px;               
-            }
-            QPushButton:hover {
-                color: rgb(26, 133, 255);       
-            }
-            QPushButton:pressed {
-                color: rgb(26, 133, 255);                  
-            }
-        )";
+    StyleLoginWidget();
 
-    QString buttonStyleGray = R"(
-            QPushButton {
-                background-color: transparent;     
-                color: rgb(153, 150, 150);              
-                border: none;        
-                border-radius: 5px;             
-                padding: 5px 10px;              
-                font-family: 'Arial';            
-                font-size: 14px;                 
-            }
-            QPushButton:hover {
-                color: rgb(153, 150, 150);      
-            }
-            QPushButton:pressed {
-                color: rgb(153, 150, 150);      
-            }
-        )";
-
+    QString buttonStyleBlue;
+    QString buttonStyleGray;
 };
+
 
 class AuthorizationComponent;
 class RegistrationComponent;
@@ -62,10 +29,10 @@ class LoginWidget : public QWidget {
 
 public:
     explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client);
-    void setTheme(Theme theme);
+    void setTheme(Theme& theme);
 
-signals:
-    void sendLoginSuccess(bool isRegistaration);
+    AuthorizationComponent* getAuthorizationComponent();
+    RegistrationComponent* getRegistrationComponent();
 
 private slots:
     void switchToAuthorize();

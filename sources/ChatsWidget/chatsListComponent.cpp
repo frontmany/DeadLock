@@ -6,9 +6,10 @@
 #include "messagingAreaComponent.h"
 #include "messageComponent.h"
 #include "buttons.h"
+#include "photo.h"
 #include "utility.h"
 #include "client.h"
-#include"profileEditorWidget.h"
+#include "profileEditorWidget.h"
 
 #include <QPainter>
 #include <QPaintEvent>
@@ -17,7 +18,7 @@
 
 
 void ChatsListComponent::loadAvatarFromPC(const std::string & login) {
-    QString dir = Utility::getSaveDir();
+    QString dir = QString::fromStdString(utility::getSaveDir());
     QString fileNameFinal = QString::fromStdString(login) + "myMainPhoto.png";
     QDir saveDir(dir);
     QString fullPath = saveDir.filePath(fileNameFinal);
@@ -124,7 +125,7 @@ void ChatsListComponent::openEditUserDialogWidnow() {
     }
     else {
         m_isEditDialog = true;
-        m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClientSide(), m_theme);
+        m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClient(), m_theme);
         m_containerVLayout->insertWidget(0, m_profile_editor_widget);
     }
      
@@ -158,13 +159,21 @@ void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelect
     
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
-    chatComponent->setLastMessage(QString::fromStdString(chat->getLastMessage()));
     chatComponent->setTheme(theme);
     chatComponent->setSelected(isSelected);
     m_containerVLayout->insertWidget(chatComponent->getChat()->getLayoutIndex(), chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
-}
 
+    auto& messagesVec = chat->getMessagesVec();
+    if (messagesVec.size() == 0) {
+        chatComponent->setLastMessage("no messages yet");
+    }
+    else {
+        auto lastMessage = messagesVec.back();
+        chatComponent->setLastMessage(QString::fromStdString(lastMessage->getMessage()));
+    }
+
+}
 
 void ChatsListComponent::openAddChatDialog() {
     if (m_isChatAddDialog) {
