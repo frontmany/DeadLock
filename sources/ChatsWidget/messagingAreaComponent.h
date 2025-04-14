@@ -14,12 +14,8 @@
 #include <QScrollBar>
 #include <random>
 
-#include "request.h"
 #include "chat.h"
 
-
-
-std::string getCurrentTime();
 
 struct StyleMessagingAreaComponent {
     QString darkSlider = R"(
@@ -129,7 +125,6 @@ class MessagingAreaComponent : public QWidget {
 
 public:
     MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget);
-    MessagingAreaComponent(Theme theme);
     void setTheme(Theme theme);
     
 
@@ -138,17 +133,15 @@ public:
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
 
-    QJsonObject serialize() const;
-    static MessagingAreaComponent* deserialize(const QJsonObject& jsonObject, QWidget* parent, ChatsWidget* chatsWidget);
-
 
 signals:
-    void sendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id);
+    void sendMessageData(Message*, Chat* chat);
 
 public slots:
-    void addMessageReceived(QString msg, QString timestamp, double id);
-    void addMessageSent(QString msg, QString timestamp, double id);
-    void addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg);
+    void addMessage(Message* message);
+    void setAvatar(const QPixmap& pixMap);
+    void setName(const QString& name);
+    void markMessageAsChecked(Message* message);
 
 private slots:
     void adjustTextEditHeight();
@@ -169,7 +162,7 @@ private:
     QVBoxLayout* m_sendMessage_VLayout;
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
-    ChatsWidget* m_chatsWidget;
+    
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;
@@ -179,4 +172,5 @@ private:
     ButtonCursor*           m_sendMessageButton;
 
     Chat*                   m_chat;
+    ChatsWidget*            m_chatsWidget;
 };

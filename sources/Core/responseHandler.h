@@ -1,0 +1,40 @@
+#include <unordered_map>
+#include <string>
+#include <mutex>
+#include <queue>
+#include <sstream>
+
+class WorkerUI;
+class Client;
+class Chat;
+
+class ResponseHandler {
+public:
+	ResponseHandler(Client* client);
+	void setWorkerUI(WorkerUI* workerImpl);
+
+
+	void handleResponse(const std::string& packet);
+
+	void onRegistrationSuccess();
+	void onRegistrationFail();
+
+	void onAuthorizationSuccess();
+	void onAuthorizationFail();
+
+	void onChatCreateSuccess(const std::string& packet);
+	void onChatCreateFail();
+
+	void onMessageReceive(const std::string& packet);
+	void onUserInfo(const std::string& packet);
+	void onMessageReadConfirmationReceive(const std::string& packet);
+
+
+
+	void processFriendsStatusesSuccess(const std::string& packet);
+	void onStatusReceive(const std::string& packet);
+
+private:
+	WorkerUI* m_worker_UI;
+	Client* m_client;
+};

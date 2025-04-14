@@ -17,6 +17,7 @@
 enum Theme;
 class ChatsWidget;
 class ButtonIcon;
+class AvatarIcon;
 
 class ChatComponent : public QWidget {
     Q_OBJECT
@@ -24,8 +25,6 @@ class ChatComponent : public QWidget {
 public:
     explicit ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat);
 
-    void setName(const QString& name);
-    void setAvatar(const QPixmap& avatar);
     void setTheme(Theme theme);
     void setSelected(bool isSelected);
     const Chat* getChatConst() const { return m_chat; }
@@ -47,8 +46,10 @@ private slots:
 
 
 public slots:
+    void setName(const QString& name);
+    void setAvatar(const QPixmap& avatar);
     void setUnreadMessageDot(bool isUnreadMessages);
-    void setLastMessage(const QString& message, bool fromAnotherThread);
+    void setLastMessage(const QString& message);
 
 signals:
     void clicked();
@@ -66,6 +67,7 @@ private:
     QVBoxLayout* m_statusVLayout;
 
     ButtonIcon*  m_UnreadDot;
+    AvatarIcon*   m_avatar_ico;
     QLabel*      m_lastMessageLabel;
     QLabel*      m_nameLabel;
     QPixmap      m_avatar;

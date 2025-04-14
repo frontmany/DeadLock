@@ -14,6 +14,7 @@
 #include <QMouseEvent>
 #include <QEvent>
 #include "ChatComponent.h"
+#include "mainwindow.h"
 
 
 
@@ -102,16 +103,25 @@ struct StyleChatsListComponent {
     }
 )";
 
+    QString DialogStyle = R"(
+    QLineEdit {
+        background-color: #ffffff;                    
+        border: none;       
+        border-radius: 15px;           
+        padding: 5px;                 
+    }
+)";
+
 };
 
-class RoundIconButton;
+class AvatarIcon;
 class AddChatDialogComponent;
+class ProfileEditorWidget;
 class MessagingAreaComponent;
 class ButtonIcon;
 class ToggleSwitch;
-class ClientSide;
+class Client;
 class ChatsWidget;
-enum Theme;
 
 class ChatsListComponent : public QWidget {
     Q_OBJECT
@@ -120,13 +130,15 @@ public:
     ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme);
     ~ChatsListComponent();
     void setTheme(Theme theme);
-    void addChatComponent(Theme theme, Chat* chat);
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
-    void recoverChatComponents(ClientSide* clientSide, ChatsWidget* chatsWidget);
+    void SetAvatar(const Photo& photo);
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
     AddChatDialogComponent* getAddChatDialogComponent() { return m_chatAddDialog; }
     QLineEdit* getSearchLineEdit() { return m_searchLineEdit; }
+    void setIsEditDialogFlag(bool isEditDialog) { m_isEditDialog = isEditDialog; }
+
+    ChatsWidget* getChatsWidget() const;
 
 signals:
     void sendCreateChatData(QString login);
@@ -134,14 +146,17 @@ signals:
 
 
 public slots:
-    void addChatComponentSlot(QString theme, Chat* chat);
+    void addChatComponent(Theme theme, Chat* chat, bool isSelected);
     void openAddChatDialog();
     void closeAddChatDialog();
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
+    void loadAvatarFromPC(const std::string& login);
+    void closeEditUserDialogWidnow();
 
 private slots:
     void toSendChangeTheme(bool fl);
+    void openEditUserDialogWidnow();
 
 private:
     QColor                      m_backgroundColor;
@@ -159,12 +174,14 @@ private:
     QWidget*            m_containerWidget;
     QVBoxLayout*        m_containerVLayout;
     QLineEdit*          m_searchLineEdit;
-    RoundIconButton*    m_profileButton;
+    AvatarIcon*         m_profileButton;
     ButtonIcon*         m_newChatButton;
     AddChatDialogComponent* m_chatAddDialog;
-
+    ChatsWidget*        m_chats_widget;
+    ProfileEditorWidget* m_profile_editor_widget = nullptr;
 
     std::vector<ChatComponent*> m_vec_chatComponents;
     bool m_isChatAddDialog = false;
+    bool m_isEditDialog = false;
     bool m_ableToCreateChat = true;
 };

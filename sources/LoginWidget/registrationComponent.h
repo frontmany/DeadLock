@@ -7,74 +7,27 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QVBoxLayout>
+#include <QDebug>
+#include <QRegularExpressionValidator>
 
-#include "loginWidget.h"
 
 struct StyleRegistrationComponent {
+    StyleRegistrationComponent();
 
-    QString DarkButtonStyle = R"(
-    QPushButton {
-        background-color: rgb(21, 119, 232);   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
+    QString DarkButtonStyle;
+    QString LightButtonStyle;
 
-    QString DarkLineEditStyle = R"(
-    QLineEdit {
-        background-color: #333;    
-        color: white;               
-        border: none;     
-        border-radius: 5px;         
-        padding: 5px;               
-    }
-    QLineEdit:focus {
-        border: 2px solid #888;    
-    }
-)";
-
-    QString LightButtonStyle = R"(
-    QPushButton {
-        background-color: rgb(21, 119, 232);    
-        color: white;                
-        border: none;      
-        border-radius: 5px;          
-        padding: 5px 10px;           
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);     
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
-
-    QString LightLineEditStyle = R"(
-    QLineEdit {
-        background-color: #ffffff;    
-        color: black;                 
-        border: none;       
-        border-radius: 5px;           
-        padding: 5px;                 
-    }
-    QLineEdit:focus {
-        border: 2px solid rgb(237, 237, 237);         
-    }
-)";
+    QString DarkLineEditStyle;
+    QString DarkLineEditStyleRedBorder;
 
 
-
+    QString LightLineEditStyle;
+    QString LightLineEditStyleRedBorder;
 };
 
+
 class LoginWidget;
+enum Theme;
 
 
 class RegistrationComponent : public QWidget {
@@ -82,8 +35,11 @@ class RegistrationComponent : public QWidget {
 
 public:
     explicit RegistrationComponent(QWidget* parent, LoginWidget* loginWidget);
-    void setTheme(Theme theme);
+    void setTheme(Theme& theme);
 
+    void setRedBorderToLoginEdit();
+    void setRedBorderToNameEdit();
+    void setRedBorderToPasswordEdits();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -91,6 +47,9 @@ protected:
 
 private slots:
     void slotToSendRegistrationData();
+    void resetNameEditStyle();
+    void resetLoginEditStyle();
+    void resetPasswordEditsStyles();
 
 signals:
     void sendRegistrationData(QString& login, QString& data, QString& name);
@@ -113,4 +72,6 @@ private:
     QLineEdit* m_passwordEdit;
     QLineEdit* m_password2Edit;
     QLineEdit* m_nameEdit;
+
+    Theme* m_theme = nullptr;
 };
