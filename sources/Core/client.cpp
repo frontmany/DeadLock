@@ -10,6 +10,7 @@
 #include "operationResult.h"
 #include "responseHandler.h"
 #include "packetsBuilder.h"
+#include "queryType.h"
 #include "database.h"
 #include "workerUI.h"
 #include "utility.h"
@@ -18,26 +19,15 @@
 #include "photo.h"
 #include "chat.h"
 
-void Client::processQueue() {
+void Client::processIncomingMessagesQueue() {
+    net::safe_deque<net::owned_message<QueryType>>& queue = getMessagesQueue();
     while (true) {
-        if (!m_packets_queue.empty()) {
-
-            m_queue_mutex.lock();
-            std::string packet = m_packets_queue.front();
-            m_packets_queue.pop();
-            m_queue_mutex.unlock();
-
-            m_response_handler->handleResponse(packet);
+        if (!queue.empty()) {
+            net::owned_message<QueryType> msg = queue.pop_front();
+            std::string messageStr = "";
+            msg.msg >> messageStr;
+            m_response_handler->handleResponse(messageStr);
         }
-    }
-}
-
-void Client::processToSendQueue() {
-    while (m_packets_to_send_queue.size() != 0) {
-        std::string packet = m_packets_to_send_queue.front();
-        m_packets_to_send_queue.pop();
-
-        sendPacket(packet);
     }
 }
 
@@ -46,14 +36,12 @@ Client::Client() :
     m_is_ui_ready_to_update(false),
     m_is_has_photo(false),
     m_my_login(""),
-    m_my_name(""),
-    m_socket(m_io_context),                 
+    m_my_name(""),            
     m_my_photo(nullptr)
 {
     m_db = new Database;
     m_response_handler = new ResponseHandler(this);
     m_packets_builder = new PacketsBuilder();
-    m_buffer = std::make_shared<asio::streambuf>();
 }
 
 Client::~Client() 
@@ -72,116 +60,69 @@ Client::~Client()
 }
 
 
-void Client::run() {
+void Client::run() { 
     m_db->init();
-    startAsyncReceive();
-    m_workerThread = std::thread([this]() { processQueue(); });
-    m_io_contextThread = std::thread([this]() { m_io_context.run(); });
+    m_workerThread = std::thread([this]() { processIncomingMessagesQueue(); });
 }
 
 void Client::connectTo(const std::string& ipAddress, int port) {
-    try {
-        m_endpoint = asio::ip::tcp::endpoint(asio::ip::make_address(ipAddress), port);
-        m_socket.connect(m_endpoint);
-        std::cout << "Connection established successfully!" << std::endl;
-    }
-    catch (const asio::system_error& e) {
-        std::cerr << "Connection failed: " << e.what()
-            << " (code: " << e.code() << ")" << std::endl;
-        throw;
-    }
-}
-
-void Client::startAsyncReceive() {
-    m_buffer->prepare(1024 * 1024); 
-    processToSendQueue();
-    asio::async_read_until(m_socket, *m_buffer, m_packets_builder->getEndPacketString(),
-        [this](const std::error_code& ec, std::size_t bytes_transferred) {
-            handleAsyncReceive(ec, bytes_transferred);
-        });
-}
-
-void Client::handleAsyncReceive(const std::error_code& ec, std::size_t bytes_transferred) {
-    if (ec) {
-        std::cerr << "Error during receive: " << ec.message() << std::endl;
-
-        return;
-    }
-
-    std::istream is(m_buffer.get());
-    std::string message;
-    std::string buffer_content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-
-    if (!buffer_content.empty()) {
-        std::cout << "Received complete message: " << buffer_content << std::endl;
-        m_queue_mutex.lock();
-        m_packets_queue.push(buffer_content);
-        m_queue_mutex.unlock();
-    }
-
-    m_buffer->consume(bytes_transferred);
-
-    startAsyncReceive();
+    connect(ipAddress, port);
 }
 
 void Client::stop() {
-    m_socket.close();
-    m_io_context.stop();
-    if (m_io_contextThread.joinable()) {
-        m_io_contextThread.join();
-    }
+    disconnect();
 }
 
 void Client::authorizeClient(const std::string& login, const std::string& passwordHash) {
-    sendPacket(m_packets_builder->getAuthorizationPacket(login, passwordHash));
+    sendPacket(m_packets_builder->getAuthorizationPacket(login, passwordHash), QueryType::AUTHORIZATION);
 }
 
 void Client::registerClient(const std::string& login, const std::string& passwordHash, const std::string& name) {
     m_my_login = login;
     m_my_name = name;
-    sendPacket(m_packets_builder->getRegistrationPacket(login, name, passwordHash));
+    sendPacket(m_packets_builder->getRegistrationPacket(login, name, passwordHash), QueryType::REGISTRATION);
 }
 
 void Client::createChatWith(const std::string& friendLogin) {
-    sendPacket(m_packets_builder->getCreateChatPacket(m_my_login, friendLogin));
+    sendPacket(m_packets_builder->getCreateChatPacket(m_my_login, friendLogin), QueryType::CREATE_CHAT);
 }
 
 void Client::broadcastMyStatus(const std::string& status) {
     const std::vector<std::string>& tmpFriendsLoginsVec = getFriendsLoginsVecFromMap();
-    m_packets_to_send_queue.push(m_packets_builder->getStatusPacket(status, m_my_login, tmpFriendsLoginsVec));
+    sendPacket(m_packets_builder->getStatusPacket(status, m_my_login, tmpFriendsLoginsVec), QueryType::STATUS);
 }
 
 void Client::sendMessage(const std::string& friendLogin, const Message* message) {
-    sendPacket(m_packets_builder->getMessagePacket(m_my_login, friendLogin, message));
+    sendPacket(m_packets_builder->getMessagePacket(m_my_login, friendLogin, message), QueryType::MESSAGE);
 }
 
 void Client::sendMessageReadConfirmation(const std::string& friendLogin, const Message* message) {
-    sendPacket(m_packets_builder->getMessageReadConfirmationPacket(m_my_login, friendLogin, message));
+    sendPacket(m_packets_builder->getMessageReadConfirmationPacket(m_my_login, friendLogin, message), QueryType::MESSAGES_READ_CONFIRMATION);
 }
 
 void Client::getAllFriendsStatuses() {
-    m_packets_to_send_queue.push(m_packets_builder->getLoadAllFriendsStatusesPacket(getFriendsLoginsVecFromMap()));
+    sendPacket(m_packets_builder->getLoadAllFriendsStatusesPacket(getFriendsLoginsVecFromMap()), QueryType::LOAD_ALL_FRIENDS_STATUSES);
 }
 
-void Client::requestUserInfoFromServer(const std::string& myLogin) {
-    m_packets_to_send_queue.push(m_packets_builder->getLoadUserInfoPacket(myLogin));
+void Client::requestFriendInfoFromServer(const std::string& myLogin) {
+    sendPacket(m_packets_builder->getLoadUserInfoPacket(myLogin), QueryType::LOAD_FRIEND_INFO);
 }
 
 
 void Client::updateMyName(const std::string& newName) {
     m_my_name = newName;
     const std::vector<std::string>& tmpFriendsLoginsVec = getFriendsLoginsVecFromMap();
-    sendPacket(m_packets_builder->getUpdateMyNamePacket(m_my_login,newName,tmpFriendsLoginsVec));
+    sendPacket(m_packets_builder->getUpdateMyNamePacket(m_my_login,newName,tmpFriendsLoginsVec), QueryType::UPDATE_MY_NAME);
 }
 
 void Client::updateMyPassword(const std::string& newPasswordHash) {
     const std::vector<std::string>& tmpFriendsLoginsVec = getFriendsLoginsVecFromMap();
-    sendPacket(m_packets_builder->getUpdateMyPasswordPacket(m_my_login, newPasswordHash, tmpFriendsLoginsVec));
+    sendPacket(m_packets_builder->getUpdateMyPasswordPacket(m_my_login, newPasswordHash, tmpFriendsLoginsVec), QueryType::UPDATE_MY_PASSWORD);
 }
 
 void Client::updateMyPhoto(const Photo& newPhoto) {
     const std::vector<std::string>& tmpFriendsLoginsVec = getFriendsLoginsVecFromMap();
-    sendPacket(m_packets_builder->getUpdateMyPhotoPacket(m_my_login, newPhoto, tmpFriendsLoginsVec));
+    sendPacket(m_packets_builder->getUpdateMyPhotoPacket(m_my_login, newPhoto, tmpFriendsLoginsVec), QueryType::UPDATE_MY_PHOTO);
 }
 
 
@@ -201,29 +142,11 @@ const std::vector<std::string> Client::getFriendsLoginsVecFromMap() {
     return result;
 }
 
-OperationResult Client::sendPacket(const std::string& packet) {
-    try {
-        size_t bytes_sent = asio::write(m_socket,
-            asio::buffer(packet),
-            asio::transfer_all());
-
-        if (bytes_sent != packet.size()) {
-            std::cerr << "Warning: Not all bytes were sent ("
-                << bytes_sent << "/" << packet.size() << ")\n";
-            return OperationResult::FAIL; 
-        }
-
-        return OperationResult::SUCCESS;
-    }
-
-    catch (const std::exception& e) {
-        std::cerr << "Error sending packet: " << e.what() << std::endl;
-        return OperationResult::FAIL;
-    }
-    catch (...) {
-        std::cerr << "Unknown error while sending packet" << std::endl;
-        return OperationResult::FAIL;
-    }
+void Client::sendPacket(const std::string& packet, QueryType type) {
+    net::message<QueryType> msg;
+    msg.header.type = type;
+    msg << packet;
+    send(msg);
 }
 
 

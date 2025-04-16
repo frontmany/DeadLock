@@ -1,5 +1,5 @@
 
-enum class QueryType {
+enum class QueryType : uint32_t {
 	AUTHORIZATION,
 	REGISTRATION,
 	CREATE_CHAT,

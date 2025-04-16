@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
     MainWindow* mainWindow = new MainWindow(nullptr, client);
     mainWindow->setupLoginWidget();
     
-    mainWindow->resize(960, 540);
     mainWindow->showMaximized();
 
     app.exec();

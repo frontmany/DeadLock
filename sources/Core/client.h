@@ -7,10 +7,12 @@
 #include <unordered_map>
 #include <memory>
 
-#include "asio.hpp"
+#include "net.h"
 
 
 enum class OperationResult;
+enum class QueryType : uint32_t;
+
 class      Message;
 class      Database;
 class      WorkerUI;
@@ -19,11 +21,8 @@ class      Chat;
 class      Photo;
 class      PacketsBuilder;
 
-class Client {
+class Client : public net::client_interface<QueryType> { //TODO
 public:
-    void processQueue();
-    void processToSendQueue();
-
     Client();
     ~Client();
 
@@ -43,21 +42,18 @@ public:
     void updateMyPhoto(const Photo& newPhoto);
 
     void createChatWith(const std::string& friendLogin);
+
     void sendMessage(const std::string& friendLogin, const Message* message);
     void sendMessageReadConfirmation(const std::string& friendLogin, const Message* message);
 
     void broadcastMyStatus(const std::string& status);
-    void checkIsLoginAvailable(const std::string& newLogin);
     void getAllFriendsStatuses();
-
-    void requestUserInfoFromServer(const std::string& myLogin);
+    void requestFriendInfoFromServer(const std::string& myLogin);
     
     void waitUntilUIReadyToUpdate();
 
 
     // GET && SET
-    asio::io_context& getIoContext() { return m_io_context; }
-
     bool isNeedToSaveConfig() { return m_is_need_to_save_config; };
     void setIsNeedToSaveConfig(bool isNeedToSaveConfig) { m_is_need_to_save_config = isNeedToSaveConfig; }
 
@@ -79,22 +75,15 @@ public:
 
 private:
     const std::vector<std::string> getFriendsLoginsVecFromMap();
-
-    OperationResult sendPacket(const std::string& packet);
-    void startAsyncReceive();
-    void handleAsyncReceive(const std::error_code& ec, std::size_t bytes_transferred);
+    void processIncomingMessagesQueue();
+    void sendPacket(const std::string& packet, QueryType type);
 
 private:
-    asio::io_context                 m_io_context;
-    asio::ip::tcp::socket            m_socket;
-    asio::ip::tcp::endpoint          m_endpoint;
-    std::shared_ptr<asio::streambuf> m_buffer;
-    std::thread                      m_io_contextThread;
     std::thread                      m_workerThread;
-    std::thread                      m_packetsSenderThread;
 
     bool                    m_is_need_to_save_config;
     std::atomic<bool>       m_is_ui_ready_to_update;
+
     ResponseHandler*        m_response_handler;
     PacketsBuilder*         m_packets_builder;
     Database*               m_db;
@@ -104,10 +93,6 @@ private:
     std::string m_my_login;
     std::string m_my_name;
     Photo*      m_my_photo;
-
-    std::queue<std::string>                m_packets_queue;
-    std::queue<std::string>                m_packets_to_send_queue;
-
 
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;    
 };

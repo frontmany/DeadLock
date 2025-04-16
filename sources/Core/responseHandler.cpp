@@ -81,7 +81,7 @@ void ResponseHandler::onAuthorizationSuccess() {
 
     bool res = m_client->load(myLogin + ".json");
     if (!res) {
-        m_client->requestUserInfoFromServer(myLogin);
+        m_client->requestFriendInfoFromServer(myLogin);
         m_worker_UI->showConfigLoadErrorDialog();
     }
 
@@ -250,8 +250,7 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
 
         chatsMap[friendLogin] = chat;
 
-
-        m_client->requestUserInfoFromServer(friendLogin);
+        m_client->requestFriendInfoFromServer(friendLogin);
     }
 }
 
