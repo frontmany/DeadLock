@@ -22,11 +22,12 @@
 void Client::processIncomingMessagesQueue() {
     net::safe_deque<net::owned_message<QueryType>>& queue = getMessagesQueue();
     while (true) {
-        if (!queue.empty()) {
+        if (queue.empty()) {
+            std::this_thread::yield();
+        }
+        else {
             net::owned_message<QueryType> msg = queue.pop_front();
-            std::string messageStr = "";
-            msg.msg >> messageStr;
-            m_response_handler->handleResponse(messageStr);
+            m_response_handler->handleResponse(msg);
         }
     }
 }
@@ -62,7 +63,7 @@ Client::~Client()
 
 void Client::run() { 
     m_db->init();
-    m_workerThread = std::thread([this]() { processIncomingMessagesQueue(); });
+    m_worker_thread = std::thread([this]() { processIncomingMessagesQueue(); });
 }
 
 void Client::connectTo(const std::string& ipAddress, int port) {

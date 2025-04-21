@@ -3,10 +3,10 @@
 #include "chatsWidget.h"
 #include "client.h"
 #include "utility.h"
-#include "asio.hpp"
+#include "queryType.h"
 #include "photo.h"
 #include "chat.h"
-
+#include "net.h"
 
 ResponseHandler::ResponseHandler(Client* client)
 	: m_client(client), m_worker_UI(nullptr) {
@@ -17,48 +17,53 @@ void ResponseHandler::setWorkerUI(WorkerUI* workerImpl) {
     m_worker_UI = workerImpl;
 }
 
-void ResponseHandler::handleResponse(const std::string& packet) {
-    std::istringstream iss(packet);
-
-    std::string type;
-    std::getline(iss, type);
-
-    if (type != "REGISTRATION_SUCCESS" && type != "AUTHORIZATION_SUCCESS" && type != "REGISTRATION_FAIL" && type != "AUTHORIZATION_FAIL") {
+void ResponseHandler::handleResponse(ownedMessageT& msg) {
+    if (msg.msg.header.type != QueryType::REGISTRATION_SUCCESS && 
+        msg.msg.header.type != QueryType::AUTHORIZATION_SUCCESS &&
+        msg.msg.header.type != QueryType::REGISTRATION_FAIL &&
+        msg.msg.header.type != QueryType::AUTHORIZATION_FAIL) {
         m_client->waitUntilUIReadyToUpdate();
     }
 
+    std::string packet = "";
+    if (msg.msg.body.size() > 0) {
+        msg.msg >> packet;
+    }
 
-    if (type == "REGISTRATION_SUCCESS") {
+    std::istringstream iss(packet);
+
+
+    if (msg.msg.header.type == QueryType::REGISTRATION_SUCCESS) {
         onRegistrationSuccess();
     }
-    else if (type == "REGISTRATION_FAIL") {
+    else if (msg.msg.header.type == QueryType::REGISTRATION_FAIL) {
         onRegistrationFail();
     }
-    else if (type == "AUTHORIZATION_SUCCESS") {
+    else if (msg.msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
         onAuthorizationSuccess();
     }
-    else if (type == "AUTHORIZATION_FAIL") {
+    else if (msg.msg.header.type == QueryType::AUTHORIZATION_FAIL) {
         onAuthorizationFail();
     }
-    else if (type == "CHAT_CREATE_SUCCESS") {
+    else if (msg.msg.header.type == QueryType::CHAT_CREATE_SUCCESS) {
         onChatCreateSuccess(packet);
     }
-    else if (type == "CHAT_CREATE_FAIL") {
+    else if (msg.msg.header.type == QueryType::CHAT_CREATE_FAIL) {
         onChatCreateFail();
     }
-    else if (type == "FRIENDS_STATUSES") {
+    else if (msg.msg.header.type == QueryType::FRIENDS_STATUSES) {
         processFriendsStatusesSuccess(iss.str());
     }
-    else if (type == "MESSAGE") {
+    else if (msg.msg.header.type == QueryType::MESSAGE) {
         onMessageReceive(iss.str());
     }
-    else if (type == "USER_INFO") {
+    else if (msg.msg.header.type == QueryType::USER_INFO) {
         onUserInfo(iss.str());
     }
-    else if (type == "MESSAGES_READ_CONFIRMATION") {
+    else if (msg.msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
         onMessageReadConfirmationReceive(iss.str());
     }
-    else if (type == "STATUS") {
+    else if (msg.msg.header.type == QueryType::STATUS) {
         onStatusReceive(iss.str());
     }
 }
@@ -100,8 +105,6 @@ void ResponseHandler::onAuthorizationFail() {
 
 void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     std::istringstream iss(packet);
-    std::string type;
-    std::getline(iss, type);
 
     std::string login;
     std::getline(iss, login);
@@ -149,8 +152,6 @@ void ResponseHandler::onChatCreateFail() {
 
 void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
     std::istringstream iss(packet);
-    std::string type;
-    std::getline(iss, type);
 
     std::string vecBegin;
     std::getline(iss, vecBegin);
@@ -185,8 +186,6 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
 void ResponseHandler::onMessageReceive(const std::string& packet) {
 
     std::istringstream iss(packet);
-    std::string type;
-    std::getline(iss, type);
 
     std::string myLogin;
     std::getline(iss, myLogin);
@@ -258,8 +257,6 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
 void ResponseHandler::onUserInfo(const std::string& packet) {
 
     std::istringstream iss(packet);
-    std::string type;
-    std::getline(iss, type);
 
     std::string login;
     std::getline(iss, login);
@@ -307,16 +304,10 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
 
 
 void ResponseHandler::onMessageReadConfirmationReceive(const std::string& packet) {
-
     std::istringstream iss(packet);
-
-    std::string type;
-    std::getline(iss, type);
 
     std::string myLogin;
     std::getline(iss, myLogin);
-
-    std::getline(iss, type);
 
     std::string friendLogin;
     std::getline(iss, friendLogin);
@@ -349,11 +340,7 @@ void ResponseHandler::onMessageReadConfirmationReceive(const std::string& packet
 
 
 void ResponseHandler::onStatusReceive(const std::string& packet) {
-
     std::istringstream iss(packet);
-
-    std::string type;
-    std::getline(iss, type);
 
     std::string friendLogin;
     std::getline(iss, friendLogin);

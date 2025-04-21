@@ -85,7 +85,7 @@ namespace net {
 				[this](std::error_code ec, std::size_t length) {
 					if (!ec) {
 						if (m_message_tmp.header.size > 0) {
-							m_message_tmp.body.resize(m_message_tmp.header.size);
+							m_message_tmp.body.resize(m_message_tmp.header.size - sizeof(message_header<T>));
 							readBody();
 						}
 						else
@@ -128,7 +128,7 @@ namespace net {
 						else {
 							m_safe_deque_outgoing_messages.pop_front();
 
-							if (m_safe_deque_outgoing_messages.empty()) {
+							if (!m_safe_deque_outgoing_messages.empty()) {
 								writeHeader();
 							}
 						}
@@ -137,12 +137,12 @@ namespace net {
 		}
 
 		void writeBody() {
-			asio::async_write(m_socket, asio::buffer(m_safe_deque_outgoing_messages.front().body.data(), m_message_tmp.body.size()),
+			asio::async_write(m_socket, asio::buffer(m_safe_deque_outgoing_messages.front().body.data(), m_safe_deque_outgoing_messages.front().body.size()),
 				[this](std::error_code ec, std::size_t length) {
 					if (!ec) {
 						m_safe_deque_outgoing_messages.pop_front();
 
-						if (m_safe_deque_outgoing_messages.empty()) {
+						if (!m_safe_deque_outgoing_messages.empty()) {
 							writeHeader();
 						}
 					

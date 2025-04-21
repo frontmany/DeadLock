@@ -75,11 +75,11 @@ public:
 
 private:
     const std::vector<std::string> getFriendsLoginsVecFromMap();
-    void processIncomingMessagesQueue();
     void sendPacket(const std::string& packet, QueryType type);
+    void processIncomingMessagesQueue();
 
 private:
-    std::thread                      m_workerThread;
+    std::thread                      m_worker_thread;
 
     bool                    m_is_need_to_save_config;
     std::atomic<bool>       m_is_ui_ready_to_update;
