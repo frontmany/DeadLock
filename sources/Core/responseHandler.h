@@ -7,6 +7,14 @@
 class WorkerUI;
 class Client;
 class Chat;
+enum class QueryType : uint32_t;
+
+namespace net {
+	template <typename T>
+	class owned_message;
+}
+
+typedef net::owned_message<QueryType> ownedMessageT;
 
 class ResponseHandler {
 public:
@@ -14,7 +22,7 @@ public:
 	void setWorkerUI(WorkerUI* workerImpl);
 
 
-	void handleResponse(const std::string& packet);
+	void handleResponse(ownedMessageT& msg);
 
 	void onRegistrationSuccess();
 	void onRegistrationFail();

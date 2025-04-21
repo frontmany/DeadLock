@@ -1,2 +1,2 @@
-cd C:\Users\arsen\Programing\Projects\DeadLock\build
+cd C:\prj\Deadlock\DeadLock Client\build
 cmake ..

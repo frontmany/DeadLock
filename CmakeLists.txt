@@ -26,7 +26,7 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 qt_standard_project_setup()
 set(CMAKE_AUTOMOC ON)
 
-include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Core" "sources/GreetWidget" "sources/ProfileWidget" "vendor" "vendor/base_64")
+include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Core" "sources/GreetWidget" "sources/ProfileWidget" "vendor" "vendor/base_64" "vendor/network_library")
 link_directories("vendor/sqlite")
 
 qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/GreetWidget/greetResources.qrc resources/ChatsWidget/chatsResources.qrc)

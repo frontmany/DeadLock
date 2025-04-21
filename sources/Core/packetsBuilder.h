@@ -3,17 +3,13 @@
 
 class Photo;
 class Message;
-enum class QueryType;
 
 class PacketsBuilder {
 public:
 	PacketsBuilder() {};
 	~PacketsBuilder() = default;
-	const std::string& getEndPacketString();
 
-	PacketsBuilder& operator=(const PacketsBuilder& other) {
-		return *this;
-	}
+	PacketsBuilder& operator=(const PacketsBuilder& other) { return *this; }
 
 	//GET
 	const std::string getAuthorizationPacket(const std::string& login, const std::string& passwordHash);
@@ -33,21 +29,16 @@ public:
 	const std::string getStatusPacket(const std::string& status, const std::string& myLogin, const std::vector<std::string>& friendsLoginsVec);
 
 private:
-	const std::string parseTypeToStr(QueryType type);
+	static constexpr const char* get = "GET";
+	static constexpr const char* rpl = "RPL";
+	static constexpr const char* broadcast = "BROADCAST";
 
-private:
-	const std::string endPacket = "_+14?bb5HmR;%@`7[S^?!#sL8";
+	static constexpr const char* messageBegin = "MESSAGE_BEGIN";
+	static constexpr const char* messageEnd = "MESSAGE_END";
 
-	const std::string get = "GET";
-	const std::string rpl = "RPL";
-	const std::string broadcast = "BROADCAST";
+	static constexpr const char* photoBegin = "PHOTO_BEGIN";
+	static constexpr const char* photoEnd = "PHOTO_END";
 
-	const std::string messageBegin = "MESSAGE_BEGIN";
-	const std::string messageEnd = "MESSAGE_END";
-
-	const std::string photoBegin = "PHOTO_BEGIN";
-	const std::string photoEnd = "PHOTO_END";
-
-	const std::string vecBegin = "VEC_BEGIN";
-	const std::string vecEnd = "VEC_END";
+	static constexpr const char* vecBegin = "VEC_BEGIN";
+	static constexpr const char* vecEnd = "VEC_END";
 };

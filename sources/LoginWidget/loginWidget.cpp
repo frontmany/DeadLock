@@ -90,7 +90,7 @@ void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
 
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
     m_client->registerClient(login.toStdString(), utility::hashPassword(password.toStdString()), name.toStdString());
-    m_client->setMyLogin(login.toStdString());
+     m_client->setMyLogin(login.toStdString());
     m_client->setMyName(name.toStdString());
 }
 

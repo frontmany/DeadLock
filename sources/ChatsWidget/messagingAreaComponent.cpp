@@ -11,6 +11,77 @@
 #include <random>
 #include <limits>
 
+
+StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
+    darkSlider = R"(
+    QScrollBar:vertical {
+        border: 2px solid rgb(36, 36, 36);      
+        background: rgb(36, 36, 36);        
+        width: 10px;                 
+        border-radius: 5px; 
+    }
+
+    QScrollBar::handle:vertical {
+        background: rgb(56, 56, 56);   
+        border: 2px solid rgb(56, 56, 56);      
+        width: 10px;    
+        border-radius: 5px;           
+    }
+
+    QScrollBar::add-line:vertical, 
+    QScrollBar::sub-line:vertical { 
+        background: none;             
+    }
+)";
+
+    lightSlider = R"(
+    QScrollBar:vertical {
+        border: 2px solid rgb(250, 250, 250);      
+        background: rgb(250, 250, 250);        
+        width: 10px;                 
+        border-radius: 5px; 
+    }
+
+    QScrollBar::handle:vertical {
+        background: rgb(218, 219, 227);   
+        border: 2px solid rgb(218, 219, 227);      
+        width: 10px;    
+        border-radius: 5px;           
+    }
+
+    QScrollBar::add-line:vertical, 
+    QScrollBar::sub-line:vertical { 
+        background: none;             
+    }
+)";
+
+    DarkTextEditStyle = R"(
+    QTextEdit {
+        background-color: rgb(36, 36, 36);    
+        color: white;               
+        border: none;     
+        border-radius: 15px;         
+        padding: 5px;               
+    }
+    QTextEdit:focus {
+        border: 2px solid #888;     
+    }
+)";
+
+    LightTextEditStyle = R"(
+    QTextEdit {
+        background-color: #ffffff;    
+        color: black;                 
+        border: none;       
+        border-radius: 15px;           
+        padding: 5px;                 
+    }
+    QTextEdit:focus {
+        border: 2px solid rgb(237, 237, 237);        
+    }
+)";
+};
+
 MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget)
     : QWidget(parent), m_friendName(friendName), m_theme(theme), m_chat(chat), m_chatsWidget(chatsWidget) {
 
