@@ -38,19 +38,19 @@ protected:
 
 private:
     void updateAnimation();
-    QColor backgroundColor() const; // Метод для получения цвета фона
+    QColor backgroundColor() const; // РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ С†РІРµС‚Р° С„РѕРЅР°
 
 signals:
     void toggled(bool checked);
     void indicatorXChanged(int newValue);
 
 private:
-    bool m_isChecked; // Состояние переключателя
-    int m_radius; // Радиус индикатора
-    QPropertyAnimation* m_animation; // Анимация индикатора
-    int m_indicatorX; // Положение индикатора по оси X
-    QColor m_backgroundColor; // Цвет фона переключателя
-    QColor m_circleColor; // Цвет фона переключателя
+    bool m_isChecked; // РЎРѕСЃС‚РѕСЏРЅРёРµ РїРµСЂРµРєР»СЋС‡Р°С‚РµР»СЏ
+    int m_radius; // Р Р°РґРёСѓСЃ РёРЅРґРёРєР°С‚РѕСЂР°
+    QPropertyAnimation* m_animation; // РђРЅРёРјР°С†РёСЏ РёРЅРґРёРєР°С‚РѕСЂР°
+    int m_indicatorX; // РџРѕР»РѕР¶РµРЅРёРµ РёРЅРґРёРєР°С‚РѕСЂР° РїРѕ РѕСЃРё X
+    QColor m_backgroundColor; // Р¦РІРµС‚ С„РѕРЅР° РїРµСЂРµРєР»СЋС‡Р°С‚РµР»СЏ
+    QColor m_circleColor; // Р¦РІРµС‚ С„РѕРЅР° РїРµСЂРµРєР»СЋС‡Р°С‚РµР»СЏ
     Theme m_theme;
 };
 
@@ -97,7 +97,7 @@ public:
     {
         setFixedSize(50, 50);
         setGeometry(x, y, iconSize, iconSize);
-        setAttribute(Qt::WA_Hover); // Включаем отслеживание hover-событий
+        setAttribute(Qt::WA_Hover); // Р’РєР»СЋС‡Р°РµРј РѕС‚СЃР»РµР¶РёРІР°РЅРёРµ hover-СЃРѕР±С‹С‚РёР№
     }
 
     QSize sizeHint() const override { return QSize(32, 32); }

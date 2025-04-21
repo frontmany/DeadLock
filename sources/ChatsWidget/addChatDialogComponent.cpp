@@ -3,6 +3,36 @@
 #include "buttons.h"
 #include "mainwindow.h"
 
+StyleEditComponent::StyleEditComponent() {
+    DarkLineEditStyle = R"(
+    QLineEdit {
+        background-color: #333;    
+        color: white;     
+        font-size: 12px;           
+        border: none;     
+        border-radius: 5px;         
+        padding: 5px;               
+    }
+    QLineEdit:focus {
+        border: none;     
+    }
+)";
+
+    LightLineEditStyle = R"(
+    QLineEdit {
+        background-color: #ffffff;    
+        color: black;      
+        font-size: 12px;            
+        border: none;       
+        border-radius: 5px;           
+        padding: 5px;                 
+    }
+    QLineEdit:focus {
+        border: none;     
+    }
+)";
+}
+
 EditComponent::EditComponent(QWidget* parent, ChatsListComponent* chatsListComponent, Theme theme) : QWidget(parent) {
     m_theme = theme;
     m_chatsListComponent = chatsListComponent;

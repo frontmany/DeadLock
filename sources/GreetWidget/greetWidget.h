@@ -146,7 +146,7 @@ public:
     void setLogin(const std::string& login);
 
 protected:
-    void wheelEvent(QWheelEvent* event) override; // Переопределение метода для обработки колесика мыши
+    void wheelEvent(QWheelEvent* event) override; 
     void paintEvent(QPaintEvent* event) override;
 
 private slots:
