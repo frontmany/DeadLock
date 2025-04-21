@@ -1,0 +1,38 @@
+<RCC>
+    <qresource prefix="/resources/ChatsWidget">
+        <file>darkChatsBackground.jpg</file>
+        <file>lightChatsBackground.jpg</file>
+        <file>userDark.png</file>
+        <file>userDarkHover.png</file>
+        <file>userLight.png</file>
+        <file>userLightHover.png</file>
+        <file>startChatDark.png</file>
+        <file>startChatLight.png</file>
+        <file>startChatHoverDark.png</file>
+        <file>startChatHoverLight.png</file>
+        <file>closeDark.png</file>
+        <file>closeLight.png</file>
+        <file>closeHoverLight.png</file>
+        <file>closeHoverDark.png</file>
+        <file>sendHoverDark.png</file>
+        <file>sendHoverLight.png</file>
+        <file>sendDark.png</file>
+        <file>sendLight.png</file>
+        <file>userFriend.png</file> 
+        <file>userFriendDark.png</file> 
+        <file>userFriendLight.png</file>
+        <file>userFriendHoverDark.png</file>
+        <file>userFriendHoverLight.png</file>
+        <file>menuHoverLight.png</file>
+        <file>menuHoverDark.png</file>
+        <file>menuDark.png</file>
+        <file>menuLight.png</file>
+        <file>notCheck.png</file>
+        <file>check.png</file>
+        <file>unreadDark.png</file>
+        <file>unreadLight.png</file>
+        <file>helloDark.jpg</file>
+        <file>helloLight.jpg</file>
+        <file>moon.png</file>
+    </qresource>
+</RCC>

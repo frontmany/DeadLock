@@ -1,5 +1,6 @@
 #include "MessageComponent.h"
 #include "mainwindow.h"
+#include "message.h"
 #include "buttons.h"
 
 
@@ -21,9 +22,10 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
     m_textLabel->setWordWrap(true); 
     m_textLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_textLabel->setMaximumWidth(400); 
+    m_textLabel->setMinimumHeight(38); 
     m_textLabel->adjustSize();
+    m_text_VLayout->addSpacing(-3);
     m_text_VLayout->addWidget(m_textLabel);
-    m_text_VLayout->addSpacing(-15);
 
     m_time_VLayout = new QVBoxLayout;
     m_time_VLayout->setAlignment(Qt::AlignBottom);
@@ -56,21 +58,8 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
 
     this->setLayout(m_main_HLayout);
     this->setMinimumSize(30, 35);
-    
     this->setMaximumSize(600, 800);
     setTheme(m_theme);
-}
-
-void InnerComponent::setReadStatus(bool read) {
-    
-    if (read) {
-        m_is_read = true;
-        m_readStatusBtn->setTheme(LIGHT);
-    }
-    else {
-        m_is_read = false;
-        m_readStatusBtn->setTheme(DARK);
-    }
 }
 
 void InnerComponent::paintEvent(QPaintEvent* event) {
@@ -85,6 +74,17 @@ void InnerComponent::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event); // Вызываем базовый метод
 }
 
+void InnerComponent::setReadStatus(bool read) {
+
+    if (read) {
+        m_is_read = true;
+        m_readStatusBtn->setTheme(LIGHT);
+    }
+    else {
+        m_is_read = false;
+        m_readStatusBtn->setTheme(DARK);
+    }
+}
 
 void InnerComponent::setTheme(Theme theme) {
     m_theme = theme;
@@ -117,10 +117,10 @@ void InnerComponent::setTheme(Theme theme) {
 }
 
 
-MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp, 
-    const QString& text, Theme theme, double id, bool isSent)
-    : QWidget(parent), m_theme(theme), m_id(id), m_isSent(isSent){
-    m_innerWidget = new InnerComponent(this, timestamp, text, m_theme, m_isSent);
+MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme theme)
+    : QWidget(parent), m_theme(theme), m_id(QString::fromStdString(message->getId())), m_isSent(message->getIsSend()),
+    m_isRead(message->getIsRead()) {
+    m_innerWidget = new InnerComponent(this, QString::fromStdString(message->getTimestamp()), QString::fromStdString(message->getMessage()), m_theme, m_isSent);
     this->setStyleSheet("background-color: transparent;");
   
     m_main_HLayout = new QHBoxLayout(this);
@@ -136,34 +136,11 @@ MessageComponent::MessageComponent(QWidget* parent, const QString& timestamp,
 
    
     setLayout(m_main_HLayout);
-    setReadStatus(false);
+    setIsRead(false);
     setTheme(theme);
+    m_innerWidget->setReadStatus(false);
+
+   
 }
 
-
-QJsonObject MessageComponent::serialize() const {
-    QJsonObject jsonObject;
-    jsonObject["id"] = m_id;
-    jsonObject["isSent"] = m_isSent;
-    jsonObject["theme"] = static_cast<int>(m_theme);
-    jsonObject["text"] = m_innerWidget->getText();
-    jsonObject["timestamp"] = m_innerWidget->getTimestamp();
-    jsonObject["isRead"] = m_innerWidget->getIsRead();
-    return jsonObject;
-}
-
-
-MessageComponent* MessageComponent::deserialize(const QJsonObject& jsonObject) {
-
-    double id = jsonObject["id"].toInt();
-    bool isSent = jsonObject["isSent"].toBool();
-    Theme theme = static_cast<Theme>(jsonObject["theme"].toInt());
-    const QString text = jsonObject["text"].toString();
-    const QString timestamp = jsonObject["timestamp"].toString();
-    bool isRead = jsonObject["isRead"].toBool();
-
-    MessageComponent* messageComponent = new MessageComponent(nullptr, timestamp, text, theme, id, isSent);
-
-    return messageComponent;
-}
 

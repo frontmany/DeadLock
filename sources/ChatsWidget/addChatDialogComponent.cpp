@@ -3,6 +3,36 @@
 #include "buttons.h"
 #include "mainwindow.h"
 
+StyleEditComponent::StyleEditComponent() {
+    DarkLineEditStyle = R"(
+    QLineEdit {
+        background-color: #333;    
+        color: white;     
+        font-size: 12px;           
+        border: none;     
+        border-radius: 5px;         
+        padding: 5px;               
+    }
+    QLineEdit:focus {
+        border: none;     
+    }
+)";
+
+    LightLineEditStyle = R"(
+    QLineEdit {
+        background-color: #ffffff;    
+        color: black;      
+        font-size: 12px;            
+        border: none;       
+        border-radius: 5px;           
+        padding: 5px;                 
+    }
+    QLineEdit:focus {
+        border: none;     
+    }
+)";
+}
+
 EditComponent::EditComponent(QWidget* parent, ChatsListComponent* chatsListComponent, Theme theme) : QWidget(parent) {
     m_theme = theme;
     m_chatsListComponent = chatsListComponent;
@@ -159,6 +189,7 @@ void AddChatDialogComponent::closeDialog() {
 
 void AddChatDialogComponent::setupUI() {
     m_createChatButton = new QPushButton("Create Chat", this);
+    m_createChatButton->setMinimumSize(80, 30);
     m_editComponent = new EditComponent(this, m_chatsListComponent, m_theme);
 
     m_dialogVLayout = new QVBoxLayout(this);

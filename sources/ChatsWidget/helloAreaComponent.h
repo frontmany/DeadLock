@@ -9,7 +9,6 @@
 #include <QPainter>
 #include <QScrollBar>
 
-#include "request.h"
 #include "chat.h"
 
 class ButtonIcon;

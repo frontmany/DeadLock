@@ -14,81 +14,15 @@
 #include <QScrollBar>
 #include <random>
 
-#include "request.h"
 #include "chat.h"
 
 
-
-std::string getCurrentTime();
-
 struct StyleMessagingAreaComponent {
-    QString darkSlider = R"(
-    QScrollBar:vertical {
-        border: 2px solid rgb(36, 36, 36);      
-        background: rgb(36, 36, 36);        
-        width: 10px;                 
-        border-radius: 5px; 
-    }
-
-    QScrollBar::handle:vertical {
-        background: rgb(56, 56, 56);   
-        border: 2px solid rgb(56, 56, 56);      
-        width: 10px;    
-        border-radius: 5px;           
-    }
-
-    QScrollBar::add-line:vertical, 
-    QScrollBar::sub-line:vertical { 
-        background: none;             
-    }
-)";
-
-    QString lightSlider = R"(
-    QScrollBar:vertical {
-        border: 2px solid rgb(250, 250, 250);      
-        background: rgb(250, 250, 250);        
-        width: 10px;                 
-        border-radius: 5px; 
-    }
-
-    QScrollBar::handle:vertical {
-        background: rgb(218, 219, 227);   
-        border: 2px solid rgb(218, 219, 227);      
-        width: 10px;    
-        border-radius: 5px;           
-    }
-
-    QScrollBar::add-line:vertical, 
-    QScrollBar::sub-line:vertical { 
-        background: none;             
-    }
-)";
-    
-    QString DarkTextEditStyle = R"(
-    QTextEdit {
-        background-color: rgb(36, 36, 36);    
-        color: white;               
-        border: none;     
-        border-radius: 15px;         
-        padding: 5px;               
-    }
-    QTextEdit:focus {
-        border: 2px solid #888;     
-    }
-)";
-
-QString LightTextEditStyle = R"(
-    QTextEdit {
-        background-color: #ffffff;    
-        color: black;                 
-        border: none;       
-        border-radius: 15px;           
-        padding: 5px;                 
-    }
-    QTextEdit:focus {
-        border: 2px solid rgb(237, 237, 237);        
-    }
-)";
+    StyleMessagingAreaComponent();
+    QString darkSlider;
+    QString lightSlider;
+    QString DarkTextEditStyle;
+    QString LightTextEditStyle;
 };
 
 class ButtonIcon;
@@ -129,7 +63,6 @@ class MessagingAreaComponent : public QWidget {
 
 public:
     MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget);
-    MessagingAreaComponent(Theme theme);
     void setTheme(Theme theme);
     
 
@@ -138,17 +71,15 @@ public:
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
 
-    QJsonObject serialize() const;
-    static MessagingAreaComponent* deserialize(const QJsonObject& jsonObject, QWidget* parent, ChatsWidget* chatsWidget);
-
 
 signals:
-    void sendMessageData(const QString& message, const QString& timeStamp, Chat* chat, double id);
+    void sendMessageData(Message*, Chat* chat);
 
 public slots:
-    void addMessageReceived(QString msg, QString timestamp, double id);
-    void addMessageSent(QString msg, QString timestamp, double id);
-    void addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg);
+    void addMessage(Message* message);
+    void setAvatar(const QPixmap& pixMap);
+    void setName(const QString& name);
+    void markMessageAsChecked(Message* message);
 
 private slots:
     void adjustTextEditHeight();
@@ -169,7 +100,7 @@ private:
     QVBoxLayout* m_sendMessage_VLayout;
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
-    ChatsWidget* m_chatsWidget;
+    
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;
@@ -179,4 +110,5 @@ private:
     ButtonCursor*           m_sendMessageButton;
 
     Chat*                   m_chat;
+    ChatsWidget*            m_chatsWidget;
 };

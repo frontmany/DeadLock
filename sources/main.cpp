@@ -4,7 +4,10 @@
 #include <QPainter>
 #include <QMainWindow>
 #include <QStyleFactory>
+#include <iostream>
 
+
+#include "client.h"
 #include "mainWindow.h"
 
 
@@ -15,23 +18,21 @@ public:
 
 int main(int argc, char* argv[])
 {
+    setlocale(LC_ALL, "ru");
 
     QApplication app(argc, argv);
     CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
     app.setStyle(customStyle);
 
-    MainWindow* mainWindow = new MainWindow(nullptr);
+    Client* client = new Client;
+    client->connectTo("192.168.0.2", 8080);
+    client->run();
+
+    MainWindow* mainWindow = new MainWindow(nullptr, client);
+    mainWindow->setupLoginWidget();
     
+    mainWindow->showMaximized();
 
-
-    mainWindow->show();
-    mainWindow->resize(960, 540);
-
-    
-
-    int result = app.exec();
+    app.exec();
     delete mainWindow;
-    delete customStyle;
-
-    return result;
 }

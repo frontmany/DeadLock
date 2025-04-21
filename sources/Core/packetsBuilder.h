@@ -1,0 +1,44 @@
+#include<iostream>
+#include<vector>
+
+class Photo;
+class Message;
+
+class PacketsBuilder {
+public:
+	PacketsBuilder() {};
+	~PacketsBuilder() = default;
+
+	PacketsBuilder& operator=(const PacketsBuilder& other) { return *this; }
+
+	//GET
+	const std::string getAuthorizationPacket(const std::string& login, const std::string& passwordHash);
+	const std::string getRegistrationPacket(const std::string& login, const std::string& name, const std::string& passwordHash);
+	const std::string getCreateChatPacket(const std::string& myLogin, const std::string& friendLogin);
+	const std::string getUpdateMyNamePacket(const std::string& login, const std::string& newName, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getUpdateMyPasswordPacket(const std::string& login, const std::string& newPasswordHash, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getUpdateMyPhotoPacket(const std::string& login, const Photo& photo, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getLoadUserInfoPacket(const std::string& login);
+	const std::string getLoadAllFriendsStatusesPacket(const std::vector<std::string>& friendsLoginsVec);
+
+	//RPL
+	const std::string getMessagePacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);
+	const std::string getMessageReadConfirmationPacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);
+
+	//BROADCAST
+	const std::string getStatusPacket(const std::string& status, const std::string& myLogin, const std::vector<std::string>& friendsLoginsVec);
+
+private:
+	static constexpr const char* get = "GET";
+	static constexpr const char* rpl = "RPL";
+	static constexpr const char* broadcast = "BROADCAST";
+
+	static constexpr const char* messageBegin = "MESSAGE_BEGIN";
+	static constexpr const char* messageEnd = "MESSAGE_END";
+
+	static constexpr const char* photoBegin = "PHOTO_BEGIN";
+	static constexpr const char* photoEnd = "PHOTO_END";
+
+	static constexpr const char* vecBegin = "VEC_BEGIN";
+	static constexpr const char* vecEnd = "VEC_END";
+};

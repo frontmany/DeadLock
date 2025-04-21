@@ -2,9 +2,50 @@
 #include "authorizationComponent.h"
 #include "registrationComponent.h"
 #include "mainwindow.h"
-#include "clientSide.h"
+#include "client.h"
+#include "utility.h"
+#include <QGraphicsBlurEffect>
+#include <QPainterPath>
 
-LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client)
+StyleLoginWidget::StyleLoginWidget() {
+    buttonStyleBlue = R"(
+        QPushButton {
+            background-color: transparent; 
+            color: rgb(21, 119, 232);   
+            border: none;                  
+            padding: 5px 10px;            
+            font-family: 'Arial';          
+            font-size: 14px;               
+        }
+        QPushButton:hover {
+            color: rgb(26, 133, 255);       
+        }
+        QPushButton:pressed {
+            color: rgb(26, 133, 255);                  
+        }
+    )";
+
+    buttonStyleGray = R"(
+        QPushButton {
+            background-color: transparent;     
+            color: rgb(153, 150, 150);              
+            border: none;        
+            border-radius: 5px;             
+            padding: 5px 10px;              
+            font-family: 'Arial';            
+            font-size: 14px;                 
+        }
+        QPushButton:hover {
+            color: rgb(153, 150, 150);      
+        }
+        QPushButton:pressed {
+            color: rgb(153, 150, 150);      
+        }
+    )";
+}
+
+
+LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
     : QWidget(parent), m_client(client){
 
     m_switchState = AUTHORIZATION;
@@ -40,34 +81,17 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client)
     
     connect(m_switchToRegisterButton, &QPushButton::clicked, this, &LoginWidget::switchToRegister);
     connect(m_switchToAuthorizeButton, &QPushButton::clicked, this, &LoginWidget::switchToAuthorize);
-
-    connect(this, &LoginWidget::sendLoginStatus, mw, &MainWindow::onLogin);
 }
 
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
-    bool isLog =  m_client->authorizeClient(login.toStdString(), password.toStdString());
-    if (isLog) {
-        User me;
-        me.setLogin(login.toStdString());
-        me.setPassword(password.toStdString());
-        me.setLastSeen("online");
-        m_client->setMyInfo(me);
-    }
-    emit(sendLoginStatus(isLog));
+    m_client->authorizeClient(login.toStdString(), utility::hashPassword(password.toStdString()));
+    m_client->setMyLogin(login.toStdString());
 }
 
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
-    bool isLog = m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
-    if (isLog) {
-        User me;
-        me.setLogin(login.toStdString());
-        me.setName(name.toStdString());
-        me.setPassword(password.toStdString());
-        me.setLastSeen("online");
-        m_client->setMyInfo(me);
-        
-    }
-    emit(sendLoginStatus(isLog));
+    m_client->registerClient(login.toStdString(), utility::hashPassword(password.toStdString()), name.toStdString());
+     m_client->setMyLogin(login.toStdString());
+    m_client->setMyName(name.toStdString());
 }
 
 void LoginWidget::switchToAuthorize() {
@@ -86,11 +110,34 @@ void LoginWidget::switchToRegister() {
 
 void LoginWidget::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
+
+    // 2. Рисуем размытый скруглённый прямоугольник
+    QPainterPath roundedRectPath;
+    int cornerRadius = 0; // Радиус скругления углов
+    QRect rect(0, 0, width(), height()); // Прямоугольник с отступами 50 пикселей от краёв
+
+    // Создаём скруглённый прямоугольник
+    roundedRectPath.addRoundedRect(rect, cornerRadius, cornerRadius);
+
+    // Применяем размытие
+    QGraphicsBlurEffect blurEffect;
+    blurEffect.setBlurRadius(10); // Уровень размытия
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    // Рисуем скруглённый прямоугольник с размытием
+    painter.save();
+    painter.setClipPath(roundedRectPath);
+    painter.setOpacity(0.7); // Прозрачность
+    painter.fillPath(roundedRectPath, QColor(26, 26, 26, 200)); // Цвет прямоугольника
+    painter.restore();
+
+    
     painter.drawPixmap(this->rect(), m_background); 
     QWidget::paintEvent(event);
 }
 
-void LoginWidget::setTheme(Theme theme) {
+void LoginWidget::setTheme(Theme& theme) {
     swapSwitchStyles();
     m_authorizationWidget->setTheme(theme);
     m_registrationWidget->setTheme(theme);
@@ -118,4 +165,13 @@ void LoginWidget::swapSwitchStyles() {
         m_switchToAuthorizeButton->setStyleSheet(style->buttonStyleGray);
         m_switchToRegisterButton->setStyleSheet(style->buttonStyleBlue);
     }
+}
+
+
+AuthorizationComponent* LoginWidget::getAuthorizationComponent() {
+    return m_authorizationWidget;
+}
+
+RegistrationComponent* LoginWidget::getRegistrationComponent() {
+    return m_registrationWidget;
 }

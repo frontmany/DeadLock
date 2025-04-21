@@ -4,137 +4,88 @@
 #include "addChatDialogComponent.h"
 #include "helloAreaComponent.h"
 #include "chatHeaderComponent.h"
-#include "clientSide.h"
-#include "request.h"
+#include "client.h"
+#include "utility.h"
+#include "message.h"
 #include "chat.h"
 #include "chatComponent.h"
-#include"mainWindow.h"
+#include "mainWindow.h"
 
 
-ChatsWidget::ChatsWidget(QWidget* parent, ClientSide* client, Theme theme) 
-    : QWidget(parent), m_client(client), m_theme(theme) {
+ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, Theme theme) 
+    : QWidget(parent), m_client(client), m_theme(theme), m_main_window(mainWindow) {
 
     m_mainHLayout = new QHBoxLayout;
     m_mainHLayout->setAlignment(Qt::AlignLeft);
 
-	m_leftVLayout = new QVBoxLayout;
+
     m_background.load(":/resources/LoginWidget/lightLoginBackground.jpg");
     m_current_messagingAreaComponent = nullptr;
-    m_isFirstChatSet = true;
 	m_chatsListComponent = new ChatsListComponent(this, this, m_theme);
-    
-    
+
+    if (m_client->getPhoto() != nullptr) {
+        m_chatsListComponent->SetAvatar(*m_client->getPhoto());
+    }
+
+    m_leftVLayout = new QVBoxLayout;
+    m_leftVLayout->addWidget(m_chatsListComponent);
+
     m_helloAreaComponent = new HelloAreaComponent(m_theme);
-	m_leftVLayout->addWidget(m_chatsListComponent);
     m_mainHLayout->addLayout(m_leftVLayout);
     m_mainHLayout->addWidget(m_helloAreaComponent);
     this->setLayout(m_mainHLayout);
-	
 }
 
-
-
 ChatsWidget::~ChatsWidget() {
-    serialize();
-    for (auto comp : m_vec_messagingComponents_cache) {
+    for (auto comp :  m_vec_messaging_components) {
         delete comp;
     }
 }
 
+MainWindow* ChatsWidget::getMainWindow() {
+    return m_main_window;
+}
 
 void ChatsWidget::onCreateChatButtonClicked(QString login) {
-    QString login2 = login;
-    Chat* chat = nullptr;
-    try {
-        chat = m_client->createChatWith(login2.toStdString());
+    bool isValidCreation = isValidChatCreation(login.toStdString());
+    if (isValidCreation) {
+        m_client->createChatWith(login.toStdString());
     }
-    catch (...) {
-        auto ChatsVec = m_client->getMyChatsVec();
-        ChatsVec.erase(ChatsVec.end() - 1);
-        m_chatsListComponent->getAddChatDialogComponent()->getEditComponent()->setRedBorderToChatAddDialog();
-        return;
-    }
-    
-    if (m_isFirstChatSet == true) {
-        m_mainHLayout->removeWidget(m_helloAreaComponent);
-        delete m_helloAreaComponent;
-        m_isFirstChatSet = false;
-    }
-    else {
-        m_mainHLayout->removeWidget(m_current_messagingAreaComponent);
-        m_current_messagingAreaComponent->hide();
-        m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
-    }
-
-    auto messagingAreaComponent = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat, this);
-    m_current_messagingAreaComponent = messagingAreaComponent;
-    m_current_messagingAreaComponent->setTheme(m_theme);
-    m_vec_messagingComponents_cache.push_back(m_current_messagingAreaComponent);
-    m_mainHLayout->addWidget(m_current_messagingAreaComponent);
-
-    m_chatsListComponent->addChatComponent(m_theme, chat);
-    m_chatsListComponent->closeAddChatDialog();
 }
 
 void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
-    if (m_isFirstChatSet == true) {
-        m_mainHLayout->removeWidget(m_helloAreaComponent);
-        delete m_helloAreaComponent;
-        m_isFirstChatSet = false;
-    }
-    else {
-        m_mainHLayout->removeWidget(m_current_messagingAreaComponent);
-        m_current_messagingAreaComponent->hide();
-    }
+    removeRightComponent();
 
-    auto itMsgComp = std::find_if(m_vec_messagingComponents_cache.begin(), m_vec_messagingComponents_cache.end(), [chat](MessagingAreaComponent* msgComp) {
+    auto itMsgComp = std::find_if( m_vec_messaging_components.begin(),  m_vec_messaging_components.end(), [chat](MessagingAreaComponent* msgComp) {
         return msgComp->getChatConst()->getFriendLogin() == chat->getFriendLogin();
         });
 
-    if (itMsgComp == m_vec_messagingComponents_cache.end()) {
-        std::cout << "error can not find mesaging Area Component";
+    if (itMsgComp ==  m_vec_messaging_components.end()) {
+        std::cout << "error can not find messaging Area Component";
     }
+
     else {
         m_current_messagingAreaComponent = *itMsgComp;
-        m_current_messagingAreaComponent->setTheme(m_theme);
         m_current_messagingAreaComponent->show();
+        m_current_messagingAreaComponent->setTheme(m_theme);
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
-        if (chat->getNotReadReceivedMsgVec().size() > 0) {
-            m_client->sendMessagesReadPacket(chat->getFriendLogin(), chat->getNotReadReceivedMsgVec());
-            chat->getNotReadReceivedMsgVec().clear();
-
+        auto unreadVec = chat->getUnreadReceiveMessagesVec();
+        if (unreadVec.size() > 0) {
+            for (auto msg : unreadVec) {
+                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), msg);
+                msg->setIsRead(true);
+            }
         }
 
     }
-
-    for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
-        chatComp->setSelected(false);
-    }
-    component->setSelected(true);
+    selectChatComponent(component);
 }
 
-void ChatsWidget::onSendMessageData(QString message, const QString& timeStamp, Chat* chat, double id) {
-    auto& chatsComponentsVec = m_chatsListComponent->getChatComponentsVec();
-    auto itComponentsVec = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [chat](ChatComponent* chatComponent) {
-        return chat->getFriendLogin() == chatComponent->getChatConst()->getFriendLogin();
-        });
-
-    ChatComponent* comp = *itComponentsVec;
-    if (message.length() > 15) {
-        std::string s = message.toStdString().substr(0, 15) + "...";
-        comp->setLastMessage(QString::fromStdString(s), false);
-    }
-    else {
-        comp->setLastMessage(message, false);
-    }
-    
-    Msg* msg = new Msg;
-    msg->setId(id);
-    msg->setIsSend(true);
-    msg->setMessage(message.toStdString());
-    msg->setTimestamp(timeStamp.toStdString());
-    m_client->sendMessage(chat, message.toStdString(), timeStamp.toStdString(), id);
+void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
+    chat->getMessagesVec().push_back(message);
+    chat->setLastReceivedOrSentMessage(message->getMessage());
+    m_client->sendMessage(chat->getFriendLogin(), message);
 }
 
 void ChatsWidget::onChangeThemeClicked() {
@@ -146,7 +97,12 @@ void ChatsWidget::onChangeThemeClicked() {
         m_theme = DARK;
         setTheme(DARK);
     }
-    
+} 
+
+void ChatsWidget::createMessagingComponent(std::string friendName, Chat* chat) {
+    std::lock_guard<std::mutex> guard(m_mtx);
+     m_vec_messaging_components.emplace_back(new MessagingAreaComponent(nullptr, QString::fromStdString(friendName), m_theme, chat, this));
+     m_vec_messaging_components.back()->hide();
 }
 
 void ChatsWidget::setTheme(Theme theme) {
@@ -161,19 +117,10 @@ void ChatsWidget::setTheme(Theme theme) {
     }
 }
 
-
 void ChatsWidget::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.drawPixmap(this->rect(), m_background);
     QWidget::paintEvent(event);
-}
-
-
-void ChatsWidget::createMessagingAreaFromClientSide(QString message, QString timeStamp, Chat* chat, double id) {
-    MessagingAreaComponent* newComp = new MessagingAreaComponent(this, QString::fromStdString(chat->getFriendName()), m_theme, chat, this);
-    newComp->setTheme(m_theme);
-    newComp->addMessageReceived(message, timeStamp, id);
-    m_vec_messagingComponents_cache.push_back(newComp);
 }
 
 void ChatsWidget::setBackGround(Theme theme) {
@@ -188,93 +135,108 @@ void ChatsWidget::setBackGround(Theme theme) {
     update();
 }
 
-
-void ChatsWidget::setClient(ClientSide* client) {
+void ChatsWidget::setClient(Client* client) {
     m_client = client;
 }
 
-void ChatsWidget::serialize() {
-    QJsonObject jsonObject;
-    QJsonArray chatsArray;
-    for (const auto& messagingArea : m_vec_messagingComponents_cache) {
-        if (messagingArea) {
-            chatsArray.append(messagingArea->serialize());
-        }
-    }
+void ChatsWidget::restoreMessagingAreaComponents() {
+    std::lock_guard<std::mutex> guard(m_mtx);
 
-    jsonObject["messagingComponentsCache"] = chatsArray;
-    jsonObject["client"] = m_client->serialize();
-    // Получаем директорию для сохранения
-    QString dir = getSaveDir();
-    QString fileName = QString::fromStdString(m_client->getMyInfo().getLogin()) + ".json";
-
-    // Создаем полный путь к файлу
-    QDir saveDir(dir);
-    if (!saveDir.exists()) {
-        if (!saveDir.mkpath(".")) { // Создаем директорию, если она не существует
-            qWarning() << "Не удалось создать директорию:" << dir;
-            return;
-        }
-    }
-
-    QString fullPath = saveDir.filePath(fileName); // Полный путь к файлу
-    QFile file(fullPath);
-    if (file.open(QIODevice::WriteOnly)) {
-        QJsonDocument saveDoc(jsonObject);
-        file.write(saveDoc.toJson());
-        file.close();
-    }
-    else {
-        qWarning() << "Не удалось открыть файл для записи:" << fullPath;
+    for (auto& chatPair : m_client->getMyChatsMap()) {
+        MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
+        area->hide();
+         m_vec_messaging_components.push_back(area);
     }
 }
 
+void ChatsWidget::restoreChatComponents() {
+    std::lock_guard<std::mutex> guard(m_mtx);
 
-ChatsWidget* ChatsWidget::deserialize(const QString& fileName, QWidget* parent, ClientSide* client, Theme theme) {
-    QString dir = getSaveDir();
-    QDir saveDir(dir);
-    QString fullPath = saveDir.filePath(fileName); // Полный путь к файлу
+    auto& map = m_client->getMyChatsMap();
+    for (int i = 0; i < m_client->getMyChatsMap().size(); i++) {
+        auto it = std::find_if(map.begin(), map.end(), [i](std::pair<std::string, Chat*> chatPair) {
+            return chatPair.second->getLayoutIndex() == i;
+            });
+        
+        std::pair<std::string, Chat*> chatPair = *it;
 
-    if (!QFile::exists(fullPath)) {
-        qWarning() << "Файл не найден: " << fullPath;
-        return new ChatsWidget(parent, client, theme);
-    }
-
-    QFile file(fullPath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Не удалось открыть файл для чтения:" << file.errorString();
-        return new ChatsWidget(parent, client, theme);
-    }
-
-    QByteArray fileData = file.readAll();
-    file.close();
-
-    QJsonDocument loadDoc(QJsonDocument::fromJson(fileData));
-    if (loadDoc.isNull() || !loadDoc.isObject()) {
-        qWarning() << "Error loading JSON from a file.";
-        return new ChatsWidget(parent, client, theme);
-    }
-
-    QJsonObject jsonObject = loadDoc.object();
-    ChatsWidget* chatsWidget = new ChatsWidget(parent, client, theme);
-
-    QJsonObject clientObject = jsonObject["client"].toObject();
-    ClientSide* deserializedClient = ClientSide::deserialize(clientObject, chatsWidget);
-    chatsWidget->setClient(deserializedClient);
-
-    if (jsonObject.contains("messagingComponentsCache")) {
-        QJsonArray chatsArray = jsonObject["messagingComponentsCache"].toArray();
-        for (const auto& chatValue : chatsArray) {
-            QJsonObject chatObject = chatValue.toObject();
-            MessagingAreaComponent* messagingArea = MessagingAreaComponent::deserialize(chatObject, chatsWidget, chatsWidget);
-            if (messagingArea) {
-                chatsWidget->getMessagingComponentsCacheVec().push_back(messagingArea);
-            }
-            else {
-                qWarning() << "Ошибка десериализации messagingArea.";
-            }
+        m_chatsListComponent->addChatComponent(m_theme, chatPair.second, false);
+        ChatComponent* comp = m_chatsListComponent->getChatComponentsVec().back();
+        auto& vec = chatPair.second->getMessagesVec();
+        if (vec.size() == 0) {
+            comp->setUnreadMessageDot(false);
+            comp->setLastMessage("no messages yet");
+        }
+        else {
+            comp->setUnreadMessageDot(!vec.back()->getIsRead() && !vec.back()->getIsSend());
+            comp->setLastMessage(QString::fromStdString(vec.back()->getMessage()));
         }
     }
+}
 
-    return chatsWidget;
+bool ChatsWidget::isValidChatCreation(const std::string& loginToCheck) {
+    auto& chatsMap = m_client->getMyChatsMap();
+    auto it = std::find_if(chatsMap.begin(), chatsMap.end(), [&loginToCheck](std::pair<std::string, Chat*> pair) {
+        return pair.first == loginToCheck;
+        });
+
+    if (it != m_client->getMyChatsMap().end() || loginToCheck == m_client->getMyLogin()) {
+        m_chatsListComponent->getAddChatDialogComponent()->getEditComponent()->setRedBorderToChatAddDialog();
+        return false;
+    }
+
+    return true;
+}
+
+void ChatsWidget::removeRightComponent() {
+    if (m_is_hello_component) {
+        m_mainHLayout->removeWidget(m_helloAreaComponent);
+        delete m_helloAreaComponent;
+        setIsHelloAreaComponent(false);
+    }
+    else {
+        m_mainHLayout->removeWidget(m_current_messagingAreaComponent);
+        m_current_messagingAreaComponent->hide();
+    }
+}
+
+void ChatsWidget::selectChatComponent(ChatComponent* component) {
+    for (auto chatComp : m_chatsListComponent->getChatComponentsVec()) {
+        chatComp->setSelected(false);
+    }
+    component->setSelected(true);
+}
+
+
+
+void ChatsWidget::createAndSetMessagingAreaComponent(Chat* chat) {
+    Theme theme = getTheme();
+    QHBoxLayout* mainHLayout = getMainHLayout();
+
+    MessagingAreaComponent* messagingAreaComponent = new MessagingAreaComponent(
+        this,
+        QString::fromStdString(chat->getFriendName()),
+        theme,
+        chat,
+        this
+    );
+
+    setCurrentMessagingAreaComponent(messagingAreaComponent);
+    messagingAreaComponent->setTheme(theme);
+
+    mainHLayout->addWidget(messagingAreaComponent);
+
+    getMessagingAreasVec().push_back(messagingAreaComponent);
+}
+
+void ChatsWidget::createAndAddChatComponentToList(Chat* chat) {
+    Theme theme = getTheme();
+    ChatsListComponent* chatsListComponent = getChatsList();
+
+    chatsListComponent->addChatComponent(theme, chat, true);
+}
+
+void ChatsWidget::closeAddChatDialog() {
+    ChatsListComponent* chatsListComponent = getChatsList();
+    chatsListComponent->closeAddChatDialog();
 }

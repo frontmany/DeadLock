@@ -1,2 +1,2 @@
-cd C:\prj\Air_Gram\build
+cd C:\prj\Deadlock\DeadLock Client\build
 cmake ..

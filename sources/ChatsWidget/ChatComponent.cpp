@@ -2,6 +2,7 @@
 #include "chatsWidget.h"
 #include "addChatDialogComponent.h"
 #include "buttons.h"
+#include "photo.h"
 #include "mainwindow.h"
 
 ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
@@ -13,34 +14,44 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     setAttribute(Qt::WA_Hover);
 
     m_nameLabel = new QLabel(this);
+    m_nameLabel->setText(QString::fromStdString(m_chat->getFriendName()));
+
     m_lastMessageLabel = new QLabel(this);
+    m_nameLabel->setText(QString::fromStdString(m_chat->getLastReceivedOrSentMessage()));
 
     if (m_chat->getIsFriendHasPhoto() == true) {
-        const Photo& photo = m_chat->getFriendPhoto();
+        const Photo& photo = *m_chat->getFriendPhoto();
         m_avatar = QPixmap(QString::fromStdString(photo.getPhotoPath()));
         update();
     }
     else {
         if (m_theme == DARK) {
-            m_avatar = QPixmap(":/resources/LoginWidget/lightLoginBackground.jpg");
+            m_avatar = QPixmap(":/resources/ChatsWidget/userFiend.png");
         }
         else {
-            m_avatar = QPixmap(":/resources/LoginWidget/lightLoginBackground.jpg");
+            m_avatar = QPixmap(":/resources/ChatsWidget/userFiend.png");
 
         }
         update();
     }
 
     m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
-    m_lastMessageLabel->setText("no messages yet");
 
     m_contentsVLayout = new QVBoxLayout();
     m_contentsVLayout->addWidget(m_nameLabel);
     m_contentsVLayout->addWidget(m_lastMessageLabel);
 
-
-
-    m_UnreadDot = new ButtonIcon(this, 50, 50);
+    m_avatar_ico = new AvatarIcon(this, 0, 0, 50, false);
+    if (chat->getIsFriendHasPhoto()) {
+        QIcon avatarIcon(m_avatar);
+        m_avatar_ico->setIcon(avatarIcon);
+    }
+    else {
+        QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
+        m_avatar_ico->setIcon(avatarIcon);
+    }
+    
+    m_UnreadDot = new ButtonIcon(this, 40, 40);
     QIcon icon1(":/resources/ChatsWidget/unreadDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/unreadDark.png");
     m_UnreadDot->uploadIconsDark(icon1, iconHover1);
@@ -48,6 +59,9 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     QIcon iconHover2(":/resources/ChatsWidget/unreadLight.png");
     m_UnreadDot->uploadIconsLight(icon2, iconHover2);
     m_UnreadDot->hide();
+    if (m_chat->getUnreadReceiveMessagesVec().size() > 0){
+        m_UnreadDot->show();
+    }
     m_UnreadDot->setTheme(m_theme);
 
     m_statusVLayout = new  QVBoxLayout;
@@ -56,7 +70,9 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_statusVLayout->addSpacing(-2);
 
     m_mainHLayout = new QHBoxLayout();
-    m_mainHLayout->setContentsMargins(70, 10, 10, 10);
+    m_mainHLayout->setContentsMargins(10, 10, 10, 10);
+    m_mainHLayout->addWidget(m_avatar_ico);
+    m_mainHLayout->addSpacing(5);
     m_mainHLayout->addLayout(m_contentsVLayout);
     m_mainHLayout->addSpacing(500);
     m_mainHLayout->addLayout(m_statusVLayout);
@@ -140,7 +156,6 @@ void ChatComponent::setTheme(Theme theme) {
 
 void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
     if (isUnreadMessages == true) {
-        m_UnreadDot->setTheme(m_theme);
         m_UnreadDot->show();
     }
     else {
@@ -149,10 +164,12 @@ void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
 }
 
 void ChatComponent::setName(const QString& name) {
+    std::cout << "---------------------------------------label changed\n";
     m_nameLabel->setText(name);
+    update();
 }
 
-void ChatComponent::setLastMessage(const QString& message, bool fromAnotherThread) {
+void ChatComponent::setLastMessage(const QString& message) {
     if (message.length() > 15) {
         std::string s = message.toStdString().substr(0, 15) + "...";
         m_lastMessageLabel->setText(QString::fromStdString(s));
@@ -163,28 +180,20 @@ void ChatComponent::setLastMessage(const QString& message, bool fromAnotherThrea
 }
 
 void ChatComponent::setAvatar(const QPixmap& avatar) {
+    std::cout << "---------------------------------------photo changed\n";
     m_avatar = avatar.scaled(m_avatarSize, m_avatarSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QIcon avatarIcon(m_avatar);
+    m_avatar_ico->setIcon(avatarIcon);
     update();
 }
 
 void ChatComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
 
-
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setBrush(m_currentColor);
     painter.setPen(Qt::NoPen);
     painter.drawRoundedRect(rect(), 5, 5);
-
-
-    if (!m_avatar.isNull()) {
-        QPainterPath path;
-        QRectF avatarRect(10, (height() - m_avatarSize) / 2, m_avatarSize, m_avatarSize);
-        path.addEllipse(avatarRect);
-        painter.setClipPath(path);
-        painter.drawPixmap(avatarRect.toRect(), m_avatar);
-        painter.setClipPath(QPainterPath());
-    }
 }
 
 bool ChatComponent::event(QEvent* event)

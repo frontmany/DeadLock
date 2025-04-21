@@ -9,50 +9,17 @@
 #include <QPixmap>
 
 
-
-
-
 struct StyleLoginWidget {
-    QString buttonStyleBlue = R"(
-            QPushButton {
-                background-color: transparent; 
-                color: rgb(21, 119, 232);   
-                border: none;                  
-                padding: 5px 10px;            
-                font-family: 'Arial';          
-                font-size: 14px;               
-            }
-            QPushButton:hover {
-                color: rgb(26, 133, 255);       
-            }
-            QPushButton:pressed {
-                color: rgb(26, 133, 255);                  
-            }
-        )";
+    StyleLoginWidget();
 
-    QString buttonStyleGray = R"(
-            QPushButton {
-                background-color: transparent;     
-                color: rgb(153, 150, 150);              
-                border: none;        
-                border-radius: 5px;             
-                padding: 5px 10px;              
-                font-family: 'Arial';            
-                font-size: 14px;                 
-            }
-            QPushButton:hover {
-                color: rgb(153, 150, 150);      
-            }
-            QPushButton:pressed {
-                color: rgb(153, 150, 150);      
-            }
-        )";
-
+    QString buttonStyleBlue;
+    QString buttonStyleGray;
 };
+
 
 class AuthorizationComponent;
 class RegistrationComponent;
-class ClientSide;
+class Client;
 class MainWindow;
 enum Theme;
 
@@ -61,11 +28,11 @@ class LoginWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LoginWidget(QWidget* parent, MainWindow* mw, ClientSide* client);
-    void setTheme(Theme theme);
+    explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client);
+    void setTheme(Theme& theme);
 
-signals:
-    void sendLoginStatus(bool status);
+    AuthorizationComponent* getAuthorizationComponent();
+    RegistrationComponent* getRegistrationComponent();
 
 private slots:
     void switchToAuthorize();
@@ -86,14 +53,14 @@ private:
     StyleLoginWidget*       style;
     QPixmap                 m_background;
     SwithcState             m_switchState;
-    ClientSide*             m_client;
+    Client*                 m_client;
 
     QVBoxLayout*            m_mainVLayout;
     QHBoxLayout*            m_switchersHLayout;
     QHBoxLayout*            m_FormsHLayout;
 
-    AuthorizationComponent*     m_authorizationWidget;
-    RegistrationComponent*     m_registrationWidget;
+    AuthorizationComponent* m_authorizationWidget;
+    RegistrationComponent*  m_registrationWidget;
 
     QPushButton*            m_switchToAuthorizeButton;
     QPushButton*            m_switchToRegisterButton;

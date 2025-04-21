@@ -1,11 +1,15 @@
 #include "chatsListComponent.h"
 #include "addChatDialogComponent.h"
+#include "fieldsEditComponent.h"
 #include "chatsWidget.h"
 #include "mainwindow.h"
 #include "messagingAreaComponent.h"
 #include "messageComponent.h"
 #include "buttons.h"
-#include "clientSide.h"
+#include "photo.h"
+#include "utility.h"
+#include "client.h"
+#include "profileEditorWidget.h"
 
 #include <QPainter>
 #include <QPaintEvent>
@@ -13,9 +17,23 @@
 
 
 
+void ChatsListComponent::loadAvatarFromPC(const std::string & login) {
+    QString dir = QString::fromStdString(utility::getSaveDir());
+    QString fileNameFinal = QString::fromStdString(login) + "myMainPhoto.png";
+    QDir saveDir(dir);
+    QString fullPath = saveDir.filePath(fileNameFinal);
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Couldn't open the file:" << fileNameFinal.toStdString();
+        return;
+    }
+    SetAvatar(Photo(fullPath.toStdString()));
+}
+
 ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme)
     : QWidget(parent), m_backgroundColor(Qt::transparent),
-    m_chatsWidget(chatsWidget), m_chatAddDialog(nullptr) {
+    m_chatsWidget(chatsWidget), m_chatAddDialog(nullptr), m_chats_widget(chatsWidget){
 
     style = new StyleChatsListComponent;
     m_backgroundColor = QColor(20, 20, 20, 200);
@@ -32,9 +50,9 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->setAlignment(Qt::AlignLeft);
 
 
-    m_profileButton = new RoundIconButton(this);
-    m_profileButton->setStyleSheet(style->transparentButtonStyle);
-    m_profileButton->setFixedSize(40, 40);
+    m_profileButton = new AvatarIcon(this, 0, 0, 32, true);
+    QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
+    m_profileButton->setIcon(avatarIcon);
     m_profileHLayout->addWidget(m_profileButton);
 
     m_newChatButton = new ButtonIcon(this, 50, 50);
@@ -54,8 +72,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     QIcon iconHover4(":/resources/ChatsWidget/moon.png");
     m_moon_icon->uploadIconsLight(icon4, iconHover4);
     m_moon_icon->setTheme(DARK);
-    
-
 
     m_darkModeSwitch = new ToggleSwitch(this, m_theme);
     m_darkModeSwitch->setTheme(m_theme);
@@ -97,9 +113,28 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
 
     m_mainVLayout->addWidget(m_scrollArea);
 
+    connect(m_profileButton, &AvatarIcon::clicked, this, &ChatsListComponent::openEditUserDialogWidnow);
     connect(m_newChatButton, &ButtonIcon::clicked, this, &ChatsListComponent::openAddChatDialog);
     connect(this, &ChatsListComponent::sendCreateChatData, m_chatsWidget, &ChatsWidget::onCreateChatButtonClicked);
     connect(this, &ChatsListComponent::sendChangeTheme, m_chatsWidget, &ChatsWidget::onChangeThemeClicked);
+}
+
+void ChatsListComponent::openEditUserDialogWidnow() {
+    if (m_isEditDialog) {
+        return;
+    }
+    else {
+        m_isEditDialog = true;
+        m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClient(), m_theme);
+        m_containerVLayout->insertWidget(0, m_profile_editor_widget);
+    }
+     
+}
+
+void ChatsListComponent::closeEditUserDialogWidnow() {
+    m_containerVLayout->removeWidget(m_profile_editor_widget);
+    delete m_profile_editor_widget;
+    m_profile_editor_widget = nullptr;
 }
 
 void ChatsListComponent::toSendChangeTheme(bool fl) {
@@ -115,18 +150,30 @@ void ChatsListComponent::receiveCreateChatData(QString login) {
     emit sendCreateChatData(login2);
 }
 
-void ChatsListComponent::addChatComponent(Theme theme, Chat* chat) {
-    for (auto chatComp : m_vec_chatComponents) {
-        chatComp->setSelected(false);
+void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelected) {
+    if (isSelected) {
+        for (auto chatComp : m_vec_chatComponents) {
+            chatComp->setSelected(false);
+        }
     }
+    
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setTheme(theme);
-    m_containerVLayout->insertWidget(0, chatComponent);
+    chatComponent->setSelected(isSelected);
+    m_containerVLayout->insertWidget(chatComponent->getChat()->getLayoutIndex(), chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
-    chatComponent->setSelected(true);
-}
 
+    auto& messagesVec = chat->getMessagesVec();
+    if (messagesVec.size() == 0) {
+        chatComponent->setLastMessage("no messages yet");
+    }
+    else {
+        auto lastMessage = messagesVec.back();
+        chatComponent->setLastMessage(QString::fromStdString(lastMessage->getMessage()));
+    }
+
+}
 
 void ChatsListComponent::openAddChatDialog() {
     if (m_isChatAddDialog) {
@@ -145,14 +192,20 @@ void ChatsListComponent::closeAddChatDialog() {
     m_isChatAddDialog = false;
 }
 
+ChatsWidget* ChatsListComponent::getChatsWidget() const {
+    return m_chats_widget;
+}
 
 void ChatsListComponent::setTheme(Theme theme) {
     m_theme = theme;
     m_darkModeSwitch->setTheme(m_theme);
+    if (m_profile_editor_widget != nullptr) {
+        m_profile_editor_widget->setTheme(theme);
+    }
+
     if (theme == DARK) {
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
-        m_profileButton->setTheme(theme);
         m_newChatButton->setTheme(theme);
         for (auto comp : m_vec_chatComponents) {
             comp->setTheme(DARK);
@@ -168,7 +221,6 @@ void ChatsListComponent::setTheme(Theme theme) {
     else {
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->lightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
-        m_profileButton->setTheme(theme);
         m_newChatButton->setTheme(theme);
         for (auto comp : m_vec_chatComponents) {
             comp->setTheme(LIGHT);
@@ -182,50 +234,12 @@ void ChatsListComponent::setTheme(Theme theme) {
 }
 
 void ChatsListComponent::popUpComponent(ChatComponent* comp) {
+    std::cout << "call popUpComponent";
     m_containerVLayout->removeWidget(comp);
     m_containerVLayout->insertWidget(0, comp);
 }
 
-void ChatsListComponent::addChatComponentSlot(QString theme, Chat* chat) {
-    Theme themeT;
-    if (theme == "DARK") {
-        themeT = DARK;
-    }
-    else {
-        themeT = LIGHT;
-    }
-
-    for (auto chatComp : m_vec_chatComponents) {
-        chatComp->setSelected(false);
-    }
-    ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
-    chatComponent->setLastMessage(QString::fromStdString(chat->getLastIncomeMessage()), true);
-    chatComponent->setUnreadMessageDot(true);
-    chatComponent->setName(QString::fromStdString(chat->getFriendName()));
-    chatComponent->setTheme(themeT);
-    m_containerVLayout->insertWidget(0, chatComponent);
-    m_vec_chatComponents.push_back(chatComponent);
-    chatComponent->setSelected(false);
-}
-
-void ChatsListComponent::recoverChatComponents(ClientSide* clientSide, ChatsWidget* chatsWidget) {
-    auto& vec = clientSide->getMyChatsVec();
-    for (auto area : chatsWidget->getMessagingComponentsCacheVec()) {
-        ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, area->getChat());
-        chatComponent->setName(QString::fromStdString(area->getChat()->getFriendName()));
-        chatComponent->setTheme(m_theme);
-
-
-        auto& messages = area->getMessagesComponentsVec();
-        auto lastMessageComponent = messages.back(); 
-        auto lastMessage = lastMessageComponent->getMessage(); 
-        chatComponent->setLastMessage(lastMessage, false);
-
-        m_containerVLayout->insertWidget(0, chatComponent);
-        m_vec_chatComponents.push_back(chatComponent);
-    }
-
-    for (auto chatComp : m_vec_chatComponents) {
-        chatComp->setSelected(false);
-    }
+void ChatsListComponent::SetAvatar(const Photo& photo) {
+    QIcon avatarIcon(QString::fromStdString(photo.getPhotoPath()));
+    m_profileButton->setIcon(avatarIcon);
 }

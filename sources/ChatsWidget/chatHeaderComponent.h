@@ -6,23 +6,22 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include "request.h"
-
 
 class ButtonIcon;
+class AvatarIcon;
 enum Theme;
 
 struct StyleChatHeaderComponent {
 
 
-    QString purpleLabelStyle = R"(
+    QString deepBlueLabelStyle = R"(
     QLabel {
         font-family: "Segoe UI";
         background-color: transparent;  
         font-weight: normal;
         border: none;   
         font-size: 14px;
-        color: rgb(85, 90, 250);            
+        color: rgb(64, 140, 255);            
     }
 )";
 
@@ -82,6 +81,8 @@ public:
 
 public slots:
     void setLastSeen(const QString& lastSeen);
+    void setAvatar(const QPixmap& pixMap);
+    void setName(const QString& name);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -95,7 +96,7 @@ private:
     Theme m_theme;
     QColor m_backColor;
     
-    ButtonIcon*     m_leftIcon;
+    AvatarIcon*     m_leftIcon;
     ButtonIcon*     m_rightButton;
 
     QHBoxLayout* m_mainLayout;

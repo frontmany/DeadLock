@@ -1,6 +1,7 @@
 #include "chatHeaderComponent.h"
 #include "mainwindow.h"
 #include "buttons.h"
+#include "utility.h"
 
 
 
@@ -17,23 +18,20 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
         update();
     }
 
-    //TODO QPIXMAP set avatar
     style = new StyleChatHeaderComponent;
 
-
     m_mainLayout = new QHBoxLayout(this);
-    m_leftIcon = new ButtonIcon(this, 50, 50);
 
-    QIcon icon1(":/resources/ChatsWidget/userFriend.png");
-    QIcon iconHover1(":/resources/ChatsWidget/userFriend.png");
-    m_leftIcon->uploadIconsDark(icon1, iconHover1);
-
-    QIcon icon2(":/resources/ChatsWidget/userFriend.png");
-    QIcon iconHover2(":/resources/ChatsWidget/userFriend.png");
-    m_leftIcon->uploadIconsLight(icon2, iconHover2);
-    m_leftIcon->setTheme(m_theme);
+    m_leftIcon = new AvatarIcon(this, 0, 0, 32, true);
+    if (avatar.isNull()) {
+        QIcon icon(":/resources/ChatsWidget/userFriend.png");
+        m_leftIcon->setIcon(icon);
+    }
+    else {
+        QIcon icon(avatar);
+        m_leftIcon->setIcon(icon);
+    }
     m_mainLayout->addWidget(m_leftIcon);
-
 
     m_rightLayout = new QVBoxLayout();
 
@@ -45,11 +43,11 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
         m_nameLabel->setStyleSheet(style->darkLabelStyle);
     }
 
-    m_lastSeenLabel = new QLabel(lastSeen, this);
+    m_lastSeenLabel = new QLabel(QString::fromStdString(utility::parseDate(lastSeen.toStdString())), this);
     if (m_theme == DARK) {
 
         if (m_lastSeenLabel->text() == "online") {
-            m_lastSeenLabel->setStyleSheet(style->purpleLabelStyle);
+            m_lastSeenLabel->setStyleSheet(style->deepBlueLabelStyle);
         }
         else {
             m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
@@ -86,10 +84,27 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
     setLayout(m_mainLayout);
 }
 
+void ChatHeaderComponent::setAvatar(const QPixmap& pixMap) {
+    QIcon icon(pixMap);
+    m_leftIcon->setIcon(icon);
+    update();
+}
+
+void ChatHeaderComponent::setName(const QString& name) {
+    m_nameLabel->setText(name);
+    update();
+}
+
 void ChatHeaderComponent::setLastSeen(const QString& lastSeen) {
     m_lastSeenLabel->setText(lastSeen);
     if (m_lastSeenLabel->text() == "online") {
-        m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);
+        if (m_theme == DARK) {
+            m_lastSeenLabel->setStyleSheet(style->deepBlueLabelStyle);
+        }
+        else {
+            m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);
+        }
+
     }
     else {
         m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
@@ -101,10 +116,9 @@ void ChatHeaderComponent::setTheme(Theme theme) {
     if (m_theme == DARK) {
         m_backColor = QColor(36, 36, 36);
         m_rightButton->setTheme(m_theme);
-        m_leftIcon->setTheme(m_theme);
         m_nameLabel->setStyleSheet(style->lightLabelStyle);
         if (m_lastSeenLabel->text() == "online") {
-            m_lastSeenLabel->setStyleSheet(style->purpleLabelStyle);
+            m_lastSeenLabel->setStyleSheet(style->deepBlueLabelStyle);
         }
         else {
             m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
@@ -114,7 +128,6 @@ void ChatHeaderComponent::setTheme(Theme theme) {
     else {
         m_backColor = QColor(224, 224, 224);
         m_rightButton->setTheme(m_theme);
-        m_leftIcon->setTheme(m_theme);
         m_nameLabel->setStyleSheet(style->darkLabelStyle);
         if (m_lastSeenLabel->text() == "online") {
             m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);

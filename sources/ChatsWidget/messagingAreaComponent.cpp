@@ -2,29 +2,85 @@
 #include "chatHeaderComponent.h"
 #include "messageComponent.h"
 #include "chatsWidget.h"
+#include "utility.h"
 #include "mainWindow.h"
 #include "buttons.h"
+#include "message.h"
+#include "client.h"
+#include "photo.h"
 #include <random>
 #include <limits>
 
-int generateRandomNumber() {
-    std::random_device rd; // Инициализация генератора случайных чисел
-    std::mt19937 gen(rd()); // Используем Mersenne Twister
-    std::uniform_int_distribution<int> distribution(0, 1000000); 
-    return distribution(gen);
-}
 
-std::string getCurrentTime() {
-    auto now = std::chrono::system_clock::now();
+StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
+    darkSlider = R"(
+    QScrollBar:vertical {
+        border: 2px solid rgb(36, 36, 36);      
+        background: rgb(36, 36, 36);        
+        width: 10px;                 
+        border-radius: 5px; 
+    }
 
-    std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
+    QScrollBar::handle:vertical {
+        background: rgb(56, 56, 56);   
+        border: 2px solid rgb(56, 56, 56);      
+        width: 10px;    
+        border-radius: 5px;           
+    }
 
-    std::ostringstream oss;
-    oss << std::put_time(std::localtime(&now_time_t), "%H:%M");
+    QScrollBar::add-line:vertical, 
+    QScrollBar::sub-line:vertical { 
+        background: none;             
+    }
+)";
 
-    return oss.str(); 
-}
+    lightSlider = R"(
+    QScrollBar:vertical {
+        border: 2px solid rgb(250, 250, 250);      
+        background: rgb(250, 250, 250);        
+        width: 10px;                 
+        border-radius: 5px; 
+    }
 
+    QScrollBar::handle:vertical {
+        background: rgb(218, 219, 227);   
+        border: 2px solid rgb(218, 219, 227);      
+        width: 10px;    
+        border-radius: 5px;           
+    }
+
+    QScrollBar::add-line:vertical, 
+    QScrollBar::sub-line:vertical { 
+        background: none;             
+    }
+)";
+
+    DarkTextEditStyle = R"(
+    QTextEdit {
+        background-color: rgb(36, 36, 36);    
+        color: white;               
+        border: none;     
+        border-radius: 15px;         
+        padding: 5px;               
+    }
+    QTextEdit:focus {
+        border: 2px solid #888;     
+    }
+)";
+
+    LightTextEditStyle = R"(
+    QTextEdit {
+        background-color: #ffffff;    
+        color: black;                 
+        border: none;       
+        border-radius: 15px;           
+        padding: 5px;                 
+    }
+    QTextEdit:focus {
+        border: 2px solid rgb(237, 237, 237);        
+    }
+)";
+};
 
 MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget)
     : QWidget(parent), m_friendName(friendName), m_theme(theme), m_chat(chat), m_chatsWidget(chatsWidget) {
@@ -32,7 +88,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     setMinimumSize(300, 400);
     
     if (chat->getIsFriendHasPhoto() == true) {
-        m_header = new ChatHeaderComponent(this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto().getPhotoPath())));
+        m_header = new ChatHeaderComponent(this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
     }
     else {
         m_header = new ChatHeaderComponent(this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap());
@@ -102,6 +158,19 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     setLayout(m_main_VLayout);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     adjustTextEditHeight();
+
+    for (auto message : m_chat->getMessagesVec()) {
+        addMessage(message);
+    }
+}
+
+void MessagingAreaComponent::setAvatar(const QPixmap& pixMap) {
+    m_header->setAvatar(pixMap);
+    update();
+}
+
+void MessagingAreaComponent::setName(const QString& name) {
+    m_header->setName(name);
 }
 
 void MessagingAreaComponent::adjustTextEditHeight() {
@@ -133,20 +202,6 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     }
 }
 
-MessagingAreaComponent::MessagingAreaComponent(Theme theme) {
-    style = new StyleMessagingAreaComponent;
-    m_theme = theme;
-
-    if (m_theme == DARK) {
-        m_backColor = QColor(25, 25, 25);
-        update();
-    }
-    else {
-        m_backColor = QColor(240, 240, 240, 200);
-        update();
-    }
-}
-
 void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -158,14 +213,14 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
 
 
 void MessagingAreaComponent::onSendMessageClicked() {
-    double id = generateRandomNumber();
-    addMessageSent(m_messageInputEdit->toPlainText(), QString::fromStdString(getCurrentTime()), id);
+    Message* message = new Message(m_messageInputEdit->toPlainText().toStdString(), utility::getTimeStamp(), utility::generateId(), true, false);
+    addMessage(message);
     m_containerWidget->adjustSize();
     m_scrollArea->verticalScrollBar()->setValue(m_scrollArea->verticalScrollBar()->maximum());
     onTypeMessage();
     QString s = m_messageInputEdit->toPlainText();
     m_messageInputEdit->setText("");
-    emit sendMessageData(s , QString::fromStdString(getCurrentTime()), m_chat, id);
+    emit sendMessageData(message, m_chat);
 
 }
 
@@ -180,66 +235,24 @@ void MessagingAreaComponent::onTypeMessage() {
 }
 
 
-void MessagingAreaComponent::addMessageReceived(QString msg, QString timestamp, double id) {
-    MessageComponent* message = new MessageComponent(this, timestamp, msg, m_theme, id, false);
-    m_vec_messagesComponents.push_back(message);
-    m_containerVLayout->addWidget(message);
-}
-
-
-void MessagingAreaComponent::addMessageSent(QString msg, QString timestamp, double id) {
-    MessageComponent* message = new MessageComponent(this, timestamp, msg+'\n', m_theme, id, true);
-    m_vec_messagesComponents.push_back(message);
-    m_containerVLayout->addWidget(message);
-}
-
-
-void MessagingAreaComponent::addComponentToNotCurrentMessagingArea(Chat* foundChat, Msg* msg) {
-    MessageComponent* message = new MessageComponent(m_chatsWidget, QString::fromStdString(msg->getTimestamp()), QString::fromStdString(msg->getMessage()), m_chatsWidget->getTheme(), msg->getId(), false);
-    getMessagesComponentsVec().push_back(message);
-    m_containerVLayout->addWidget(message);
-}
-
-
-
-
-QJsonObject MessagingAreaComponent::serialize() const {
-    QJsonObject messagingAreaObject;
-    messagingAreaObject["friendName"] = m_friendName;
-    messagingAreaObject["theme"] = static_cast<int>(m_theme);
-    messagingAreaObject["chat"] = m_chat->serialize();
-
-    QJsonArray messagesArray;
-    for (const auto& messageComponent : m_vec_messagesComponents) {
-        messagesArray.append(messageComponent->serialize());
-    }
-    messagingAreaObject["messages"] = messagesArray;
-
-    return messagingAreaObject;
-}
-
-MessagingAreaComponent* MessagingAreaComponent::deserialize(const QJsonObject& jsonObject, QWidget* parent, ChatsWidget* chatsWidget) {
-    QString friendName = jsonObject["friendName"].toString();
-    Theme theme = static_cast<Theme>(jsonObject["theme"].toInt());
-    QJsonObject chatObject = jsonObject["chat"].toObject();
-    Chat* chat = Chat::deserialize(chatObject);
-
-    MessagingAreaComponent* component = new MessagingAreaComponent(parent, friendName, theme, chat, chatsWidget);
-    component->hide();
-
-    QJsonArray messagesArray = jsonObject["messages"].toArray();
-    for (const auto& msgValue : messagesArray) {
-        QJsonObject msgObject = msgValue.toObject();
-        MessageComponent* msgComponent = MessageComponent::deserialize(msgObject);
-        component->m_vec_messagesComponents.push_back(msgComponent);
-
-        if (msgComponent->getIsSent()) {
-            component->addMessageSent(msgComponent->getMessage(), msgComponent->getTimestamp(), msgComponent->getId());
+void MessagingAreaComponent::addMessage(Message* message) {
+    MessageComponent* messageComp = new MessageComponent(this, message, m_theme);
+    if (message->getIsSend()) {
+        if (message->getIsRead()) {
+            messageComp->setIsRead(true);
         }
         else {
-            component->addMessageReceived(msgComponent->getMessage(), msgComponent->getTimestamp(), msgComponent->getId());
+            messageComp->setIsRead(false);
         }
     }
+    
+    m_vec_messagesComponents.push_back(messageComp);
+    m_containerVLayout->addWidget(messageComp);
+}
 
-    return component;
+void MessagingAreaComponent::markMessageAsChecked(Message* message) {
+    Client* client = m_chatsWidget->getClient();
+    client->sendMessageReadConfirmation(m_chat->getFriendLogin(), { message });
+
+    m_chat->getMessagesVec().back()->setIsRead(true);
 }
