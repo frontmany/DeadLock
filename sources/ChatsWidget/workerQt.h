@@ -24,6 +24,12 @@ public:
 	void onAuthorizationSuccess() override;
 	void onAuthorizationFail() override;
 
+	void onPasswordVerifySuccess() override;
+	void onPasswordVerifyFail() override;
+
+	void onCheckNewLoginSuccess() override;
+	void onCheckNewLoginFail() override;
+
 	void onChatCreateSuccess(Chat* chat) override;
 	void onChatCreateFail() override;
 

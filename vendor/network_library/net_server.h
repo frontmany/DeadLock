@@ -51,8 +51,8 @@ namespace net {
 						m_asio_context, std::move(socket), m_safe_deque_incoming_messages);
 
 					if (onClientConnect()) {
-						m_deque_connections.push_back(std::move(newConnection));
-						m_deque_connections.back()->connectToClient();
+						m_set_connections.push_back(std::move(newConnection));
+						m_set_connections.back()->connectToClient();
 					}
 					else {
 						std::cout << "[-----] Connection Denied\n";
@@ -73,8 +73,7 @@ namespace net {
 				onClientDisconnect(connection);
 				connection.reset();
 
-				m_deque_connections.erase(std::remove(m_deque_connections.begin(), 
-					m_deque_connections.end(), connection), m_deque_connections.end());
+				m_set_connections.erase(connection);
 			}
 
 		}
@@ -82,7 +81,7 @@ namespace net {
 		void broadcastMessage(const message<T>& msg, std::shared_ptr<connection<T>> connectionToIgnore = nullptr) {
 			bool isInvalidConnectionAppears = false;
 
-			for (auto& connection : m_deque_connections) {
+			for (auto& connection : m_set_connections) {
 				if (connection && connection->isConnected()) {
 					if (connection != connectionToIgnore) {
 						connection->send(msg);
@@ -96,8 +95,7 @@ namespace net {
 			} 
 
 			if (isInvalidConnectionAppears) {
-				m_deque_connections.erase(std::remove(m_deque_connections.begin(),
-					m_deque_connections.end(), nullptr), m_deque_connections.end());
+				m_set_connections.erase_if([](const auto& ptr) { return ptr.get() == nullptr; });
 			}
 		}
 
@@ -114,26 +112,23 @@ namespace net {
 			}
 		}
 
-		virtual void onClientValidated(std::shared_ptr<connection<T>> connection) {
+		virtual void onClientValidated(std::shared_ptr<connection<T>> connection) {}
 
-		}
+		virtual void onClientDisconnect(std::shared_ptr<connection<T>> connection) {}
 
 	protected:
-
-
 		virtual bool onClientConnect(std::shared_ptr<connection<T>> connection) {
 			return true;
 		}
 
-		virtual void onClientDisconnect(std::shared_ptr<connection<T>> connection) {
-		}
 
-		virtual void onMessage(std::shared_ptr<connection<T>> connection, const message<T>& msg) {
-		}
+
+		virtual void onMessage(std::shared_ptr<connection<T>> connection, const message<T>& msg) {}
+
 
 	protected:
 		safe_deque<owned_message<T>>				m_safe_deque_incoming_messages;
-		std::deque<std::shared_ptr<connection<T>>>  m_deque_connections;
+		std::unordered_set<std::shared_ptr<connection<T>>>  m_set_connections;
 
 		asio::io_context		m_asio_context;
 		std::thread			m_context_thread;

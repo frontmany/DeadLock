@@ -30,8 +30,6 @@ void ResponseHandler::handleResponse(ownedMessageT& msg) {
         msg.msg >> packet;
     }
 
-    std::istringstream iss(packet);
-
 
     if (msg.msg.header.type == QueryType::REGISTRATION_SUCCESS) {
         onRegistrationSuccess();
@@ -52,19 +50,34 @@ void ResponseHandler::handleResponse(ownedMessageT& msg) {
         onChatCreateFail();
     }
     else if (msg.msg.header.type == QueryType::FRIENDS_STATUSES) {
-        processFriendsStatusesSuccess(iss.str());
+        processFriendsStatusesSuccess(packet);
     }
     else if (msg.msg.header.type == QueryType::MESSAGE) {
-        onMessageReceive(iss.str());
+        onMessageReceive(packet);
     }
     else if (msg.msg.header.type == QueryType::USER_INFO) {
-        onUserInfo(iss.str());
+        onUserInfo(packet);
     }
     else if (msg.msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
-        onMessageReadConfirmationReceive(iss.str());
+        onMessageReadConfirmationReceive(packet);
     }
     else if (msg.msg.header.type == QueryType::STATUS) {
-        onStatusReceive(iss.str());
+        onStatusReceive(packet);
+    }
+    else if (msg.msg.header.type == QueryType::VERIFY_PASSWORD_FAIL) {
+        onPasswordVerifyFail();
+    }
+    else if (msg.msg.header.type == QueryType::VERIFY_PASSWORD_SUCCESS) {
+        onPasswordVerifySuccess();
+    }
+    else if (msg.msg.header.type == QueryType::NEW_LOGIN_SUCCESS) {
+        onCheckNewLoginSuccess(packet);
+    }
+    else if (msg.msg.header.type == QueryType::NEW_LOGIN_FAIL) {
+        onPasswordVerifySuccess();
+    }
+    else if (msg.msg.header.type == QueryType::ALL_PENDING_MESSAGES_WERE_SENT) {
+        m_client->getAllFriendsStatuses();
     }
 }
 
@@ -90,10 +103,7 @@ void ResponseHandler::onAuthorizationSuccess() {
         m_worker_UI->showConfigLoadErrorDialog();
     }
 
-    m_client->getAllFriendsStatuses();
-    m_client->broadcastMyStatus("online");
     m_client->setIsNeedToSaveConfig(true);
-
     m_worker_UI->onAuthorizationSuccess();
 }
 
@@ -178,6 +188,7 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
         }
     }
 
+    m_client->broadcastMyStatus("online");
     m_worker_UI->updateFriendsStatuses(loginToStatusPairsVec);
 }
 
@@ -189,9 +200,6 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
 
     std::string myLogin;
     std::getline(iss, myLogin);
-
-    std::string type2;
-    std::getline(iss, type2);
 
     std::string friendLogin;
     std::getline(iss, friendLogin);
@@ -255,7 +263,6 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
 
 
 void ResponseHandler::onUserInfo(const std::string& packet) {
-
     std::istringstream iss(packet);
 
     std::string login;
@@ -276,6 +283,25 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
 
     std::string photoStr;
     std::getline(iss, photoStr);
+
+    std::string newLogin;
+    std::getline(iss, newLogin);
+
+    if (newLogin != "") {
+        auto& chatsMap = m_client->getMyChatsMap();
+
+        auto it = chatsMap.find(login);
+        if (it != chatsMap.end()) {
+            Chat* chat = it->second;
+            chat->setFriendLogin(newLogin);
+
+            auto node = chatsMap.extract(it);
+            node.key() = newLogin;
+            
+            chatsMap.insert(std::move(node));
+        }
+        m_client->updateInConfigFriendLogin(login, newLogin);
+    }
 
     Photo* photo = Photo::deserialize(base64_decode(photoStr), login);
 
@@ -330,7 +356,7 @@ void ResponseHandler::onMessageReadConfirmationReceive(const std::string& packet
 
         m_worker_UI->onMessageReadConfirmationReceive(friendLogin, id);
 
-        if (chat->getFriendLastSeen() == "Their last visit ? A mystery for the ages.") {
+        if (chat->getFriendLastSeen() == "last seen: N/A") {
             chat->setFriendLastSeen("online");
             m_worker_UI->onStatusReceive(friendLogin, "online");
         }
@@ -356,4 +382,30 @@ void ResponseHandler::onStatusReceive(const std::string& packet) {
 
         m_worker_UI->onStatusReceive(friendLogin, status);
     }
+}
+
+
+void ResponseHandler::onPasswordVerifySuccess() {
+    m_worker_UI->onPasswordVerifySuccess();
+
+}
+
+void ResponseHandler::onPasswordVerifyFail() {
+    m_worker_UI->onPasswordVerifyFail();
+}
+
+
+void ResponseHandler::onCheckNewLoginSuccess(const std::string& packet) {
+    std::istringstream iss(packet);
+
+    std::string allowedLogin;
+    std::getline(iss, allowedLogin);
+
+    m_client->updateMyLogin(allowedLogin);
+
+    m_worker_UI->onCheckNewLoginSuccess();
+}
+
+void ResponseHandler::onCheckNewLoginFail() {
+    m_worker_UI->onCheckNewLoginFail();
 }

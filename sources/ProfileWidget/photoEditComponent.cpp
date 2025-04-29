@@ -53,18 +53,14 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     connect(m_continueButton, &QPushButton::clicked, [this]() {
         saveCroppedImage();
         Photo* photo = new Photo(m_filePath.toStdString());
-
+        m_client->setIsHasPhoto(true);
+        m_client->setPhoto(photo);
+        m_client->updateMyPhoto(*photo);
 
         m_profile_editor_widget->setFieldsEditor();
         m_profile_editor_widget->updateAvatar(*photo);
-
- 
-        m_client->setPhoto(photo);
-        m_client->setIsHasPhoto(true);
-
-        m_client->updateMyPhoto(*photo);
         m_profile_editor_widget->setFieldsEditor();
-        });
+    });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
     m_cropXSlider->setFixedSize(200, 20);

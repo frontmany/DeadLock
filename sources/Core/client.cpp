@@ -109,6 +109,31 @@ void Client::requestFriendInfoFromServer(const std::string& myLogin) {
     sendPacket(m_packets_builder->getLoadUserInfoPacket(myLogin), QueryType::LOAD_FRIEND_INFO);
 }
 
+void Client::verifyPassword(const std::string& passwordHash) {
+    sendPacket(m_packets_builder->getVerifyPasswordPacket(m_my_login, passwordHash), QueryType::VERIFY_PASSWORD);
+}
+
+
+void Client::checkIsNewLoginAvailable(const std::string& newLogin) {
+    if (m_my_login == newLogin) {
+        WorkerUI* workerUI = m_response_handler->getWorkerUI();
+        workerUI->onCheckNewLoginFail();
+    }
+    sendPacket(m_packets_builder->getCheckIsNewLoginAvailablePacket(newLogin), QueryType::CHECK_NEW_LOGIN);
+}
+
+void Client::updateMyLogin(const std::string& newLogin) {
+    if (m_my_login == newLogin) {
+        return;
+    }
+
+    updateConfigName(newLogin);
+
+    const std::vector<std::string>& tmpFriendsLoginsVec = getFriendsLoginsVecFromMap();
+    sendPacket(m_packets_builder->getUpdateMyLoginPacket(m_my_login, newLogin, tmpFriendsLoginsVec), QueryType::UPDATE_MY_LOGIN);
+
+    m_my_login = newLogin;
+}
 
 void Client::updateMyName(const std::string& newName) {
     m_my_name = newName;
@@ -246,4 +271,81 @@ void Client::waitUntilUIReadyToUpdate() {
     while (!m_is_ui_ready_to_update.load()) {
         std::this_thread::yield();
     }
+}
+
+void Client::updateConfigName(const std::string& newLogin) {
+    QString oldFileName = QString::fromStdString(utility::getSaveDir()) +
+        QString::fromStdString("/" + m_my_login) + ".json";
+    QFile oldFile(oldFileName);
+
+    if (oldFile.exists()) {
+        QString newFileName = QString::fromStdString(utility::getSaveDir()) +
+            QString::fromStdString("/" + newLogin) + ".json";
+
+        if (!oldFile.rename(newFileName)) {
+            qWarning() << "Failed to rename config file from" << oldFileName << "to" << newFileName;
+            return;
+        }
+    }
+}
+
+void Client::updateInConfigFriendLogin(const std::string& oldLogin, const std::string& newLogin) {
+    QString dir = QString::fromStdString(utility::getSaveDir());
+    QString fileName = QString::fromStdString("/" + m_my_login) + ".json";
+    QString fullPath = dir + fileName;
+    std::string STRDEBUG = fullPath.toStdString();
+
+    QFile file(fullPath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Failed to open config file for reading:" << fullPath;
+        return;
+    }
+
+    QJsonDocument configDoc = QJsonDocument::fromJson(file.readAll());
+    file.close();
+
+    if (configDoc.isNull()) {
+        qWarning() << "Invalid JSON in config file:" << fullPath;
+        return;
+    }
+
+    QJsonObject configObj = configDoc.object();
+
+    if (!configObj.contains("chatsArray") || !configObj["chatsArray"].isArray()) {
+        qWarning() << "No chats array found in config";
+        return;
+    }
+
+    QJsonArray chatsArray = configObj["chatsArray"].toArray();
+    bool found = false;
+
+    for (auto&& chatValue : chatsArray) {
+        if (!chatValue.isObject()) continue;
+
+        QJsonObject chatObj = chatValue.toObject();
+        QString currentLogin = chatObj["friend_login"].toString();
+
+        if (currentLogin == QString::fromStdString(oldLogin)) {
+            // Обновляем логин друга
+            chatObj["friend_login"] = QString::fromStdString(newLogin);
+            chatValue = chatObj;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        qWarning() << "Friend login" << oldLogin.c_str() << "not found in config";
+        return;
+    }
+
+    configObj["chatsArray"] = chatsArray;
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "Failed to open config file for writing:" << fullPath;
+        return;
+    }
+
+    file.write(QJsonDocument(configObj).toJson());
+    file.close();
 }

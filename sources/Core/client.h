@@ -33,15 +33,20 @@ public:
 
     void save() const;
     bool load(const std::string& fileName);
+    void updateConfigName(const std::string& newLogin);
+    void updateInConfigFriendLogin(const std::string& oldLogin, const std::string& newLogin);
 
     void authorizeClient(const std::string& login, const std::string& passwordHash);
     void registerClient(const std::string& login, const std::string& passwordHash, const std::string& name);
 
     void updateMyName(const std::string& newName);
+    void updateMyLogin(const std::string& newLogin);
     void updateMyPassword(const std::string& newPasswordHash);
     void updateMyPhoto(const Photo& newPhoto);
 
     void createChatWith(const std::string& friendLogin);
+    void verifyPassword(const std::string& passwordHash);
+    void checkIsNewLoginAvailable(const std::string& newLogin);
 
     void sendMessage(const std::string& friendLogin, const Message* message);
     void sendMessageReadConfirmation(const std::string& friendLogin, const Message* message);

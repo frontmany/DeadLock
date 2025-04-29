@@ -135,10 +135,13 @@ public:
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
     AddChatDialogComponent* getAddChatDialogComponent() { return m_chatAddDialog; }
+    ProfileEditorWidget* getProfileEditorWidget() { return m_profile_editor_widget; }
+
     QLineEdit* getSearchLineEdit() { return m_searchLineEdit; }
     void setIsEditDialogFlag(bool isEditDialog) { m_isEditDialog = isEditDialog; }
 
     ChatsWidget* getChatsWidget() const;
+    
 
 signals:
     void sendCreateChatData(QString login);

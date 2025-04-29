@@ -1,4 +1,5 @@
 #include "profileEditorWidget.h"
+#include "passwordEditorComponent.h"
 #include "fieldsEditComponent.h"
 #include "photoEditComponent.h"
 #include "chatsListComponent.h"
@@ -12,6 +13,8 @@ ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* ch
 
     m_photo_edit_component = new PhotoEditComponent(parent, this, client, m_theme);
     m_photo_edit_component->hide();
+
+    m_password_edit_component = new PasswordEditComponent(this, this, m_client, m_theme);
 
     m_mainVLayout = new QVBoxLayout();
     m_mainVLayout->addWidget(m_fields_edit_component);
@@ -38,9 +41,23 @@ void ProfileEditorWidget::setFieldsEditor() {
     m_fields_edit_component->setMaximumSize(400, 500);
     m_mainVLayout->removeWidget(m_photo_edit_component);
     m_photo_edit_component->hide();
+    m_password_edit_component->hide();
     m_mainVLayout->addWidget(m_fields_edit_component);
     m_fields_edit_component->show();
     m_fields_edit_component->update();
+}
+
+void ProfileEditorWidget::setPasswordEditor() {
+    setFixedHeight(500);
+    m_password_edit_component->setMaximumSize(400, 500);
+    m_mainVLayout->removeWidget(m_fields_edit_component);
+    m_fields_edit_component->hide();
+    m_mainVLayout->addWidget(m_password_edit_component);
+
+    if (m_password_edit_component->isVerificationStage() == false)
+        m_password_edit_component->showCurrentPasswordInput();
+
+    m_password_edit_component->show();
 }
 
 void ProfileEditorWidget::onImagePicker() {
@@ -54,6 +71,9 @@ void ProfileEditorWidget::setTheme(Theme theme) {
     }
     if (m_photo_edit_component != nullptr) {
         m_photo_edit_component->setTheme(theme);
+    }
+    if (m_password_edit_component != nullptr) {
+        m_password_edit_component->setTheme(theme);
     }
 
     update();

@@ -15,11 +15,16 @@ public:
 	const std::string getAuthorizationPacket(const std::string& login, const std::string& passwordHash);
 	const std::string getRegistrationPacket(const std::string& login, const std::string& name, const std::string& passwordHash);
 	const std::string getCreateChatPacket(const std::string& myLogin, const std::string& friendLogin);
+
 	const std::string getUpdateMyNamePacket(const std::string& login, const std::string& newName, const std::vector<std::string>& friendsLoginsVec);
 	const std::string getUpdateMyPasswordPacket(const std::string& login, const std::string& newPasswordHash, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getUpdateMyLoginPacket(const std::string& login, const std::string& newLogin, const std::vector<std::string>& friendsLoginsVec);
 	const std::string getUpdateMyPhotoPacket(const std::string& login, const Photo& photo, const std::vector<std::string>& friendsLoginsVec);
+
 	const std::string getLoadUserInfoPacket(const std::string& login);
 	const std::string getLoadAllFriendsStatusesPacket(const std::vector<std::string>& friendsLoginsVec);
+	const std::string getVerifyPasswordPacket(const std::string& login, const std::string& passwordHash);
+	const std::string getCheckIsNewLoginAvailablePacket(const std::string& newLogin);
 
 	//RPL
 	const std::string getMessagePacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);

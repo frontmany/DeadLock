@@ -101,10 +101,35 @@ const std::string PacketsBuilder::getUpdateMyPhotoPacket(
     return oss.str();
 }
 
+const std::string  PacketsBuilder::getUpdateMyLoginPacket(const std::string& login, const std::string& newLogin, const std::vector<std::string>& friendsLoginsVec) {
+    std::ostringstream oss;
+    oss << get << '\n'
+        << login << '\n'
+        << newLogin << '\n';
+
+    oss << vecBegin << '\n';
+    for (const auto& login : friendsLoginsVec) {
+        oss << login << '\n';
+    }
+    oss << vecEnd << '\n';
+
+    return oss.str();
+}
+
 const std::string PacketsBuilder::getLoadUserInfoPacket(const std::string& login) {
     std::ostringstream oss;
     oss << get << '\n'
         << login << '\n';
+
+    return oss.str();
+}
+
+const std::string PacketsBuilder::getVerifyPasswordPacket(const std::string& login, const std::string& passwordHash) {
+    std::ostringstream oss;
+
+    oss << get << '\n'
+        << login << '\n'
+        << passwordHash;
 
     return oss.str();
 }
@@ -124,6 +149,13 @@ const std::string PacketsBuilder::getLoadAllFriendsStatusesPacket(const std::vec
     return oss.str();
 }
 
+const std::string PacketsBuilder::getCheckIsNewLoginAvailablePacket(const std::string& newLogin) {
+    std::ostringstream oss;
+    oss << get << '\n'
+        << newLogin;
+
+    return oss.str();
+}
 
 //RPL
 const std::string PacketsBuilder::getMessagePacket(const std::string& myLogin,

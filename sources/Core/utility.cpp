@@ -56,7 +56,7 @@ std::string utility::generateId() {
 }
 
 std::string utility::parseDate(const std::string& fullDate) {
-    if (fullDate == "Their last visit ? A mystery for the ages.") {
+    if (fullDate == "last seen: N/A") {
         return fullDate;
     }
     if (fullDate == "online") {
@@ -65,7 +65,9 @@ std::string utility::parseDate(const std::string& fullDate) {
     if (fullDate == "recently") {
         return fullDate;
     }
-
+    if (fullDate == "requested status of unknown user") { // tmp should be fixed later
+        return "online";
+    }
     if (fullDate.find("last seen:") != 0) {
         return "Invalid date format";
     }

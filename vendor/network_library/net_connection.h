@@ -43,7 +43,6 @@ namespace net {
 						if (!ec) {
 							std::cout << "Connected to: " << endpoint << std::endl;
 							readValidation();
-							readHeader();
 						}
 						else {
 							std::cerr << "Connection failed: " << ec.message() << std::endl;
@@ -84,7 +83,7 @@ namespace net {
 			asio::async_read(m_socket, asio::buffer(&m_message_tmp.header, sizeof(message_header<T>)),
 				[this](std::error_code ec, std::size_t length) {
 					if (!ec) {
-						if (m_message_tmp.header.size > 0) {
+						if (m_message_tmp.header.size > sizeof(message_header<T>)) {
 							m_message_tmp.body.resize(m_message_tmp.header.size - sizeof(message_header<T>));
 							readBody();
 						}
@@ -115,6 +114,7 @@ namespace net {
 			else
 				m_safe_deque_incoming_messages.push_back({ nullptr, m_message_tmp });
 			
+			m_message_tmp = message<T>();
 			readHeader();
 		}
 

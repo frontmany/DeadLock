@@ -5,11 +5,14 @@
 #include "mainwindow.h"
 #include "chatsListComponent.h"
 #include "addChatDialogComponent.h"
+#include "fieldsEditComponent.h"
+#include "passwordEditorComponent.h"
 #include "chatComponent.h"
 #include "chatHeaderComponent.h"
 #include "helloAreaComponent.h"
 #include "registrationComponent.h"
 #include "authorizationComponent.h"
+#include "profileEditorWidget.h"
 #include "loginWidget.h"
 #include "utility.h"
 #include "chat.h"
@@ -38,6 +41,33 @@ void WorkerQt::onAuthorizationFail() {
 	QMetaObject::invokeMethod(m_main_window, "updateAuthorizationUIRedBorder", Qt::QueuedConnection);
 }
 
+void WorkerQt::onPasswordVerifySuccess() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();
+	ProfileEditorWidget* profileEditorWidget = chatsListComponent->getProfileEditorWidget();
+	
+	if (profileEditorWidget != nullptr) {
+		PasswordEditComponent* passwordEditComponent = profileEditorWidget->getPasswordEditComponent();
+		QMetaObject::invokeMethod(passwordEditComponent,
+			"showNewPasswordInput",
+			Qt::QueuedConnection);
+	}
+	
+}
+void WorkerQt::onPasswordVerifyFail() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();
+	ProfileEditorWidget* profileEditorWidget = chatsListComponent->getProfileEditorWidget();
+
+	if (profileEditorWidget != nullptr) {
+		PasswordEditComponent* passwordEditComponent = profileEditorWidget->getPasswordEditComponent();
+		QMetaObject::invokeMethod(passwordEditComponent,
+			"showErrorLabelPasswordInput",
+			Qt::QueuedConnection);
+	}
+
+}
+
 void WorkerQt::onChatCreateSuccess(Chat* chat) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	QMetaObject::invokeMethod(chatsWidget, "removeRightComponent", Qt::QueuedConnection);
@@ -57,7 +87,7 @@ void WorkerQt::onChatCreateFail() {
 				}
 			}
 		}
-		}, Qt::QueuedConnection);
+	}, Qt::QueuedConnection);
 }
 
 void WorkerQt::showConfigLoadErrorDialog() {
@@ -289,4 +319,29 @@ bool WorkerQt::updateExistingMessagingAreaComp(ChatsWidget* chatsWidget, Chat* c
 	}
 
 	return false;
+}
+
+
+//TODO
+void WorkerQt::onCheckNewLoginSuccess() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();
+	ProfileEditorWidget* profileEditorWidget = chatsListComponent->getProfileEditorWidget();
+	QMetaObject::invokeMethod(profileEditorWidget,
+		"close",
+		Qt::QueuedConnection);
+}
+
+void WorkerQt::onCheckNewLoginFail() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();
+	ProfileEditorWidget* profileEditorWidget = chatsListComponent->getProfileEditorWidget();
+
+	if (profileEditorWidget != nullptr) {
+		auto fieldsEditComponent = profileEditorWidget->getFieldsEditComponent();
+		QMetaObject::invokeMethod(fieldsEditComponent,
+			"setErrorText",
+			Qt::QueuedConnection,
+			Q_ARG(const QString&, "login already taken"));
+	}
 }

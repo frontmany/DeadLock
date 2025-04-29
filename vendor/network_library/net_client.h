@@ -29,6 +29,8 @@ namespace net {
 				m_connection->connectToServer(endpoint);
 
 				m_context_thread = std::thread([this]() {m_context.run(); });
+
+				return true;
 			}
 			catch (std::exception& e) {
 				std::cerr << "Client exception: " << e.what() << "\n";
@@ -46,7 +48,7 @@ namespace net {
 			if (m_context_thread.joinable())
 				m_context_thread.join();
 			 
-			m_connection.release();
+			m_connection.reset();
 		}
 
 		bool isConnected() {

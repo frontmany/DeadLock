@@ -20,12 +20,19 @@ class ResponseHandler {
 public:
 	ResponseHandler(Client* client);
 	void setWorkerUI(WorkerUI* workerImpl);
+	WorkerUI* getWorkerUI() { return m_worker_UI; }
 
 
 	void handleResponse(ownedMessageT& msg);
 
 	void onRegistrationSuccess();
 	void onRegistrationFail();
+
+	void onPasswordVerifySuccess();
+	void onPasswordVerifyFail();
+
+	void onCheckNewLoginSuccess(const std::string& packet);
+	void onCheckNewLoginFail();
 
 	void onAuthorizationSuccess();
 	void onAuthorizationFail();

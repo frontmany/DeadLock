@@ -156,7 +156,15 @@ void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelect
             chatComp->setSelected(false);
         }
     }
+
+    auto componentsVecIt = std::find_if(m_vec_chatComponents.begin(), m_vec_chatComponents.end(), [chat](ChatComponent* comp) {
+        return chat->getFriendLogin() == comp->getChat()->getFriendLogin();
+        });
     
+    if (componentsVecIt != m_vec_chatComponents.end()) {
+        return;
+    }
+
     ChatComponent* chatComponent = new ChatComponent(this, m_chatsWidget, chat);
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setTheme(theme);

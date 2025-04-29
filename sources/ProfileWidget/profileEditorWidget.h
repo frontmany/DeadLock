@@ -10,6 +10,7 @@
 class FieldsEditComponent;
 class ChatsListComponent;
 class PhotoEditComponent;
+class PasswordEditComponent;
 class Client;
 class Photo;
 enum  Theme;
@@ -22,10 +23,14 @@ public:
     void updateAvatar(const Photo& photo);
     void setTheme(Theme theme);
 
+    PasswordEditComponent* getPasswordEditComponent() { return m_password_edit_component; }
+    FieldsEditComponent* getFieldsEditComponent() { return m_fields_edit_component; }
+
 public slots:
     void onImagePicker();
     void setPhotoEditor();
     void setFieldsEditor();
+    void setPasswordEditor();
     void close();
     
 protected:
@@ -38,7 +43,9 @@ private:
     QVBoxLayout* m_mainVLayout;
     QHBoxLayout* m_mainHLayout;
 
+
     ChatsListComponent* m_chats_list_component = nullptr;
     FieldsEditComponent* m_fields_edit_component = nullptr;
     PhotoEditComponent* m_photo_edit_component = nullptr;
+    PasswordEditComponent* m_password_edit_component = nullptr;
 };
