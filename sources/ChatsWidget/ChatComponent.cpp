@@ -171,13 +171,14 @@ void ChatComponent::setName(const QString& name) {
 }
 
 void ChatComponent::setLastMessage(const QString& message) {
-    if (message.length() > 15) {
-        std::string s = message.toStdString().substr(0, 15) + "...";
-        m_lastMessageLabel->setText(QString::fromStdString(s));
+    QString cleanedMessage = message;
+    cleanedMessage.replace('\n', ' ');
+
+    if (cleanedMessage.length() > 15) {
+        cleanedMessage = cleanedMessage.left(15) + "...";
     }
-    else {
-        m_lastMessageLabel->setText(message);
-    }
+
+    m_lastMessageLabel->setText(cleanedMessage);
 }
 
 void ChatComponent::setAvatar(const QPixmap& avatar) {

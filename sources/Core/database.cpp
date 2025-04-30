@@ -159,9 +159,7 @@ void Database::saveMessages(const std::string& login, std::vector<Message*> mess
 }
 
 
-std::vector<Message*> Database::loadMessages(const std::string& login) const {
-    std::vector<Message*> messages;
-
+std::vector<Message*> Database::loadMessages(const std::string& login, std::vector<Message*>& messages) const {
     const char* sql = "SELECT MSGS FROM MESSAGES WHERE LOGIN = ?;";
     sqlite3_stmt* stmt = nullptr;
     int rc;

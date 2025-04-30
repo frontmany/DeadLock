@@ -17,7 +17,7 @@ QJsonObject Chat::serialize(const Database& db) const {
 Chat* Chat::deserialize(const QJsonObject& jsonObject, const Database& db) {
     Chat* chat = new Chat();
     chat->m_friend_login = jsonObject["friend_login"].toString().toStdString();
-    chat->m_vec_messages = db.loadMessages(chat->m_friend_login);
+    db.loadMessages(chat->m_friend_login, chat->m_vec_messages);
     chat->m_friend_name = jsonObject["friend_name"].toString().toStdString();
     chat->m_is_friend_has_photo = jsonObject["is_friend_has_photo"].toBool();
 

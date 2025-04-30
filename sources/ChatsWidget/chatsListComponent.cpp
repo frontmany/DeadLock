@@ -43,7 +43,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
     this->setMinimumSize(250, 300);
-    this->setMaximumSize(600, 3000);
+    this->setMaximumSize(740, 3000);
 
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);

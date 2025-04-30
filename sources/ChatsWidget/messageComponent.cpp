@@ -76,6 +76,10 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
     m_textLabel->setStyleSheet(style->labelStyleDarkMessage);
     m_textLabel->setText(text);
 
+
+
+
+
     m_text_VLayout = new QVBoxLayout;
     m_text_VLayout->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_text_VLayout->addSpacing(-3);
@@ -184,10 +188,11 @@ void InnerComponent::setTheme(Theme theme) {
 
 MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme theme)
     : QWidget(parent), m_theme(theme), m_id(QString::fromStdString(message->getId())), m_isSent(message->getIsSend()),
-    m_isRead(message->getIsRead()) {
+    m_isRead(message->getIsRead()) 
+{
     m_innerWidget = new InnerComponent(this, QString::fromStdString(message->getTimestamp()), QString::fromStdString(message->getMessage()), m_theme, m_isSent);
     this->setStyleSheet("background-color: transparent;");
-  
+
     m_main_HLayout = new QHBoxLayout(this);
     if (m_isSent){
         m_main_HLayout->setAlignment(Qt::AlignRight);
@@ -195,9 +200,14 @@ MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme them
     else {
         m_main_HLayout->setAlignment(Qt::AlignLeft);
     }
+
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
     m_main_HLayout->addWidget(m_innerWidget);
     m_main_HLayout->addSpacing(5);
     m_main_HLayout->setContentsMargins(5, 5, 5, 5);
+    m_main_HLayout->setSizeConstraint(QLayout::SetMaximumSize);
+
 
    
     setLayout(m_main_HLayout);

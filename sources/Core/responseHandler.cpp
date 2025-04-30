@@ -215,8 +215,10 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
         }
         else {
             message += line;
+            message += '\n';
         }
     }
+    message.pop_back();
 
     std::string id;
     std::getline(iss, id);

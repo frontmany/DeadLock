@@ -10,6 +10,7 @@
 #include <QScrollArea>
 #include <QCoreApplication>
 #include <QPainter>
+#include <QMimeData>
 #include <string>
 #include <QKeyEvent>
 #include <vector>
@@ -39,23 +40,64 @@ class MyTextEdit : public QTextEdit
 {
     Q_OBJECT
 public:
-    MyTextEdit(QWidget* parent) : QTextEdit(parent), m_max_length(100) {}
+    MyTextEdit(QWidget* parent = nullptr) : QTextEdit(parent), m_max_length(8192)
+    {
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    }
+
     void setMaxLength(int max_length) {
         m_max_length = max_length;
+    }
+
+    int maxLength() const {
+        return m_max_length;
     }
 
 protected:
     void keyPressEvent(QKeyEvent* event) override
     {
+        if ((event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
+            (event->modifiers() & Qt::ShiftModifier))
+        {
+            QTextEdit::keyPressEvent(event); 
+            return;
+        }
+
         if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
             emit enterPressed();
             return;
         }
+
+        if (toPlainText().length() >= m_max_length &&
+            !event->text().isEmpty() &&
+            !(event->modifiers() & Qt::ControlModifier) &&
+            event->key() != Qt::Key_Backspace &&
+            event->key() != Qt::Key_Delete)
+        {
+            return;
+        }
+
         QTextEdit::keyPressEvent(event);
     }
-    
+
+    void insertFromMimeData(const QMimeData* source) override
+    {
+        QString text = source->text();
+        if (toPlainText().length() + text.length() > m_max_length) {
+            int allowed = m_max_length - toPlainText().length();
+            if (allowed > 0) {
+                QString clippedText = text.left(allowed);
+                QTextEdit::insertPlainText(clippedText);
+            }
+            return;
+        }
+        QTextEdit::insertFromMimeData(source);
+    }
+
 private:
-    int m_max_length = 0;
+    int m_max_length;
+
 signals:
     void enterPressed();
 };
@@ -93,7 +135,10 @@ private slots:
 
 protected:
     void paintEvent(QPaintEvent* event) override;
+ 
 
+private:
+    void updateRelatedChatComponentLastMessage();
 
 private:
     StyleMessagingAreaComponent*    style;

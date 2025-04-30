@@ -1,6 +1,7 @@
 #include "MessagingAreaComponent.h"
 #include "chatHeaderComponent.h"
 #include "messageComponent.h"
+#include "chatsListComponent.h"
 #include "chatsWidget.h"
 #include "utility.h"
 #include "mainWindow.h"
@@ -237,6 +238,16 @@ void MessagingAreaComponent::onSendMessageClicked() {
         return;
     }
 
+    msg.erase(0, msg.find_first_not_of(' '));
+    msg.erase(msg.find_last_not_of(' ') + 1);
+
+    size_t spaceCount = std::count(msg.begin(), msg.end(), ' ');
+    if (spaceCount > 1 && msg.length() > 18) {
+        msg += '\n';  
+    }
+
+    updateRelatedChatComponentLastMessage();
+
     Message* message = new Message(msg, utility::getTimeStamp(), utility::generateId(), true, false);
     addMessage(message);
     m_containerWidget->adjustSize();
@@ -248,9 +259,26 @@ void MessagingAreaComponent::onSendMessageClicked() {
     moveSliderDown();
 }
 
+void MessagingAreaComponent::updateRelatedChatComponentLastMessage() {
+    ChatsListComponent* comp = m_chatsWidget->getChatsList();
+    std::vector<ChatComponent*> chatCompVec = comp->getChatComponentsVec();
+    auto it = std::find_if(chatCompVec.begin(), chatCompVec.end(), [this](ChatComponent* chatComp) {
+        return chatComp->getChat()->getFriendLogin() == m_chat->getFriendLogin();
+        });
+
+    if (it != chatCompVec.end()) {
+        ChatComponent* relatedComp = *it;
+        relatedComp->setLastMessage(m_messageInputEdit->toPlainText());
+    }
+
+    m_chat->setLastReceivedOrSentMessage((m_messageInputEdit->toPlainText().toStdString()));
+}
+
+
 
 void MessagingAreaComponent::onTypeMessage() {
-    if (m_messageInputEdit->toPlainText() == "") {
+    QString text = m_messageInputEdit->toPlainText();
+    if (text == "") {
         m_sendMessageButton->hide();
     }
     else {

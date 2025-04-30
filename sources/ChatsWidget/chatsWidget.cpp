@@ -146,7 +146,7 @@ void ChatsWidget::restoreMessagingAreaComponents() {
     for (auto& chatPair : m_client->getMyChatsMap()) {
         MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
         area->hide();
-         m_vec_messaging_components.push_back(area);
+        m_vec_messaging_components.push_back(area);
     }
 }
 

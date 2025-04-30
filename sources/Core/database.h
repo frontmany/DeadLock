@@ -29,7 +29,7 @@ public:
 	Database() = default;
 	void init();
 	void saveMessages(const std::string& login, std::vector<Message*> messages) const;
-	std::vector<Message*> loadMessages(const std::string& login) const ;
+	std::vector<Message*> loadMessages(const std::string& login, std::vector<Message*>& messages) const ;
 
 private:
 	std::string friendsToString(const std::vector<std::string>& friends);
