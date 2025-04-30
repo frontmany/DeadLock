@@ -5,8 +5,10 @@
 #include <QTextEdit>
 #include <QLabel>
 #include <QDebug>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QScrollArea>
+#include <QCoreApplication>
 #include <QPainter>
 #include <string>
 #include <QKeyEvent>
@@ -63,8 +65,10 @@ class MessagingAreaComponent : public QWidget {
 
 public:
     MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget);
+    ~MessagingAreaComponent();
+
     void setTheme(Theme theme);
-    
+    QScrollArea* getScrollArea() { return m_scrollArea; }
 
     ChatHeaderComponent* getChatHeader() { return m_header; }
     std::vector<MessageComponent*>& getMessagesComponentsVec() { return m_vec_messagesComponents; }
@@ -80,6 +84,7 @@ public slots:
     void setAvatar(const QPixmap& pixMap);
     void setName(const QString& name);
     void markMessageAsChecked(Message* message);
+    void moveSliderDown(bool isCalledFromWorker = false);
 
 private slots:
     void adjustTextEditHeight();

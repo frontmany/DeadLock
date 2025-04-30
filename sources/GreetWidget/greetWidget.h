@@ -23,109 +23,18 @@
 
 
 struct StyleGreetWidget {
-    QString buttonStyleGray = R"(
-            QPushButton {
-                background-color: rgb(145, 145, 145); 
-                color: rgb(255, 255, 255);   
-                border: none;                  
-                padding: 5px 10px;   
-                border-radius: 5px;           
-                font-family: 'Arial';          
-                font-size: 20px;               
-            }
-            QPushButton:hover {
-                color: rgb(255, 255, 255);     
-                background-color: rgb( 173, 173, 173 ); 
-            }
-            QPushButton:pressed {
-                background-color: rgb( 173, 173, 173 ); 
-                color: rgb(255, 255, 255);                  
-            }
-        )";
+    StyleGreetWidget();
 
-    QString buttonSkipStyle = R"(
-            QPushButton {
-                background-color: transparent;     
-                color: rgb(153, 150, 150);              
-                border: none;        
-                border-radius: 5px;             
-                padding: 5px 10px;              
-                font-family: 'Arial';            
-                font-size: 14px;                 
-            }
-            QPushButton:hover {
-                color: rgb(26, 133, 255);      
-            }
-            QPushButton:pressed {
-                color: rgb(26, 133, 255);      
-            }
-        )";
+    QString buttonStyleGray;
 
-    QString DarkButtonStyle = R"(
-    QPushButton {
-        background-color: rgb(21, 119, 232);   
-        color: white;             
-        border: none;   
-        border-radius: 28px;       
-        padding: 5px 10px;        
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-    )";
+    QString DarkbuttonSkipStyle;
+    QString LightButtonSkipStyle;
 
-    QString DarkSliderStyle = R"(
-QSlider::groove:horizontal {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
-    height: 8px; /* Высота полосы */
-    border-radius: 4px; /* Закругление углов полосы */
-}
+    QString DarkButtonStyle;
+    QString LightButtonStyle;
 
-QSlider::handle:horizontal {
-    background-color: white; /* Цвет ручки */
-    width: 16px; /* Ширина ручки */
-    height: 16px; /* Высота ручки */
-    border-radius: 8px; /* Круглая форма ручки */
-    margin: -4px 0; /* Смещение ручки относительно полосы */
-}
-
-QSlider::add-page:horizontal {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
-
-QSlider::sub-page:horizontal {
-    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
-
-QSlider::groove:vertical {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
-    width: 8px; /* Ширина полосы */
-    border-radius: 4px; /* Закругление углов полосы */
-}
-
-QSlider::handle:vertical {
-    background-color: white; /* Цвет ручки */
-    width: 16px; /* Ширина ручки */
-    height: 16px; /* Высота ручки */
-    border-radius: 8px; /* Круглая форма ручки */
-    margin: 0 -4px; /* Смещение ручки относительно полосы */
-}
-
-QSlider::add-page:vertical {
-    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
-
-QSlider::sub-page:vertical {
-    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-    border-radius: 4px; /* Закругление углов */
-}
-)";
+    QString DarkSliderStyle;
+    QString LightSliderStyle;
 
 };
 
@@ -144,6 +53,7 @@ public:
     void setBackGround(Theme theme);
     void setName(const std::string& name);
     void setLogin(const std::string& login);
+    void setTheme(Theme theme);
 
 protected:
     void wheelEvent(QWheelEvent* event) override; 
@@ -186,8 +96,10 @@ private:
     QSlider*        m_cropXSlider;
     QSlider*        m_cropYSlider;
     
-    QVBoxLayout* m_containerLayout;
+    QVBoxLayout*    m_containerLayout;
     QWidget*        m_container;
+
+    Theme           m_theme;
 
     int m_cropX;
     int m_cropY;

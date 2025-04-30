@@ -16,8 +16,8 @@ void AvatarIcon::paintEvent(QPaintEvent* event)
         QRadialGradient gradient(circleRect.center(), circleRect.width() / 1.5);
         if (m_theme == Theme::LIGHT) {
             gradient.setColorAt(0, QColor(63, 139, 252, 150)); // Ярче и менее прозрачный в центре
-            gradient.setColorAt(0.7, QColor(63, 139, 252, 50)); // Плавнее спад прозрачности
-            gradient.setColorAt(1, QColor(63, 139, 252, 0));   // Полностью прозрачный на краях
+            gradient.setColorAt(0.7, QColor(127, 179, 255, 50)); // Плавнее спад прозрачности
+            gradient.setColorAt(1, QColor(189, 215, 255, 0));   // Полностью прозрачный на краях
         }
         else {
             gradient.setColorAt(0, QColor(255, 255, 255, 150)); // Ярче и менее прозрачный в центре
@@ -49,6 +49,10 @@ void AvatarIcon::paintEvent(QPaintEvent* event)
     }
 }
 
+void AvatarIcon::setTheme(Theme theme) {
+    m_theme = theme;
+    update();
+}
 
 ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
     : QWidget(parent), m_isChecked(false), m_radius(20), m_indicatorX(5) {

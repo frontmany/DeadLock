@@ -18,67 +18,13 @@
 
 
 struct StyleInnerComponent {
-    QString labelStyleDarkMessage = R"(
-    QLabel {
-        background-color: transparent; 
-        color: rgb(240, 240, 240); 
-        font-family: 'Segoe UI'; 
-        font-size: 14px; 
-        font-weight: normal;
-        padding: 10px; 
-        border: none; 
-        border-radius: 20px; 
-    }
-)";
+    StyleInnerComponent();
 
-    QString labelStyleLightMessage = R"(
-    QLabel {
-        background-color: transparent; 
-        color: rgb(52, 52, 52); 
-        font-family: 'Segoe UI'; 
-        font-size: 14px; 
-        font-weight: normal;
-        padding: 10px; 
-        border: none; 
-        border-radius: 20px; 
-    }
-)";
+    QString labelStyleDarkMessage;
+    QString labelStyleLightMessage;
 
-    QString labelStyleDarkTime = R"(
-    QLabel {
-        background-color: transparent; 
-        color: rgb(219, 219, 219); 
-        font-family: 'Segoe UI'; 
-        font-size: 13px; 
-        padding: 10px; 
-        border: none; 
-        border-radius: 20px; 
-    }
-)";
-
-    QString labelStyleLightTime = R"(
-    QLabel {
-        background-color: transparent; 
-        color: rgb(153, 153, 153); 
-        font-family: 'Segoe UI'; 
-        font-size: 13px; 
-        padding: 10px; 
-        border: none; 
-        border-radius: 20px; 
-    }
-)";
-
-    QString labelStyleLight = R"(
-    QLabel {
-        background-color: transparent; 
-        color: rgb(38, 38, 38); 
-        font-family: 'Segoe UI'; 
-        font-size: 14px; 
-        padding: 10px; 
-        border: none; 
-        border-radius: 20px; 
-    }
-)";
+    QString labelStyleDarkTime;
+    QString labelStyleLightTime;
 };
 
 
@@ -90,6 +36,8 @@ enum Theme;
 class InnerComponent : public QWidget {
 public:
     InnerComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, bool isSent);
+    ~InnerComponent();
+
     void setTheme(Theme theme);
 
     void setText(const QString& text) { m_textLabel->setText(text); }
@@ -127,8 +75,9 @@ class MessageComponent : public QWidget {
 
 public:
     explicit MessageComponent(QWidget* parent, Message* message, Theme theme);
-    void setTheme(Theme theme) { m_innerWidget->setTheme(theme);
-    }
+    ~MessageComponent();
+
+    void setTheme(Theme theme) { m_innerWidget->setTheme(theme);}
 
     void setMessage(const QString& message) { m_innerWidget->setText(message); }
     const QString& getMessage() const{ return m_innerWidget->getText(); }
@@ -145,11 +94,7 @@ public:
     const QString& getId() const { return m_id; }
 
 public slots:
-    void setIsRead(bool isRead) {
-        m_innerWidget->setIsRead(isRead);
-        m_innerWidget->setReadStatus(isRead);
-        m_isRead = isRead;
-    }
+    void setIsRead(bool isRead);
 
 private:
     Theme m_theme;

@@ -69,6 +69,7 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         m_current_messagingAreaComponent->show();
         m_current_messagingAreaComponent->setTheme(m_theme);
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
+        m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->setValue(m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->maximum());
 
         auto unreadVec = chat->getUnreadReceiveMessagesVec();
         if (unreadVec.size() > 0) {

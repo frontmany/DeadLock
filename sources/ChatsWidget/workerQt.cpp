@@ -143,11 +143,14 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 	}
 
 	ChatComponent* chatComp = *it;
+	if (chatComp->getChat()->getLayoutIndex() != 0){
+		QMetaObject::invokeMethod(chatsList,
+			"popUpComponent",
+			Qt::QueuedConnection,
+			Q_ARG(ChatComponent*, chatComp));
+	}
 
-	QMetaObject::invokeMethod(chatsList,
-		"popUpComponent",
-		Qt::QueuedConnection,
-		Q_ARG(ChatComponent*, chatComp));
+	
 
 	QMetaObject::invokeMethod(chatComp,
 		"setLastMessage",
@@ -187,6 +190,17 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 			"markMessageAsChecked",
 			Qt::QueuedConnection,
 			Q_ARG(Message*, message));
+
+
+		if (!message->getIsSend() &&
+			qAbs(areaComp->getScrollArea()->verticalScrollBar()->value() -
+				areaComp->getScrollArea()->verticalScrollBar()->maximum()) < 15) {
+
+			QMetaObject::invokeMethod(areaComp,
+				"moveSliderDown",
+				Qt::QueuedConnection,
+				Q_ARG(bool, true));
+		}
 	}
 }
 

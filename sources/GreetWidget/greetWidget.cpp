@@ -7,7 +7,222 @@
 #include "packetsBuilder.h"
 #include "chatsListComponent.h"
 
+StyleGreetWidget::StyleGreetWidget(){
+    buttonStyleGray = R"(
+        QPushButton {
+            background-color: rgb(145, 145, 145); 
+            color: rgb(255, 255, 255);   
+            border: none;                  
+            padding: 5px 10px;   
+            border-radius: 5px;           
+            font-family: 'Arial';          
+            font-size: 20px;               
+        }
+        QPushButton:hover {
+            color: rgb(255, 255, 255);     
+            background-color: rgb( 173, 173, 173 ); 
+        }
+        QPushButton:pressed {
+            background-color: rgb( 173, 173, 173 ); 
+            color: rgb(255, 255, 255);                  
+        }
+        )";
 
+    DarkbuttonSkipStyle = R"(
+        QPushButton {
+            background-color: transparent;     
+            color: rgb(153, 150, 150);              
+            border: none;        
+            border-radius: 5px;             
+            padding: 5px 10px;              
+            font-family: 'Arial';            
+            font-size: 14px;                 
+        }
+        QPushButton:hover {
+            color: rgb(26, 133, 255);      
+        }
+        QPushButton:pressed {
+            color: rgb(26, 133, 255);      
+        }
+        )";
+
+    LightButtonSkipStyle = R"(
+        QPushButton {
+            background-color: transparent;     
+            color: rgb(229, 229, 229);              
+            border: none;        
+            border-radius: 5px;             
+            padding: 5px 10px;              
+            font-family: 'Arial';            
+            font-size: 14px;                 
+        }
+        QPushButton:hover {
+            color: rgb(26, 133, 255);      
+        }
+        QPushButton:pressed {
+            color: rgb(26, 133, 255);      
+        }
+        )";
+
+    DarkButtonStyle = R"(
+        QPushButton {
+            background-color: rgb(21, 119, 232);   
+            color: white;             
+            border: none;   
+            border-radius: 28px;       
+            padding: 5px 10px;        
+        }
+        QPushButton:hover {
+            background-color: rgb(26, 133, 255);   
+        }
+        QPushButton:pressed {
+            background-color: rgb(26, 133, 255);      
+        }
+        )";
+
+    LightButtonStyle = R"(
+        QPushButton {
+            background-color: rgb(26, 133, 255);   
+            color: white;             
+            border: none;   
+            border-radius: 28px;       
+            padding: 5px 10px;        
+        }
+        QPushButton:hover {
+            background-color: rgb(21, 119, 232);   
+        }
+        QPushButton:pressed {
+            background-color: rgb(21, 119, 232);      
+        }
+        )";
+
+
+    DarkSliderStyle = R"(
+        QSlider::groove:horizontal {
+            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
+            height: 8px; /* Высота полосы */
+            border-radius: 4px; /* Закругление углов полосы */
+        }
+
+        QSlider::handle:horizontal {
+            background-color: white; /* Цвет ручки */
+            width: 16px; /* Ширина ручки */
+            height: 16px; /* Высота ручки */
+            border-radius: 8px; /* Круглая форма ручки */
+            margin: -4px 0; /* Смещение ручки относительно полосы */
+        }
+
+        QSlider::add-page:horizontal {
+            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+
+        QSlider::sub-page:horizontal {
+            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+
+        QSlider::groove:vertical {
+            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
+            width: 8px; /* Ширина полосы */
+            border-radius: 4px; /* Закругление углов полосы */
+        }
+
+        QSlider::handle:vertical {
+            background-color: white; /* Цвет ручки */
+            width: 16px; /* Ширина ручки */
+            height: 16px; /* Высота ручки */
+            border-radius: 8px; /* Круглая форма ручки */
+            margin: 0 -4px; /* Смещение ручки относительно полосы */
+        }
+
+        QSlider::add-page:vertical {
+            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+
+        QSlider::sub-page:vertical {
+            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+        )";
+
+
+    LightSliderStyle = R"(
+        QSlider::groove:horizontal {
+            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет полосы */
+            height: 8px; /* Высота полосы */
+            border-radius: 4px; /* Закругление углов полосы */
+        }
+
+        QSlider::handle:horizontal {
+            background-color: white; /* Цвет ручки */
+            width: 16px; /* Ширина ручки */
+            height: 16px; /* Высота ручки */
+            border-radius: 8px; /* Круглая форма ручки */
+            margin: -4px 0; /* Смещение ручки относительно полосы */
+        }
+
+        QSlider::add-page:horizontal {
+            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет заполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+
+        QSlider::sub-page:horizontal {
+            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+
+        QSlider::groove:vertical {
+            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет полосы */
+            width: 8px; /* Ширина полосы */
+            border-radius: 4px; /* Закругление углов полосы */
+        }
+
+        QSlider::handle:vertical {
+            background-color: white; /* Цвет ручки */
+            width: 16px; /* Ширина ручки */
+            height: 16px; /* Высота ручки */
+            border-radius: 8px; /* Круглая форма ручки */
+            margin: 0 -4px; /* Смещение ручки относительно полосы */
+        }
+
+        QSlider::add-page:vertical {
+            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет заполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+
+        QSlider::sub-page:vertical {
+            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+            border-radius: 4px; /* Закругление углов */
+        }
+        )";
+
+};
+
+void GreetWidget::setTheme(Theme theme) {
+    if (m_theme == Theme::DARK) {
+        m_welcomeLabel->setStyleSheet("font-size: 42px; font-weight: bold; color: white;");
+        m_skipButton->setStyleSheet(m_style->DarkbuttonSkipStyle);
+
+        m_selectImageButton->setStyleSheet(m_style->DarkButtonStyle);
+        m_continueButton->setStyleSheet(m_style->DarkButtonStyle);
+
+        m_cropXSlider->setStyleSheet(m_style->DarkSliderStyle);
+        m_cropYSlider->setStyleSheet(m_style->DarkSliderStyle);
+    }
+    else {
+        m_welcomeLabel->setStyleSheet("font-size: 42px; font-weight: bold; color: white;");
+        m_skipButton->setStyleSheet(m_style->LightButtonSkipStyle);
+
+        m_selectImageButton->setStyleSheet(m_style->LightButtonStyle);
+        m_continueButton->setStyleSheet(m_style->LightButtonStyle);
+
+        m_cropXSlider->setStyleSheet(m_style->LightSliderStyle);
+        m_cropYSlider->setStyleSheet(m_style->LightSliderStyle);
+    }
+    
+}
 
 qreal getQtScaleFactor() {
     QScreen* screen = QApplication::primaryScreen();
@@ -20,9 +235,9 @@ int getQtZoomPercent() {
 
 GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv)
     : QWidget(parent), m_client(client), m_style(new StyleGreetWidget()),
-    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv) {
+    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv), m_theme(theme) {
 
-    setBackGround(theme);
+    setBackGround(m_theme);
 
     m_sender = new PacketsBuilder();
 
@@ -32,7 +247,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     QString welcomeStr = "Welcome " + QString::fromStdString(login) + "!";
     m_welcomeLabel = new QLabel(welcomeStr, this);
     m_welcomeLabel->setAlignment(Qt::AlignCenter);
-    m_welcomeLabel->setStyleSheet("font-size: 42px; font-weight: bold;");
+    
 
     m_greetLabelLayout = new QHBoxLayout();
     m_greetLabelLayout->setAlignment(Qt::AlignCenter);
@@ -40,7 +255,6 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_greetLabelLayout->addWidget(m_welcomeLabel);
 
     m_skipButton = new QPushButton("skip", this);
-    m_skipButton->setStyleSheet(m_style->buttonSkipStyle);
     m_skipButton->setMinimumSize(100, 60);
     m_skipButton->setMaximumSize(350, 60);
     connect(m_skipButton, &QPushButton::clicked, this, [this]() {
@@ -70,11 +284,9 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_selectImageButton = new QPushButton("Choose a photo", this);
     m_selectImageButton->setMinimumSize(200, 60);
     m_selectImageButton->setMaximumSize(200, 60);
-    m_selectImageButton->setStyleSheet(m_style->DarkButtonStyle);
     connect(m_selectImageButton, &QPushButton::clicked, this, &GreetWidget::openImagePicker);
 
     m_continueButton = new QPushButton("Continue", this);
-    m_continueButton->setStyleSheet(m_style->DarkButtonStyle);
     m_continueButton->setEnabled(false);
     m_continueButton->setMinimumSize(200, 60);
     m_continueButton->setMaximumSize(350, 60);
@@ -140,7 +352,6 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
         });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
-    m_cropXSlider->setStyleSheet(m_style->DarkSliderStyle);
     m_cropXSlider->setFixedSize(400, 20);
     m_cropXSlider->hide();
     m_cropXSlider->setRange(0, 500);
@@ -154,14 +365,14 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
 
     m_cropYSlider = new QSlider(Qt::Vertical, this);
-    m_cropYSlider->setRange(0, 330);
-    m_cropYSlider->setStyleSheet(m_style->DarkSliderStyle);
-    m_cropYSlider->setInvertedAppearance(true);
-    m_cropYSlider->setValue(m_cropY);
-   
-    m_cropYSlider->setFixedSize(20, 330);
-    connect(m_cropYSlider, &QSlider::valueChanged, this, &GreetWidget::adjustCropArea);
+    m_cropYSlider->setFixedSize(20, 400);
     m_cropYSlider->hide();
+    m_cropYSlider->setRange(0, 500);
+    m_cropYSlider->setValue(m_cropY);
+    m_cropYSlider->setInvertedAppearance(true);
+    connect(m_cropYSlider, &QSlider::valueChanged, this, &GreetWidget::adjustCropArea);
+
+
     m_buttonsHLayout = new QHBoxLayout();
     m_buttonsHLayout->setAlignment(Qt::AlignCenter);
     m_buttonsHLayout->addWidget(m_selectImageButton);
@@ -207,6 +418,8 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
     setLayout(m_containerLayout);
     setMouseTracking(true);
+
+    setTheme(m_theme);
 }
 
 void GreetWidget::startWelcomeAnimation() {
@@ -222,7 +435,7 @@ void GreetWidget::startWelcomeAnimation() {
 }
 
 void GreetWidget::openImagePicker() {
-    QString imagePath = QFileDialog::getOpenFileName(this, "Выберите фото", "", "Images (*.png *.jpg *.jpeg)");
+    QString imagePath = QFileDialog::getOpenFileName(this, "Choose Photo", "", "Images (*.png *.jpg *.jpeg)");
     if (!imagePath.isEmpty()) {
         m_selectedImage.load(imagePath);
 
@@ -428,7 +641,15 @@ void GreetWidget::paintEvent(QPaintEvent* event) {
     painter.save();
     painter.setClipPath(roundedRectPath);
     painter.setOpacity(0.7); // Прозрачность
-    painter.fillPath(roundedRectPath, QColor(26, 26, 26, 200)); // Цвет прямоугольника
+
+    if (m_theme == Theme::DARK) {
+        painter.fillPath(roundedRectPath, QColor(26, 26, 26, 200)); // Цвет прямоугольника
+
+    }
+    else {
+        painter.fillPath(roundedRectPath, QColor(150, 150, 150, 200)); // Цвет прямоугольника
+
+    }
     painter.restore();
 }
 

@@ -38,17 +38,17 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
 
     LightButtonStyle = R"(
     QPushButton {
-        background-color: rgb(21, 119, 232);    
+        background-color: rgb(26, 133, 255);
         color: white;                
         border: none;      
         border-radius: 5px;          
         padding: 5px 10px;           
     }
     QPushButton:hover {
-        background-color: rgb(26, 133, 255);     
+        background-color: rgb(21, 119, 232);     
     }
     QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
+        background-color: rgb(21, 119, 232);      
     }
 )";
 
@@ -71,7 +71,7 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
     QLineEdit {
         background-color: #ffffff;
         color: black;
-        border: 1px solid #e0e0e0;
+        border: 2px solid #ff4444;
         border-radius: 5px;
         padding: 5px;
     }
@@ -80,15 +80,7 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
         background-color: #fff8f8;   /* —легка красноватый фон */
     }
     QLineEdit:hover {
-        border: 1px solid #c0c0c0;
-    }
-    QLineEdit:disabled {
-        background-color: #f5f5f5;
-        color: #a0a0a0;
-        border: 1px solid #eaeaea;
-    }
-    QLineEdit:invalid {
-        border: 2px solid #ff9999;  /* ћ€гкий красный дл€ невалидных */
+        border: 2px solid #ff4444;
     }
 )";
 
@@ -97,19 +89,15 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
     QLineEdit {
         background-color: #333;
         color: white;
-        border: none;
+        border: rgb(255, 66, 66);
         border-radius: 5px;
         padding: 5px;
     }
     QLineEdit:focus {
-        border: 2px solid red;
+        border: 2px solid rgb(255, 66, 66);
     }
     QLineEdit:hover {
-        border: 1px solid #555;
-    }
-    QLineEdit:disabled {
-        background-color: #222;
-        color: #777;
+        border: 2px solid rgb(255, 66, 66);
     }
 )";
 }

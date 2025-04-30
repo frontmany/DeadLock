@@ -42,15 +42,15 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
-    this->setMinimumSize(200, 300);
-    this->setMaximumSize(800, 3000);
+    this->setMinimumSize(250, 300);
+    this->setMaximumSize(600, 3000);
 
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
     m_profileHLayout->setAlignment(Qt::AlignLeft);
 
 
-    m_profileButton = new AvatarIcon(this, 0, 0, 32, true);
+    m_profileButton = new AvatarIcon(this, 0, 0, 32, true, m_theme);
     QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
     m_profileButton->setIcon(avatarIcon);
     m_profileHLayout->addWidget(m_profileButton);
@@ -207,6 +207,7 @@ ChatsWidget* ChatsListComponent::getChatsWidget() const {
 void ChatsListComponent::setTheme(Theme theme) {
     m_theme = theme;
     m_darkModeSwitch->setTheme(m_theme);
+    m_profileButton->setTheme(m_theme);
     if (m_profile_editor_widget != nullptr) {
         m_profile_editor_widget->setTheme(theme);
     }

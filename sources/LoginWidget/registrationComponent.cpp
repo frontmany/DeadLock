@@ -22,17 +22,17 @@ StyleRegistrationComponent::StyleRegistrationComponent() {
 
     LightButtonStyle = R"(
     QPushButton {
-        background-color: rgb(21, 119, 232);    
+        background-color: rgb(26, 133, 255);    
         color: white;                
         border: none;      
         border-radius: 5px;          
         padding: 5px 10px;           
     }
     QPushButton:hover {
-        background-color: rgb(26, 133, 255);     
+        background-color: rgb(21, 119, 232);     
     }
     QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
+        background-color: rgb(21, 119, 232);      
     }
 )";
 

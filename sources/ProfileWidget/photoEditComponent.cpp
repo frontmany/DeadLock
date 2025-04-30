@@ -140,7 +140,7 @@ void PhotoEditComponent::openImagePicker() {
     setFixedHeight(700);
     m_profile_editor_widget->onImagePicker();
 
-    QString imagePath = QFileDialog::getOpenFileName(this, "Выберите фото", "", "Images (*.png *.jpg *.jpeg)");
+    QString imagePath = QFileDialog::getOpenFileName(this, "Choose Photo", "", "Images (*.png *.jpg *.jpeg)");
     if (!imagePath.isEmpty()) {
         m_selectedImage.load(imagePath);
         m_selectedImage = m_selectedImage.scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation);

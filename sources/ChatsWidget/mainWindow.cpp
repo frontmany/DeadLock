@@ -72,20 +72,18 @@ LoginWidget* MainWindow::getLoginWidget() {
 }
 
 void MainWindow::updateRegistrationUIRedBorder() {
-    LoginWidget* loginWidget = getLoginWidget();
-    RegistrationComponent* registrationComponent = loginWidget->getRegistrationComponent();
+    RegistrationComponent* registrationComponent = m_loginWidget->getRegistrationComponent();
     registrationComponent->setRedBorderToLoginEdit();
     registrationComponent->setRedBorderToNameEdit();
     registrationComponent->setRedBorderToPasswordEdits();
 }
 
 void MainWindow::updateAuthorizationUIRedBorder() {
-    if (auto loginWidget = getLoginWidget()) {
-        if (auto authorizationComponent = loginWidget->getAuthorizationComponent()) {
-            authorizationComponent->setRedBorderToLoginEdit();
-            authorizationComponent->setRedBorderToPasswordEdit();
-        }
+    if (auto authorizationComponent = m_loginWidget->getAuthorizationComponent()) {
+        authorizationComponent->setRedBorderToLoginEdit();
+        authorizationComponent->setRedBorderToPasswordEdit();
     }
+    
 }
 
 ChatsWidget* MainWindow::getChatsWidget() {

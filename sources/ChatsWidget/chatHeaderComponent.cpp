@@ -22,7 +22,7 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
 
     m_mainLayout = new QHBoxLayout(this);
 
-    m_leftIcon = new AvatarIcon(this, 0, 0, 32, true);
+    m_leftIcon = new AvatarIcon(this, 0, 0, 32, true, m_theme);
     if (avatar.isNull()) {
         QIcon icon(":/resources/ChatsWidget/userFriend.png");
         m_leftIcon->setIcon(icon);
@@ -113,6 +113,7 @@ void ChatHeaderComponent::setLastSeen(const QString& lastSeen) {
 
 void ChatHeaderComponent::setTheme(Theme theme) {
     m_theme = theme;
+    m_leftIcon->setTheme(m_theme);
     if (m_theme == DARK) {
         m_backColor = QColor(36, 36, 36);
         m_rightButton->setTheme(m_theme);

@@ -162,6 +162,25 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     for (auto message : m_chat->getMessagesVec()) {
         addMessage(message);
     }
+
+    
+}
+
+MessagingAreaComponent::~MessagingAreaComponent() {
+    for (auto* messageComponent : m_vec_messagesComponents) {
+        delete messageComponent;
+    }
+    m_vec_messagesComponents.clear();
+
+    delete m_messageInputEdit;
+    delete m_header;
+    delete m_sendMessageButton;
+    delete m_containerWidget;
+
+    delete m_scrollArea;
+    delete m_main_VLayout;
+    delete m_sendMessage_VLayout;
+    delete style;
 }
 
 void MessagingAreaComponent::setAvatar(const QPixmap& pixMap) {
@@ -213,15 +232,20 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
 
 
 void MessagingAreaComponent::onSendMessageClicked() {
-    Message* message = new Message(m_messageInputEdit->toPlainText().toStdString(), utility::getTimeStamp(), utility::generateId(), true, false);
+    std::string msg = m_messageInputEdit->toPlainText().toStdString();
+    if (msg.find_first_not_of(' ') == std::string::npos) {
+        return;
+    }
+
+    Message* message = new Message(msg, utility::getTimeStamp(), utility::generateId(), true, false);
     addMessage(message);
     m_containerWidget->adjustSize();
-    m_scrollArea->verticalScrollBar()->setValue(m_scrollArea->verticalScrollBar()->maximum());
     onTypeMessage();
     QString s = m_messageInputEdit->toPlainText();
     m_messageInputEdit->setText("");
     emit sendMessageData(message, m_chat);
 
+    moveSliderDown();
 }
 
 
@@ -245,9 +269,23 @@ void MessagingAreaComponent::addMessage(Message* message) {
             messageComp->setIsRead(false);
         }
     }
-    
+
     m_vec_messagesComponents.push_back(messageComp);
     m_containerVLayout->addWidget(messageComp);
+}
+
+void MessagingAreaComponent::moveSliderDown(bool isCalledFromWorker) {
+
+    if (isCalledFromWorker) {
+        QCoreApplication::processEvents();
+    }
+
+    QTimer::singleShot(0, this, [this]() {
+        if (m_containerWidget->layout()->count() > 0) {
+            QWidget *lastMessage = m_containerWidget->layout()->itemAt(m_containerWidget->layout()->count() - 1)->widget();
+            m_scrollArea->ensureWidgetVisible(lastMessage);
+        }
+    });
 }
 
 void MessagingAreaComponent::markMessageAsChecked(Message* message) {
