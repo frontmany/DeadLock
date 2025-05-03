@@ -27,7 +27,6 @@ public:
     FieldsEditComponent* getFieldsEditComponent() { return m_fields_edit_component; }
 
 public slots:
-    void onImagePicker();
     void setPhotoEditor();
     void setFieldsEditor();
     void setPasswordEditor();

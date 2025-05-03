@@ -50,30 +50,6 @@ StyleRegistrationComponent::StyleRegistrationComponent() {
     }
 )";
 
-    LightLineEditStyleRedBorder = R"(
-    QLineEdit {
-        background-color: #ffffff;
-        color: black;
-        border: 1px solid #e0e0e0;
-        border-radius: 5px;
-        padding: 5px;
-    }
-    QLineEdit:focus {
-        border: 2px solid #ff4444;  /* ярко-красный при фокусе */
-        background-color: #fff8f8;   /* —легка красноватый фон */
-    }
-    QLineEdit:hover {
-        border: 1px solid #c0c0c0;
-    }
-    QLineEdit:disabled {
-        background-color: #f5f5f5;
-        color: #a0a0a0;
-        border: 1px solid #eaeaea;
-    }
-    QLineEdit:invalid {
-        border: 2px solid #ff9999;  /* ћ€гкий красный дл€ невалидных */
-    }
-)";
 
     DarkLineEditStyle = R"(
     QLineEdit {
@@ -88,23 +64,36 @@ StyleRegistrationComponent::StyleRegistrationComponent() {
     }
 )";
 
-    DarkLineEditStyleRedBorder = R"(
+    LightLineEditStyleRedBorder = R"(
     QLineEdit {
-        background-color: #333;
-        color: white;
-        border: none;
+        background-color: #ffffff;
+        color: black;
+        border: 2px solid #ff4444;
         border-radius: 5px;
         padding: 5px;
     }
     QLineEdit:focus {
-        border: 2px solid red;
+        border: 2px solid #ff4444;  /* ярко-красный при фокусе */
+        background-color: #fff8f8;   /* —легка красноватый фон */
     }
     QLineEdit:hover {
-        border: 1px solid #555;
+        border: 2px solid #ff4444;
     }
-    QLineEdit:disabled {
-        background-color: #222;
-        color: #777;
+)";
+
+    DarkLineEditStyleRedBorder = R"(
+    QLineEdit {
+        background-color: #333;
+        color: white;
+        border: 2px solid rgb(255, 66, 66);
+        border-radius: 5px;
+        padding: 5px;
+    }
+    QLineEdit:focus {
+        border: 2px solid rgb(255, 66, 66);
+    }
+    QLineEdit:hover {
+        border: 2px solid rgb(255, 66, 66);
     }
 )";
 
@@ -188,10 +177,22 @@ RegistrationComponent::RegistrationComponent(QWidget* parent, LoginWidget* login
     m_registerButtonHla->addSpacing(25);
 
 
+    QHBoxLayout* errorLabelHLayout = new QHBoxLayout;
+    errorLabelHLayout->setAlignment(Qt::AlignLeft);
+    m_error_label = new QLabel;
+    m_error_label->setStyleSheet("color: rgb(252, 81, 81);");
+    m_error_label->setFixedHeight(30);
+    m_error_label->hide();
+    m_error_label->setWordWrap(true);
+    errorLabelHLayout->addSpacing(25);
+    errorLabelHLayout->addWidget(m_error_label);
+
+
     layout->addLayout(m_loginEditHla);
     layout->addLayout(m_nameEditHla);
     layout->addLayout(m_passwordEditHla);
     layout->addLayout(m_password2EditHla);
+    layout->addLayout(errorLabelHLayout);
     layout->addLayout(m_registerButtonHla);
     setLayout(layout);
     setFixedSize(550, 450);
@@ -235,45 +236,50 @@ void RegistrationComponent::setTheme(Theme& theme) {
 
 void RegistrationComponent::slotToSendRegistrationData() {
     QString login = m_loginEdit->text();
-    /*
+
     QRegularExpression loginRegex("^[a-zA-Z0-9_]{4,20}$");
 
     if (!loginRegex.match(login).hasMatch()) {
         setRedBorderToLoginEdit();
+        setErrorMessageToLabel("Username must be 4-20 characters long and can only contain letters, numbers, and underscores");
         return;
     }
-     */
 
     QString name = m_nameEdit->text().trimmed();
-    /*
+
     if (name.length() < 2 || name.length() > 50) {
         setRedBorderToNameEdit();
+        setErrorMessageToLabel("Name must be between 2 and 50 characters long");
         return;
     }
-   */
+
     QString password = m_passwordEdit->text();
     QString password2 = m_password2Edit->text();
-    /*
+
     if (password.length() < 8) {
         setRedBorderToPasswordEdits();
+        setErrorMessageToLabel("Password must be at least 8 characters long");
         return;
     }
 
     if (password != password2) {
         setRedBorderToPasswordEdits();
+        setErrorMessageToLabel("Passwords do not match");
         return;
     }
 
     QRegularExpression passwordRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$");
     if (!passwordRegex.match(password).hasMatch()) {
         setRedBorderToPasswordEdits();
+        setErrorMessageToLabel("Password must contain at least one uppercase letter, one lowercase letter, and one digit");
         return;
     }
-    */
+
     emit sendRegistrationData(login, password, name);
 }
 
 void RegistrationComponent::setRedBorderToLoginEdit() {
+    m_error_label->show();
     if (*m_theme == DARK) {
         m_loginEdit->setStyleSheet(style->DarkLineEditStyleRedBorder);
     }
@@ -283,6 +289,7 @@ void RegistrationComponent::setRedBorderToLoginEdit() {
 }
 
 void RegistrationComponent::setRedBorderToNameEdit() {
+    m_error_label->show();
     if (*m_theme == DARK) {
         m_nameEdit->setStyleSheet(style->DarkLineEditStyleRedBorder);
     }
@@ -292,6 +299,7 @@ void RegistrationComponent::setRedBorderToNameEdit() {
 }
 
 void RegistrationComponent::setRedBorderToPasswordEdits() {
+    m_error_label->show();
     if (*m_theme == DARK) {
         m_passwordEdit->setStyleSheet(style->DarkLineEditStyleRedBorder);
         m_password2Edit->setStyleSheet(style->DarkLineEditStyleRedBorder);
@@ -302,8 +310,13 @@ void RegistrationComponent::setRedBorderToPasswordEdits() {
     }
 }
 
+void  RegistrationComponent::setErrorMessageToLabel(const QString& errorText) {
+    m_error_label->setText(errorText);
+    m_error_label->show();
+}
 
 void RegistrationComponent::resetLoginEditStyle() {
+    m_error_label->hide();
     if (*m_theme == DARK) {
         m_loginEdit->setStyleSheet(style->DarkLineEditStyle);
     }
@@ -313,6 +326,7 @@ void RegistrationComponent::resetLoginEditStyle() {
 }
 
 void RegistrationComponent::resetNameEditStyle() {
+    m_error_label->hide();
     if (*m_theme == DARK) {
         m_nameEdit->setStyleSheet(style->DarkLineEditStyle);
     }
@@ -322,6 +336,7 @@ void RegistrationComponent::resetNameEditStyle() {
 }
 
 void RegistrationComponent::resetPasswordEditsStyles() {
+    m_error_label->hide();
     if (*m_theme == DARK) {
         m_passwordEdit->setStyleSheet(style->DarkLineEditStyle);
         m_password2Edit->setStyleSheet(style->DarkLineEditStyle);

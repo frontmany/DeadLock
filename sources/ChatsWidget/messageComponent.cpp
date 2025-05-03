@@ -1,6 +1,7 @@
 #include "MessageComponent.h"
 #include "mainwindow.h"
 #include "message.h"
+#include "utility.h"
 #include "buttons.h"
 
 
@@ -105,12 +106,13 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
     m_isRead_VLayout = new QVBoxLayout;
     m_isRead_VLayout->setAlignment(Qt::AlignBottom);
     m_isRead_VLayout->addWidget(m_readStatusBtn);
-    m_isRead_VLayout->addSpacing(-2);
 
+    m_isRead_VLayout->addSpacing(-12);
+    
 
     m_main_HLayout->addLayout(m_text_VLayout);
     m_main_HLayout->addLayout(m_time_VLayout);
-    m_main_HLayout->addSpacing(-8);
+    m_main_HLayout->addSpacing(-4);
 
     if (m_isSent == true) {
         m_main_HLayout->addLayout(m_isRead_VLayout);
@@ -121,7 +123,7 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
 
     this->setLayout(m_main_HLayout);
     this->setMinimumSize(30, 35);
-    this->setMaximumSize(600, 800);
+    this->setMaximumSize(600, 8000);
     setTheme(m_theme);
 }
 

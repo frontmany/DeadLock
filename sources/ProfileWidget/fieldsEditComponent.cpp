@@ -192,7 +192,8 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     }
     
     m_avatar_label = new QLabel();
-    m_avatar_label->setPixmap(currentAvatar.scaled(100, 100, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_avatar_label->setFixedSize(utility::getScaledSize(95), utility::getScaledSize(95));
+    m_avatar_label->setPixmap(currentAvatar.scaled(utility::getScaledSize(95), utility::getScaledSize(95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     m_change_photo_button = new QPushButton("Change Photo");
     connect(m_change_photo_button, &QPushButton::clicked, [this]() {m_profile_editor_widget->setPhotoEditor(); });
@@ -205,6 +206,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
     m_login_label = new QLabel("Login:");
     m_login_edit = new QLineEdit(QString::fromStdString(m_client->getMyLogin()));
+    m_login_edit->setFixedHeight(30);
     m_login_edit->setValidator(validator);
     connect(m_login_edit, &QLineEdit::textChanged, [this]() {
         m_error_label->setText("");
@@ -212,6 +214,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
     m_name_label = new QLabel("Name:");
     m_name_edit = new QLineEdit(QString::fromStdString(m_client->getMyName()));
+    m_name_edit->setFixedHeight(30);
     connect(m_name_edit, &QLineEdit::textChanged, [this]() {
         m_error_label->setText("");
     });
@@ -229,7 +232,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_photo_password_buttonsHLayout->setAlignment(Qt::AlignRight);
     m_photo_password_buttonsHLayout->addWidget(m_change_photo_button);
     m_photo_password_buttonsHLayout->addWidget(m_password_button);
-    m_photo_password_buttonsHLayout->addSpacing(15);
+    m_photo_password_buttonsHLayout->addSpacing(16);
 
     m_save_button = new QPushButton("Save");
     m_save_button->setMinimumHeight(30);
@@ -261,7 +264,6 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
             m_client->updateMyName(name);
             m_profile_editor_widget->close();
         }
-
     });
 
 
@@ -276,6 +278,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
 
     m_mainVLayout = new QVBoxLayout;
+    m_mainVLayout->setAlignment(Qt::AlignCenter);
     m_mainVLayout->addWidget(m_avatar_label, 0, Qt::AlignCenter);
     m_mainVLayout->addSpacing(20);
     m_mainVLayout->addLayout(m_photo_password_buttonsHLayout);
@@ -287,13 +290,14 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_mainVLayout->addWidget(m_name_edit);
     m_mainVLayout->addSpacing(5);
     m_mainVLayout->addWidget(m_error_label);
-    m_mainVLayout->addSpacing(40);
+    m_mainVLayout->addSpacing(20);
     m_mainVLayout->addLayout(m_save_cancel_buttonsHLayout);
-  
+    m_mainVLayout->addSpacing(10);
 
     setLayout(m_mainVLayout);
 
     setTheme(m_theme);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
 
@@ -326,9 +330,9 @@ void FieldsEditComponent::setTheme(Theme theme) {
     }
 }
 
-void FieldsEditComponent::updateAvatar() {
-    QPixmap currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto()->getPhotoPath()));
-    m_avatar_label->setPixmap(currentAvatar);
+void FieldsEditComponent::updateAvatar(const Photo& photo) {
+    QPixmap currentAvatar = QPixmap(QString::fromStdString(photo.getPhotoPath()));
+    m_avatar_label->setPixmap(currentAvatar.scaled(utility::getScaledSize(95), utility::getScaledSize(95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     update();
 }
 

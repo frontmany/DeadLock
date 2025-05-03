@@ -1,6 +1,6 @@
 #include <QString>
-#include <QDateTime>
-#include <QStringList>
+#include <QScreen>
+#include <QApplication>
 
 #include <iostream>
 #include <ctime>
@@ -21,6 +21,9 @@ namespace utility {
 	std::string getSaveDir();
 	std::string parseDate(const std::string& fulldate);
 	std::string getTimeStamp();
+
+	qreal getDeviceScaleFactor();
+	int getScaledSize(int baseSize);
 
 	bool isDarkMode();
 

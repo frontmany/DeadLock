@@ -25,9 +25,9 @@
 struct StyleGreetWidget {
     StyleGreetWidget();
 
-    QString buttonStyleGray;
+    QString WhiteLabelWelcomeStyle;
 
-    QString DarkbuttonSkipStyle;
+    QString DarkButtonSkipStyle;
     QString LightButtonSkipStyle;
 
     QString DarkButtonStyle;
@@ -51,7 +51,7 @@ public:
     explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv);
     void startWelcomeAnimation();
     void setBackGround(Theme theme);
-    void setName(const std::string& name);
+    void setWelcomeLabelText(const std::string& text);
     void setLogin(const std::string& login);
     void setTheme(Theme theme);
 
@@ -96,7 +96,7 @@ private:
     QSlider*        m_cropXSlider;
     QSlider*        m_cropYSlider;
     
-    QVBoxLayout*    m_containerLayout;
+    QHBoxLayout*    m_containerLayout;
     QWidget*        m_container;
 
     Theme           m_theme;

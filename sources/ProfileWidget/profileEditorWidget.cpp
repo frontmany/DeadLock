@@ -4,6 +4,8 @@
 #include "photoEditComponent.h"
 #include "chatsListComponent.h"
 #include "client.h"
+#include "photo.h"
+#include "utility.h"
 #include "chatsWidget.h"
 
 ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, Theme theme)
@@ -29,7 +31,12 @@ ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* ch
 }
 
 void ProfileEditorWidget::setPhotoEditor() {
-    setFixedHeight(700);
+    if (utility::getDeviceScaleFactor() >= 1.25) {
+        setFixedHeight(utility::getScaledSize(900));
+    }
+    else {
+        setFixedHeight(utility::getScaledSize(800));
+    }
     m_mainVLayout->removeWidget(m_fields_edit_component);
     m_fields_edit_component->hide();
     m_mainVLayout->addWidget(m_photo_edit_component);
@@ -37,8 +44,17 @@ void ProfileEditorWidget::setPhotoEditor() {
 }
 
 void ProfileEditorWidget::setFieldsEditor() {
-    setFixedHeight(500);
-    m_fields_edit_component->setMaximumSize(400, 500);
+    if (utility::getDeviceScaleFactor() >= 1.25) {
+        setFixedHeight(utility::getScaledSize(540));
+    }
+    if (utility::getDeviceScaleFactor() > 1.5) {
+        setFixedHeight(utility::getScaledSize(640));
+    }
+    else {
+        setFixedHeight(utility::getScaledSize(500));
+    }
+
+    m_fields_edit_component->setMaximumSize(400, utility::getScaledSize(500));
     m_mainVLayout->removeWidget(m_photo_edit_component);
     m_photo_edit_component->hide();
     m_password_edit_component->hide();
@@ -48,8 +64,8 @@ void ProfileEditorWidget::setFieldsEditor() {
 }
 
 void ProfileEditorWidget::setPasswordEditor() {
-    setFixedHeight(500);
-    m_password_edit_component->setMaximumSize(400, 500);
+    setFixedHeight(utility::getScaledSize(500));
+    m_password_edit_component->setMaximumSize(400, utility::getScaledSize(500));
     m_mainVLayout->removeWidget(m_fields_edit_component);
     m_fields_edit_component->hide();
     m_mainVLayout->addWidget(m_password_edit_component);
@@ -58,10 +74,6 @@ void ProfileEditorWidget::setPasswordEditor() {
         m_password_edit_component->showCurrentPasswordInput();
 
     m_password_edit_component->show();
-}
-
-void ProfileEditorWidget::onImagePicker() {
-    setFixedHeight(800);
 }
 
 void ProfileEditorWidget::setTheme(Theme theme) {
@@ -85,7 +97,7 @@ void ProfileEditorWidget::close() {
 }
 
 void ProfileEditorWidget::updateAvatar(const Photo& photo) {
-    m_fields_edit_component->updateAvatar();
+    m_fields_edit_component->updateAvatar(photo);
     m_chats_list_component->SetAvatar(photo);
 }
 

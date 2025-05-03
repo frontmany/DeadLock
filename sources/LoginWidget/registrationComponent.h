@@ -40,6 +40,7 @@ public:
     void setRedBorderToLoginEdit();
     void setRedBorderToNameEdit();
     void setRedBorderToPasswordEdits();
+    void setErrorMessageToLabel(const QString& errorText);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -72,6 +73,8 @@ private:
     QLineEdit* m_passwordEdit;
     QLineEdit* m_password2Edit;
     QLineEdit* m_nameEdit;
+
+    QLabel*    m_error_label;
 
     Theme* m_theme = nullptr;
 };

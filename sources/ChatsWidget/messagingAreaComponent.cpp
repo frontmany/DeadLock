@@ -81,21 +81,49 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
         border: 2px solid rgb(237, 237, 237);        
     }
 )";
+
+    LightErrorLabelStyle =
+        "QLabel {"
+        "   color: white;"
+        "   font-weight: bold;"
+        "   font-size: 12px;"
+        "   background-color: #FF5252;"
+        "   border-radius: 12px;"
+        "   padding: 6px 12px;"
+        "   border: 1px solid #FF8A80;"
+        "   min-width: 60px;"
+        "   text-align: center;"
+        "   qproperty-alignment: 'AlignCenter';"
+        "}";
+
+
+    DarkErrorLabelStyle =
+        "QLabel {"
+        "   color: white;"
+        "   font-weight: bold;"
+        "   font-size: 12px;"
+        "   background-color: rgb(252, 81, 81);"
+        "   border-radius: 12px;"
+        "   padding: 6px 12px;"
+        "   border: 1px solid #FF5252;"
+        "   min-width: 60px;"
+        "   text-align: center;"
+        "   qproperty-alignment: 'AlignCenter';"
+        "}";
 };
 
 MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget)
-    : QWidget(parent), m_friendName(friendName), m_theme(theme), m_chat(chat), m_chatsWidget(chatsWidget) {
-
+    : QWidget(parent), m_friendName(friendName), m_theme(theme), m_chat(chat),
+    m_chatsWidget(chatsWidget), m_style(new StyleMessagingAreaComponent())
+{
     setMinimumSize(300, 400);
+    this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
-    if (chat->getIsFriendHasPhoto() == true) {
+    if (chat->getIsFriendHasPhoto() == true) 
         m_header = new ChatHeaderComponent(this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
-    }
-    else {
+    else 
         m_header = new ChatHeaderComponent(this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap());
-    }
-
-    style = new StyleMessagingAreaComponent;
+  
 
     if (m_theme == DARK) {
         m_backColor = QColor(25, 25, 25);
@@ -105,16 +133,18 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     }
 
     m_containerWidget = new QWidget();
+
     m_containerVLayout = new QVBoxLayout(m_containerWidget);
     m_containerVLayout->setAlignment(Qt::AlignBottom);
+
     m_containerWidget->setLayout(m_containerVLayout);
+
 
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setWidget(m_containerWidget);
     m_scrollArea->setStyleSheet("background: transparent;");
 
-    QHBoxLayout* hla = new QHBoxLayout;
 
     m_sendMessageButton = new ButtonCursor(this, m_theme);
     QIcon icon1(":/resources/ChatsWidget/sendDark.png");
@@ -126,25 +156,38 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_sendMessageButton->setTheme(m_theme);
     m_sendMessageButton->hide();
 
+
     m_sendMessage_VLayout = new QVBoxLayout;
     m_sendMessage_VLayout->setAlignment(Qt::AlignBottom);
     m_sendMessage_VLayout->addWidget(m_sendMessageButton);
 
 
     m_messageInputEdit = new MyTextEdit(this);
-    m_messageInputEdit->setMaxLength(100);
     m_messageInputEdit->setMinimumHeight(30);
     m_messageInputEdit->setPlaceholderText("Type your message...");
     m_messageInputEdit->setAcceptRichText(false);
     m_messageInputEdit->setFixedHeight(m_messageInputEdit->document()->size().height());
 
-    hla->addWidget(m_messageInputEdit);
-    hla->addLayout(m_sendMessage_VLayout);
+
+    QHBoxLayout* m_button_sendHLayout = new QHBoxLayout;
+    m_button_sendHLayout->addWidget(m_messageInputEdit);
+    m_button_sendHLayout->addLayout(m_sendMessage_VLayout);
+
+
+    m_error_label = new QLabel;
+    m_error_label->hide();
+
+    m_error_labelLayout = new QHBoxLayout;
+    m_error_labelLayout->setAlignment(Qt::AlignCenter);
+    m_error_labelLayout->setContentsMargins(5, 10, 5, 10);
+    m_error_labelLayout->addWidget(m_error_label);
+
 
     m_main_VLayout = new QVBoxLayout();
     m_main_VLayout->addWidget(m_header);
     m_main_VLayout->addWidget(m_scrollArea);
-    m_main_VLayout->addLayout(hla);
+    m_main_VLayout->addLayout(m_button_sendHLayout);
+    m_main_VLayout->addLayout(m_error_labelLayout);
 
     m_main_VLayout->setContentsMargins(10, 10, 10, 10);
     m_main_VLayout->setSpacing(5);
@@ -152,9 +195,13 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::adjustTextEditHeight);
     connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::onTypeMessage);
     connect(m_messageInputEdit, &MyTextEdit::enterPressed, this, &MessagingAreaComponent::onSendMessageClicked);
+    connect(m_messageInputEdit, &MyTextEdit::pasteExceeded, this, &MessagingAreaComponent::setErrorLabelText);
+
 
     connect(m_sendMessageButton, &ButtonCursor::clicked, this, &MessagingAreaComponent::onSendMessageClicked);
     connect(this, &MessagingAreaComponent::sendMessageData, m_chatsWidget, &ChatsWidget::onSendMessageData);
+
+
 
     setLayout(m_main_VLayout);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -163,8 +210,6 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     for (auto message : m_chat->getMessagesVec()) {
         addMessage(message);
     }
-
-    
 }
 
 MessagingAreaComponent::~MessagingAreaComponent() {
@@ -180,8 +225,45 @@ MessagingAreaComponent::~MessagingAreaComponent() {
 
     delete m_scrollArea;
     delete m_main_VLayout;
-    delete m_sendMessage_VLayout;
-    delete style;
+    delete m_style;
+}
+
+void MessagingAreaComponent::setErrorLabelText(const QString& errorText) {
+    m_error_label->setText(errorText);
+    m_error_label->show();
+
+    if (!m_error_label->graphicsEffect()) {
+        m_error_label->setGraphicsEffect(new QGraphicsOpacityEffect(this));
+    }
+
+    QGraphicsOpacityEffect* opacityEffect =
+        qobject_cast<QGraphicsOpacityEffect*>(m_error_label->graphicsEffect());
+    opacityEffect->setOpacity(1.0);
+
+    QPropertyAnimation* fadeIn = new QPropertyAnimation(opacityEffect, "opacity", this);
+    fadeIn->setDuration(500);
+    fadeIn->setStartValue(0.0);
+    fadeIn->setEndValue(1.0);
+    fadeIn->setEasingCurve(QEasingCurve::InQuad);
+
+
+    QPropertyAnimation* fadeOut = new QPropertyAnimation(opacityEffect, "opacity", this);
+    fadeOut->setDuration(1500);
+    fadeOut->setStartValue(1.0);
+    fadeOut->setEndValue(0.0);
+    fadeOut->setEasingCurve(QEasingCurve::OutQuad);
+
+    QSequentialAnimationGroup* animationGroup = new QSequentialAnimationGroup(this);
+    animationGroup->addAnimation(fadeIn);
+    animationGroup->addPause(500); 
+    animationGroup->addAnimation(fadeOut);
+
+
+    connect(animationGroup, &QSequentialAnimationGroup::finished, [this]() {
+        m_error_label->hide();
+        });
+
+    animationGroup->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void MessagingAreaComponent::setAvatar(const QPixmap& pixMap) {
@@ -201,8 +283,9 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (m_theme == DARK) {
         m_backColor = QColor(25, 25, 25);
-        m_messageInputEdit->setStyleSheet(style->DarkTextEditStyle);
-        m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
+        m_messageInputEdit->setStyleSheet(m_style->DarkTextEditStyle);
+        m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->darkSlider);
+        m_error_label->setStyleSheet(m_style->DarkErrorLabelStyle);
         m_header->setTheme(DARK);
         for (auto msgComp : m_vec_messagesComponents) {
             msgComp->setTheme(DARK);
@@ -212,8 +295,9 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     }
     else {
         m_backColor = QColor(240, 240, 240, 200);
-        m_messageInputEdit->setStyleSheet(style->LightTextEditStyle);
-        m_scrollArea->verticalScrollBar()->setStyleSheet(style->lightSlider);
+        m_messageInputEdit->setStyleSheet(m_style->LightTextEditStyle);
+        m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->lightSlider);
+        m_error_label->setStyleSheet(m_style->LightErrorLabelStyle);
         m_header->setTheme(LIGHT);
         for (auto msgComp : m_vec_messagesComponents) {
             msgComp->setTheme(LIGHT);

@@ -89,7 +89,7 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
     QLineEdit {
         background-color: #333;
         color: white;
-        border: rgb(255, 66, 66);
+        border: 2px solid rgb(255, 66, 66);
         border-radius: 5px;
         padding: 5px;
     }
@@ -146,13 +146,28 @@ AuthorizationComponent::AuthorizationComponent(QWidget* parent, LoginWidget* log
     m_loginButtonHla->addSpacing(25);
 
     
+    QHBoxLayout* errorLabelHLayout = new QHBoxLayout;
+    errorLabelHLayout->setAlignment(Qt::AlignLeft);
+    m_error_label = new QLabel;
+    m_error_label->setStyleSheet("color: rgb(252, 81, 81);");
+    m_error_label->setFixedHeight(30);
+    m_error_label->hide();
+    m_error_label->setWordWrap(true);
+    errorLabelHLayout->addSpacing(25);
+    errorLabelHLayout->addWidget(m_error_label);
+
     layout->addLayout(m_loginEditHla);
     layout->addLayout(m_passwordEditHla);
+    layout->addLayout(errorLabelHLayout);
     layout->addLayout(m_loginButtonHla);
     setLayout(layout);
     setFixedSize(450, 300); 
 }
 
+void AuthorizationComponent::setErrorMessageToLabel(const QString& errorText) {
+    m_error_label->setText(errorText);
+    m_error_label->show();
+}
 
 void AuthorizationComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
@@ -169,14 +184,14 @@ void AuthorizationComponent::paintEvent(QPaintEvent* event) {
 void AuthorizationComponent::setTheme(Theme& theme) {
     m_theme = &theme;
     if (theme == DARK) {
-       m_loginEdit->setStyleSheet(style->DarkLineEditStyle);
+        m_loginEdit->setStyleSheet(style->DarkLineEditStyle);
         m_passwordEdit->setStyleSheet(style->DarkLineEditStyle);
         m_loginButton->setStyleSheet(style->DarkButtonStyle);
         m_backgroundColor = QColor(30, 30, 30, 200);
         update();
     }
     else {
-       m_loginEdit->setStyleSheet(style->LightLineEditStyle);
+        m_loginEdit->setStyleSheet(style->LightLineEditStyle);
         m_passwordEdit->setStyleSheet(style->LightLineEditStyle);
         m_loginButton->setStyleSheet(style->LightButtonStyle);
         m_backgroundColor = QColor(204, 204, 204, 200); 
@@ -186,27 +201,35 @@ void AuthorizationComponent::setTheme(Theme& theme) {
 
 void AuthorizationComponent::SlotToSendLoginData() {
     QString login = m_loginEdit->text();
-    
-    /*
+
     QRegularExpression loginRegex("^[a-zA-Z0-9_]{4,20}$");
 
     if (!loginRegex.match(login).hasMatch()) {
         setRedBorderToLoginEdit();
+        setErrorMessageToLabel("Invalid username. Must be 4-20 characters (letters, numbers, or _)");
         return;
     }
-    */
+
     QString password = m_passwordEdit->text();
-    /*
+
+    if (password.isEmpty()) {
+        setRedBorderToPasswordEdit();
+        setErrorMessageToLabel("Password cannot be empty");
+        return;
+    }
+
     QRegularExpression passwordRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$");
     if (!passwordRegex.match(password).hasMatch()) {
         setRedBorderToPasswordEdit();
+        setErrorMessageToLabel("Invalid password. Must contain uppercase, lowercase and a number");
         return;
     }
-    */
+
     emit sendLoginData(login, password);
 }
 
 void AuthorizationComponent::setRedBorderToLoginEdit() {
+    m_error_label->show();
     if (*m_theme == DARK) {
         m_loginEdit->setStyleSheet(style->DarkLineEditStyleRedBorder);
     }
@@ -217,6 +240,7 @@ void AuthorizationComponent::setRedBorderToLoginEdit() {
 
 
 void AuthorizationComponent::setRedBorderToPasswordEdit() {
+    m_error_label->show();
     if (*m_theme == DARK) {
         m_passwordEdit->setStyleSheet(style->DarkLineEditStyleRedBorder);
     }
@@ -226,6 +250,7 @@ void AuthorizationComponent::setRedBorderToPasswordEdit() {
 }
 
 void AuthorizationComponent::resetLoginEditStyle() {
+    m_error_label->hide();
     if (*m_theme == DARK) {
         m_loginEdit->setStyleSheet(style->DarkLineEditStyle);
     }
@@ -235,6 +260,7 @@ void AuthorizationComponent::resetLoginEditStyle() {
 }
 
 void AuthorizationComponent::resetPasswordEditStyle() {
+    m_error_label->hide();
     if (*m_theme == DARK) {
         m_passwordEdit->setStyleSheet(style->DarkLineEditStyle);
     }

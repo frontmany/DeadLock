@@ -43,7 +43,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::setupGreetWidget() {
     m_greetWidget = new GreetWidget(this, this, m_client, m_theme, "", m_chatsWidget);
-    m_greetWidget->setName(m_client->getMyName());
+    m_greetWidget->setWelcomeLabelText(m_client->getMyName());
     m_greetWidget->setLogin(m_client->getMyLogin());
     m_greetWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
     m_greetWidget->startWelcomeAnimation();
@@ -73,17 +73,13 @@ LoginWidget* MainWindow::getLoginWidget() {
 
 void MainWindow::updateRegistrationUIRedBorder() {
     RegistrationComponent* registrationComponent = m_loginWidget->getRegistrationComponent();
-    registrationComponent->setRedBorderToLoginEdit();
-    registrationComponent->setRedBorderToNameEdit();
-    registrationComponent->setRedBorderToPasswordEdits();
+    registrationComponent->setErrorMessageToLabel("Registration Failed");
+    
 }
 
 void MainWindow::updateAuthorizationUIRedBorder() {
-    if (auto authorizationComponent = m_loginWidget->getAuthorizationComponent()) {
-        authorizationComponent->setRedBorderToLoginEdit();
-        authorizationComponent->setRedBorderToPasswordEdit();
-    }
-    
+    auto authorizationComponent = m_loginWidget->getAuthorizationComponent();
+    authorizationComponent->setErrorMessageToLabel("Authorization Failed");
 }
 
 ChatsWidget* MainWindow::getChatsWidget() {

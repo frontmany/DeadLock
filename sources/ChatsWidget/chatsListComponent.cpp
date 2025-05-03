@@ -43,7 +43,19 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
     this->setMinimumSize(250, 300);
-    this->setMaximumSize(740, 3000);
+
+
+    if (utility::getDeviceScaleFactor() <= 1.25) {
+        this->setMaximumSize(640, 3000);
+    }
+    if (utility::getDeviceScaleFactor() <= 1) {
+        this->setMaximumSize(740, 3000);
+    }
+    else {
+        this->setMaximumSize(540, 3000);
+    }
+
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
@@ -64,20 +76,16 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_newChatButton->uploadIconsLight(icon2, iconHover2);
     m_profileHLayout->addWidget(m_newChatButton);
 
-    m_moon_icon = new ButtonIcon(this, 50, 50);
-    QIcon icon3(":/resources/ChatsWidget/moon.png");
-    QIcon iconHover3(":/resources/ChatsWidget/moon.png");
-    m_moon_icon->uploadIconsDark(icon3, iconHover3);
-    QIcon icon4(":/resources/ChatsWidget/moon.png");
-    QIcon iconHover4(":/resources/ChatsWidget/moon.png");
-    m_moon_icon->uploadIconsLight(icon4, iconHover4);
-    m_moon_icon->setTheme(DARK);
+    m_moon_icon = new QLabel(this);
+    m_moon_icon->setFixedSize(50, 50);
+    m_moon_icon->setPixmap(QPixmap(":/resources/ChatsWidget/moon.png"));
 
     m_darkModeSwitch = new ToggleSwitch(this, m_theme);
     m_darkModeSwitch->setTheme(m_theme);
     QObject::connect(m_darkModeSwitch, &ToggleSwitch::toggled, this, &ChatsListComponent::toSendChangeTheme);
     m_profileHLayout->addSpacing(1500);
     m_profileHLayout->addWidget(m_moon_icon);
+    m_profileHLayout->addSpacing(-10);
     m_profileHLayout->addWidget(m_darkModeSwitch);
     m_profileHLayout->addSpacing(15);
 

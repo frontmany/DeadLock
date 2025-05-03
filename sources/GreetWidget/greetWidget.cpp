@@ -7,28 +7,8 @@
 #include "packetsBuilder.h"
 #include "chatsListComponent.h"
 
-StyleGreetWidget::StyleGreetWidget(){
-    buttonStyleGray = R"(
-        QPushButton {
-            background-color: rgb(145, 145, 145); 
-            color: rgb(255, 255, 255);   
-            border: none;                  
-            padding: 5px 10px;   
-            border-radius: 5px;           
-            font-family: 'Arial';          
-            font-size: 20px;               
-        }
-        QPushButton:hover {
-            color: rgb(255, 255, 255);     
-            background-color: rgb( 173, 173, 173 ); 
-        }
-        QPushButton:pressed {
-            background-color: rgb( 173, 173, 173 ); 
-            color: rgb(255, 255, 255);                  
-        }
-        )";
-
-    DarkbuttonSkipStyle = R"(
+StyleGreetWidget::StyleGreetWidget() {
+    DarkButtonSkipStyle = R"(
         QPushButton {
             background-color: transparent;     
             color: rgb(153, 150, 150);              
@@ -99,111 +79,115 @@ StyleGreetWidget::StyleGreetWidget(){
 
     DarkSliderStyle = R"(
         QSlider::groove:horizontal {
-            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
-            height: 8px; /* Высота полосы */
-            border-radius: 4px; /* Закругление углов полосы */
+            background-color: rgb(77, 77, 77); 
+            height: 8px; 
+            border-radius: 4px;
         }
 
         QSlider::handle:horizontal {
-            background-color: white; /* Цвет ручки */
-            width: 16px; /* Ширина ручки */
-            height: 16px; /* Высота ручки */
-            border-radius: 8px; /* Круглая форма ручки */
-            margin: -4px 0; /* Смещение ручки относительно полосы */
+            background-color: white;
+            width: 16px;
+            height: 16px; 
+            border-radius: 8px;
+            margin: -4px 0;
         }
 
         QSlider::add-page:horizontal {
-            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(77, 77, 77);
+            border-radius: 4px;
         }
 
         QSlider::sub-page:horizontal {
-            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(21, 119, 232);
+            border-radius: 4px;
         }
 
         QSlider::groove:vertical {
-            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
-            width: 8px; /* Ширина полосы */
-            border-radius: 4px; /* Закругление углов полосы */
+            background-color: rgb(77, 77, 77);
+            width: 8px;
+            border-radius: 4px;
         }
 
         QSlider::handle:vertical {
-            background-color: white; /* Цвет ручки */
-            width: 16px; /* Ширина ручки */
-            height: 16px; /* Высота ручки */
-            border-radius: 8px; /* Круглая форма ручки */
-            margin: 0 -4px; /* Смещение ручки относительно полосы */
+            background-color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 8px; 
+            margin: 0 -4px;
         }
 
         QSlider::add-page:vertical {
-            background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(77, 77, 77);
+            border-radius: 4px;
         }
 
         QSlider::sub-page:vertical {
-            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(21, 119, 232);
+            border-radius: 4px;
         }
         )";
 
 
     LightSliderStyle = R"(
         QSlider::groove:horizontal {
-            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет полосы */
-            height: 8px; /* Высота полосы */
-            border-radius: 4px; /* Закругление углов полосы */
+            background-color: rgb(230, 230, 230);
+            height: 8px;
+            border-radius: 4px;
         }
 
         QSlider::handle:horizontal {
-            background-color: white; /* Цвет ручки */
-            width: 16px; /* Ширина ручки */
-            height: 16px; /* Высота ручки */
-            border-radius: 8px; /* Круглая форма ручки */
-            margin: -4px 0; /* Смещение ручки относительно полосы */
+            background-color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            margin: -4px 0;
         }
 
         QSlider::add-page:horizontal {
-            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет заполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(230, 230, 230);
+            border-radius: 4px;
         }
 
         QSlider::sub-page:horizontal {
-            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(21, 119, 232);
+            border-radius: 4px;
         }
 
         QSlider::groove:vertical {
-            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет полосы */
-            width: 8px; /* Ширина полосы */
-            border-radius: 4px; /* Закругление углов полосы */
+            background-color: rgb(230, 230, 230);
+            width: 8px;
+            border-radius: 4px;
         }
 
         QSlider::handle:vertical {
-            background-color: white; /* Цвет ручки */
-            width: 16px; /* Ширина ручки */
-            height: 16px; /* Высота ручки */
-            border-radius: 8px; /* Круглая форма ручки */
-            margin: 0 -4px; /* Смещение ручки относительно полосы */
+            background-color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            margin: 0 -4px;
         }
 
         QSlider::add-page:vertical {
-            background-color: rgb(230, 230, 230); /* Тёмно-серый цвет заполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(230, 230, 230);
+            border-radius: 4px;
         }
 
         QSlider::sub-page:vertical {
-            background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
-            border-radius: 4px; /* Закругление углов */
+            background-color: rgb(21, 119, 232);
+            border-radius: 4px; 
         }
         )";
 
+
+    WhiteLabelWelcomeStyle = "font-size: 42px; font-weight: bold; color: white;";
 };
+
+using namespace utility;
 
 void GreetWidget::setTheme(Theme theme) {
     if (m_theme == Theme::DARK) {
-        m_welcomeLabel->setStyleSheet("font-size: 42px; font-weight: bold; color: white;");
-        m_skipButton->setStyleSheet(m_style->DarkbuttonSkipStyle);
+        m_welcomeLabel->setStyleSheet(m_style->WhiteLabelWelcomeStyle);
+        m_skipButton->setStyleSheet(m_style->DarkButtonSkipStyle);
 
         m_selectImageButton->setStyleSheet(m_style->DarkButtonStyle);
         m_continueButton->setStyleSheet(m_style->DarkButtonStyle);
@@ -212,7 +196,7 @@ void GreetWidget::setTheme(Theme theme) {
         m_cropYSlider->setStyleSheet(m_style->DarkSliderStyle);
     }
     else {
-        m_welcomeLabel->setStyleSheet("font-size: 42px; font-weight: bold; color: white;");
+        m_welcomeLabel->setStyleSheet(m_style->WhiteLabelWelcomeStyle);
         m_skipButton->setStyleSheet(m_style->LightButtonSkipStyle);
 
         m_selectImageButton->setStyleSheet(m_style->LightButtonStyle);
@@ -221,16 +205,11 @@ void GreetWidget::setTheme(Theme theme) {
         m_cropXSlider->setStyleSheet(m_style->LightSliderStyle);
         m_cropYSlider->setStyleSheet(m_style->LightSliderStyle);
     }
-    
 }
 
-qreal getQtScaleFactor() {
-    QScreen* screen = QApplication::primaryScreen();
-    return screen->devicePixelRatio(); // Возвращает 1.0, 1.25, 1.5 и т.д.
-}
-
-int getQtZoomPercent() {
-    return static_cast<int>(getQtScaleFactor() * 100);
+void GreetWidget::setWelcomeLabelText(const std::string& text) {
+    QString s = "Welcome " + QString::fromStdString(text) + "!";
+    m_welcomeLabel->setText(s);
 }
 
 GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv)
@@ -239,38 +218,67 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
     setBackGround(m_theme);
 
+    qreal scale = getDeviceScaleFactor();
+    m_style->DarkButtonStyle = R"(
+    QPushButton {
+        background-color: rgb(21, 119, 232);   
+        color: white;             
+        border: none;   
+        border-radius: )" + QString::number(28 / scale) + R"(px;       
+        padding: 5px 10px;        
+    }
+    QPushButton:hover {
+        background-color: rgb(26, 133, 255);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(26, 133, 255);      
+    }
+    )";
+
+    m_style->LightButtonStyle = R"(
+    QPushButton {
+        background-color: rgb(26, 133, 255);   
+        color: white;             
+        border: none;   
+        border-radius: )" + QString::number(28 / scale) + R"(px;       
+        padding: 5px 10px;        
+    }
+    QPushButton:hover {
+        background-color: rgb(21, 119, 232);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(21, 119, 232);      
+    }
+    )";
+
     m_sender = new PacketsBuilder();
 
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setAlignment(Qt::AlignCenter);
+    m_mainVLayout->setContentsMargins(getScaledSize(20), getScaledSize(20), getScaledSize(20), getScaledSize(20));
 
     QString welcomeStr = "Welcome " + QString::fromStdString(login) + "!";
     m_welcomeLabel = new QLabel(welcomeStr, this);
     m_welcomeLabel->setAlignment(Qt::AlignCenter);
-    
+    QFont welcomeFont = m_welcomeLabel->font();
+    welcomeFont.setPixelSize(getScaledSize(16));
+    m_welcomeLabel->setFont(welcomeFont);
 
     m_greetLabelLayout = new QHBoxLayout();
+    m_greetLabelLayout->setContentsMargins(0, getScaledSize(20), 0, getScaledSize(10));
     m_greetLabelLayout->setAlignment(Qt::AlignCenter);
-    m_greetLabelLayout->addSpacing(35);
+    m_greetLabelLayout->addSpacing(getScaledSize(35));
     m_greetLabelLayout->addWidget(m_welcomeLabel);
 
     m_skipButton = new QPushButton("skip", this);
-    m_skipButton->setMinimumSize(100, 60);
-    m_skipButton->setMaximumSize(350, 60);
+    m_skipButton->setMinimumSize(getScaledSize(100), getScaledSize(60));
+    m_skipButton->setMaximumSize(getScaledSize(350), getScaledSize(60));
     connect(m_skipButton, &QPushButton::clicked, this, [this]() {
         m_mainWindow->setupChatsWidget();
         });
 
     m_imageLabel = new QLabel(this);
-
-    
-    if (getQtZoomPercent() <= 100) {
-        m_imageLabel->setFixedSize(500, 500);
-    }
-    else {
-        m_imageLabel->setFixedSize(200, 200);
-    }
-
+    m_imageLabel->setFixedSize(getScaledSize(500), getScaledSize(500));
     m_imageLabel->setAlignment(Qt::AlignCenter);
 
     QPixmap pixmap(":/resources/GreetWidget/loadPhoto.png");
@@ -282,14 +290,14 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     ));
 
     m_selectImageButton = new QPushButton("Choose a photo", this);
-    m_selectImageButton->setMinimumSize(200, 60);
-    m_selectImageButton->setMaximumSize(200, 60);
+    m_selectImageButton->setMinimumSize(getScaledSize(200), getScaledSize(60));
+    m_selectImageButton->setMaximumSize(getScaledSize(200), getScaledSize(60));
     connect(m_selectImageButton, &QPushButton::clicked, this, &GreetWidget::openImagePicker);
 
     m_continueButton = new QPushButton("Continue", this);
     m_continueButton->setEnabled(false);
-    m_continueButton->setMinimumSize(200, 60);
-    m_continueButton->setMaximumSize(350, 60);
+    m_continueButton->setMinimumSize(getScaledSize(200), getScaledSize(60));
+    m_continueButton->setMaximumSize(getScaledSize(350), getScaledSize(60));
     connect(m_continueButton, &QPushButton::clicked, this, [this]() {
         int res = saveCroppedImage();
         if (res == 1) {
@@ -319,7 +327,28 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
             QPushButton* okButton = new QPushButton("OK", errorDialog);
             okButton->setFixedHeight(30);
             okButton->setFixedWidth(140);
-            okButton->setStyleSheet(m_style->buttonStyleGray);
+
+            QString buttonStyleGray = R"(
+                QPushButton {
+                    background-color: rgb(145, 145, 145); 
+                    color: rgb(255, 255, 255);   
+                    border: none;                  
+                    padding: 5px 10px;   
+                    border-radius: 5px;           
+                    font-family: 'Arial';          
+                    font-size: 20px;               
+                }
+                QPushButton:hover {
+                    color: rgb(255, 255, 255);     
+                    background-color: rgb( 173, 173, 173 ); 
+                }
+                QPushButton:pressed {
+                    background-color: rgb( 173, 173, 173 ); 
+                    color: rgb(255, 255, 255);                  
+                }
+                )";
+
+            okButton->setStyleSheet(buttonStyleGray);
             connect(okButton, &QPushButton::clicked, errorDialog, &QDialog::accept);
 
             layout->addWidget(textLabel);
@@ -352,7 +381,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
         });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
-    m_cropXSlider->setFixedSize(400, 20);
+    m_cropXSlider->setFixedSize(getScaledSize(400), getScaledSize(20));
     m_cropXSlider->hide();
     m_cropXSlider->setRange(0, 500);
     m_cropXSlider->setValue(m_cropX);
@@ -360,12 +389,11 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
 
     m_sliderXLayout = new QHBoxLayout();
     m_sliderXLayout->setAlignment(Qt::AlignCenter);
-    m_sliderXLayout->addSpacing(40);
+    m_sliderXLayout->addSpacing(getScaledSize(50));
     m_sliderXLayout->addWidget(m_cropXSlider);
 
-
     m_cropYSlider = new QSlider(Qt::Vertical, this);
-    m_cropYSlider->setFixedSize(20, 400);
+    m_cropYSlider->setFixedSize(getScaledSize(20), getScaledSize(400));
     m_cropYSlider->hide();
     m_cropYSlider->setRange(0, 500);
     m_cropYSlider->setValue(m_cropY);
@@ -376,44 +404,39 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
     m_buttonsHLayout = new QHBoxLayout();
     m_buttonsHLayout->setAlignment(Qt::AlignCenter);
     m_buttonsHLayout->addWidget(m_selectImageButton);
-    m_buttonsHLayout->addSpacing(60);
+    m_buttonsHLayout->addSpacing(getScaledSize(35));
     m_buttonsHLayout->addWidget(m_continueButton);
     m_buttonsHLayout->addWidget(m_skipButton);
-    m_buttonsHLayout->addSpacing(-140);
+    m_buttonsHLayout->addSpacing(getScaledSize(-145));
     
     m_imageAndYSliderLayout = new QHBoxLayout();
     m_imageAndYSliderLayout->setAlignment(Qt::AlignCenter);
     m_imageAndYSliderLayout->addWidget(m_cropYSlider);
-    m_imageAndYSliderLayout->addSpacing(20);
+    m_imageAndYSliderLayout->addSpacing(getScaledSize(20));
     m_imageAndYSliderLayout->addWidget(m_imageLabel);
 
     m_bothSlidersVLayout = new QVBoxLayout();
     m_bothSlidersVLayout->setAlignment(Qt::AlignTop);
     m_bothSlidersVLayout->addLayout(m_imageAndYSliderLayout);
+    m_bothSlidersVLayout->addSpacing(getScaledSize(70));
     m_bothSlidersVLayout->addLayout(m_sliderXLayout);
 
     m_photoAndSlidersWidgetContainer = new QWidget;
+    m_photoAndSlidersWidgetContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     m_photoAndSlidersWidgetContainer->setLayout(m_bothSlidersVLayout);
-    m_photoAndSlidersWidgetContainer->setFixedHeight(550);
+    m_photoAndSlidersWidgetContainer->setFixedHeight(getScaledSize(575));
 
-    m_mainVLayout->addSpacing(85);
     m_mainVLayout->addLayout(m_greetLabelLayout);
-    m_mainVLayout->addSpacing(25);
     m_mainVLayout->addWidget(m_photoAndSlidersWidgetContainer);
-    m_mainVLayout->addSpacing(25);
     m_mainVLayout->addLayout(m_buttonsHLayout);
-    m_mainVLayout->addSpacing(150);
 
     m_container = new QWidget;
     m_container->setLayout(m_mainVLayout);
-    if (getQtZoomPercent() <= 100) {
-        m_container->setMaximumSize(5000, 5000);
-    }
-    else {
-        m_container->setMaximumSize(5000, 700);
-    }
+    m_container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
-    m_containerLayout = new QVBoxLayout;
+    m_containerLayout = new QHBoxLayout;
+    m_containerLayout->setAlignment(Qt::AlignCenter);
+    m_containerLayout->setContentsMargins(0, 0, 0, 0);
     m_containerLayout->addWidget(m_container);
 
     setLayout(m_containerLayout);
@@ -439,27 +462,19 @@ void GreetWidget::openImagePicker() {
     if (!imagePath.isEmpty()) {
         m_selectedImage.load(imagePath);
 
-        int paramScale = 0;
-        if (getQtZoomPercent() <= 100) {
-            paramScale = 500;
-        }
-        else {
-            paramScale = 200;
-        }
-
-        m_selectedImage = m_selectedImage.scaled(paramScale * devicePixelRatioF(), paramScale * devicePixelRatioF(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        int paramScale = getScaledSize(500);
+        m_selectedImage = m_selectedImage.scaled(paramScale, paramScale, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
         int imageWidth = m_selectedImage.width();
         int imageHeight = m_selectedImage.height();
 
-        if (imageWidth < paramScale * devicePixelRatioF() || imageHeight < paramScale * devicePixelRatioF()) {
+        if (imageWidth < paramScale || imageHeight < paramScale) {
             m_imageLabel->setFixedSize(imageWidth, imageHeight);
-            m_cropXSlider->setFixedSize(imageWidth, 30);
-            m_cropYSlider->setFixedSize(30, imageHeight);
-            m_mainVLayout->insertSpacing(0, -100);
+            m_cropXSlider->setFixedSize(imageWidth, getScaledSize(30));
+            m_cropYSlider->setFixedSize(getScaledSize(30), imageHeight);
         }
         else {
-            m_imageLabel->setFixedSize(500, 500);
+            m_imageLabel->setFixedSize(getScaledSize(500), getScaledSize(500));
         }
 
         m_imageLabel->setPixmap(m_selectedImage);
@@ -481,11 +496,9 @@ void GreetWidget::openImagePicker() {
         m_cropXSlider->show();
         m_cropYSlider->show();
     }
-}
 
-void GreetWidget::setName(const std::string& name) {
-    QString s = "Welcome " + QString::fromStdString(name) + "!";
-    m_welcomeLabel->setText(s);
+    m_imageLabel->update();
+    update();
 }
 
 void GreetWidget::setLogin(const std::string& login) {
@@ -495,13 +508,11 @@ void GreetWidget::setLogin(const std::string& login) {
 void GreetWidget::cropImageToCircle() {
     if (m_selectedImage.isNull()) return;
 
-    // Размеры изображения
     QSize imageSize = m_imageLabel->size();
 
-    // Размытие изображения
     QPixmap blurredImage = m_selectedImage.scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QGraphicsBlurEffect* blurEffect = new QGraphicsBlurEffect;
-    blurEffect->setBlurRadius(10); // Устанавливаем радиус размытия
+    blurEffect->setBlurRadius(10);
     QGraphicsScene scene;
     QGraphicsPixmapItem item;
     item.setPixmap(blurredImage);
@@ -513,103 +524,82 @@ void GreetWidget::cropImageToCircle() {
     scene.render(&painter);
     painter.end();
 
-    // Затемнение размытого изображения (делаем его серым)
     QPixmap darkenedBlurredImage = QPixmap::fromImage(blurredImageResult);
     QPainter darkenPainter(&darkenedBlurredImage);
-    darkenPainter.setCompositionMode(QPainter::CompositionMode_Multiply); // Режим наложения
-    darkenPainter.fillRect(darkenedBlurredImage.rect(), QColor(100, 100, 100, 150)); // Серый цвет с прозрачностью
+    darkenPainter.setCompositionMode(QPainter::CompositionMode_Multiply);
+    darkenPainter.fillRect(darkenedBlurredImage.rect(), QColor(100, 100, 100, 150)); 
     darkenPainter.end();
 
-    // Создание круглой маски с белой рамкой
-    QPixmap circularMask(m_cropSize, m_cropSize); // Используем m_cropSize для ширины и высоты
+    QPixmap circularMask(m_cropSize, m_cropSize);
     circularMask.fill(Qt::transparent);
 
     QPainter circularPainter(&circularMask);
     circularPainter.setRenderHint(QPainter::Antialiasing);
 
-    // Рисуем белую рамку
     circularPainter.setPen(QPen(Qt::NoPen));
-    circularPainter.setBrush(Qt::NoBrush); // Без заливки
-    circularPainter.drawEllipse(1, 1, m_cropSize - 2, m_cropSize - 2); // Учитываем толщину рамки
+    circularPainter.setBrush(Qt::NoBrush); 
+    circularPainter.drawEllipse(1, 1, m_cropSize - 2, m_cropSize - 2);
     circularPainter.end();
 
-    // Создание фона с размытым и затемненным изображением
     QPixmap background(imageSize);
     background.fill(Qt::transparent);
 
     QPainter backgroundPainter(&background);
     backgroundPainter.setRenderHint(QPainter::Antialiasing);
 
-    // Рисуем размытое и затемненное изображение
     backgroundPainter.drawPixmap(0, 0, darkenedBlurredImage);
 
-    // Рисуем исходное изображение внутри маски
     QPixmap originalImage = m_selectedImage.scaled(imageSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    // Создаем круглую область для исходного изображения
-    QPixmap circularArea(m_cropSize, m_cropSize); // Используем m_cropSize для ширины и высоты
+    QPixmap circularArea(m_cropSize, m_cropSize); 
     circularArea.fill(Qt::transparent);
 
     QPainter circularAreaPainter(&circularArea);
     circularAreaPainter.setRenderHint(QPainter::Antialiasing);
-    circularAreaPainter.setBrush(Qt::white); // Заливка белым цветом для маски
-    circularAreaPainter.setPen(Qt::NoPen); // Без контура
+    circularAreaPainter.setBrush(Qt::white);
+    circularAreaPainter.setPen(Qt::NoPen); 
     circularAreaPainter.drawEllipse(0, 0, m_cropSize, m_cropSize);
     circularAreaPainter.end();
 
-    // Наложение круглой области на исходное изображение
     QPixmap maskedOriginalImage = originalImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
     maskedOriginalImage.setMask(circularArea.createMaskFromColor(Qt::transparent));
 
-    // Рисуем исходное изображение внутри маски
     backgroundPainter.drawPixmap(m_cropX, m_cropY, maskedOriginalImage);
 
-    // Рисуем белую рамку поверх
     backgroundPainter.drawPixmap(m_cropX, m_cropY, circularMask);
 
     backgroundPainter.end();
 
-    // Устанавливаем изображение с размытием, затемнением, круглой маской и белой рамкой
     m_imageLabel->setPixmap(background);
 }
 
 void GreetWidget::adjustCropArea(int value) {
-    // Получаем размеры изображения
     int imageWidth = m_imageLabel->width();
     int imageHeight = m_imageLabel->height();
 
-    // Ограничиваем размер маски, чтобы она не превышала размеры изображения
     m_cropSize = qMin(m_cropSize, qMin(imageWidth, imageHeight));
 
-    // Ограничиваем перемещение маски в пределах изображения
     int maxX = imageWidth - m_cropSize;
     int maxY = imageHeight - m_cropSize;
 
-    // Ограничиваем значения m_cropX и m_cropY
     m_cropX = qBound(0, m_cropXSlider->value(), maxX);
     m_cropY = qBound(0, m_cropYSlider->value(), maxY);
 
     if (!m_selectedImage.isNull()) {
-        cropImageToCircle(); // Перерисовываем изображение с контуром маски
+        cropImageToCircle(); 
     }
 }
 
 void GreetWidget::wheelEvent(QWheelEvent* event) {
     if (m_selectedImage.isNull()) return;
 
-    // Изменение размера маски с помощью колесика мыши
-    int delta = event->angleDelta().y(); // Получаем значение прокрутки
-    int newSize = m_cropSize + (delta > 0 ? 10 : -10); // Увеличиваем или уменьшаем размер
+    int delta = event->angleDelta().y();
+    int newSize = m_cropSize + (delta > 0 ? 10 : -10);
 
-    // Ограничиваем минимальный и максимальный размер маски
     newSize = qBound(50, newSize, 500);
-    // Обновляем размер маски
     m_cropSize = newSize;
 
-    // Ограничиваем положение маски, чтобы она не выходила за пределы изображения
-    adjustCropArea(0); // Пересчитываем положение маски
-
-    // Перерисовываем изображение
+    adjustCropArea(0); 
     cropImageToCircle();
 }
 
@@ -618,36 +608,31 @@ void GreetWidget::paintEvent(QPaintEvent* event) {
 
     QPainter painter(this);
 
-    // 1. Рисуем фоновое изображение на весь экран
     if (!m_background.isNull()) {
         painter.drawPixmap(rect(), m_background);
     }
 
-    // 2. Рисуем размытый скруглённый прямоугольник
     QPainterPath roundedRectPath;
-    int cornerRadius = 0; // Радиус скругления углов
-    QRect rect(0, 0, width(), height()); // Прямоугольник с отступами 50 пикселей от краёв
+    int cornerRadius = 0;
+    QRect rect(0, 0, width(), height()); 
 
-    // Создаём скруглённый прямоугольник
     roundedRectPath.addRoundedRect(rect, cornerRadius, cornerRadius);
 
-    // Применяем размытие
     QGraphicsBlurEffect blurEffect;
-    blurEffect.setBlurRadius(10); // Уровень размытия
+    blurEffect.setBlurRadius(10);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
-    // Рисуем скруглённый прямоугольник с размытием
     painter.save();
     painter.setClipPath(roundedRectPath);
-    painter.setOpacity(0.7); // Прозрачность
+    painter.setOpacity(0.7);
 
     if (m_theme == Theme::DARK) {
-        painter.fillPath(roundedRectPath, QColor(26, 26, 26, 200)); // Цвет прямоугольника
+        painter.fillPath(roundedRectPath, QColor(26, 26, 26, 200)); 
 
     }
     else {
-        painter.fillPath(roundedRectPath, QColor(150, 150, 150, 200)); // Цвет прямоугольника
+        painter.fillPath(roundedRectPath, QColor(150, 150, 150, 200));
 
     }
     painter.restore();
@@ -670,7 +655,6 @@ int GreetWidget::saveCroppedImage() {
         return 1;
     }
 
-    // Создаем круглую маску
     QPixmap circularMask(m_cropSize, m_cropSize);
     circularMask.fill(Qt::transparent);
     QPainter maskPainter(&circularMask);
@@ -680,11 +664,9 @@ int GreetWidget::saveCroppedImage() {
     maskPainter.drawEllipse(0, 0, m_cropSize, m_cropSize);
     maskPainter.end();
 
-    // Обрезаем изображение по маске
     QPixmap croppedImage = m_selectedImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
     croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
 
-    // Получаем путь для сохранения
     QString saveDir = QString::fromStdString(utility::getSaveDir());
     if (saveDir.isEmpty()) {
         qWarning() << "Не удалось получить директорию для сохранения.";
@@ -694,10 +676,8 @@ int GreetWidget::saveCroppedImage() {
     QString fileName = QString::fromStdString(m_login) + "myMainPhoto.png";
     m_filePath = QDir(saveDir).filePath(fileName);
 
-    // Конвертируем в QImage для обработки
     QImage image = croppedImage.toImage();
 
-    // Уменьшаем размер изображения, если оно слишком большое
     while (image.sizeInBytes() > 58 * 1024 && image.width() > 10 && image.height() > 10) {
         image = image.scaled(image.width() * 0.9, image.height() * 0.9,
             Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -714,20 +694,18 @@ int GreetWidget::saveCroppedImage() {
         return 1;
     }
 
-    // Проверяем, удалось ли сжать
     if (imageData.size() > 58 * 1024) {
         qWarning() << "Не удалось сжать изображение до 64 КБ. Фактический размер:"
             << imageData.size() / 1024 << "КБ";
         return 1;
     }
 
-    // Сохраняем в файл
     QFile file(m_filePath);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(imageData);
         qDebug() << "Изображение успешно сохранено:" << m_filePath
             << "Размер:" << imageData.size() / 1024 << "КБ"
-            << "Качество:" << quality + 5; // +5 потому что последняя итерация уменьшила quality
+            << "Качество:" << quality + 5;
         file.close();
         return 0;
     }

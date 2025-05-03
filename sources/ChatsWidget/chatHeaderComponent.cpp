@@ -36,31 +36,8 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
     m_rightLayout = new QVBoxLayout();
 
     m_nameLabel = new QLabel(name, this);
-    if (m_theme == DARK) {
-        m_nameLabel->setStyleSheet(style->lightLabelStyle);
-    }
-    else {
-        m_nameLabel->setStyleSheet(style->darkLabelStyle);
-    }
 
     m_lastSeenLabel = new QLabel(QString::fromStdString(utility::parseDate(lastSeen.toStdString())), this);
-    if (m_theme == DARK) {
-
-        if (m_lastSeenLabel->text() == "online") {
-            m_lastSeenLabel->setStyleSheet(style->deepBlueLabelStyle);
-        }
-        else {
-            m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
-        }
-    }
-    else {
-        if (m_lastSeenLabel->text() == "online") {
-            m_lastSeenLabel->setStyleSheet(style->blueLabelStyle);
-        }
-        else {
-            m_lastSeenLabel->setStyleSheet(style->grayLabelStyle);
-        }
-    }
     
 
     m_rightLayout->addWidget(m_nameLabel);
@@ -82,6 +59,7 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
     m_mainLayout->addSpacing(5);
 
     setLayout(m_mainLayout);
+    setTheme(m_theme);
 }
 
 void ChatHeaderComponent::setAvatar(const QPixmap& pixMap) {

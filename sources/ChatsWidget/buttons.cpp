@@ -6,45 +6,41 @@ void AvatarIcon::paintEvent(QPaintEvent* event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // Если кнопка в состоянии hover, рисуем мягкую белую подсветку ПОД иконкой
+    qreal dpr = devicePixelRatioF();
+    qreal scaleFactor = dpr;
+
     if (m_hovered && m_needHover)
     {
-        QRectF circleRect = rect().adjusted(2, 2, -2, -2); // Увеличиваем область подсветки (меньше отступ)
-
-        // Создаем радиальный градиент для эффекта свечения
+        qreal hoverMargin = 2 * scaleFactor;
+        QRectF circleRect = rect().adjusted(hoverMargin, hoverMargin, -hoverMargin, -hoverMargin);
 
         QRadialGradient gradient(circleRect.center(), circleRect.width() / 1.5);
         if (m_theme == Theme::LIGHT) {
-            gradient.setColorAt(0, QColor(63, 139, 252, 150)); // Ярче и менее прозрачный в центре
-            gradient.setColorAt(0.7, QColor(127, 179, 255, 50)); // Плавнее спад прозрачности
-            gradient.setColorAt(1, QColor(189, 215, 255, 0));   // Полностью прозрачный на краях
+            gradient.setColorAt(0, QColor(63, 139, 252, 150));
+            gradient.setColorAt(0.7, QColor(127, 179, 255, 50));
+            gradient.setColorAt(1, QColor(189, 215, 255, 0));
         }
         else {
-            gradient.setColorAt(0, QColor(255, 255, 255, 150)); // Ярче и менее прозрачный в центре
-            gradient.setColorAt(0.7, QColor(255, 255, 255, 50)); // Плавнее спад прозрачности
-            gradient.setColorAt(1, QColor(255, 255, 255, 0));   // Полностью прозрачный на краях
+            gradient.setColorAt(0, QColor(255, 255, 255, 150));
+            gradient.setColorAt(0.7, QColor(255, 255, 255, 50));
+            gradient.setColorAt(1, QColor(255, 255, 255, 0));
         }
 
-        // Настраиваем кисть с градиентом
         painter.setBrush(gradient);
         painter.setPen(Qt::NoPen);
-
-        // Рисуем круг с градиентом
         painter.drawEllipse(circleRect);
     }
 
-    // Рисуем круглый фон (если нужен, иначе можно убрать)
-    QRectF circleRect = rect().adjusted(0, 0, 0, 0); // Круг с отступом
-    painter.setBrush(Qt::transparent);
-    painter.setPen(Qt::NoPen);
-    painter.drawEllipse(circleRect);
-
-    // Рисуем иконку в центре (поверх всего)
-    if (!m_icon.isNull()) // Проверяем, что иконка загружена
+    if (!m_icon.isNull())
     {
-        QPixmap pixmap = m_icon.pixmap(m_size, m_size);
-        int x = (width() - pixmap.width()) / 2;
-        int y = (height() - pixmap.height()) / 2;
+        QSize scaledSize(m_size, m_size);
+        QPixmap pixmap = m_icon.pixmap(scaledSize);
+        pixmap.setDevicePixelRatio(dpr);
+
+        // Центрируем иконку
+        int x = (width() - m_size) / 2;
+        int y = (height() - m_size) / 2;
+
         painter.drawPixmap(x, y, pixmap);
     }
 }
@@ -70,8 +66,8 @@ ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
     }
 
     m_animation = new QPropertyAnimation(this, "indicatorX");
-    m_animation->setDuration(200); // Длительность анимации
-    m_animation->setEasingCurve(QEasingCurve::InOutQuad); // Кривая анимации
+    m_animation->setDuration(200);
+    m_animation->setEasingCurve(QEasingCurve::InOutQuad);
 }
 
 bool ToggleSwitch::isChecked() const {
@@ -137,7 +133,7 @@ QColor ToggleSwitch::backgroundColor() const {
 
 void ToggleSwitch::setBackgroundColor(const QColor& color) {
     m_backgroundColor = color;
-    update(); // Обновляем виджет
+    update();
 }
 
 ButtonCursor::ButtonCursor(QWidget* parent, Theme theme)
@@ -161,14 +157,14 @@ void ButtonCursor::uploadIconsLight(QIcon light, QIcon lightHover)
 {
     m_iconLight = light;
     m_hoverIconLight = lightHover;
-    m_currentIcon = m_iconLight; // Устанавливаем иконку по умолчанию
+    m_currentIcon = m_iconLight;
 }
 
 void ButtonCursor::uploadIconsDark(QIcon dark, QIcon darkHover)
 {
     m_iconDark = dark;
     m_hoverIconDark = darkHover;
-    m_currentIcon = m_iconDark; // Устанавливаем иконку по умолчанию
+    m_currentIcon = m_iconDark; 
 }
 
 void ButtonCursor::paintEvent(QPaintEvent* event)
@@ -231,68 +227,134 @@ void ButtonCursor::mouseReleaseEvent(QMouseEvent* event)
 
 
 
+
+
+
+
+
+
+
 ButtonIcon::ButtonIcon(QWidget* parent, int x, int y)
-    : QWidget(parent)
+    : QWidget(parent), m_theme(Theme::DARK)
 {
-    m_theme = DARK;
     setFixedSize(x, y);
     setMouseTracking(true);
     setAttribute(Qt::WA_Hover);
 }
 
-void ButtonIcon::setTheme(Theme theme) {
-    m_theme = theme;
+QSize ButtonIcon::sizeHint() const
+{
+    return QSize(50, 50);
+}
 
-    if (theme == DARK) {
-        m_currentIcon = m_iconDark;
-        update();
+void ButtonIcon::setTheme(Theme theme)
+{
+    m_theme = theme;
+    updateIcon();
+    update();
+}
+
+void ButtonIcon::uploadIconsLight(QIcon light, QIcon lightHover)
+{
+    m_iconLight = light;
+    m_hoverIconLight = lightHover;
+    updateIcon();
+}
+
+void ButtonIcon::uploadIconsDark(QIcon dark, QIcon darkHover)
+{
+    m_iconDark = dark;
+    m_hoverIconDark = darkHover;
+    updateIcon();
+}
+
+void ButtonIcon::setIconSize(QSize size)
+{
+    m_iconSize = size;
+    update();
+}
+
+void ButtonIcon::paintEvent(QPaintEvent* event)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QSize scaledSize = m_iconSize;
+
+    if (!m_currentIcon.isNull())
+    {
+        QPixmap pixmap = m_currentIcon.pixmap(scaledSize);
+
+        int x = (width() - m_iconSize.width()) / 2;
+        int y = (height() - m_iconSize.height()) / 2;
+        painter.drawPixmap(x, y, pixmap);
+    }
+}
+
+bool ButtonIcon::event(QEvent* event)
+{
+    switch (event->type())
+    {
+    case QEvent::HoverEnter:
+        hoverEnter(static_cast<QHoverEvent*>(event));
+        return true;
+    case QEvent::HoverLeave:
+        hoverLeave(static_cast<QHoverEvent*>(event));
+        return true;
+    case QEvent::HoverMove:
+        hoverMove(static_cast<QHoverEvent*>(event));
+        return true;
+    default:
+        return QWidget::event(event);
+    }
+}
+
+void ButtonIcon::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton && rect().contains(event->pos())) {
+        emit clicked();
+    }
+}
+
+void ButtonIcon::updateIcon()
+{
+    if (m_hovered) {
+        m_currentIcon = (m_theme == Theme::DARK) ? m_hoverIconDark : m_hoverIconLight;
     }
     else {
-        m_currentIcon = m_iconLight;
-        update();
+        m_currentIcon = (m_theme == Theme::DARK) ? m_iconDark : m_iconLight;
     }
-}
-
-void ButtonIcon::uploadIconsLight(QIcon light, QIcon lightHover) {
-    m_hoverIconLight = lightHover;
-    m_iconLight = light;
-}
-
-
-void ButtonIcon::uploadIconsDark(QIcon dark, QIcon darkHover) {
-    m_hoverIconDark = darkHover;
-    m_iconDark = dark;
 }
 
 void ButtonIcon::hoverEnter(QHoverEvent* event)
 {
-    if (m_theme == DARK) {
-        m_currentIcon = m_hoverIconDark;
-        update();
-    }
-    else {
-        m_currentIcon = m_hoverIconLight;
-        update();
-    }
-
+    m_hovered = true;
+    updateIcon();
+    update();
 }
 
 void ButtonIcon::hoverLeave(QHoverEvent* event)
 {
-    if (m_theme == DARK) {
-        m_currentIcon = m_iconDark;
-        update();
-    }
-    else {
-        m_currentIcon = m_iconLight;
-        update();
-    }
+    m_hovered = false;
+    updateIcon();
+    update();
+}
+
+void ButtonIcon::hoverMove(QHoverEvent* event)
+{
+    update();
 }
 
 
-void ButtonIcon::setIconSize(QSize size) {
-    setFixedSize(size);
-}
+
+
+
+
+
+
+
+
+
 
 void RoundIconButton::setTheme(Theme theme) {
     if (theme == DARK) {

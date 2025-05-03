@@ -73,7 +73,7 @@ void Database::saveMessages(const std::string& login, std::vector<Message*> mess
     for (size_t i = 0; i < messages.size(); ++i) {
         oss << messages[i]->serialize();
         if (i < messages.size() - 1) {
-            oss << ',';
+            oss << delimiter;
         }
     }
     std::string text = oss.str();
@@ -176,14 +176,24 @@ std::vector<Message*> Database::loadMessages(const std::string& login, std::vect
         const char* messageText = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
         if (messageText) {
             std::string messagesStr(messageText);
-            std::istringstream ss(messagesStr);
-            std::string messagePart;
+            size_t pos = 0;
+            size_t delimiter_len = delimiter.length();
 
-            while (std::getline(ss, messagePart, ',')) {
+            while (true) {
+                size_t next_pos = messagesStr.find(delimiter, pos);
+
+                std::string messagePart = messagesStr.substr(pos, next_pos - pos);
+
                 Message* message = Message::deserialize(messagePart);
                 if (message) {
                     messages.push_back(message);
                 }
+
+                if (next_pos == std::string::npos) {
+                    break;
+                }
+
+                pos = next_pos + delimiter_len;
             }
         }
     }

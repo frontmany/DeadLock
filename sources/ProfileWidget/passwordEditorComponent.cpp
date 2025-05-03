@@ -169,7 +169,9 @@ void PasswordEditComponent::showCurrentPasswordInput() {
     m_verificationStage = true;
 
     m_currentPasswordLabel = new QLabel("Current password:", this);
+    m_currentPasswordLabel->setMinimumHeight(30);
     m_currentPasswordEdit = new QLineEdit(this);
+    m_currentPasswordEdit->setMinimumHeight(30);
     m_currentPasswordEdit->setEchoMode(QLineEdit::Password);
     m_currentPasswordEdit->setPlaceholderText("Enter your current password");
     connect(m_currentPasswordEdit, &QLineEdit::textChanged, [this]() {
@@ -182,6 +184,7 @@ void PasswordEditComponent::showCurrentPasswordInput() {
     connect(m_cancel_button, &QPushButton::clicked, this, [this]() {m_errorLabel->setText(""); });
 
     m_continueButton = new QPushButton("Continue", this);
+    m_continueButton->setMinimumHeight(30);
     connect(m_continueButton, &QPushButton::clicked, this, &PasswordEditComponent::onContinueClicked);
 
     m_buttonsHLayout = new QHBoxLayout;
@@ -190,6 +193,7 @@ void PasswordEditComponent::showCurrentPasswordInput() {
 
 
     m_errorLabel = new QLabel(this);
+    m_errorLabel->setMinimumHeight(30);
     m_errorLabel->setStyleSheet("color: red;");
 
     m_mainLayout->addWidget(m_currentPasswordLabel);
@@ -216,18 +220,24 @@ void PasswordEditComponent::showNewPasswordInput() {
     m_verificationStage = false;
 
     m_newPassLabel = new QLabel("New password:", this);
+    m_newPassLabel->setMinimumHeight(30);
     m_newPasswordEdit = new QLineEdit(this);
+    m_newPasswordEdit->setMinimumHeight(30);
     m_newPasswordEdit->setEchoMode(QLineEdit::Password);
     m_newPasswordEdit->setPlaceholderText("Enter new password");
 
     m_confirmPassLabel = new QLabel("Confirm password:", this);
+    m_confirmPassLabel->setMinimumHeight(30);
     m_confirmPasswordEdit = new QLineEdit(this);
+
     m_confirmPasswordEdit->setEchoMode(QLineEdit::Password);
+    m_confirmPasswordEdit->setMinimumHeight(30);
     m_confirmPasswordEdit->setPlaceholderText("Confirm new password");
 
 
 
     m_changePasswordButton = new QPushButton("Change Password", this);
+    m_changePasswordButton->setMinimumHeight(30);
     connect(m_changePasswordButton, &QPushButton::clicked, this, &PasswordEditComponent::onChangePasswordClicked);
     connect(m_newPasswordEdit, &QLineEdit::textChanged, this, &PasswordEditComponent::clearErrorLabel);
     connect(m_confirmPasswordEdit, &QLineEdit::textChanged, this, &PasswordEditComponent::clearErrorLabel);
@@ -245,7 +255,9 @@ void PasswordEditComponent::showNewPasswordInput() {
     m_mainLayout->addWidget(m_confirmPasswordEdit);
     m_mainLayout->addSpacing(15);
     m_mainLayout->addLayout(m_buttonsHLayout);
+    m_mainLayout->addSpacing(5);
     m_mainLayout->addWidget(m_errorLabel);
+    m_mainLayout->addSpacing(10);
 
     setTheme(m_theme);
 }
@@ -327,19 +339,18 @@ void PasswordEditComponent::onChangePasswordClicked() {
     }
 
     // add this check in release
-     /*
     QRegularExpression passwordRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$");
     if (!passwordRegex.match(newPassword).hasMatch()) {
         m_errorLabel->setText("Password must contain:\n- At least one lowercase letter\n- At least one uppercase letter\n- At least one digit");
         return;
     }
-    */
-    /*
+    
+    
     if (newPassword.length() < 8) {
         m_errorLabel->setText("Password must be at least 8 characters");
         return;
     }
-    */
+    
 
     m_client->updateMyPassword(utility::hashPassword(newPassword.toStdString()));
     m_profile_editor_widget->setFieldsEditor();

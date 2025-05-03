@@ -7,8 +7,13 @@
 #include <QDebug>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QSequentialAnimationGroup>
 #include <QScrollArea>
 #include <QCoreApplication>
+#include <QGuiApplication>
+#include <QPropertyAnimation>
+#include <QGraphicsOpacityEffect>
+#include <qclipboard.h>
 #include <QPainter>
 #include <QMimeData>
 #include <string>
@@ -26,6 +31,10 @@ struct StyleMessagingAreaComponent {
     QString lightSlider;
     QString DarkTextEditStyle;
     QString LightTextEditStyle;
+
+    QString LightErrorLabelStyle;
+    QString DarkErrorLabelStyle;
+
 };
 
 class ButtonIcon;
@@ -36,71 +45,72 @@ class ChatsWidget;
 class Packet;
 enum Theme;
 
-class MyTextEdit : public QTextEdit
-{
+class MyTextEdit : public QTextEdit {
     Q_OBJECT
 public:
-    MyTextEdit(QWidget* parent = nullptr) : QTextEdit(parent), m_max_length(8192)
-    {
+    explicit MyTextEdit(QWidget* parent = nullptr) : QTextEdit(parent) {
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     }
 
-    void setMaxLength(int max_length) {
-        m_max_length = max_length;
-    }
-
-    int maxLength() const {
-        return m_max_length;
+    void setLimitedPlainText(const QString& text) {
+        if (text.length() <= 8192) {
+            QTextEdit::setPlainText(text);
+            emit textLengthChanged(document()->characterCount());
+        }
+        else {
+            emit pasteExceeded("Maximum length exceeded (8192 characters limit).");
+        }
     }
 
 protected:
-    void keyPressEvent(QKeyEvent* event) override
-    {
-        if ((event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) &&
-            (event->modifiers() & Qt::ShiftModifier))
-        {
-            QTextEdit::keyPressEvent(event); 
-            return;
-        }
-
+    void keyPressEvent(QKeyEvent* event) override {
         if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-            emit enterPressed();
-            return;
-        }
-
-        if (toPlainText().length() >= m_max_length &&
-            !event->text().isEmpty() &&
-            !(event->modifiers() & Qt::ControlModifier) &&
-            event->key() != Qt::Key_Backspace &&
-            event->key() != Qt::Key_Delete)
-        {
-            return;
-        }
-
-        QTextEdit::keyPressEvent(event);
-    }
-
-    void insertFromMimeData(const QMimeData* source) override
-    {
-        QString text = source->text();
-        if (toPlainText().length() + text.length() > m_max_length) {
-            int allowed = m_max_length - toPlainText().length();
-            if (allowed > 0) {
-                QString clippedText = text.left(allowed);
-                QTextEdit::insertPlainText(clippedText);
+            if (event->modifiers() & Qt::ShiftModifier) {
+                QTextEdit::keyPressEvent(event);
+            }
+            else {
+                emit enterPressed();
+                event->accept();
             }
             return;
         }
-        QTextEdit::insertFromMimeData(source);
-    }
 
-private:
-    int m_max_length;
+        if (event->key() == Qt::Key_V && event->modifiers() & Qt::ControlModifier) {
+            QTextCursor cursor = textCursor();
+            int selectedChars = cursor.selectedText().length();
+            int currentLength = document()->characterCount();
+            QString clipboardText = QGuiApplication::clipboard()->text();
+
+            if (currentLength - selectedChars + clipboardText.length() > 8192) {
+                emit pasteExceeded("Maximum length exceeded (8192 characters limit).");
+                return;
+            }
+            QTextEdit::paste();
+            emit textLengthChanged(document()->characterCount());
+            return;
+        }
+
+        if (event->key() == Qt::Key_Backspace ||
+            event->key() == Qt::Key_Delete ||
+            event->modifiers() & Qt::ControlModifier) {
+            QTextEdit::keyPressEvent(event);
+            emit textLengthChanged(document()->characterCount());
+            return;
+        }
+
+        if (document()->characterCount() < 8192) {
+            QTextEdit::keyPressEvent(event);
+            emit textLengthChanged(document()->characterCount());
+        }
+    }
 
 signals:
     void enterPressed();
+    void pasteExceeded(const QString& errorText);
+    void textLengthChanged(int length);
 };
+
 
 class MessagingAreaComponent : public QWidget {
     Q_OBJECT
@@ -125,6 +135,7 @@ public slots:
     void addMessage(Message* message);
     void setAvatar(const QPixmap& pixMap);
     void setName(const QString& name);
+    void setErrorLabelText(const QString& errorText);
     void markMessageAsChecked(Message* message);
     void moveSliderDown(bool isCalledFromWorker = false);
 
@@ -141,7 +152,7 @@ private:
     void updateRelatedChatComponentLastMessage();
 
 private:
-    StyleMessagingAreaComponent*    style;
+    StyleMessagingAreaComponent*    m_style;
     Theme                           m_theme;
     QColor                          m_backColor;
     
@@ -150,7 +161,7 @@ private:
     QVBoxLayout* m_sendMessage_VLayout;
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
-    
+    QHBoxLayout* m_button_sendHLayout;
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;
@@ -158,6 +169,9 @@ private:
     QScrollArea*            m_scrollArea;  
     QWidget*                m_containerWidget;
     ButtonCursor*           m_sendMessageButton;
+
+    QLabel*                 m_error_label;
+    QHBoxLayout*            m_error_labelLayout;
 
     Chat*                   m_chat;
     ChatsWidget*            m_chatsWidget;

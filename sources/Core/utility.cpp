@@ -178,3 +178,13 @@ bool utility::isDarkMode() {
     }
     return false;
 }
+
+qreal utility::getDeviceScaleFactor() {
+    QScreen* screen = QApplication::primaryScreen();
+    return screen->devicePixelRatio();
+}
+
+int utility::getScaledSize(int baseSize) {
+    static qreal scale = getDeviceScaleFactor();
+    return static_cast<int>(baseSize / scale);
+}

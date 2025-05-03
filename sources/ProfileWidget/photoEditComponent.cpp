@@ -13,43 +13,48 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme),
     m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100) {
     m_style = new StylePhotoEditComponent;
+
     m_mainVLayout = new QVBoxLayout(this);
+    m_mainVLayout->setContentsMargins(utility::getScaledSize(20), utility::getScaledSize(20), utility::getScaledSize(20), utility::getScaledSize(20));
     m_mainVLayout->setAlignment(Qt::AlignTop);
     
+
+    m_imageLabel = new QLabel(this);
+    m_imageLabel->setFixedSize(utility::getScaledSize(500), utility::getScaledSize(500));
+    m_imageLabel->setAlignment(Qt::AlignCenter);
+
+    QPixmap pixmap(":/resources/GreetWidget/loadPhoto.png");
+    pixmap.setDevicePixelRatio(devicePixelRatioF());
+    m_imageLabel->setPixmap(pixmap.scaled(
+        m_imageLabel->size() * devicePixelRatioF(),
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+    ));
+    
+
     m_cancelButton = new QPushButton("cancel", this);
-    m_cancelButton->setMinimumSize(100, 60);
-    m_cancelButton->setMaximumSize(150, 60);
+    m_cancelButton->setMinimumSize(utility::getScaledSize(100), utility::getScaledSize(60));
+    m_cancelButton->setMaximumSize(utility::getScaledSize(150), utility::getScaledSize(60));
     connect(m_cancelButton, &QPushButton::clicked, [this]() {
         m_profile_editor_widget->setFieldsEditor();
-
-
-        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-        
-
-        m_imageLabel->setFixedSize(450, 450);
+        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(utility::getScaledSize(450), utility::getScaledSize(450), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        m_imageLabel->setFixedSize(utility::getScaledSize(450), utility::getScaledSize(450));
         m_cropXSlider->hide();
         m_cropYSlider->hide();
         setFixedHeight(650);
         });
 
-    m_imageLabel = new QLabel(this);
-    m_imageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    m_imageLabel->setAlignment(Qt::AlignCenter);
-
-
-    m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(450, 450, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    
 
 
     m_selectImageButton = new QPushButton("Choose a photo", this);
-    m_selectImageButton->setMinimumSize(200, 60);
-    m_selectImageButton->setMaximumSize(250, 60);
+    m_selectImageButton->setMinimumSize(utility::getScaledSize(200), utility::getScaledSize(60));
+    m_selectImageButton->setMaximumSize(utility::getScaledSize(250), utility::getScaledSize(60));
     connect(m_selectImageButton, &QPushButton::clicked, this, &PhotoEditComponent::openImagePicker);
 
     m_continueButton = new QPushButton("Save", this);
     m_continueButton->setEnabled(false);
-    m_continueButton->setMinimumSize(200, 60);
-    m_continueButton->setMaximumSize(250, 60);
+    m_continueButton->setMinimumSize(utility::getScaledSize(200), utility::getScaledSize(60));
+    m_continueButton->setMaximumSize(utility::getScaledSize(250), utility::getScaledSize(60));
     connect(m_continueButton, &QPushButton::clicked, [this]() {
         saveCroppedImage();
         Photo* photo = new Photo(m_filePath.toStdString());
@@ -63,7 +68,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
-    m_cropXSlider->setFixedSize(200, 20);
+    m_cropXSlider->setFixedSize(utility::getScaledSize(200), utility::getScaledSize(20));
     m_cropXSlider->hide();
     m_cropXSlider->setRange(0, 500);
     m_cropXSlider->setValue(m_cropX);
@@ -71,7 +76,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
 
     m_sliderXLayout = new QHBoxLayout();
     m_sliderXLayout->setAlignment(Qt::AlignCenter);
-    m_sliderXLayout->addSpacing(40);
+    m_sliderXLayout->addSpacing(50);
     m_sliderXLayout->addWidget(m_cropXSlider);
 
 
@@ -79,7 +84,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_cropYSlider->setRange(0, 330);
     m_cropYSlider->setInvertedAppearance(true);
     m_cropYSlider->setValue(m_cropY);
-    m_cropYSlider->setFixedSize(20, 200);
+    m_cropYSlider->setFixedSize(utility::getScaledSize(20), utility::getScaledSize(200));
     m_cropYSlider->hide();
     connect(m_cropYSlider, &QSlider::valueChanged, this, &PhotoEditComponent::adjustCropArea);
 
@@ -89,31 +94,32 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_buttonsHLayout->addSpacing(30);
     m_buttonsHLayout->addWidget(m_continueButton);
     m_buttonsHLayout->addWidget(m_cancelButton);
-    m_buttonsHLayout->addSpacing(-110);
+    m_buttonsHLayout->addSpacing(-95);
 
     m_imageAndYSliderLayout = new QHBoxLayout();
     m_imageAndYSliderLayout->setAlignment(Qt::AlignCenter);
     m_imageAndYSliderLayout->addWidget(m_cropYSlider);
-    m_imageAndYSliderLayout->addSpacing(20);
+    m_imageAndYSliderLayout->addSpacing(utility::getScaledSize(20));
     m_imageAndYSliderLayout->addWidget(m_imageLabel);
 
     m_bothSlidersVLayout = new QVBoxLayout();
     m_bothSlidersVLayout->setAlignment(Qt::AlignTop);
     m_bothSlidersVLayout->addLayout(m_imageAndYSliderLayout);
-    m_bothSlidersVLayout->addSpacing(20);
+    m_bothSlidersVLayout->addSpacing(40);
     m_bothSlidersVLayout->addLayout(m_sliderXLayout);
 
     m_photoAndSlidersWidgetContainer = new QWidget;
-    m_photoAndSlidersWidgetContainer->setMaximumSize(2000, 600);
+    m_photoAndSlidersWidgetContainer->setMaximumSize(utility::getScaledSize(2000), utility::getScaledSize(600));
     m_photoAndSlidersWidgetContainer->setLayout(m_bothSlidersVLayout);
 
     m_mainVLayout->addWidget(m_photoAndSlidersWidgetContainer);
-    m_mainVLayout->addSpacing(20);
+    m_mainVLayout->addSpacing(utility::getScaledSize(20));
     m_mainVLayout->addLayout(m_buttonsHLayout);
     m_mainVLayout->addSpacing(30);
     setLayout(m_mainVLayout);
     setMouseTracking(true);
 
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     setTheme(m_theme);
 } 
 
@@ -137,23 +143,23 @@ void PhotoEditComponent::setTheme(Theme theme) {
 }
 
 void PhotoEditComponent::openImagePicker() {
-    setFixedHeight(700);
-    m_profile_editor_widget->onImagePicker();
-
     QString imagePath = QFileDialog::getOpenFileName(this, "Choose Photo", "", "Images (*.png *.jpg *.jpeg)");
     if (!imagePath.isEmpty()) {
         m_selectedImage.load(imagePath);
-        m_selectedImage = m_selectedImage.scaled(500, 500, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+        int paramScale = utility::getScaledSize(500);
+        m_selectedImage = m_selectedImage.scaled(paramScale, paramScale, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
         int imageWidth = m_selectedImage.width();
         int imageHeight = m_selectedImage.height();
 
-        if (imageWidth < 500 || imageHeight < 500) {
+        if (imageWidth < paramScale || imageHeight < paramScale) {
             m_imageLabel->setFixedSize(imageWidth, imageHeight);
             m_cropXSlider->setFixedSize(imageWidth, 30);
             m_cropYSlider->setFixedSize(30, imageHeight);
         }
         else {
-            m_imageLabel->setFixedSize(400, 400);
+            m_imageLabel->setFixedSize(utility::getScaledSize(400), utility::getScaledSize(400));
         }
 
         m_imageLabel->setPixmap(m_selectedImage);
@@ -301,7 +307,6 @@ void PhotoEditComponent::saveCroppedImage() {
 
     QImage image = croppedImage.toImage();
 
-    // Уменьшаем размер изображения, если оно слишком большое
     while (image.sizeInBytes() > 58 * 1024 && image.width() > 10 && image.height() > 10) {
         image = image.scaled(image.width() * 0.9, image.height() * 0.9,
             Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -318,20 +323,18 @@ void PhotoEditComponent::saveCroppedImage() {
         return;
     }
 
-    // Проверяем, удалось ли сжать
     if (imageData.size() > 58 * 1024) {
         qWarning() << "Не удалось сжать изображение до 64 КБ. Фактический размер:"
             << imageData.size() / 1024 << "КБ";
         return;
     }
 
-    // Сохраняем в файл
     QFile file(m_filePath);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(imageData);
         qDebug() << "The image was saved successfully:" << m_filePath
             << "Size" << imageData.size() / 1024 << "КБ"
-            << "Quality:" << quality + 5; // +5 потому что последняя итерация уменьшила quality
+            << "Quality:" << quality + 5;
         file.close();
         return;
     }

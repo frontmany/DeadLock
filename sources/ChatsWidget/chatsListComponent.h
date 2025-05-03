@@ -170,7 +170,7 @@ private:
     QHBoxLayout* m_profileHLayout;
     QHBoxLayout* m_contentsHLayout;
 
-    ButtonIcon*         m_moon_icon;
+    QLabel*             m_moon_icon;
     ToggleSwitch*       m_darkModeSwitch;
     ChatsWidget*        m_chatsWidget;
     QScrollArea*        m_scrollArea;

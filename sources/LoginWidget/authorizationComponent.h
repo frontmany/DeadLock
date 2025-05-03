@@ -35,6 +35,7 @@ public:
 
     void setRedBorderToLoginEdit();
     void setRedBorderToPasswordEdit();
+    void setErrorMessageToLabel(const QString& errorText);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -61,6 +62,8 @@ private:
     QPushButton*                m_loginButton;
     QLineEdit*                  m_loginEdit;
     QLineEdit*                  m_passwordEdit;
+
+    QLabel*                     m_error_label;
 
     Theme* m_theme = nullptr;
 };

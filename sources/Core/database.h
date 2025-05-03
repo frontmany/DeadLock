@@ -49,5 +49,6 @@ private:
 	sqlite3_finalize_t sqlite3_finalize;
 
 private:
+	const std::string delimiter = "--8d45f2a1-3c7b-4e9d-a2f6-1b0c9e3d5a7f--";
 	void* m_db;
 };

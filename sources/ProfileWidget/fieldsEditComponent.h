@@ -40,6 +40,7 @@ struct StyleFieldsEditComponent {
 class EditDialogComponent;
 class ProfileEditorWidget;
 class Client;
+class Photo;
 enum  Theme;
 
 
@@ -50,7 +51,7 @@ class FieldsEditComponent : public QWidget {
 public:
     FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget,  Client* client, Theme theme);
     void setTheme(Theme theme);
-    void updateAvatar();
+    void updateAvatar(const Photo& photo);
 
 public slots:
     void setErrorText(const QString& text);
