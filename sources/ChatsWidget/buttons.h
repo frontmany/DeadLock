@@ -97,7 +97,7 @@ public:
     {
         setFixedSize(50, 50);
         setGeometry(x, y, iconSize, iconSize);
-        setAttribute(Qt::WA_Hover); // Включаем отслеживание hover-событий
+        setAttribute(Qt::WA_Hover); 
     }
 
     QSize sizeHint() const override { return QSize(32, 32); }

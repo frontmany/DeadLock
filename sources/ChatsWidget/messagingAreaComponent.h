@@ -7,6 +7,8 @@
 #include <QDebug>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsScene>
 #include <QSequentialAnimationGroup>
 #include <QScrollArea>
 #include <QCoreApplication>
@@ -40,6 +42,7 @@ struct StyleMessagingAreaComponent {
 class ButtonIcon;
 class ButtonCursor;
 class ChatHeaderComponent;
+class MessagingAreaComponent;
 class MessageComponent;
 class ChatsWidget;
 class Packet;
@@ -112,6 +115,35 @@ signals:
 };
 
 
+class FriendProfileComponent : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit FriendProfileComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme);
+    void setUserData(const QString& login, const QString& name);
+    void setTheme(Theme theme);
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+
+private:
+    void setupUI();
+    void applyGlassEffect(QPainter& painter, const QPainterPath& path);
+
+    QLabel* m_login_label;
+    QLabel* m_name_label;
+
+    //ButtonIcon m_block_button; TODO
+    ButtonIcon* m_close_button;
+    MessagingAreaComponent* m_messagingAreaComponent;
+
+    QVBoxLayout* m_mainLayout;
+    QColor* m_color;
+
+    Theme m_theme;
+};
+
+
 class MessagingAreaComponent : public QWidget {
     Q_OBJECT
 
@@ -132,6 +164,9 @@ signals:
     void sendMessageData(Message*, Chat* chat);
 
 public slots:
+    void openFriendProfile();
+    void closeFriendProfile();
+
     void addMessage(Message* message);
     void setAvatar(const QPixmap& pixMap);
     void setName(const QString& name);
@@ -162,6 +197,8 @@ private:
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
     QHBoxLayout* m_button_sendHLayout;
+
+    FriendProfileComponent* m_friend_profile_component;
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;

@@ -112,6 +112,93 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
         "}";
 };
 
+
+FriendProfileComponent::FriendProfileComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme)
+    : QWidget(parent), m_theme(theme), m_messagingAreaComponent(messagingAreaComponent)
+{
+    setAttribute(Qt::WA_TranslucentBackground);
+    setWindowFlags(Qt::FramelessWindowHint);
+    setupUI();
+}
+
+void FriendProfileComponent::setupUI()
+{
+
+    m_mainLayout = new QVBoxLayout(this);
+    m_mainLayout->setSpacing(10);
+    m_mainLayout->setContentsMargins(10, 10, 10, 10);
+
+    m_login_label = new QLabel(this);
+    m_login_label->setAlignment(Qt::AlignLeft);
+
+    m_name_label = new QLabel(this);
+    m_name_label->setAlignment(Qt::AlignLeft);
+
+
+    m_close_button = new ButtonIcon(this, 25, 25);
+    QIcon icon1(":/resources/ChatsWidget/closeDark.png");
+    QIcon iconHover1(":/resources/ChatsWidget/closeHoverDark.png");
+    m_close_button->uploadIconsDark(icon1, iconHover1);
+    QIcon icon2(":/resources/ChatsWidget/closeLightGray.png");
+    QIcon iconHover2(":/resources/ChatsWidget/closeHoverLightGray.png");
+    m_close_button->uploadIconsLight(icon2, iconHover2);
+    m_close_button->setTheme(m_theme);
+
+    connect(m_close_button, &ButtonIcon::clicked, m_messagingAreaComponent, &MessagingAreaComponent::closeFriendProfile);
+
+    m_close_button->setParent(this); // Важно!
+    m_close_button->setGeometry(
+        170, // X-позиция (отступ слева)
+        5, // Y-позиция (отступ сверху)
+        width(), // Ширина
+        120 // Высота профильного компонента
+    );
+
+    m_mainLayout->addWidget(m_login_label);
+    m_mainLayout->addWidget(m_name_label);
+    setTheme(m_theme);
+}
+
+void FriendProfileComponent::setUserData(const QString& login, const QString& name)
+{
+    m_login_label->setText("login: " + login);
+    m_name_label->setText("name: " + name);
+}
+
+void FriendProfileComponent::paintEvent(QPaintEvent* event)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QPainterPath path;
+    path.addRoundedRect(rect(), 5, 5);
+    painter.setClipPath(path);
+    applyGlassEffect(painter, path);
+}
+
+void FriendProfileComponent::applyGlassEffect(QPainter& painter, const QPainterPath& path)
+{
+    painter.fillPath(path, *m_color);
+}
+
+void FriendProfileComponent::setTheme(Theme theme) {
+    m_theme = theme;
+
+    if (m_theme == Theme::DARK) {
+        m_close_button->setTheme(m_theme);
+        m_color = new QColor(51, 51, 51);
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(94, 94, 94);");
+        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(94, 94, 94);");
+    }
+    else {
+        m_close_button->setTheme(m_theme);
+        m_color = new QColor(225, 225, 225);
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(184, 184, 184);");
+        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(184, 184, 184);");
+    }
+}
+
+
 MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget)
     : QWidget(parent), m_friendName(friendName), m_theme(theme), m_chat(chat),
     m_chatsWidget(chatsWidget), m_style(new StyleMessagingAreaComponent())
@@ -120,16 +207,21 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     if (chat->getIsFriendHasPhoto() == true) 
-        m_header = new ChatHeaderComponent(this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
+        m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
     else 
-        m_header = new ChatHeaderComponent(this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap());
+        m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap());
   
+    m_friend_profile_component = new FriendProfileComponent(this, this, m_theme);
+    m_friend_profile_component->hide();
+    m_friend_profile_component->setFixedSize(200, 70);
+    m_friend_profile_component->setUserData(QString::fromStdString(chat->getFriendLogin()), QString::fromStdString(chat->getFriendName()));
+
 
     if (m_theme == DARK) {
         m_backColor = QColor(25, 25, 25);
     }
     else {
-        m_backColor = QColor(240, 240, 240, 300);
+        m_backColor = QColor(240, 240, 240);
     }
 
     m_containerWidget = new QWidget();
@@ -189,6 +281,14 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_main_VLayout->addLayout(m_button_sendHLayout);
     m_main_VLayout->addLayout(m_error_labelLayout);
 
+    m_friend_profile_component->setParent(m_scrollArea->viewport()); // Важно!
+    m_friend_profile_component->setGeometry(
+        0, // X-позиция (отступ слева)
+        0, // Y-позиция (отступ сверху)
+        width(), // Ширина
+        120 // Высота профильного компонента
+    );
+
     m_main_VLayout->setContentsMargins(10, 10, 10, 10);
     m_main_VLayout->setSpacing(5);
 
@@ -222,10 +322,17 @@ MessagingAreaComponent::~MessagingAreaComponent() {
     delete m_header;
     delete m_sendMessageButton;
     delete m_containerWidget;
-
     delete m_scrollArea;
     delete m_main_VLayout;
     delete m_style;
+}
+
+void MessagingAreaComponent::openFriendProfile() {
+    m_friend_profile_component->show();
+}
+
+void MessagingAreaComponent::closeFriendProfile() {
+    m_friend_profile_component->hide();
 }
 
 void MessagingAreaComponent::setErrorLabelText(const QString& errorText) {
@@ -283,6 +390,7 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (m_theme == DARK) {
         m_backColor = QColor(25, 25, 25);
+        m_friend_profile_component->setTheme(m_theme);
         m_messageInputEdit->setStyleSheet(m_style->DarkTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->darkSlider);
         m_error_label->setStyleSheet(m_style->DarkErrorLabelStyle);
@@ -295,6 +403,7 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     }
     else {
         m_backColor = QColor(240, 240, 240, 200);
+        m_friend_profile_component->setTheme(m_theme);
         m_messageInputEdit->setStyleSheet(m_style->LightTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->lightSlider);
         m_error_label->setStyleSheet(m_style->LightErrorLabelStyle);

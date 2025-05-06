@@ -1,6 +1,7 @@
 #include "responseHandler.h"
 #include "workerUI.h"
 #include "chatsWidget.h"
+#include "friendInfo.h"
 #include "client.h"
 #include "utility.h"
 #include "queryType.h"
@@ -79,11 +80,16 @@ void ResponseHandler::handleResponse(ownedMessageT& msg) {
     else if (msg.msg.header.type == QueryType::ALL_PENDING_MESSAGES_WERE_SENT) {
         m_client->getAllFriendsStatuses();
     }
+    else if (msg.msg.header.type == QueryType::FIND_USER_RESULTS) {
+        processFoundUsers(packet);
+    }
 }
+
 
 void ResponseHandler::onRegistrationSuccess() {
     const std::string& myLogin = m_client->getMyLogin();
-    m_client->setIsNeedToSaveConfig(true);
+    m_client->setIsNeedToAutoLogin(true);
+    m_client->setNeedToUndoAutoLogin(false);
 
     m_worker_UI->onRegistrationSuccess();
 }
@@ -95,15 +101,18 @@ void ResponseHandler::onRegistrationFail() {
 
 
 void ResponseHandler::onAuthorizationSuccess() {
-    const std::string& myLogin = m_client->getMyLogin();
+    if (m_client->isAutoLogin() != true) {
+        const std::string& myLogin = m_client->getMyLogin();
+        bool res = m_client->load(myLogin + ".json");
+        if (!res) {
+            m_client->requestFriendInfoFromServer(myLogin);
+            m_worker_UI->showConfigLoadErrorDialog();
+        }
 
-    bool res = m_client->load(myLogin + ".json");
-    if (!res) {
-        m_client->requestFriendInfoFromServer(myLogin);
-        m_worker_UI->showConfigLoadErrorDialog();
+        m_client->setIsNeedToAutoLogin(true);
     }
-
-    m_client->setIsNeedToSaveConfig(true);
+    
+    m_client->setNeedToUndoAutoLogin(false);
     m_worker_UI->onAuthorizationSuccess();
 }
 
@@ -111,6 +120,50 @@ void ResponseHandler::onAuthorizationFail() {
     m_worker_UI->onAuthorizationFail();
 }
 
+
+void ResponseHandler::processFoundUsers(const std::string& packet) {
+    std::istringstream iss(packet);
+
+    std::string countStr;
+    std::getline(iss, countStr);
+    size_t count = std::stoi(countStr);
+
+    std::vector<FriendInfo*> vec;
+    vec.reserve(count);
+
+    for (int i = 9; i < count; i++) {
+        FriendInfo* user = new FriendInfo();
+
+        std::string login;
+        std::getline(iss, login);
+        user->setFriendLogin(login);
+
+        std::string name;
+        std::getline(iss, name);
+        user->setFriendName(name);
+
+        std::string lastSeen;
+        std::getline(iss, lastSeen);
+        user->setFriendLastSeen(lastSeen);
+
+        std::string isHasPhotoStr;
+        std::getline(iss, isHasPhotoStr);
+        bool isHasPhoto = isHasPhotoStr == "true";
+        user->setIsFriendHasPhoto(isHasPhoto);
+
+        std::string sizeStr;
+        std::getline(iss, sizeStr);
+
+        std::string photoStr;
+        std::getline(iss, photoStr);
+        Photo* photo = Photo::deserializeWithoutSaveOnDisc(base64_decode(photoStr));
+        user->setFriendPhoto(photo);
+
+        vec.emplace_back(user);
+    }
+    
+    m_worker_UI->processFoundUsers(std::move(vec));
+}
 
 
 void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
@@ -144,7 +197,7 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
 
     utility::incrementAllChatLayoutIndexes(m_client->getMyChatsMap());
 
-    Photo* photo = Photo::deserialize(base64_decode(photoStr), login);
+    Photo* photo = Photo::deserializeAndSaveOnDisc(base64_decode(photoStr), login);
     chat->setFriendPhoto(photo);
     chat->setFriendLastSeen(lastSeen);
     chat->setLastReceivedOrSentMessage("no messages yet");
@@ -305,7 +358,7 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
         m_client->updateInConfigFriendLogin(login, newLogin);
     }
 
-    Photo* photo = Photo::deserialize(base64_decode(photoStr), login);
+    Photo* photo = Photo::deserializeAndSaveOnDisc(base64_decode(photoStr), login);
 
     auto& chatsMap = m_client->getMyChatsMap();
     const auto it = chatsMap.find(login);

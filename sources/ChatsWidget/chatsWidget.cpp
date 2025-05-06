@@ -208,7 +208,11 @@ void ChatsWidget::selectChatComponent(ChatComponent* component) {
     component->setSelected(true);
 }
 
-
+void ChatsWidget::onLogoutRequested() {
+    m_client->undoAutoLogin();
+    m_client->setNeedToUndoAutoLogin(true);
+    QApplication::quit();
+}
 
 void ChatsWidget::createAndSetMessagingAreaComponent(Chat* chat) {
     Theme theme = getTheme();

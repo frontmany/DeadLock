@@ -16,6 +16,8 @@
 #include "loginWidget.h"
 #include "utility.h"
 #include "chat.h"
+#include "friendInfo.h"
+#include "friendSearchDialogComponent.h"
 #include "photo.h"
 
 
@@ -305,6 +307,18 @@ bool  WorkerQt::updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat) {
 	return false;
 }
 
+void WorkerQt::processFoundUsers(std::vector<FriendInfo*>&& vec) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto chatsList = chatsWidget->getChatsList();
+	auto friendSearchDialogComponent = chatsList->getFriendSearchDialogComponent();
+	/*
+	QMetaObject::invokeMethod(friendSearchDialogComponent,
+		"refreshFriendsList",
+		Qt::QueuedConnection,
+		Q_ARG(const std::vector<FriendInfo*>&&, std::move(vec)));
+	*/
+}
+
 bool WorkerQt::updateExistingMessagingAreaComp(ChatsWidget* chatsWidget, Chat* chat) {
 	auto& messagingAreasVec = chatsWidget->getMessagingAreasVec();
 	auto messagingAreaIt = std::find_if(messagingAreasVec.begin(), messagingAreasVec.end(), [chat](MessagingAreaComponent* messagingAreaComp) {
@@ -336,7 +350,7 @@ bool WorkerQt::updateExistingMessagingAreaComp(ChatsWidget* chatsWidget, Chat* c
 }
 
 
-//TODO
+
 void WorkerQt::onCheckNewLoginSuccess() {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();

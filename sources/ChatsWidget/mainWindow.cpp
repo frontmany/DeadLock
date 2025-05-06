@@ -33,7 +33,7 @@ MainWindow::~MainWindow() {
     m_client->broadcastMyStatus(utility::getCurrentDateTime());
     std::cout << "saving\n";
 
-    if (m_client->isNeedToSaveConfig()) {
+    if (m_client->isAutoLogin()) {
         m_client->save();
     }
 

@@ -118,6 +118,7 @@ class AvatarIcon;
 class AddChatDialogComponent;
 class ProfileEditorWidget;
 class MessagingAreaComponent;
+class FriendSearchDialogComponent;
 class ButtonIcon;
 class ToggleSwitch;
 class Client;
@@ -135,6 +136,7 @@ public:
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
     AddChatDialogComponent* getAddChatDialogComponent() { return m_chatAddDialog; }
+    FriendSearchDialogComponent* getFriendSearchDialogComponent() { return m_friend_search_dialog; }
     ProfileEditorWidget* getProfileEditorWidget() { return m_profile_editor_widget; }
 
     QLineEdit* getSearchLineEdit() { return m_searchLineEdit; }
@@ -146,6 +148,7 @@ public:
 signals:
     void sendCreateChatData(QString login);
     void sendChangeTheme();
+    void logoutRequested();
 
 
 public slots:
@@ -177,13 +180,20 @@ private:
     QWidget*            m_containerWidget;
     QVBoxLayout*        m_containerVLayout;
     QLineEdit*          m_searchLineEdit;
+
     AvatarIcon*         m_profileButton;
     ButtonIcon*         m_newChatButton;
-    AddChatDialogComponent* m_chatAddDialog;
-    ChatsWidget*        m_chats_widget;
-    ProfileEditorWidget* m_profile_editor_widget = nullptr;
+    ButtonIcon*         m_logoutButton;
+
+    QTimer*                      m_search_timer;
+    FriendSearchDialogComponent* m_friend_search_dialog;
+    AddChatDialogComponent*      m_chatAddDialog;
+
+    ChatsWidget*         m_chats_widget;
+    ProfileEditorWidget* m_profile_editor_widget;
 
     std::vector<ChatComponent*> m_vec_chatComponents;
+
     bool m_isChatAddDialog = false;
     bool m_isEditDialog = false;
     bool m_ableToCreateChat = true;

@@ -157,6 +157,16 @@ const std::string PacketsBuilder::getCheckIsNewLoginAvailablePacket(const std::s
     return oss.str();
 }
 
+const std::string PacketsBuilder::getFindUserPacket(const std::string& myLogin, const std::string& text) {
+    std::ostringstream oss;
+
+    oss << get << '\n'
+        << myLogin << '\n'
+        << text;
+
+    return oss.str();
+}
+
 //RPL
 const std::string PacketsBuilder::getMessagePacket(const std::string& myLogin,
     const std::string& friendLogin,

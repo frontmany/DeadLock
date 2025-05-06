@@ -1,13 +1,69 @@
 #include "chatHeaderComponent.h"
+#include "messagingAreaComponent.h"
 #include "mainwindow.h"
 #include "buttons.h"
 #include "utility.h"
 
+StyleChatHeaderComponent::StyleChatHeaderComponent(){
+    deepBlueLabelStyle = R"(
+        QLabel {
+            font-family: "Segoe UI";
+            background-color: transparent;  
+            font-weight: normal;
+            border: none;   
+            font-size: 14px;
+            color: rgb(64, 140, 255);            
+        }
+        )";
+
+    blueLabelStyle = R"(
+        QLabel {
+            font-family: "Segoe UI";
+            background-color: transparent;  
+            font-weight: normal;
+            border: none;   
+            font-size: 14px;
+            color: rgb(104, 163, 252);            
+        }
+        )";
+
+    lightLabelStyle = R"(
+        QLabel {
+            font-family: "Segoe UI";
+            background-color: transparent;  
+            font-weight: bold;
+            border: none;   
+            font-size: 14px;
+            color: rgb(219, 219, 219);            
+        }
+        )";
+
+    darkLabelStyle = R"(
+        QLabel {
+            font-family: "Segoe UI";
+            background-color: transparent;  
+            font-weight: bold;
+            border: none;   
+            font-size: 14px;
+            color: rgb(47, 47, 48);            
+        }
+        )";
+
+    grayLabelStyle = R"(
+        QLabel {
+            font-family: "Segoe UI";
+            background-color: transparent;  
+            font-weight: normal;
+            border: none;   
+            font-size: 14px;
+            color: rgb(120, 120, 120);            
+        }
+        )";
+};
 
 
-
-ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString name, QString lastSeen, QPixmap avatar)
-    : QWidget(parent), m_theme(theme) {
+ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme, QString name, QString lastSeen, QPixmap avatar)
+    : QWidget(parent), m_theme(theme), m_messaging_area_component(messagingAreaComponent) {
 
     if (m_theme == DARK) {
         m_backColor = QColor(36, 36, 36);
@@ -22,6 +78,7 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
 
     m_mainLayout = new QHBoxLayout(this);
 
+
     m_leftIcon = new AvatarIcon(this, 0, 0, 32, true, m_theme);
     if (avatar.isNull()) {
         QIcon icon(":/resources/ChatsWidget/userFriend.png");
@@ -31,7 +88,10 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
         QIcon icon(avatar);
         m_leftIcon->setIcon(icon);
     }
-    m_mainLayout->addWidget(m_leftIcon);
+
+    connect(m_leftIcon, &AvatarIcon::clicked, [this]() {
+        m_messaging_area_component->openFriendProfile();
+        });
 
     m_rightLayout = new QVBoxLayout();
 
@@ -39,10 +99,9 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, Theme theme, QString n
 
     m_lastSeenLabel = new QLabel(QString::fromStdString(utility::parseDate(lastSeen.toStdString())), this);
     
-
+    m_mainLayout->addWidget(m_leftIcon);
     m_rightLayout->addWidget(m_nameLabel);
     m_rightLayout->addWidget(m_lastSeenLabel);
-
     m_mainLayout->addLayout(m_rightLayout);
 
     m_rightButton = new ButtonIcon(this, 50, 50);

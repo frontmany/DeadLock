@@ -21,7 +21,7 @@ class      Chat;
 class      Photo;
 class      PacketsBuilder;
 
-class Client : public net::client_interface<QueryType> { //TODO
+class Client : public net::client_interface<QueryType> {
 public:
     Client();
     ~Client();
@@ -30,6 +30,9 @@ public:
     void setWorkerUI(WorkerUI* workerImpl);
     void run();
     void stop();
+
+    bool autoLogin();
+    bool undoAutoLogin();
 
     void save() const;
     bool load(const std::string& fileName);
@@ -54,15 +57,22 @@ public:
     void broadcastMyStatus(const std::string& status);
     void getAllFriendsStatuses();
     void requestFriendInfoFromServer(const std::string& myLogin);
+    void findUser(const std::string& text);
     
     void waitUntilUIReadyToUpdate();
 
 
     // GET && SET
-    bool isNeedToSaveConfig() { return m_is_need_to_save_config; };
-    void setIsNeedToSaveConfig(bool isNeedToSaveConfig) { m_is_need_to_save_config = isNeedToSaveConfig; }
+    bool isAutoLogin() { return m_is_auto_login; };
+    void setIsNeedToAutoLogin(bool  isNeedToAutoLogin) { m_is_auto_login = isNeedToAutoLogin; }
+
+    bool isUndoAutoLogin() { return m_is_undo_auto_login; };
+    void setNeedToUndoAutoLogin(bool  isNeedToUndoAutoLogin) { m_is_undo_auto_login = isNeedToUndoAutoLogin; }
 
     void setIsUIReadyToUpdate(bool isUIReadyToUpdate) { m_is_ui_ready_to_update.store(isUIReadyToUpdate); }
+
+    void setMyPasswordHash(const std::string& passwordHash) { m_my_password_hash = passwordHash; }
+    const std::string& getMyPasswordHash() const { return m_my_password_hash; }
 
     void setMyLogin(const std::string& login) { m_my_login = login; }
     const std::string& getMyLogin() const { return m_my_login; }
@@ -84,9 +94,11 @@ private:
     void processIncomingMessagesQueue();
 
 private:
-    std::thread                      m_worker_thread;
+    std::thread             m_worker_thread;
 
-    bool                    m_is_need_to_save_config;
+    bool                    m_is_auto_login;
+    bool                    m_is_undo_auto_login;
+
     std::atomic<bool>       m_is_ui_ready_to_update;
 
     ResponseHandler*        m_response_handler;
@@ -96,6 +108,7 @@ private:
 
     bool        m_is_has_photo;
     std::string m_my_login;
+    std::string m_my_password_hash;
     std::string m_my_name;
     Photo*      m_my_photo;
 

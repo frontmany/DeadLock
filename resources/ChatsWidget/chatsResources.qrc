@@ -36,5 +36,11 @@
         <file>moon.png</file>
 		<file>lockDark.png</file>
 		<file>lockLight.png</file>
+		<file>closeHoverLightGray.png</file>
+		<file>closeLightGray.png</file>
+		<file>logoutDark.png</file>
+		<file>logoutHoverDark.png</file>
+		<file>logoutLight.png</file>
+		<file>logoutHoverLight.png</file>
     </qresource>
 </RCC>

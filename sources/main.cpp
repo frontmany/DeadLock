@@ -29,7 +29,14 @@ int main(int argc, char* argv[])
     client->run();
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);
-    mainWindow->setupLoginWidget();
+
+    bool isAutoLogin = client->autoLogin();
+    if (isAutoLogin == true) {
+        client->authorizeClient(client->getMyLogin(), client->getMyPasswordHash());
+    }
+    else {
+        mainWindow->setupLoginWidget();
+    }
     
     mainWindow->showMaximized();
 

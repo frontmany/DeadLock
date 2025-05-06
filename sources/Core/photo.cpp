@@ -40,28 +40,38 @@ std::string Photo::serialize() const {
     return base64_encode(std::string(buffer.data(), m_size), false);
 }
 
-Photo* Photo::deserialize(const std::string& data, std::string login) {
+Photo* Photo::deserializeAndSaveOnDisc(const std::string& data, std::string login) {
     if (data.empty()) {
-        return new Photo;
+        return new Photo();
     }
 
     std::string saveDirectory = "./Data_Air_Gram";
     std::string tempPath = saveDirectory + "/" + login + "Photo.png";
 
-    // Создаем директорию, если её нет
     std::filesystem::create_directories(saveDirectory);
 
-    // Записываем все данные в файл
     std::ofstream outFile(tempPath, std::ios::binary);
     if (outFile) {
-        outFile.write(data.data(), data.size());  // Используем data.size()
+        outFile.write(data.data(), data.size()); 
         outFile.close();
         std::cout << "Photo saved to: " << tempPath << std::endl;
     }
     else {
         std::cerr << "Failed to open file: " << tempPath << std::endl;
-        return new Photo;  // Возвращаем пустое фото в случае ошибки
+        return new Photo;
     }
 
-    return new Photo(tempPath);
+    Photo* newPhoto = new Photo(tempPath);
+    newPhoto->m_binaryData = data;
+    newPhoto->m_size = data.size();
+
+    return newPhoto;
+}
+
+Photo* Photo::deserializeWithoutSaveOnDisc(const std::string& data) {
+    Photo* photo = new Photo();
+    photo->m_binaryData = data;
+    photo->m_size = data.size();
+
+    return photo;
 }

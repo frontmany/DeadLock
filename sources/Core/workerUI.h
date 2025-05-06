@@ -1,6 +1,7 @@
 #include <string>
 
 class Message;
+class FriendInfo;
 class Chat;
 
 class WorkerUI {
@@ -20,6 +21,7 @@ public:
 	virtual void onCheckNewLoginFail() = 0;
 	virtual void onCheckNewLoginSuccess() = 0;
 
+	virtual void processFoundUsers(std::vector<FriendInfo*>&& vec) = 0;
 	virtual void updateFriendsStatuses(const std::vector<std::pair<std::string, std::string>>& loginToStatusPairsVec) = 0;
 	virtual void showConfigLoadErrorDialog() = 0;
 	virtual void onMessageReceive(const std::string& friendLogin, Message* message) = 0;

@@ -5,77 +5,31 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
-
+#include <QPainter>
+#include <QPainterPath>
 
 class ButtonIcon;
 class AvatarIcon;
+class MessagingAreaComponent;
 enum Theme;
 
 struct StyleChatHeaderComponent {
+    StyleChatHeaderComponent();
 
+    QString deepBlueLabelStyle;
 
-    QString deepBlueLabelStyle = R"(
-    QLabel {
-        font-family: "Segoe UI";
-        background-color: transparent;  
-        font-weight: normal;
-        border: none;   
-        font-size: 14px;
-        color: rgb(64, 140, 255);            
-    }
-)";
+    QString blueLabelStyle;
+    QString lightLabelStyle;
 
-    QString blueLabelStyle = R"(
-    QLabel {
-        font-family: "Segoe UI";
-        background-color: transparent;  
-        font-weight: normal;
-        border: none;   
-        font-size: 14px;
-        color: rgb(104, 163, 252);            
-    }
-)";
-
-    QString lightLabelStyle = R"(
-    QLabel {
-        font-family: "Segoe UI";
-        background-color: transparent;  
-        font-weight: bold;
-        border: none;   
-        font-size: 14px;
-        color: rgb(219, 219, 219);            
-    }
-)";
-
-    QString darkLabelStyle = R"(
-    QLabel {
-        font-family: "Segoe UI";
-        background-color: transparent;  
-        font-weight: bold;
-        border: none;   
-        font-size: 14px;
-        color: rgb(47, 47, 48);            
-    }
-)";
-
-    QString grayLabelStyle = R"(
-    QLabel {
-        font-family: "Segoe UI";
-        background-color: transparent;  
-        font-weight: normal;
-        border: none;   
-        font-size: 14px;
-        color: rgb(120, 120, 120);            
-    }
-)";
-
+    QString darkLabelStyle;
+    QString grayLabelStyle;
 };
 
 class ChatHeaderComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ChatHeaderComponent(QWidget* parent, Theme theme, QString name, QString lastSeen, QPixmap avatar);
+    explicit ChatHeaderComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme, QString name, QString lastSeen, QPixmap avatar);
   
     const QString& getLastSeen() const { return m_lastSeenLabel->text(); }
 
@@ -95,7 +49,9 @@ private:
     StyleChatHeaderComponent* style;
     Theme m_theme;
     QColor m_backColor;
-    
+
+    MessagingAreaComponent* m_messaging_area_component;
+
     AvatarIcon*     m_leftIcon;
     ButtonIcon*     m_rightButton;
 

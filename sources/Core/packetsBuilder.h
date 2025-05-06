@@ -15,6 +15,7 @@ public:
 	const std::string getAuthorizationPacket(const std::string& login, const std::string& passwordHash);
 	const std::string getRegistrationPacket(const std::string& login, const std::string& name, const std::string& passwordHash);
 	const std::string getCreateChatPacket(const std::string& myLogin, const std::string& friendLogin);
+	const std::string getFindUserPacket(const std::string& myLogin, const std::string& text);
 
 	const std::string getUpdateMyNamePacket(const std::string& login, const std::string& newName, const std::vector<std::string>& friendsLoginsVec);
 	const std::string getUpdateMyPasswordPacket(const std::string& login, const std::string& newPasswordHash, const std::vector<std::string>& friendsLoginsVec);

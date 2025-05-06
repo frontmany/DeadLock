@@ -33,6 +33,7 @@ public:
 	void onChatCreateSuccess(Chat* chat) override;
 	void onChatCreateFail() override;
 
+	void processFoundUsers(std::vector<FriendInfo*>&& vec) override;
 	void updateFriendsStatuses(const std::vector<std::pair<std::string, std::string>>& loginToStatusPairsVec) override;
 	void showConfigLoadErrorDialog() override;
 	void onMessageReceive(const std::string& friendLogin, Message* message) override;

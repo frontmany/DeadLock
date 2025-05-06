@@ -47,6 +47,7 @@ public:
 
 
 	void processFriendsStatusesSuccess(const std::string& packet);
+	void processFoundUsers(const std::string& packet);
 	void onStatusReceive(const std::string& packet);
 
 private:
