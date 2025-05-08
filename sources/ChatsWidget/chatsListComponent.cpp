@@ -65,7 +65,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->setAlignment(Qt::AlignLeft);
 
 
-    m_profileButton = new AvatarIcon(this, 0, 0, 32, true, m_theme);
+    m_profileButton = new AvatarIcon(this, 32, 50, true, m_theme);
     QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
     m_profileButton->setIcon(avatarIcon);
     m_profileHLayout->addWidget(m_profileButton);
@@ -109,7 +109,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_searchLineEdit->setMaximumSize(975, 32);
 
     m_search_timer = new QTimer(this);
-    m_search_timer->setInterval(500);
+    m_search_timer->setInterval(800);
     m_search_timer->setSingleShot(true);
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, [this]() {
@@ -121,6 +121,9 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
             std::string text = m_searchLineEdit->text().trimmed().toStdString();
             if (text != "" && text.find_first_not_of(' ') != std::string::npos) {
                 m_chatsWidget->getClient()->findUser(text);
+            }
+            else if (text == ""){
+                m_friend_search_dialog->close();
             }
         }
     });
@@ -138,6 +141,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout->addLayout(m_profileHLayout);
     m_mainVLayout->addSpacing(10);
     m_mainVLayout->addLayout(m_contentsHLayout);
+    m_mainVLayout->addWidget(m_friend_search_dialog);
     m_mainVLayout->addSpacing(4);
 
     m_containerWidget = new QWidget();
@@ -361,6 +365,7 @@ void ChatsListComponent::setTheme(Theme theme) {
     m_darkModeSwitch->setTheme(m_theme);
     m_logoutButton->setTheme(m_theme);
     m_profileButton->setTheme(m_theme);
+    m_friend_search_dialog->setTheme(m_theme);
 
     if (m_profile_editor_widget != nullptr) {
         m_profile_editor_widget->setTheme(theme);

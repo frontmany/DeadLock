@@ -9,6 +9,7 @@
 #include "message.h"
 #include "client.h"
 #include "photo.h"
+#include "chat.h"
 #include <random>
 #include <limits>
 
@@ -146,12 +147,12 @@ void FriendProfileComponent::setupUI()
 
     connect(m_close_button, &ButtonIcon::clicked, m_messagingAreaComponent, &MessagingAreaComponent::closeFriendProfile);
 
-    m_close_button->setParent(this); // Важно!
+    m_close_button->setParent(this);
     m_close_button->setGeometry(
-        170, // X-позиция (отступ слева)
-        5, // Y-позиция (отступ сверху)
-        width(), // Ширина
-        120 // Высота профильного компонента
+        170, 
+        5,
+        width(), 
+        120 
     );
 
     m_mainLayout->addWidget(m_login_label);
@@ -281,12 +282,12 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_main_VLayout->addLayout(m_button_sendHLayout);
     m_main_VLayout->addLayout(m_error_labelLayout);
 
-    m_friend_profile_component->setParent(m_scrollArea->viewport()); // Важно!
+    m_friend_profile_component->setParent(m_scrollArea->viewport());
     m_friend_profile_component->setGeometry(
-        0, // X-позиция (отступ слева)
-        0, // Y-позиция (отступ сверху)
-        width(), // Ширина
-        120 // Высота профильного компонента
+        0, 
+        0, 
+        width(), 
+        120 
     );
 
     m_main_VLayout->setContentsMargins(10, 10, 10, 10);
@@ -450,6 +451,18 @@ void MessagingAreaComponent::onSendMessageClicked() {
     emit sendMessageData(message, m_chat);
 
     moveSliderDown();
+    
+    auto chatsList = m_chatsWidget->getChatsList();
+    auto& chatCompsVec = chatsList->getChatComponentsVec();
+    auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [this](ChatComponent* comp) {
+        return m_chat->getFriendLogin() == comp->getChat()->getFriendLogin();
+        });
+    if (itComp != chatCompsVec.end()) {
+        ChatComponent* foundComp = *itComp;
+        chatsList->popUpComponent(foundComp);
+    }
+
+
 }
 
 void MessagingAreaComponent::updateRelatedChatComponentLastMessage() {

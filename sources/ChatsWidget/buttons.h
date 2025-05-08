@@ -92,15 +92,7 @@ class AvatarIcon : public QWidget
     Q_OBJECT
 
 public:
-    AvatarIcon(QWidget* parent, int x, int y, int iconSize, bool needHover, Theme theme)
-        : QWidget(parent), m_iconSize(iconSize, iconSize), m_size(iconSize), m_needHover(needHover), m_theme(theme)
-    {
-        setFixedSize(50, 50);
-        setGeometry(x, y, iconSize, iconSize);
-        setAttribute(Qt::WA_Hover); 
-    }
-
-    QSize sizeHint() const override { return QSize(32, 32); }
+    AvatarIcon(QWidget* parent, int iconSize, int size, bool needHover, Theme theme);
 
     void setTheme(Theme theme);
 
@@ -170,6 +162,7 @@ private:
     QIcon m_icon;
 
     QSize m_iconSize;
+    int   m_gradient_size_index;
     int   m_size;
     bool m_hovered = false;
     bool m_needHover = false;

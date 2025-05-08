@@ -1,34 +1,23 @@
 #include "friendSearchDialogComponent.h"
 #include "chatsListComponent.h"
 #include "mainwindow.h"
+#include "utility.h"
+#include "chatsWidget.h"
 #include "chat.h"
+#include "client.h"
 #include "photo.h"
 #include "friendInfo.h"
 #include "buttons.h"
 
 StyleFriendComponent::StyleFriendComponent()
 {
-    widgetStyleDark = R"(
-        FriendComponent {
-            background-color: #383838;
-            border-radius: 12px;
-            border: 1px solid #444444;
-        }
-    )";
-
-    widgetStyleLight = R"(
-        FriendComponent {
-            background-color: #f5f5f5;
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-        }
-    )";
-
     labelStyleDark = R"(
         QLabel {
+            background-color: transparent;
             color: #f0f0f0;
             font-family: 'Segoe UI';
-            font-size: 13px;
+            font-weight: bold;
+            font-size: 14px;
             padding: 2px;
             margin-top: 4px;
         }
@@ -36,9 +25,11 @@ StyleFriendComponent::StyleFriendComponent()
 
     labelStyleLight = R"(
         QLabel {
-            color: #333333;
+            background-color: transparent;
+            color: rgb(125, 125, 125);
             font-family: 'Segoe UI';
-            font-size: 13px;
+            font-weight: bold;
+            font-size: 14px;
             padding: 2px;
             margin-top: 4px;
         }
@@ -118,6 +109,66 @@ StyleFriendSearchDialogComponent::StyleFriendSearchDialogComponent() {
     }
 )";
 
+
+    darkSlider = R"(
+    QScrollBar:horizontal {
+        border: 1px solid #242424;
+        background: #242424;
+        height: 10px;
+        margin: 0px;
+        border-radius: 5px;
+    }
+    QScrollBar::handle:horizontal {
+        background: #383838;
+        min-width: 20px;
+        border-radius: 5px;
+    }
+    QScrollBar::handle:horizontal:hover {
+        background: #484848;
+    }
+    QScrollBar::handle:horizontal:pressed {
+        background: #585858;
+    }
+    QScrollBar::add-line:horizontal,
+    QScrollBar::sub-line:horizontal {
+        border: none;
+        background: none;
+    }
+    QScrollBar::add-page:horizontal,
+    QScrollBar::sub-page:horizontal {
+        background: none;
+    }
+)";
+
+    lightSlider = R"(
+    QScrollBar:horizontal {
+        border: 1px solid #fafafa;
+        background: #fafafa;
+        height: 10px;
+        margin: 0px;
+        border-radius: 5px;
+    }
+    QScrollBar::handle:horizontal {
+        background: #dadbe3;
+        min-width: 20px;
+        border-radius: 5px;
+    }
+    QScrollBar::handle:horizontal:hover {
+        background: #cacbd3;
+    }
+    QScrollBar::handle:horizontal:pressed {
+        background: #babac3;
+    }
+    QScrollBar::add-line:horizontal,
+    QScrollBar::sub-line:horizontal {
+        border: none;
+        background: none;
+    }
+    QScrollBar::add-page:horizontal,
+    QScrollBar::sub-page:horizontal {
+        background: none;
+    }
+)";
 };
 
 
@@ -129,22 +180,17 @@ FriendComponent::FriendComponent(QWidget* parent,
     m_theme(theme),
     m_friend_search_dialog_component(friendSearchDialogComponent)
 {
+    setAttribute(Qt::WA_Hover);
+    setFixedHeight(140);
+    setMinimumWidth(100);
+
     m_style = new StyleFriendComponent();
 
-    setupUi();
-    setTheme(m_theme);
-    setMinimumSize(100, 140);
-    setMaximumWidth(120);
-}
-
-void FriendComponent::setupUi() 
-{
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setSpacing(8);
     m_mainVLayout->setContentsMargins(10, 10, 10, 10);
 
-    m_avatar_button = new AvatarIcon(this, 0, 0, 50, true, m_theme);
-    m_avatar_button->setFixedSize(50, 50);
+    m_avatar_button = new AvatarIcon(this, 50, 70, true, m_theme);
 
     QPixmap defaultAvatar(":/resources/ChatsWidget/userFriend.png");
     if (!defaultAvatar.isNull()) {
@@ -154,33 +200,39 @@ void FriendComponent::setupUi()
     m_name_label = new QLabel("Friend Name", this);
     m_name_label->setAlignment(Qt::AlignCenter);
     m_name_label->setWordWrap(true);
-    m_name_label->setMaximumWidth(100);
+    m_name_label->setMaximumWidth(200);
 
     m_mainVLayout->addWidget(m_avatar_button, 0, Qt::AlignHCenter);
     m_mainVLayout->addWidget(m_name_label);
-    m_mainVLayout->setAlignment(Qt::AlignTop);
+    m_mainVLayout->setAlignment(Qt::AlignCenter);
+
+    connect(m_avatar_button, &AvatarIcon::clicked, this, &FriendComponent::slotToSendData);
+    connect(this, &FriendComponent::sendData, m_friend_search_dialog_component, &FriendSearchDialogComponent::onFriendComponentClicked);
+
+    setTheme(m_theme);
 }
 
 void FriendComponent::setTheme(Theme theme) {
     m_theme = theme;
 
+    m_avatar_button->setTheme(m_theme);
+
     if (m_theme == Theme::DARK) {
-        this->setStyleSheet(m_style->widgetStyleDark);
-         m_avatar_button->setStyleSheet(m_style->widgetStyleDark);
-         m_name_label->setStyleSheet(m_style->labelStyleDark);
+        m_name_label->setStyleSheet(m_style->labelStyleDark);
     }
     else {
-        this->setStyleSheet(m_style->widgetStyleLight);
-        m_avatar_button->setStyleSheet(m_style->widgetStyleLight);
         m_name_label->setStyleSheet(m_style->labelStyleLight);
     }
 }
 
-void FriendComponent::setFriendData(const QString& name, const QPixmap& photo)
+void FriendComponent::setFriendData(const QString& name, const QString& login, const QPixmap& photo)
 {
     m_name_label->setText(name);
+    m_login = login;
 
     if (!photo.isNull()) {
+        QIcon ic(photo);
+        
         m_avatar_button->setIcon(QIcon(photo));
     }
     else {
@@ -191,25 +243,9 @@ void FriendComponent::setFriendData(const QString& name, const QPixmap& photo)
     }
 }
 
-void FriendComponent::paintEvent(QPaintEvent* event)
-{
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
 
-    QRect rect = this->rect().adjusted(1, 1, -1, -1);
-    QPainterPath path;
-    path.addRoundedRect(rect, 12, 12);
-
-    if (m_theme == Theme::DARK) {
-        painter.fillPath(path, QColor(0x38, 0x38, 0x38));
-        painter.strokePath(path, QPen(QColor(0x44, 0x44, 0x44), 1));
-    }
-    else {
-        painter.fillPath(path, QColor(0xF5, 0xF5, 0xF5));
-        painter.strokePath(path, QPen(QColor(0xE0, 0xE0, 0xE0), 1));
-    }
-
-    QWidget::paintEvent(event);
+void FriendComponent::slotToSendData() {
+    emit sendData(m_login);
 }
 
 
@@ -223,32 +259,47 @@ FriendSearchDialogComponent::FriendSearchDialogComponent(QWidget* parent, ChatsL
     : QWidget(parent), m_chats_list_component(chatsListComponent), m_theme(theme), m_is_visible(false), m_scrollHLayout(nullptr), m_mainVLayout(nullptr)
 {
     m_style = new StyleFriendSearchDialogComponent();
-    setupUI();
-    setupScrollArea();
-}
 
-void FriendSearchDialogComponent::setupScrollArea() {
+    this->setAttribute(Qt::WA_TranslucentBackground);
+    this->setStyleSheet("background-color: transparent;");
+
+    m_scrollContent = new QWidget();
+    m_scrollContent->setAttribute(Qt::WA_TranslucentBackground);
+    m_scrollContent->setStyleSheet("background-color: transparent;");
+
+    m_scrollHLayout = new QHBoxLayout(m_scrollContent);
+    m_scrollHLayout->setAlignment(Qt::AlignLeft);
+    m_scrollHLayout->setSpacing(10);
+    m_scrollHLayout->setContentsMargins(5, 5, 5, 5);
+    m_scrollContent->setLayout(m_scrollHLayout);
+
     m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setStyleSheet(
+        "QScrollArea { background: transparent; border: none; }"
+        "QScrollArea > QWidget > QWidget { background-color: transparent; }"
+        "QScrollArea > QWidget > QScrollBar { background-color: transparent; }"
+    );
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_scrollArea->setFixedHeight(160);
-
-    m_scrollContent = new QWidget();
-    m_scrollHLayout = new QHBoxLayout(m_scrollContent);
-    m_scrollHLayout->setAlignment(Qt::AlignLeft);
-    m_scrollHLayout->setSpacing(10);
-    m_scrollHLayout->setContentsMargins(5, 5, 5, 5);
-
-    m_scrollContent->setLayout(m_scrollHLayout);
     m_scrollArea->setWidget(m_scrollContent);
 
+    m_mainVLayout = new QVBoxLayout(this);
+    m_mainVLayout->setContentsMargins(0, 0, 0, 0);
+    m_mainVLayout->setSpacing(0);
     m_mainVLayout->addWidget(m_scrollArea);
+
+    setLayout(m_mainVLayout);
+    setTheme(m_theme);
 }
 
 
 void FriendSearchDialogComponent::refreshFriendsList(const std::vector<FriendInfo*>& friendInfoVec) {
+    for (auto& pair : m_suggestions_map) {
+        delete pair.second;
+    }
     m_suggestions_map.clear();
 
     for (FriendInfo* friendInfo : friendInfoVec) {
@@ -274,46 +325,104 @@ void FriendSearchDialogComponent::closeDialog() {
 void FriendSearchDialogComponent::updateFriendsListUI() {
     QLayoutItem* item;
     while ((item = m_scrollHLayout->takeAt(0)) != nullptr) {
-        delete item->widget();
         delete item;
     }
 
+    for (auto& pair : m_components_map) {
+        delete pair.second;
+    }
+    m_components_map.clear();
+
+
+
+    m_scrollHLayout->addSpacerItem(new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::Minimum));
+
     for (const auto& [login, friendInfo] : m_suggestions_map) {
         FriendComponent* friendComp = new FriendComponent(m_scrollContent, this, m_theme);
-
         QString name = QString::fromStdString(friendInfo->getFriendName());
 
         QPixmap avatar;
+        bool avatarLoaded = false;
+
         if (friendInfo->getIsFriendHasPhoto() && friendInfo->getFriendPhoto() != nullptr) {
-            avatar = QPixmap(QString::fromStdString(friendInfo->getFriendPhoto()->getPhotoPath()));
+            std::string binaryData = friendInfo->getFriendPhoto()->getBinaryData();
+            QByteArray imageData = QByteArray::fromStdString(binaryData);
+            if (avatar.loadFromData(imageData)) {
+                avatar = avatar.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                avatarLoaded = true;
+            }
         }
-        else {
+        if (!avatarLoaded) {
             avatar = QPixmap(":/resources/ChatsWidget/userFriend.png")
                 .scaled(60, 60, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        
         }
 
-        friendComp->setFriendData(name, avatar);
-
+        friendComp->setFriendData(name, QString::fromStdString(login), avatar);
+        m_components_map[login] = friendComp;
         m_scrollHLayout->addWidget(friendComp);
     }
 
     setTheme(m_theme);
+    showDialog();
 }
 
 void FriendSearchDialogComponent::setTheme(Theme theme) {
+    m_theme = theme;
+
+    for (auto [login, component] : m_components_map) {
+        component->setTheme(m_theme);
+    }
+
     if (m_theme == Theme::DARK) {
-        m_scrollArea->setStyleSheet("background-color: #333;");
-        m_scrollContent->setStyleSheet("background-color: #333;");
+        m_scrollArea->horizontalScrollBar()->setStyleSheet(m_style->darkSlider);
+
     }
     else {
-        m_scrollArea->setStyleSheet("background-color: #fff;");
-        m_scrollContent->setStyleSheet("background-color: #fff;");
+        m_scrollArea->horizontalScrollBar()->setStyleSheet(m_style->lightSlider);
     }
 }
 
-void FriendSearchDialogComponent::setupUI() {
-    m_mainVLayout = new QVBoxLayout(this);
-    m_mainVLayout->setContentsMargins(0, 0, 0, 0);
-    m_mainVLayout->setSpacing(0);
-    setLayout(m_mainVLayout);
+void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login) {
+    auto& friendInfo = m_suggestions_map[login.toStdString()];
+    auto chatsWidget = m_chats_list_component->getChatsWidget();
+    auto client = chatsWidget->getClient();
+
+
+    auto& chatsMap = client->getMyChatsMap();
+
+    auto it = chatsMap.find(login.toStdString());
+    if (it != chatsMap.end()) {
+        auto& chatCompsVec = m_chats_list_component->getChatComponentsVec();
+        auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [login](ChatComponent* comp) {
+            return login.toStdString() == comp->getChat()->getFriendLogin();
+        });
+        if (itComp != chatCompsVec.end()) {
+            ChatComponent* foundComp = *itComp;
+
+            chatsWidget->onSetChatMessagingArea(foundComp->getChat(), foundComp);
+        }
+
+        return;
+    }
+
+    Chat* chat = new Chat;
+    chat->setFriendLogin(login.toStdString());
+    chat->setFriendName(friendInfo->getFriendName());
+    chat->setFriendLastSeen(friendInfo->getFriendLastSeen());
+    chat->setLastReceivedOrSentMessage("no messages yet");
+    chat->setIsFriendHasPhoto(friendInfo->getIsFriendHasPhoto());
+
+    Photo* photo = Photo::deserializeAndSaveOnDisc(friendInfo->getFriendPhoto()->getBinaryData(), login.toStdString());
+    chat->setFriendPhoto(photo);
+    
+
+    chat->setLayoutIndex(0);
+    utility::incrementAllChatLayoutIndexes(client->getMyChatsMap());
+
+    client->getMyChatsMap().emplace(login.toStdString(), chat);
+
+    chatsWidget->removeRightComponent();
+    chatsWidget->createAndSetMessagingAreaComponent(chat);
+    chatsWidget->createAndAddChatComponentToList(chat);
 }

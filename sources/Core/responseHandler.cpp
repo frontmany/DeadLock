@@ -131,7 +131,7 @@ void ResponseHandler::processFoundUsers(const std::string& packet) {
     std::vector<FriendInfo*> vec;
     vec.reserve(count);
 
-    for (int i = 9; i < count; i++) {
+    for (int i = 0; i < count; i++) {
         FriendInfo* user = new FriendInfo();
 
         std::string login;

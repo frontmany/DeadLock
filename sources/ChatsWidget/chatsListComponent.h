@@ -130,6 +130,7 @@ class ChatsListComponent : public QWidget {
 public:
     ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme);
     ~ChatsListComponent();
+
     void setTheme(Theme theme);
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
     void SetAvatar(const Photo& photo);
@@ -153,16 +154,19 @@ signals:
 
 public slots:
     void addChatComponent(Theme theme, Chat* chat, bool isSelected);
+
     void openAddChatDialog();
     void closeAddChatDialog();
+
+    void closeEditUserDialogWidnow();
+    void openEditUserDialogWidnow();
+
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
     void loadAvatarFromPC(const std::string& login);
-    void closeEditUserDialogWidnow();
 
 private slots:
     void toSendChangeTheme(bool fl);
-    void openEditUserDialogWidnow();
 
 private:
     QColor                      m_backgroundColor;

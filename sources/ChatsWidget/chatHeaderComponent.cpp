@@ -79,7 +79,7 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
     m_mainLayout = new QHBoxLayout(this);
 
 
-    m_leftIcon = new AvatarIcon(this, 0, 0, 32, true, m_theme);
+    m_leftIcon = new AvatarIcon(this, 32, 50, true, m_theme);
     if (avatar.isNull()) {
         QIcon icon(":/resources/ChatsWidget/userFriend.png");
         m_leftIcon->setIcon(icon);

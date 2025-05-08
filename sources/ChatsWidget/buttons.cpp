@@ -1,6 +1,13 @@
 #include "buttons.h"
 #include "mainwindow.h"
 
+AvatarIcon::AvatarIcon(QWidget* parent, int iconSize, int size, bool needHover, Theme theme)
+    : QWidget(parent), m_iconSize(iconSize, iconSize), m_size(iconSize), m_needHover(needHover), m_theme(theme)
+{
+    setFixedSize(size, size);
+    setAttribute(Qt::WA_Hover);
+}
+
 void AvatarIcon::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
@@ -11,10 +18,10 @@ void AvatarIcon::paintEvent(QPaintEvent* event)
 
     if (m_hovered && m_needHover)
     {
-        qreal hoverMargin = 2 * scaleFactor;
+        qreal hoverMargin = 4;
         QRectF circleRect = rect().adjusted(hoverMargin, hoverMargin, -hoverMargin, -hoverMargin);
 
-        QRadialGradient gradient(circleRect.center(), circleRect.width() / 1.5);
+        QRadialGradient gradient(circleRect.center(), circleRect.width());
         if (m_theme == Theme::LIGHT) {
             gradient.setColorAt(0, QColor(63, 139, 252, 150));
             gradient.setColorAt(0.7, QColor(127, 179, 255, 50));
@@ -37,7 +44,6 @@ void AvatarIcon::paintEvent(QPaintEvent* event)
         QPixmap pixmap = m_icon.pixmap(scaledSize);
         pixmap.setDevicePixelRatio(dpr);
 
-        // Центрируем иконку
         int x = (width() - m_size) / 2;
         int y = (height() - m_size) / 2;
 

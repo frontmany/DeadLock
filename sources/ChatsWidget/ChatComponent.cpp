@@ -42,7 +42,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_contentsVLayout->addWidget(m_nameLabel);
     m_contentsVLayout->addWidget(m_lastMessageLabel);
 
-    m_avatar_ico = new AvatarIcon(this, 0, 0, 50, false, m_theme);
+    m_avatar_ico = new AvatarIcon(this, 50, 50, false, m_theme);
     if (chat->getIsFriendHasPhoto()) {
         QIcon avatarIcon(m_avatar);
         m_avatar_ico->setIcon(avatarIcon);

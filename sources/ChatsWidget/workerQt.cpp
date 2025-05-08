@@ -311,12 +311,12 @@ void WorkerQt::processFoundUsers(std::vector<FriendInfo*>&& vec) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto chatsList = chatsWidget->getChatsList();
 	auto friendSearchDialogComponent = chatsList->getFriendSearchDialogComponent();
-	/*
+	
 	QMetaObject::invokeMethod(friendSearchDialogComponent,
 		"refreshFriendsList",
 		Qt::QueuedConnection,
-		Q_ARG(const std::vector<FriendInfo*>&&, std::move(vec)));
-	*/
+		Q_ARG(const std::vector<FriendInfo*>&, std::move(vec)));
+	
 }
 
 bool WorkerQt::updateExistingMessagingAreaComp(ChatsWidget* chatsWidget, Chat* chat) {
