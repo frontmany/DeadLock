@@ -111,6 +111,84 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
         "   text-align: center;"
         "   qproperty-alignment: 'AlignCenter';"
         "}";
+
+    buttonTransparentDark = R"(
+QPushButton {
+    background-color: transparent;
+    color: rgba(252, 73, 103, 0.9);
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.2px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    color: rgba(252, 73, 103, 0.95);
+    background-color: rgba(70, 70, 70, 0.3);
+    border: 1px solid transparent;
+}
+
+QPushButton:pressed {
+    color: rgba(252, 73, 103, 1.0);
+    background-color: rgba(70, 70, 70, 0.5);
+    border: 1px solid transparent;
+    padding-top: 3px;
+}
+
+QPushButton:disabled {
+    color: rgba(110, 110, 110, 0.5);
+    background-color: transparent;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: 1px solid transparent;
+}
+)";
+
+    buttonTransparentLight = R"(
+QPushButton {
+    background-color: transparent;
+    color: rgba(252, 73, 103, 0.9);
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.2px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    color: rgba(252, 73, 103, 0.95);
+    background-color: rgba(200, 200, 200, 0.3);
+    border: 1px solid transparent;
+}
+
+QPushButton:pressed {
+    color: rgba(252, 73, 103, 1.0);
+    background-color: rgba(200, 200, 200, 0.5);
+    border: 1px solid transparent;
+    padding-top: 3px;
+}
+
+QPushButton:disabled {
+    color: rgba(150, 150, 150, 0.5);
+    background-color: transparent;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: 1px solid transparent;
+}
+)";
 };
 
 
@@ -188,16 +266,214 @@ void FriendProfileComponent::setTheme(Theme theme) {
     if (m_theme == Theme::DARK) {
         m_close_button->setTheme(m_theme);
         m_color = new QColor(51, 51, 51);
-        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(94, 94, 94);");
-        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(94, 94, 94);");
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(203, 215, 245);");
+        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(203, 215, 245);");
     }
     else {
         m_close_button->setTheme(m_theme);
         m_color = new QColor(225, 225, 225);
-        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(184, 184, 184);");
-        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(184, 184, 184);");
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(105, 175, 255);");
+        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(138, 192, 255);");
     }
 }
+
+
+
+
+
+
+ChatPropertiesComponent::ChatPropertiesComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme)
+    : QWidget(parent), m_theme(theme), m_messagingAreaComponent(messagingAreaComponent)
+{
+    m_style = new StyleMessagingAreaComponent;
+
+    setAttribute(Qt::WA_TranslucentBackground);
+    setWindowFlags(Qt::FramelessWindowHint);
+    setupUI();
+}
+
+void ChatPropertiesComponent::setupUI() {
+    m_mainLayout = new QVBoxLayout(this);
+    m_mainLayout->setAlignment(Qt::AlignVCenter);
+
+    m_delete_chat_button = new  QPushButton(" delete chat");
+    m_delete_chat_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_delete_chat_button->setFixedHeight(40);
+    connect(m_delete_chat_button, &QPushButton::clicked, [this]() {
+        QDialog logoutDialog(this);
+        logoutDialog.setWindowTitle(tr("Delete Chat ?"));
+        logoutDialog.setMinimumSize(300, 150);
+
+        QString dialogStyle;
+        QString buttonStyle;
+
+        if (m_theme == Theme::DARK) {
+            dialogStyle = R"(
+            QDialog {
+                background-color: #333333;
+                color: #f0f0f0;
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 1px solid #444444;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #f0f0f0;
+            }
+        )";
+
+            buttonStyle = R"(
+            QPushButton {
+                background-color: #444444;
+                color: #f0f0f0;
+                border: 1px solid #555555;
+                border-radius: 4px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+            QPushButton:pressed {
+                background-color: #3a3a3a;
+            }
+        )";
+        }
+        else {
+            dialogStyle = R"(
+            QDialog {
+                background-color: #ffffff;
+                color: #333333;
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 1px solid #dddddd;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #333333;
+            }
+        )";
+
+            buttonStyle = R"(
+            QPushButton {
+                background-color: #f0f0f0;
+                color: #333333;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #e5e5e5;
+            }
+            QPushButton:pressed {
+                background-color: #d9d9d9;
+            }
+        )";
+        }
+
+        logoutDialog.setStyleSheet(dialogStyle);
+
+        QVBoxLayout* layout = new QVBoxLayout(&logoutDialog);
+
+        QLabel* messageLabel = new QLabel(tr("Are you sure you want to delete this chat?\n All history will be deleted."), &logoutDialog);
+        messageLabel->setAlignment(Qt::AlignCenter);
+        messageLabel->setStyleSheet("font-size: 16px; padding: 20px;");
+
+        QHBoxLayout* buttonLayout = new QHBoxLayout();
+        QPushButton* confirmButton = new QPushButton(tr("yes"), &logoutDialog);
+        QPushButton* cancelButton = new QPushButton(tr("cancel"), &logoutDialog);
+
+        confirmButton->setStyleSheet(buttonStyle);
+        cancelButton->setStyleSheet(buttonStyle);
+
+        buttonLayout->addStretch();
+        buttonLayout->addWidget(confirmButton);
+        buttonLayout->addWidget(cancelButton);
+        buttonLayout->addStretch();
+
+        layout->addWidget(messageLabel);
+        layout->addLayout(buttonLayout);
+
+        connect(confirmButton, &QPushButton::clicked, [&]() {
+            logoutDialog.accept();
+            emit deleteRequested();
+            });
+
+        connect(cancelButton, &QPushButton::clicked, [&]() {
+            logoutDialog.reject();
+            });
+
+        if (logoutDialog.exec() == QDialog::Accepted) {
+        }
+        }); //TODO design
+
+    m_close_button = new ButtonIcon(this, 25, 25);
+    QIcon icon1(":/resources/ChatsWidget/closeDark.png");
+    QIcon iconHover1(":/resources/ChatsWidget/closeHoverDark.png");
+    m_close_button->uploadIconsDark(icon1, iconHover1);
+    QIcon icon2(":/resources/ChatsWidget/closeLightGray.png");
+    QIcon iconHover2(":/resources/ChatsWidget/closeHoverLightGray.png");
+    m_close_button->uploadIconsLight(icon2, iconHover2);
+    m_close_button->setTheme(m_theme);
+    connect(m_close_button, &ButtonIcon::clicked, m_messagingAreaComponent, &MessagingAreaComponent::closeChatPropertiesDialog);
+
+    QVBoxLayout* vla = new QVBoxLayout;
+    vla->addSpacing(8);
+    vla->addWidget(m_close_button);
+    vla->setAlignment(Qt::AlignVCenter);
+
+    QHBoxLayout* hla = new QHBoxLayout;
+    hla->addWidget(m_delete_chat_button);
+    hla->addLayout(vla);
+    hla->addSpacing(5);
+
+    connect(this, &ChatPropertiesComponent::deleteRequested, m_messagingAreaComponent, &MessagingAreaComponent::onChatDelete);
+
+    m_mainLayout->addLayout(hla);
+    m_mainLayout->setContentsMargins(0, 0, 0, 5);
+    setTheme(m_theme);
+}
+
+void ChatPropertiesComponent::applyGlassEffect(QPainter& painter, const QPainterPath& path) {
+    painter.fillPath(path, *m_color);
+}
+
+void ChatPropertiesComponent::paintEvent(QPaintEvent* event) {
+    
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QPainterPath path;
+    path.addRoundedRect(rect(), 5, 5);
+    painter.setClipPath(path);
+    applyGlassEffect(painter, path);
+}
+
+void ChatPropertiesComponent::setTheme(Theme theme) {
+    m_theme = theme;
+
+    m_close_button->setTheme(m_theme);
+
+    if (m_theme == Theme::DARK) {
+        m_color = new QColor(51, 51, 51);   
+        QIcon icon(":/resources/ChatsWidget/trashBin.png");
+        m_delete_chat_button->setIcon(icon);
+        m_delete_chat_button->setStyleSheet(m_style->buttonTransparentDark);
+    }
+    else {
+        m_color = new QColor(225, 225, 225);
+        QIcon icon(":/resources/ChatsWidget/trashBin.png");
+        m_delete_chat_button->setIcon(icon);
+        m_delete_chat_button->setStyleSheet(m_style->buttonTransparentLight);
+    }
+}
+
+
+
+
+
+
 
 
 MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget)
@@ -206,16 +482,46 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
 {
     setMinimumSize(300, 400);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
+
+    if (chat->getFriendPhoto()->getPhotoPath() != "")
+        chat->setIsFriendHasPhoto(true);
+
     if (chat->getIsFriendHasPhoto() == true) 
         m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
     else 
         m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap());
-  
+
+    m_containerWidget = new QWidget(this);
+
+    m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setWidgetResizable(true);
+    m_scrollArea->setWidget(m_containerWidget);
+    m_scrollArea->setStyleSheet("background: transparent;");
+
     m_friend_profile_component = new FriendProfileComponent(this, this, m_theme);
     m_friend_profile_component->hide();
     m_friend_profile_component->setFixedSize(200, 70);
     m_friend_profile_component->setUserData(QString::fromStdString(chat->getFriendLogin()), QString::fromStdString(chat->getFriendName()));
+    m_friend_profile_component->setParent(m_scrollArea->viewport());
+    m_friend_profile_component->setGeometry(
+        17,
+        0,
+        width(),
+        120
+    );
+    m_friend_profile_component->raise();
+
+
+    m_chat_properties_component = new ChatPropertiesComponent(this, this, m_theme);
+    m_chat_properties_component->hide();
+    m_chat_properties_component->setFixedSize(170, 50);
+    m_chat_properties_component->setParent(m_scrollArea->viewport());
+    m_chat_properties_component->setGeometry(
+        width() - (m_chat_properties_component->width() + 37),  
+        0,                                         
+        120,         
+        50         
+    );
 
 
     if (m_theme == DARK) {
@@ -225,18 +531,11 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
         m_backColor = QColor(240, 240, 240);
     }
 
-    m_containerWidget = new QWidget();
+    
 
     m_containerVLayout = new QVBoxLayout(m_containerWidget);
     m_containerVLayout->setAlignment(Qt::AlignBottom);
 
-    m_containerWidget->setLayout(m_containerVLayout);
-
-
-    m_scrollArea = new QScrollArea(this);
-    m_scrollArea->setWidgetResizable(true);
-    m_scrollArea->setWidget(m_containerWidget);
-    m_scrollArea->setStyleSheet("background: transparent;");
 
 
     m_sendMessageButton = new ButtonCursor(this, m_theme);
@@ -276,19 +575,11 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_error_labelLayout->addWidget(m_error_label);
 
 
-    m_main_VLayout = new QVBoxLayout();
+    m_main_VLayout = new QVBoxLayout(this);
     m_main_VLayout->addWidget(m_header);
     m_main_VLayout->addWidget(m_scrollArea);
     m_main_VLayout->addLayout(m_button_sendHLayout);
     m_main_VLayout->addLayout(m_error_labelLayout);
-
-    m_friend_profile_component->setParent(m_scrollArea->viewport());
-    m_friend_profile_component->setGeometry(
-        0, 
-        0, 
-        width(), 
-        120 
-    );
 
     m_main_VLayout->setContentsMargins(10, 10, 10, 10);
     m_main_VLayout->setSpacing(5);
@@ -303,8 +594,6 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     connect(this, &MessagingAreaComponent::sendMessageData, m_chatsWidget, &ChatsWidget::onSendMessageData);
 
 
-
-    setLayout(m_main_VLayout);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     adjustTextEditHeight();
 
@@ -313,19 +602,39 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     }
 }
 
-MessagingAreaComponent::~MessagingAreaComponent() {
-    for (auto* messageComponent : m_vec_messagesComponents) {
-        delete messageComponent;
+void MessagingAreaComponent::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    if (m_chat_properties_component) {
+        m_chat_properties_component->setGeometry(
+            width() - (m_chat_properties_component->width() + 37),
+            0,
+            m_chat_properties_component->width(),
+            m_chat_properties_component->height()
+        );
     }
-    m_vec_messagesComponents.clear();
+}
 
-    delete m_messageInputEdit;
-    delete m_header;
-    delete m_sendMessageButton;
-    delete m_containerWidget;
-    delete m_scrollArea;
-    delete m_main_VLayout;
+MessagingAreaComponent::~MessagingAreaComponent() {
     delete m_style;
+
+    delete m_error_label;     
+    delete m_sendMessageButton;   
+
+
+    delete m_main_VLayout;         
+    delete m_containerVLayout;    
+    delete m_header;             
+    delete m_containerWidget;     
+    delete m_messageInputEdit; 
+    delete m_friend_profile_component;
+}
+
+void MessagingAreaComponent::openChatPropertiesDialog() {
+    m_chat_properties_component->show();
+}
+
+void MessagingAreaComponent::closeChatPropertiesDialog() {
+    m_chat_properties_component->hide();
 }
 
 void MessagingAreaComponent::openFriendProfile() {
@@ -334,6 +643,10 @@ void MessagingAreaComponent::openFriendProfile() {
 
 void MessagingAreaComponent::closeFriendProfile() {
     m_friend_profile_component->hide();
+}
+
+void MessagingAreaComponent::onChatDelete() {
+    m_chatsWidget->onChatDelete(QString::fromStdString(m_chat->getFriendLogin()));
 }
 
 void MessagingAreaComponent::setErrorLabelText(const QString& errorText) {
@@ -389,9 +702,12 @@ void MessagingAreaComponent::adjustTextEditHeight() {
 
 void MessagingAreaComponent::setTheme(Theme theme) {
     m_theme = theme;
+
+    m_chat_properties_component->setTheme(m_theme);
+    m_friend_profile_component->setTheme(m_theme);
+
     if (m_theme == DARK) {
         m_backColor = QColor(25, 25, 25);
-        m_friend_profile_component->setTheme(m_theme);
         m_messageInputEdit->setStyleSheet(m_style->DarkTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->darkSlider);
         m_error_label->setStyleSheet(m_style->DarkErrorLabelStyle);
@@ -404,7 +720,6 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     }
     else {
         m_backColor = QColor(240, 240, 240, 200);
-        m_friend_profile_component->setTheme(m_theme);
         m_messageInputEdit->setStyleSheet(m_style->LightTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->lightSlider);
         m_error_label->setStyleSheet(m_style->LightErrorLabelStyle);
@@ -440,6 +755,27 @@ void MessagingAreaComponent::onSendMessageClicked() {
         msg += '\n';  
     }
 
+    auto& map = m_chatsWidget->getClient()->getMyChatsMap();
+
+
+    auto chatsList = m_chatsWidget->getChatsList();
+    auto& chatCompsVec = chatsList->getChatComponentsVec();
+    auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [this](ChatComponent* comp) {
+        return m_chat->getFriendLogin() == comp->getChat()->getFriendLogin();
+        });
+    if (itComp != chatCompsVec.end()) {
+        ChatComponent* foundComp = *itComp;
+        int index = foundComp->getChat()->getLayoutIndex();
+        if (index != 0)
+            chatsList->popUpComponent(foundComp);
+    }
+
+
+    if (m_chat->getLayoutIndex() != 0) {
+        utility::increasePreviousChatIndexes(map, m_chat);
+    }
+    m_chat->setLayoutIndex(0);
+
     updateRelatedChatComponentLastMessage();
 
     Message* message = new Message(msg, utility::getTimeStamp(), utility::generateId(), true, false);
@@ -451,18 +787,6 @@ void MessagingAreaComponent::onSendMessageClicked() {
     emit sendMessageData(message, m_chat);
 
     moveSliderDown();
-    
-    auto chatsList = m_chatsWidget->getChatsList();
-    auto& chatCompsVec = chatsList->getChatComponentsVec();
-    auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [this](ChatComponent* comp) {
-        return m_chat->getFriendLogin() == comp->getChat()->getFriendLogin();
-        });
-    if (itComp != chatCompsVec.end()) {
-        ChatComponent* foundComp = *itComp;
-        chatsList->popUpComponent(foundComp);
-    }
-
-
 }
 
 void MessagingAreaComponent::updateRelatedChatComponentLastMessage() {
@@ -494,7 +818,7 @@ void MessagingAreaComponent::onTypeMessage() {
 
 
 void MessagingAreaComponent::addMessage(Message* message) {
-    MessageComponent* messageComp = new MessageComponent(this, message, m_theme);
+    MessageComponent* messageComp = new MessageComponent(m_containerWidget, message, m_theme);
     if (message->getIsSend()) {
         if (message->getIsRead()) {
             messageComp->setIsRead(true);

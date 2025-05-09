@@ -28,11 +28,11 @@ class AvatarIcon;
 struct StyleFriendComponent {
     StyleFriendComponent();
 
-    QString widgetStyleDark;
-    QString widgetStyleLight;
-
     QString labelStyleDark;
     QString labelStyleLight;
+
+    QString widgetStyleDark;
+    QString widgetStyleLight;
 
     QString avatarHoverStyleDark;
     QString avatarHoverStyleLight;
@@ -41,9 +41,14 @@ struct StyleFriendComponent {
 struct StyleFriendSearchDialogComponent {
     StyleFriendSearchDialogComponent();
 
+    QString labelStyleDark;
+    QString labelStyleLight;
+
     QString addButtonStyle;
+
     QString DarkButtonStyleBlue;
     QString LightButtonStyleBlue;
+
     QString darkSlider;
     QString lightSlider;
 };
@@ -89,7 +94,7 @@ public:
     FriendSearchDialogComponent(QWidget* parent, ChatsListComponent* chatsListComponent, 
         Theme theme);
 
-    void showDialog();
+    void showDialog(int size);
     void closeDialog();
     void setTheme(Theme theme);
 
@@ -111,6 +116,7 @@ private:
     Theme                                        m_theme;
     bool                                         m_is_visible;
 
+    QLabel*      m_not_found_label = nullptr;
     QVBoxLayout* m_mainVLayout;
     QScrollArea* m_scrollArea;       
     QWidget*     m_scrollContent;

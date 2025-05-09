@@ -150,6 +150,18 @@ void utility::increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>
     }
 }
 
+void utility::decreaseFollowingChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat) {
+    for (auto [login, currentChat] : loginToChatMap) {
+        if (currentChat->getFriendLogin() == chat->getFriendLogin()) {
+            continue;
+        }
+        else if (currentChat->getLayoutIndex() > chat->getLayoutIndex()) {
+            currentChat->setLayoutIndex(currentChat->getLayoutIndex() - 1);
+        }
+    }
+}
+
+
 std::string utility::getTimeStamp() {
     auto now = std::chrono::system_clock::now();
 

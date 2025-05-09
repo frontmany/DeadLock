@@ -88,6 +88,7 @@ void ResponseHandler::handleResponse(ownedMessageT& msg) {
 
 void ResponseHandler::onRegistrationSuccess() {
     const std::string& myLogin = m_client->getMyLogin();
+    m_client->initDatabase(myLogin);
     m_client->setIsNeedToAutoLogin(true);
     m_client->setNeedToUndoAutoLogin(false);
 
@@ -103,6 +104,8 @@ void ResponseHandler::onRegistrationFail() {
 void ResponseHandler::onAuthorizationSuccess() {
     if (m_client->isAutoLogin() != true) {
         const std::string& myLogin = m_client->getMyLogin();
+        m_client->initDatabase(myLogin);
+
         bool res = m_client->load(myLogin + ".json");
         if (!res) {
             m_client->requestFriendInfoFromServer(myLogin);

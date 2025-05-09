@@ -42,7 +42,6 @@ void AvatarIcon::paintEvent(QPaintEvent* event)
     {
         QSize scaledSize(m_size, m_size);
         QPixmap pixmap = m_icon.pixmap(scaledSize);
-        pixmap.setDevicePixelRatio(dpr);
 
         int x = (width() - m_size) / 2;
         int y = (height() - m_size) / 2;

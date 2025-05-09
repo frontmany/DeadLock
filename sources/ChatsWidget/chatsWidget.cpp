@@ -7,6 +7,7 @@
 #include "client.h"
 #include "utility.h"
 #include "message.h"
+#include "photo.h"
 #include "chat.h"
 #include "chatComponent.h"
 #include "mainWindow.h"
@@ -69,8 +70,17 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         m_current_messagingAreaComponent->show();
         m_current_messagingAreaComponent->setTheme(m_theme);
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
-        m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->setValue(m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->maximum());
 
+        bool isAtMinimum = m_current_messagingAreaComponent->getScrollArea()
+            ->verticalScrollBar()
+            ->value() == m_current_messagingAreaComponent->getScrollArea()
+            ->verticalScrollBar()
+            ->minimum();
+
+        if (isAtMinimum) {
+            m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->setValue(m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->maximum());
+        }
+       
         auto unreadVec = chat->getUnreadReceiveMessagesVec();
         if (unreadVec.size() > 0) {
             for (auto msg : unreadVec) {
@@ -100,9 +110,35 @@ void ChatsWidget::onChangeThemeClicked() {
     }
 } 
 
+void ChatsWidget::onChatDelete(const QString& loginOfRemovedChat) {
+    removeRightComponent();
+
+    m_helloAreaComponent = new HelloAreaComponent(m_theme);
+    m_is_hello_component = true;
+    m_mainHLayout->addWidget(m_helloAreaComponent);
+
+    m_chatsListComponent->removeComponent(loginOfRemovedChat);
+
+    auto it = std::find_if(m_vec_messaging_components.begin(), m_vec_messaging_components.end(), [loginOfRemovedChat](MessagingAreaComponent* msgComp) {
+        return loginOfRemovedChat.toStdString() == msgComp->getChat()->getFriendLogin();
+    });
+
+    if (it != m_vec_messaging_components.end()) {
+        MessagingAreaComponent* area = *it;
+        area->setParent(nullptr);
+        m_vec_messaging_components.erase(it);
+        area->deleteLater();
+    }
+
+    m_client->deleteFriendChatInConfig(loginOfRemovedChat.toStdString());
+    m_client->deleteFriendMessagesInDatabase(loginOfRemovedChat.toStdString());
+    m_client->deleteFriendFromChatsMap(loginOfRemovedChat.toStdString());
+
+}
+
 void ChatsWidget::createMessagingComponent(std::string friendName, Chat* chat) {
     std::lock_guard<std::mutex> guard(m_mtx);
-     m_vec_messaging_components.emplace_back(new MessagingAreaComponent(nullptr, QString::fromStdString(friendName), m_theme, chat, this));
+     m_vec_messaging_components.emplace_back(new MessagingAreaComponent(this, QString::fromStdString(friendName), m_theme, chat, this));
      m_vec_messaging_components.back()->hide();
 }
 

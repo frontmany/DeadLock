@@ -67,7 +67,7 @@ public slots:
 	void onSendMessageData(Message* message, Chat* chat);
 	void onCreateChatButtonClicked(QString login);
 	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
-	
+	void onChatDelete(const QString& loginOfRemovedChat);
 
 private:
 	bool isValidChatCreation(const std::string& loginToCheck);

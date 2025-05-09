@@ -134,6 +134,7 @@ public:
     void setTheme(Theme theme);
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
     void SetAvatar(const Photo& photo);
+    void removeComponent(const QString& loginOfRemovedComponent);
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
     AddChatDialogComponent* getAddChatDialogComponent() { return m_chatAddDialog; }

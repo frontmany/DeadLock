@@ -37,8 +37,8 @@ public:
 	void setLayoutIndex(int index) { m_index_at_layout = index; }
 	const int getLayoutIndex() const { return m_index_at_layout; }
 
-	QJsonObject serialize(const Database& db) const;
-	static Chat* deserialize(const QJsonObject& jsonObject, const Database& db);
+	QJsonObject serialize(const std::string& myLogin, const Database& db) const;
+	static Chat* deserialize(const std::string& myLogin, const QJsonObject& jsonObject, const Database& db);
 
 private:
 	std::vector<Message*>	 m_vec_messages;

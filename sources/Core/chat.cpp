@@ -2,8 +2,8 @@
 #include"photo.h"
 #include"database.h"
 
-QJsonObject Chat::serialize(const Database& db) const {
-    db.saveMessages(m_friend_login, m_vec_messages);
+QJsonObject Chat::serialize(const std::string& myLogin, const Database& db) const {
+    db.saveMessages(myLogin, m_friend_login, m_vec_messages);
     QJsonObject jsonObject;
     jsonObject["friend_last_seen"] = QString::fromStdString(m_friend_last_seen);
     jsonObject["friend_login"] = QString::fromStdString(m_friend_login);
@@ -14,10 +14,10 @@ QJsonObject Chat::serialize(const Database& db) const {
     return jsonObject;
 }
 
-Chat* Chat::deserialize(const QJsonObject& jsonObject, const Database& db) {
+Chat* Chat::deserialize(const std::string& myLogin, const QJsonObject& jsonObject, const Database& db) {
     Chat* chat = new Chat();
     chat->m_friend_login = jsonObject["friend_login"].toString().toStdString();
-    db.loadMessages(chat->m_friend_login, chat->m_vec_messages);
+    db.loadMessages(myLogin, chat->m_friend_login, chat->m_vec_messages);
     chat->m_friend_name = jsonObject["friend_name"].toString().toStdString();
     chat->m_is_friend_has_photo = jsonObject["is_friend_has_photo"].toBool();
 

@@ -114,6 +114,10 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
     m_rightButton->uploadIconsLight(icon4, iconHover4);
     m_rightButton->setTheme(m_theme);
     m_rightButton->setIconSize(QSize(40, 30));
+    connect(m_rightButton, &ButtonIcon::clicked, [this]() {
+        m_messaging_area_component->openChatPropertiesDialog();
+        });
+
     m_mainLayout->addWidget(m_rightButton);
     m_mainLayout->addSpacing(5);
 

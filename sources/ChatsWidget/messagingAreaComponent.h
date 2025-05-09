@@ -5,7 +5,9 @@
 #include <QTextEdit>
 #include <QLabel>
 #include <QDebug>
+#include <QPushButton>
 #include <QTimer>
+#include <QDialog>
 #include <QVBoxLayout>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
@@ -36,6 +38,9 @@ struct StyleMessagingAreaComponent {
 
     QString LightErrorLabelStyle;
     QString DarkErrorLabelStyle;
+
+    QString buttonTransparentDark;
+    QString buttonTransparentLight;
 
 };
 
@@ -144,6 +149,36 @@ private:
 };
 
 
+
+class ChatPropertiesComponent : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit ChatPropertiesComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme);
+    void setTheme(Theme theme);
+
+protected:
+    void paintEvent(QPaintEvent* event) override;
+
+signals:
+    void deleteRequested();
+
+private:
+    void setupUI();
+    void applyGlassEffect(QPainter& painter, const QPainterPath& path);
+
+    StyleMessagingAreaComponent* m_style;
+    MessagingAreaComponent* m_messagingAreaComponent;
+
+    ButtonIcon* m_close_button;
+    QPushButton* m_delete_chat_button;
+    QVBoxLayout* m_mainLayout;
+
+    QColor* m_color;
+    Theme m_theme;
+};
+
+
 class MessagingAreaComponent : public QWidget {
     Q_OBJECT
 
@@ -167,12 +202,16 @@ public slots:
     void openFriendProfile();
     void closeFriendProfile();
 
+    void openChatPropertiesDialog();
+    void closeChatPropertiesDialog();
+
     void addMessage(Message* message);
     void setAvatar(const QPixmap& pixMap);
     void setName(const QString& name);
     void setErrorLabelText(const QString& errorText);
     void markMessageAsChecked(Message* message);
     void moveSliderDown(bool isCalledFromWorker = false);
+    void onChatDelete();
 
 private slots:
     void adjustTextEditHeight();
@@ -181,7 +220,7 @@ private slots:
 
 protected:
     void paintEvent(QPaintEvent* event) override;
- 
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void updateRelatedChatComponentLastMessage();
@@ -199,6 +238,7 @@ private:
     QHBoxLayout* m_button_sendHLayout;
 
     FriendProfileComponent* m_friend_profile_component;
+    ChatPropertiesComponent* m_chat_properties_component;
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;

@@ -29,4 +29,5 @@ namespace utility {
 
 	void incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap);
 	void increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
+	void decreaseFollowingChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
 }

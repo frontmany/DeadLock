@@ -29,6 +29,7 @@ public:
     void connectTo(const std::string& ipAddress, int port);
     void setWorkerUI(WorkerUI* workerImpl);
     void run();
+    void initDatabase(const std::string& login);
     void stop();
 
     bool autoLogin();
@@ -58,6 +59,10 @@ public:
     void getAllFriendsStatuses();
     void requestFriendInfoFromServer(const std::string& myLogin);
     void findUser(const std::string& text);
+
+    void deleteFriendChatInConfig(const std::string& friendLogin);
+    void deleteFriendMessagesInDatabase(const std::string& friendLogin);
+    void deleteFriendFromChatsMap(const std::string& friendLogin);
     
     void waitUntilUIReadyToUpdate();
 

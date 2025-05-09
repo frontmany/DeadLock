@@ -32,6 +32,7 @@ int main(int argc, char* argv[])
 
     bool isAutoLogin = client->autoLogin();
     if (isAutoLogin == true) {
+        client->initDatabase(client->getMyLogin());
         client->authorizeClient(client->getMyLogin(), client->getMyPasswordHash());
     }
     else {

@@ -42,5 +42,6 @@
 		<file>logoutHoverDark.png</file>
 		<file>logoutLight.png</file>
 		<file>logoutHoverLight.png</file>
+		<file>trashBin.png</file>
     </qresource>
 </RCC>

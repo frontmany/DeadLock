@@ -55,7 +55,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
         this->setMaximumSize(740, 3000);
     }
     else {
-        this->setMaximumSize(540, 3000);
+        this->setMaximumSize(580, 3000);
     }
 
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
@@ -104,12 +104,12 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->addSpacing(15);
 
     m_searchLineEdit = new QLineEdit(this);
-    m_searchLineEdit->setPlaceholderText("  Search...");
+    m_searchLineEdit->setPlaceholderText("  Search for friends...");
     m_searchLineEdit->setMinimumSize(10, 32);
     m_searchLineEdit->setMaximumSize(975, 32);
 
     m_search_timer = new QTimer(this);
-    m_search_timer->setInterval(800);
+    m_search_timer->setInterval(500);
     m_search_timer->setSingleShot(true);
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, [this]() {
@@ -273,6 +273,21 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     connect(this, &ChatsListComponent::sendCreateChatData, m_chatsWidget, &ChatsWidget::onCreateChatButtonClicked);
     connect(this, &ChatsListComponent::sendChangeTheme, m_chatsWidget, &ChatsWidget::onChangeThemeClicked);
     connect(this, &ChatsListComponent::logoutRequested, m_chatsWidget, &ChatsWidget::onLogoutRequested);
+}
+
+void ChatsListComponent::removeComponent(const QString& loginOfRemovedComponent) {
+    auto it = std::find_if(m_vec_chatComponents.begin(), m_vec_chatComponents.end(), [loginOfRemovedComponent](ChatComponent* comp) {
+        return loginOfRemovedComponent.toStdString() == comp->getChat()->getFriendLogin();
+    });
+
+    if (it != m_vec_chatComponents.end()) {
+        ChatComponent* foundComp = *it;
+        m_containerVLayout->removeWidget(foundComp);
+        utility::decreaseFollowingChatIndexes(m_chats_widget->getClient()->getMyChatsMap(), foundComp->getChat());
+
+        delete foundComp;
+        m_vec_chatComponents.erase(it);
+    }
 }
 
 void ChatsListComponent::openEditUserDialogWidnow() {

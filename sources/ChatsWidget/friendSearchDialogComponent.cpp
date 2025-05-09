@@ -57,6 +57,35 @@ StyleFriendComponent::StyleFriendComponent()
 }
 
 StyleFriendSearchDialogComponent::StyleFriendSearchDialogComponent() {
+    labelStyleDark = R"(
+    QLabel {
+        background-color: transparent;
+        color: rgba(110, 110, 110, 0.9);
+        font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+        font-style: italic;
+        font-weight: 400;
+        font-size: 14px;
+        letter-spacing: 0.2px;
+        padding: 2px;
+        margin-top: 4px;
+        opacity: 0.9;
+    }
+)";
+
+    labelStyleLight = R"(
+    QLabel {
+        background-color: transparent;
+        color: rgba(110, 110, 110, 0.9);
+        font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+        font-style: italic;
+        font-weight: 400;
+        font-size: 14px;
+        letter-spacing: 0.2px;
+        padding: 2px;
+        margin-top: 4px;
+    }
+)";
+
     addButtonStyle = R"(
     QPushButton {
         background-color: transparent;   
@@ -309,12 +338,12 @@ void FriendSearchDialogComponent::refreshFriendsList(const std::vector<FriendInf
     updateFriendsListUI();
 }
 
-void FriendSearchDialogComponent::showDialog() {
+void FriendSearchDialogComponent::showDialog(int size) {
     if (m_is_visible) {
         return;
     }
     this->show();
-    this->setFixedHeight(160);
+    this->setFixedHeight(size);
 }
 
 void FriendSearchDialogComponent::closeDialog() {
@@ -328,12 +357,15 @@ void FriendSearchDialogComponent::updateFriendsListUI() {
         delete item;
     }
 
+    if (m_not_found_label != nullptr) {
+        delete m_not_found_label;
+        m_not_found_label = nullptr;
+    }
+
     for (auto& pair : m_components_map) {
         delete pair.second;
     }
     m_components_map.clear();
-
-
 
     m_scrollHLayout->addSpacerItem(new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::Minimum));
 
@@ -363,8 +395,27 @@ void FriendSearchDialogComponent::updateFriendsListUI() {
         m_scrollHLayout->addWidget(friendComp);
     }
 
+    int size = 0;
+    if (m_components_map.size() == 0) {
+        m_not_found_label = new QLabel("User not found. Try a different name or login.", this);
+        if (m_theme == Theme::DARK) {
+            m_not_found_label->setStyleSheet(m_style->labelStyleDark);
+        }
+        else {
+            m_not_found_label->setStyleSheet(m_style->labelStyleLight);
+        }
+
+        size = 35;
+        m_scrollHLayout->setAlignment(Qt::AlignTop);
+        m_scrollHLayout->addWidget(m_not_found_label);
+    }
+    else {
+        size = 160;
+        m_scrollHLayout->setAlignment(Qt::AlignLeft);
+    }
+
     setTheme(m_theme);
-    showDialog();
+    showDialog(size);
 }
 
 void FriendSearchDialogComponent::setTheme(Theme theme) {
@@ -403,6 +454,8 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
             chatsWidget->onSetChatMessagingArea(foundComp->getChat(), foundComp);
         }
 
+        m_chats_list_component->getSearchLineEdit()->setText("");
+        closeDialog();
         return;
     }
 
@@ -425,4 +478,7 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     chatsWidget->removeRightComponent();
     chatsWidget->createAndSetMessagingAreaComponent(chat);
     chatsWidget->createAndAddChatComponentToList(chat);
+
+    m_chats_list_component->getSearchLineEdit()->setText("");
+    closeDialog();
 }

@@ -60,8 +60,11 @@ Client::~Client()
     delete m_my_photo;
 }
 
+void Client::initDatabase(const std::string& login) {
+    m_db->init(login);
+}
+
 void Client::run() { 
-    m_db->init();
     m_worker_thread = std::thread([this]() { processIncomingMessagesQueue(); });
 }
 
@@ -183,7 +186,6 @@ void Client::sendPacket(const std::string& packet, QueryType type) {
 
 // save & load
 void Client::save() const {
-    // Проверяем, есть ли passwordHash в других файлах
     QString dir = QString::fromStdString(utility::getSaveDir());
     QDir saveDir(dir);
 
@@ -194,13 +196,12 @@ void Client::save() const {
         }
     }
 
-    // Ищем файлы с passwordHash
     bool hashExists = false;
     QStringList jsonFiles = saveDir.entryList(QStringList() << "*.json", QDir::Files);
 
     for (const QString& file : jsonFiles) {
         if (file == QString::fromStdString(m_my_login) + ".json") {
-            continue; // Пропускаем текущий файл пользователя
+            continue;
         }
 
         QFileInfo fileInfo(saveDir.filePath(file));
@@ -217,12 +218,11 @@ void Client::save() const {
         }
     }
 
-    // Формируем JSON данные
     QJsonObject jsonObject;
     QJsonArray chatsArray;
 
     for (const auto& chatPair : m_map_friend_login_to_chat) {
-        chatsArray.append(chatPair.second->serialize(*m_db));
+        chatsArray.append(chatPair.second->serialize(m_my_login, *m_db));
     }
     jsonObject["chatsArray"] = chatsArray;
 
@@ -230,7 +230,6 @@ void Client::save() const {
     jsonObject["my_name"] = QString::fromStdString(m_my_name);
     jsonObject["is_has_photo"] = m_is_has_photo;
 
-    // Сохраняем хэш только если он нигде не встречается
     if (!hashExists && !m_is_undo_auto_login) {
         jsonObject["my_password_hash"] = QString::fromStdString(m_my_password_hash);
         qDebug() << "Saving password hash for user:" << QString::fromStdString(m_my_login);
@@ -243,7 +242,6 @@ void Client::save() const {
         jsonObject["my_photo"] = QString::fromStdString(m_my_photo->getPhotoPath());
     }
 
-    // Сохраняем файл
     QString fileName = QString::fromStdString(m_my_login) + ".json";
     QString fullPath = saveDir.filePath(fileName);
 
@@ -297,7 +295,7 @@ bool Client::load(const std::string& fileName) {
         QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
         for (const QJsonValue& value : chatsArray) {
             if (value.isObject()) {
-                Chat* chat = Chat::deserialize(value.toObject(), *m_db);
+                Chat* chat = Chat::deserialize(m_my_login, value.toObject(), *m_db);
                 if (chat) {
                     m_map_friend_login_to_chat[chat->getFriendLogin()] = chat;
                 }
@@ -313,6 +311,19 @@ void Client::waitUntilUIReadyToUpdate() {
         std::this_thread::yield();
     }
 }
+
+void Client::deleteFriendMessagesInDatabase(const std::string& friendLogin) {
+    m_db->deleteAllMessages(m_my_login, friendLogin);
+}
+
+void Client::deleteFriendFromChatsMap(const std::string& friendLogin) {
+    auto it = m_map_friend_login_to_chat.find(friendLogin);
+    if (it != m_map_friend_login_to_chat.end()) {
+        delete it->second;
+        m_map_friend_login_to_chat.erase(it);
+    }
+}
+
 
 void Client::updateConfigName(const std::string& newLogin) {
     QString oldFileName = QString::fromStdString(utility::getSaveDir()) +
@@ -367,7 +378,6 @@ void Client::updateInConfigFriendLogin(const std::string& oldLogin, const std::s
         QString currentLogin = chatObj["friend_login"].toString();
 
         if (currentLogin == QString::fromStdString(oldLogin)) {
-            // Обновляем логин друга
             chatObj["friend_login"] = QString::fromStdString(newLogin);
             chatValue = chatObj;
             found = true;
@@ -395,7 +405,6 @@ bool Client::autoLogin() {
     QString dir = QString::fromStdString(utility::getSaveDir());
     QDir saveDir(dir);
 
-    // Получаем список всех JSON-файлов в директории
     QStringList jsonFiles = saveDir.entryList(QStringList() << "*.json", QDir::Files);
 
     if (jsonFiles.isEmpty()) {
@@ -403,7 +412,6 @@ bool Client::autoLogin() {
         return false;
     }
 
-    // Ищем файл с полем passwordHash
     for (const QString& jsonFile : jsonFiles) {
         QString fullPath = saveDir.filePath(jsonFile);
         QFile file(fullPath);
@@ -423,9 +431,11 @@ bool Client::autoLogin() {
 
         QJsonObject jsonObject = loadDoc.object();
 
-        // Проверяем наличие passwordHash
         if (jsonObject.contains("my_password_hash")) {
             m_my_login = jsonObject["my_login"].toString().toStdString();
+            initDatabase(m_my_login);
+
+
             m_my_name = jsonObject["my_name"].toString().toStdString();
             m_my_password_hash = jsonObject["my_password_hash"].toString().toStdString();
             m_is_has_photo = jsonObject["is_has_photo"].toBool();
@@ -443,7 +453,7 @@ bool Client::autoLogin() {
                 QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
                 for (const QJsonValue& value : chatsArray) {
                     if (value.isObject()) {
-                        Chat* chat = Chat::deserialize(value.toObject(), *m_db);
+                        Chat* chat = Chat::deserialize(m_my_login, value.toObject(), *m_db);
                         if (chat) {
                             m_map_friend_login_to_chat[chat->getFriendLogin()] = chat;
                         }
@@ -460,6 +470,52 @@ bool Client::autoLogin() {
 
     qWarning() << "No JSON file with passwordHash field found in directory:" << dir;
     return false;
+}
+
+
+void Client::deleteFriendChatInConfig(const std::string& friendLogin) {
+    QString configPath = QString::fromStdString(utility::getSaveDir() + "/" + m_my_login + ".json");
+    QFile file(configPath);
+
+    if (!file.open(QIODevice::ReadWrite)) {
+        qWarning() << "Couldn't open config file for update:" << configPath;
+        return;
+    }
+
+    QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
+    if (!loadDoc.isObject()) {
+        qWarning() << "Invalid JSON in config file:" << configPath;
+        file.close();
+        return;
+    }
+
+    QJsonObject jsonObject = loadDoc.object();
+
+    if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].isArray()) {
+        QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
+        QJsonArray newChatsArray;
+
+        for (const QJsonValue& value : chatsArray) {
+            if (value.isObject()) {
+                QJsonObject chatObj = value.toObject();
+                if (chatObj.contains("friend_login") &&
+                    chatObj["friend_login"].toString().toStdString() != friendLogin) {
+                    newChatsArray.append(chatObj);
+                }
+            }
+        }
+
+        if (newChatsArray.size() != chatsArray.size()) {
+            jsonObject["chatsArray"] = newChatsArray;
+
+            file.resize(0);
+            file.write(QJsonDocument(jsonObject).toJson());
+            qDebug() << "Chat with friend" << QString::fromStdString(friendLogin)
+                << "removed from config";
+        }
+    }
+
+    file.close();
 }
 
 bool Client::undoAutoLogin() {
@@ -488,13 +544,11 @@ bool Client::undoAutoLogin() {
 
     QJsonObject jsonObj = doc.object();
 
-    // Проверяем наличие поля перед удалением
     if (!jsonObj.contains("my_password_hash")) {
         qDebug() << "Password hash field not found in file:" << oldFileName;
         return true;
     }
 
-    // Удаляем поле (без проверки возвращаемого значения)
     jsonObj.remove("my_password_hash");
 
     if (!file.open(QIODevice::WriteOnly)) {
