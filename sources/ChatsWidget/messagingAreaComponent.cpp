@@ -593,6 +593,8 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     connect(m_sendMessageButton, &ButtonCursor::clicked, this, &MessagingAreaComponent::onSendMessageClicked);
     connect(this, &MessagingAreaComponent::sendMessageData, m_chatsWidget, &ChatsWidget::onSendMessageData);
 
+    connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged,
+        this, &MessagingAreaComponent::handleScroll);
 
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     adjustTextEditHeight();
@@ -612,6 +614,51 @@ void MessagingAreaComponent::resizeEvent(QResizeEvent* event) {
             m_chat_properties_component->height()
         );
     }
+}
+
+void MessagingAreaComponent::handleScroll(int value) {
+    //TODO
+    auto client = m_chatsWidget->getClient();
+
+    int sentCount = 0;
+    std::vector<MessageComponent*> skippedVec;
+    bool isWasSentAtLeastOneConfirmation = false;
+    for (auto msgComp : m_vec_unread_messagesComponents) {
+        if (!isMessageVisible(msgComp)) {
+            auto message = msgComp->getMessage();
+            message->setIsRead(true);
+            client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
+            isWasSentAtLeastOneConfirmation = true;
+            sentCount++;
+        }
+    }
+
+    if (isWasSentAtLeastOneConfirmation && skippedVec.size() != 0) {
+        for (auto msgComp : skippedVec) {
+            auto message = msgComp->getMessage();
+            message->setIsRead(true);
+            client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
+            sentCount++;
+        }
+    }
+
+    if (sentCount <= m_vec_unread_messagesComponents.size()) {
+        m_vec_unread_messagesComponents.erase(
+            m_vec_unread_messagesComponents.begin(),
+            m_vec_unread_messagesComponents.begin() + sentCount
+        );
+    }
+}
+
+std::vector<MessageComponent*>& MessagingAreaComponent::getUreadMessageComponents() {
+    std::vector<MessageComponent*> vec;
+    for (auto msgComponent : m_vec_messagesComponents) {
+        if (!msgComponent->getIsRead() && !msgComponent->getIsSent()) {
+            vec.emplace_back(msgComponent);
+        }
+    }
+
+    return m_vec_unread_messagesComponents;
 }
 
 MessagingAreaComponent::~MessagingAreaComponent() {
@@ -829,6 +876,18 @@ void MessagingAreaComponent::addMessage(Message* message) {
     }
 
     m_vec_messagesComponents.push_back(messageComp);
+
+    if (m_chatsWidget->getCurrentMessagingAreaComponent() == this  && !message->getIsSend()) {
+        bool isVisible = isMessageVisible(messageComp);
+        if (isVisible) {
+            auto client = m_chatsWidget->getClient();
+            client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
+        }
+        else {
+            m_vec_unread_messagesComponents.push_back(messageComp);
+        }
+    }
+
     m_containerVLayout->addWidget(messageComp);
 }
 
@@ -851,4 +910,18 @@ void MessagingAreaComponent::markMessageAsChecked(Message* message) {
     client->sendMessageReadConfirmation(m_chat->getFriendLogin(), { message });
 
     m_chat->getMessagesVec().back()->setIsRead(true);
+}
+
+bool MessagingAreaComponent::isMessageVisible(MessageComponent* msgComp) const {
+    if (m_vec_messagesComponents.empty()) {
+        return false;
+    }
+
+    QRect msgRect = msgComp->geometry();
+
+    QPoint msgBottomRight = msgComp->mapTo(m_scrollArea, msgRect.bottomRight());
+
+    QRect viewportRect = m_scrollArea->viewport()->rect();
+
+    return viewportRect.contains(msgBottomRight);
 }

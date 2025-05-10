@@ -79,8 +79,11 @@ public:
 
     void setTheme(Theme theme) { m_innerWidget->setTheme(theme);}
 
-    void setMessage(const QString& message) { m_innerWidget->setText(message); }
-    const QString& getMessage() const{ return m_innerWidget->getText(); }
+    void setMessage(Message* message) { m_message = message; }
+    Message* getMessage() { return m_message; }
+
+    void setMessageText(const QString& message) { m_innerWidget->setText(message); }
+    const QString& getMessageText() const{ return m_innerWidget->getText(); }
 
     void setTimestamp(const QString& timestamp) { m_innerWidget->setTimestamp(timestamp); }
     const QString& getTimestamp() const { return m_innerWidget->getTimestamp(); }
@@ -97,6 +100,7 @@ public slots:
     void setIsRead(bool isRead);
 
 private:
+    Message* m_message;
     Theme m_theme;
     QString m_id;
     bool m_isSent;

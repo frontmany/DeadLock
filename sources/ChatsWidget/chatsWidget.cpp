@@ -10,6 +10,7 @@
 #include "photo.h"
 #include "chat.h"
 #include "chatComponent.h"
+#include "messageComponent.h"
 #include "mainWindow.h"
 
 
@@ -57,40 +58,80 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
 void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     removeRightComponent();
 
-    auto itMsgComp = std::find_if( m_vec_messaging_components.begin(),  m_vec_messaging_components.end(), [chat](MessagingAreaComponent* msgComp) {
+    auto itMsgAreaComp = std::find_if( m_vec_messaging_components.begin(),  m_vec_messaging_components.end(), [chat](MessagingAreaComponent* msgComp) {
         return msgComp->getChatConst()->getFriendLogin() == chat->getFriendLogin();
         });
 
-    if (itMsgComp ==  m_vec_messaging_components.end()) {
+    if (itMsgAreaComp ==  m_vec_messaging_components.end()) {
         std::cout << "error can not find messaging Area Component";
     }
 
     else {
-        m_current_messagingAreaComponent = *itMsgComp;
+        m_current_messagingAreaComponent = *itMsgAreaComp;
         m_current_messagingAreaComponent->show();
         m_current_messagingAreaComponent->setTheme(m_theme);
         m_mainHLayout->addWidget(m_current_messagingAreaComponent);
 
-        bool isAtMinimum = m_current_messagingAreaComponent->getScrollArea()
+        auto scrollArea = m_current_messagingAreaComponent->getScrollArea();
+        auto& unreadMessageComponentsVec = m_current_messagingAreaComponent->getUreadMessageComponents();
+
+        bool isAtMinimum = scrollArea
             ->verticalScrollBar()
-            ->value() == m_current_messagingAreaComponent->getScrollArea()
+            ->value() == scrollArea
             ->verticalScrollBar()
             ->minimum();
 
         if (isAtMinimum) {
-            m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->setValue(m_current_messagingAreaComponent->getScrollArea()->verticalScrollBar()->maximum());
+            scrollArea->verticalScrollBar()
+                ->setValue(scrollArea
+                    ->verticalScrollBar()
+                    ->maximum());
+
+            for (auto msgComp : unreadMessageComponentsVec) {
+                auto message = msgComp->getMessage();
+                message->setIsRead(true);
+                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
+            }
+
+            selectChatComponent(component);
+            return;
         }
-       
-        auto unreadVec = chat->getUnreadReceiveMessagesVec();
-        if (unreadVec.size() > 0) {
-            for (auto msg : unreadVec) {
-                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), msg);
-                msg->setIsRead(true);
+
+        //TODO
+        int sentCount = 0;
+        std::vector<MessageComponent*> skippedVec;
+        bool isWasSentAtLeasOneConfirmation = false;
+        for (auto msgComp : unreadMessageComponentsVec) {
+            if (!m_current_messagingAreaComponent->isMessageVisible(msgComp)) {
+                auto message = msgComp->getMessage();
+                message->setIsRead(true);
+                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
+                isWasSentAtLeasOneConfirmation = true;
+                sentCount++;
+            }
+            else {
+                skippedVec.push_back(msgComp);
             }
         }
 
+        if (isWasSentAtLeasOneConfirmation && skippedVec.size() != 0) {
+            for (auto msgComp : skippedVec) {
+                auto message = msgComp->getMessage();
+                message->setIsRead(true);
+                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
+                sentCount++;
+            }
+        }
+        
+        if (sentCount <= unreadMessageComponentsVec.size()) {
+            unreadMessageComponentsVec.erase(
+                unreadMessageComponentsVec.begin(),
+                unreadMessageComponentsVec.begin() + sentCount
+            );
+        }
     }
     selectChatComponent(component);
+    
 }
 
 void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {

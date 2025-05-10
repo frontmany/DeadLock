@@ -152,8 +152,6 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 			Q_ARG(ChatComponent*, chatComp));
 	}
 
-	
-
 	QMetaObject::invokeMethod(chatComp,
 		"setLastMessage",
 		Qt::QueuedConnection,
@@ -187,12 +185,6 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 	if (chatsWidget->getCurrentMessagingAreaComponent() == nullptr) {}
 	else if (chatsWidget->getCurrentMessagingAreaComponent()->getChat()->getFriendLogin() == friendLogin) {
 		MessagingAreaComponent* areaComp = *comp;
-
-		QMetaObject::invokeMethod(areaComp,
-			"markMessageAsChecked",
-			Qt::QueuedConnection,
-			Q_ARG(Message*, message));
-
 
 		if (!message->getIsSend() &&
 			qAbs(areaComp->getScrollArea()->verticalScrollBar()->value() -

@@ -186,6 +186,9 @@ public:
     MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget);
     ~MessagingAreaComponent();
 
+    bool isMessageVisible(MessageComponent* msgComp) const;
+    std::vector<MessageComponent*>& getUreadMessageComponents();
+
     void setTheme(Theme theme);
     QScrollArea* getScrollArea() { return m_scrollArea; }
 
@@ -224,12 +227,14 @@ protected:
 
 private:
     void updateRelatedChatComponentLastMessage();
+    void handleScroll(int value);
 
 private:
     StyleMessagingAreaComponent*    m_style;
     Theme                           m_theme;
     QColor                          m_backColor;
     
+    std::vector<MessageComponent*> m_vec_unread_messagesComponents;
     std::vector<MessageComponent*> m_vec_messagesComponents;
 
     QVBoxLayout* m_sendMessage_VLayout;

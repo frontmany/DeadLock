@@ -190,7 +190,7 @@ void InnerComponent::setTheme(Theme theme) {
 
 MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme theme)
     : QWidget(parent), m_theme(theme), m_id(QString::fromStdString(message->getId())), m_isSent(message->getIsSend()),
-    m_isRead(message->getIsRead()) 
+    m_isRead(message->getIsRead()), m_message(message)
 {
     m_innerWidget = new InnerComponent(this, QString::fromStdString(message->getTimestamp()), QString::fromStdString(message->getMessage()), m_theme, m_isSent);
     this->setStyleSheet("background-color: transparent;");
