@@ -624,7 +624,7 @@ void MessagingAreaComponent::handleScroll(int value) {
     std::vector<MessageComponent*> skippedVec;
     bool isWasSentAtLeastOneConfirmation = false;
     for (auto msgComp : m_vec_unread_messagesComponents) {
-        if (!isMessageVisible(msgComp)) {
+        if (isMessageVisible(msgComp)) {
             auto message = msgComp->getMessage();
             message->setIsRead(true);
             client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
@@ -866,29 +866,31 @@ void MessagingAreaComponent::onTypeMessage() {
 
 void MessagingAreaComponent::addMessage(Message* message) {
     MessageComponent* messageComp = new MessageComponent(m_containerWidget, message, m_theme);
+
     if (message->getIsSend()) {
-        if (message->getIsRead()) {
-            messageComp->setIsRead(true);
-        }
-        else {
-            messageComp->setIsRead(false);
-        }
+        messageComp->setIsRead(message->getIsRead());
     }
 
     m_vec_messagesComponents.push_back(messageComp);
 
-    if (m_chatsWidget->getCurrentMessagingAreaComponent() == this  && !message->getIsSend()) {
+    if (!message->getIsSend()) {
+        m_vec_unread_messagesComponents.push_back(messageComp);
+    }
+
+    // 4. Обработка непрочитанных сообщений
+    if (m_chatsWidget->getCurrentMessagingAreaComponent() == this && !message->getIsSend()) {
         bool isVisible = isMessageVisible(messageComp);
         if (isVisible) {
             auto client = m_chatsWidget->getClient();
             client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
         }
-        else {
-            m_vec_unread_messagesComponents.push_back(messageComp);
-        }
     }
 
+    // 5. Добавляем в layout контейнера
     m_containerVLayout->addWidget(messageComp);
+
+    // 6. Обновляем геометрию
+    m_containerWidget->adjustSize();
 }
 
 void MessagingAreaComponent::moveSliderDown(bool isCalledFromWorker) {
@@ -912,16 +914,30 @@ void MessagingAreaComponent::markMessageAsChecked(Message* message) {
     m_chat->getMessagesVec().back()->setIsRead(true);
 }
 
-bool MessagingAreaComponent::isMessageVisible(MessageComponent* msgComp) const {
-    if (m_vec_messagesComponents.empty()) {
+
+bool MessagingAreaComponent::isMessageVisible(MessageComponent* msgComp) const
+{
+    if (!msgComp || !m_scrollArea || !m_scrollArea->viewport() || m_vec_messagesComponents.empty()) {
         return false;
     }
 
-    QRect msgRect = msgComp->geometry();
+    QRect msgRect = msgComp->frameGeometry();
 
-    QPoint msgBottomRight = msgComp->mapTo(m_scrollArea, msgRect.bottomRight());
+    QPoint msgTopLeft = m_containerWidget->mapTo(m_scrollArea->viewport(), msgRect.topLeft());
+    QPoint msgBottomRight = m_containerWidget->mapTo(m_scrollArea->viewport(), msgRect.bottomRight());
 
     QRect viewportRect = m_scrollArea->viewport()->rect();
 
-    return viewportRect.contains(msgBottomRight);
+    bool isVisible = viewportRect.intersects(QRect(msgTopLeft, msgBottomRight));
+
+    if (!isVisible) {
+        int scrollBarValue = m_scrollArea->verticalScrollBar()->value();
+        int msgBottomPos = m_containerWidget->mapTo(m_scrollArea->viewport(), msgRect.bottomRight()).y();
+        int viewportBottom = viewportRect.bottom();
+
+        isVisible = (msgBottomPos > viewportBottom) &&
+            (msgBottomPos - viewportBottom < 50);
+    }
+
+    return isVisible;
 }

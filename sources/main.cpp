@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     app.setStyle(customStyle);
 
     Client* client = new Client;
-    client->connectTo("192.168.56.1", 8080);
+    client->connectTo("192.168.1.51", 8080);
     client->run();
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);

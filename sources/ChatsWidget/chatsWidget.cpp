@@ -102,7 +102,7 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         std::vector<MessageComponent*> skippedVec;
         bool isWasSentAtLeasOneConfirmation = false;
         for (auto msgComp : unreadMessageComponentsVec) {
-            if (!m_current_messagingAreaComponent->isMessageVisible(msgComp)) {
+            if (m_current_messagingAreaComponent->isMessageVisible(msgComp)) {
                 auto message = msgComp->getMessage();
                 message->setIsRead(true);
                 m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
