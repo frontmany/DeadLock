@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QDialog>
 #include <QPainter>
 #include <QLabel>
@@ -41,7 +40,6 @@ private:
 
     QVBoxLayout* m_mainVLayout;
     QHBoxLayout* m_mainHLayout;
-
 
     ChatsListComponent* m_chats_list_component = nullptr;
     FieldsEditComponent* m_fields_edit_component = nullptr;

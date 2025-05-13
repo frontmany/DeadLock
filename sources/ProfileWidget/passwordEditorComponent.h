@@ -6,6 +6,11 @@
 #include <QVBoxLayout>
 #include <QMessageBox>
 
+class EditDialogComponent;
+class ProfileEditorWidget;
+class Client;
+enum Theme;
+
 struct StylePasswordEditComponent {
     StylePasswordEditComponent();
 
@@ -21,11 +26,6 @@ struct StylePasswordEditComponent {
     QString LightLabelStyle;
     QString DarkLabelStyle;
 };
-
-class EditDialogComponent;
-class ProfileEditorWidget;
-class Client;
-enum Theme;
 
 class PasswordEditComponent : public QWidget {
     Q_OBJECT

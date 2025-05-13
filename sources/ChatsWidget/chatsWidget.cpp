@@ -58,6 +58,17 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
 void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
     removeRightComponent();
 
+    if (m_current_messagingAreaComponent != nullptr && m_current_messagingAreaComponent->isDelimiterComponentUnread()) {
+
+        if (m_vec_messaging_components.size() == 0) {
+            m_current_messagingAreaComponent->removeDelimiterComponentUnread();
+        }
+        else {
+            m_current_messagingAreaComponent->moveDelimiterComponentUnreadDown();
+        }
+    }
+    
+
     auto itMsgAreaComp = std::find_if( m_vec_messaging_components.begin(),  m_vec_messaging_components.end(), [chat](MessagingAreaComponent* msgComp) {
         return msgComp->getChatConst()->getFriendLogin() == chat->getFriendLogin();
         });

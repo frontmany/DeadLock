@@ -3,6 +3,61 @@
 #include "buttons.h"
 #include "mainwindow.h"
 
+StyleAddChatDialogComponent::StyleAddChatDialogComponent() {
+    AddButtonStyle = R"(
+    QPushButton {
+        background-color: transparent;   
+        color: white;             
+        border: none;   
+        border-radius: 5px;       
+        padding: 5px 10px;        
+    }
+    QPushButton:hover {
+        background-color: rgb(26, 133, 255);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(26, 133, 255);      
+    }
+)";
+
+    DarkButtonStyleBlue = R"(
+    QPushButton {
+        background-color: rgb(21, 119, 232);   
+        color: white;             
+        border: none;   
+        border-radius: 5px;       
+        padding: 5px 10px;        
+        font-family: "Segoe UI";  
+        font-size: 14px;          
+    }
+    QPushButton:hover {
+        background-color: rgb(26, 133, 255);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(26, 133, 255);      
+    }
+)";
+
+    LightButtonStyleBlue = R"(
+    QPushButton {
+        background-color: rgb(26, 133, 255);   
+        color: white;             
+        border: none;   
+        border-radius: 5px;       
+        padding: 5px 10px;        
+        font-family: "Segoe UI";  
+        font-size: 14px;          
+    }
+    QPushButton:hover {
+        background-color: rgb(21, 119, 232);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(21, 119, 232);      
+    }
+)";
+
+}
+
 StyleEditComponent::StyleEditComponent() {
     DarkLineEditStyle = R"(
     QLineEdit {
@@ -112,15 +167,12 @@ void EditComponent::paintEvent(QPaintEvent* event) {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
-    // Создаем path для закругленного прямоугольника
     QPainterPath path;
     QRect rect = this->rect();
-    int radius = 16; // Радиус закругления
+    int radius = 16;
     path.addRoundedRect(rect, radius, radius);
 
-    // Рисуем фон с помощью path
-    painter.fillPath(path, m_color); // Цвет фона
-    // Устанавливаем контур обрезки и отрисовываем
+    painter.fillPath(path, m_color);
     painter.setClipPath(path);
 
     QColor color;
@@ -131,10 +183,9 @@ void EditComponent::paintEvent(QPaintEvent* event) {
         color = QColor(255, 189, 189);
     }
 
-    // Если нужно, рисуем красную рамку
     if (m_drawRedBorder) {
-        painter.setPen(QPen(color, 3)); // Устанавливаем цвет и толщину рамки
-        painter.drawRoundedRect(rect, radius, radius); // Рисуем рамку
+        painter.setPen(QPen(color, 3)); 
+        painter.drawRoundedRect(rect, radius, radius);
     }
 
     QWidget::paintEvent(event);

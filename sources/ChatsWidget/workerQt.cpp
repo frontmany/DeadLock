@@ -180,7 +180,8 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 	QMetaObject::invokeMethod(areaComp,
 		"addMessage",
 		Qt::QueuedConnection,
-		Q_ARG(Message*, message));
+		Q_ARG(Message*, message),
+		Q_ARG(bool, false));
 
 	if (chatsWidget->getCurrentMessagingAreaComponent() == nullptr) {}
 	else if (chatsWidget->getCurrentMessagingAreaComponent()->getChat()->getFriendLogin() == friendLogin) {

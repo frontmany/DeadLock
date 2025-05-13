@@ -9,71 +9,20 @@
 
 struct StyleEditComponent {
     StyleEditComponent();
-
     QString DarkLineEditStyle;
     QString LightLineEditStyle;
 };
 
-
 struct StyleAddChatDialogComponent {
-    QString addButtonStyle = R"(
-    QPushButton {
-        background-color: transparent;   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
-
-    QString DarkButtonStyleBlue = R"(
-    QPushButton {
-        background-color: rgb(21, 119, 232);   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-        font-family: "Segoe UI";  
-        font-size: 14px;          
-    }
-    QPushButton:hover {
-        background-color: rgb(26, 133, 255);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(26, 133, 255);      
-    }
-)";
-
-    QString LightButtonStyleBlue = R"(
-    QPushButton {
-        background-color: rgb(26, 133, 255);   
-        color: white;             
-        border: none;   
-        border-radius: 5px;       
-        padding: 5px 10px;        
-        font-family: "Segoe UI";  
-        font-size: 14px;          
-    }
-    QPushButton:hover {
-        background-color: rgb(21, 119, 232);   
-    }
-    QPushButton:pressed {
-        background-color: rgb(21, 119, 232);      
-    }
-)";
-
+    StyleAddChatDialogComponent();
+    QString AddButtonStyle;
+    QString DarkButtonStyleBlue;
+    QString LightButtonStyleBlue;
 };
 
-
-enum Theme;
 class ChatsListComponent;
 class ButtonIcon;
+enum Theme;
 
 class EditComponent : public QWidget {
     Q_OBJECT

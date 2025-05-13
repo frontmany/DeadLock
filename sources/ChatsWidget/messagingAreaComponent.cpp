@@ -1,17 +1,17 @@
 #include "MessagingAreaComponent.h"
 #include "chatHeaderComponent.h"
-#include "messageComponent.h"
 #include "chatsListComponent.h"
+#include "delimiterComponent.h"
+#include "messageComponent.h"
 #include "chatsWidget.h"
-#include "utility.h"
 #include "mainWindow.h"
+#include "utility.h"
 #include "buttons.h"
 #include "message.h"
 #include "client.h"
 #include "photo.h"
 #include "chat.h"
-#include <random>
-#include <limits>
+
 
 
 StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
@@ -600,7 +600,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     adjustTextEditHeight();
 
     for (auto message : m_chat->getMessagesVec()) {
-        addMessage(message);
+        addMessage(message, true);
     }
 }
 
@@ -789,6 +789,10 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
 
 
 void MessagingAreaComponent::onSendMessageClicked() {
+    if (isDelimiterUnread) {
+        removeDelimiterComponentUnread();
+    }
+
     std::string msg = m_messageInputEdit->toPlainText().toStdString();
     if (msg.find_first_not_of(' ') == std::string::npos) {
         return;
@@ -826,7 +830,7 @@ void MessagingAreaComponent::onSendMessageClicked() {
     updateRelatedChatComponentLastMessage();
 
     Message* message = new Message(msg, utility::getTimeStamp(), utility::generateId(), true, false);
-    addMessage(message);
+    addMessage(message, false);
     m_containerWidget->adjustSize();
     onTypeMessage();
     QString s = m_messageInputEdit->toPlainText();
@@ -864,7 +868,7 @@ void MessagingAreaComponent::onTypeMessage() {
 }
 
 
-void MessagingAreaComponent::addMessage(Message* message) {
+void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessages) {
     MessageComponent* messageComp = new MessageComponent(m_containerWidget, message, m_theme);
 
     if (message->getIsSend()) {
@@ -873,24 +877,61 @@ void MessagingAreaComponent::addMessage(Message* message) {
 
     m_vec_messagesComponents.push_back(messageComp);
 
-    if (!message->getIsSend()) {
+    if (!message->getIsSend() && !message->getIsRead()) {
         m_vec_unread_messagesComponents.push_back(messageComp);
     }
 
-    // 4. Обработка непрочитанных сообщений
-    if (m_chatsWidget->getCurrentMessagingAreaComponent() == this && !message->getIsSend()) {
+    if (!isRecoveringMessages) {
         bool isVisible = isMessageVisible(messageComp);
-        if (isVisible) {
-            auto client = m_chatsWidget->getClient();
-            client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
+
+        if ((!isDelimiterUnread && !message->getIsSend() && m_chatsWidget->getCurrentMessagingAreaComponent() != this) ||
+            (m_chatsWidget->getCurrentMessagingAreaComponent() == this && !isVisible && !isDelimiterUnread && !message->getIsSend()))
+        {
+            m_delimiter_component_unread = new DelimiterComponent("unread messages", this, m_theme);
+            m_containerVLayout->addWidget(m_delimiter_component_unread);
+            isDelimiterUnread = true;
+        }
+
+        if (m_chatsWidget->getCurrentMessagingAreaComponent() == this && !message->getIsSend()) {
+            if (isVisible) {
+                auto client = m_chatsWidget->getClient();
+                client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
+            }
         }
     }
+    
 
-    // 5. Добавляем в layout контейнера
+
     m_containerVLayout->addWidget(messageComp);
 
-    // 6. Обновляем геометрию
     m_containerWidget->adjustSize();
+}
+
+
+void MessagingAreaComponent::removeDelimiterComponentUnread() { // TODO beautifull remove
+    m_containerVLayout->removeWidget(m_delimiter_component_unread);
+    delete m_delimiter_component_unread;
+    m_delimiter_component_unread = nullptr;
+    isDelimiterUnread = false;
+}
+
+void MessagingAreaComponent::moveDelimiterComponentUnreadDown() {
+    if (m_delimiter_component_unread != nullptr) {
+        removeDelimiterComponentUnread();
+    }
+
+    if (m_vec_unread_messagesComponents.empty())
+        return;
+
+    auto* msgComp = m_vec_unread_messagesComponents.front();
+
+    m_delimiter_component_unread = new DelimiterComponent("unread messages", this, m_theme);
+
+    int insertIndex = m_containerVLayout->indexOf(msgComp);
+
+    if (insertIndex >= 0) {
+        m_containerVLayout->insertWidget(insertIndex, m_delimiter_component_unread);
+    }
 }
 
 void MessagingAreaComponent::moveSliderDown(bool isCalledFromWorker) {

@@ -79,7 +79,7 @@ private:
 	QPixmap					m_background;
 	Client*					m_client;
 	ChatsListComponent*		m_chatsListComponent;
-	MessagingAreaComponent* m_current_messagingAreaComponent;
+	MessagingAreaComponent* m_current_messagingAreaComponent = nullptr;
 	HelloAreaComponent*		m_helloAreaComponent;
 	MainWindow*				m_main_window;
 	std::mutex				m_mtx;

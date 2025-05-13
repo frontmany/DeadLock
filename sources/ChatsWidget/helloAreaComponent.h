@@ -15,29 +15,9 @@ class ButtonIcon;
 enum Theme;
 
 struct StyleHelloAreaComponent {
-    QString labelStyleDark = R"(
-    QLabel {
-        background-color: rgba(59, 59, 59, 200); 
-        color: rgb(240, 240, 240); 
-        font-family: 'Segoe UI'; 
-        font-size: 14px; 
-        padding: 10px; 
-        border: none; 
-        border-radius: 20px; 
-    }
-)";
-
-    QString labelStyleLight = R"(
-    QLabel {
-        background-color: rgba(148, 148, 148, 200); 
-        color: rgb(240, 240, 240); 
-        font-family: 'Segoe UI'; 
-        font-size: 14px; 
-        padding: 10px; 
-        border: none; 
-        border-radius: 20px; 
-    }
-)";
+    StyleHelloAreaComponent();
+    QString LabelStyleDark;
+    QString LabelStyleLight;
 };
 
 class HelloAreaComponent : public QWidget {

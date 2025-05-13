@@ -14,6 +14,12 @@
 #include <QGraphicsOpacityEffect>
 #include <QWheelEvent>
 
+class EditDialogComponent;
+class ProfileEditorWidget;
+class Client;
+class Photo;
+enum  Theme;
+
 struct StyleFieldsEditComponent {
     StyleFieldsEditComponent();
     QString DarkLabelStyle;
@@ -34,16 +40,6 @@ struct StyleFieldsEditComponent {
     QString DarkLineEditStyle;
     QString LightLineEditStyle;
 };
-
-
-
-class EditDialogComponent;
-class ProfileEditorWidget;
-class Client;
-class Photo;
-enum  Theme;
-
-
 
 class FieldsEditComponent : public QWidget {
     Q_OBJECT

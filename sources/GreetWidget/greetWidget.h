@@ -20,29 +20,22 @@
 #include <QApplication>
 #include <QStyle>
 
-
-
-struct StyleGreetWidget {
-    StyleGreetWidget();
-
-    QString WhiteLabelWelcomeStyle;
-
-    QString DarkButtonSkipStyle;
-    QString LightButtonSkipStyle;
-
-    QString DarkButtonStyle;
-    QString LightButtonStyle;
-
-    QString DarkSliderStyle;
-    QString LightSliderStyle;
-
-};
-
 class Client;
 class MainWindow;
 class ChatsWidget;
 enum  Theme;
 class PacketsBuilder;
+
+struct StyleGreetWidget {
+    StyleGreetWidget();
+    QString WhiteLabelWelcomeStyle;
+    QString DarkButtonSkipStyle;
+    QString LightButtonSkipStyle;
+    QString DarkButtonStyle;
+    QString LightButtonStyle;
+    QString DarkSliderStyle;
+    QString LightSliderStyle;
+};
 
 class GreetWidget : public QWidget {
     Q_OBJECT

@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QWidget>
 #include <QPixmap>
 #include <QIcon>
@@ -10,9 +9,7 @@
 #include <QWidget>
 #include <QPropertyAnimation>
 
-
 enum Theme;
-
 
 class ToggleSwitch : public QWidget {
     Q_OBJECT
@@ -38,19 +35,19 @@ protected:
 
 private:
     void updateAnimation();
-    QColor backgroundColor() const; // Метод для получения цвета фона
+    QColor backgroundColor() const; 
 
 signals:
     void toggled(bool checked);
     void indicatorXChanged(int newValue);
 
 private:
-    bool m_isChecked; // Состояние переключателя
-    int m_radius; // Радиус индикатора
-    QPropertyAnimation* m_animation; // Анимация индикатора
-    int m_indicatorX; // Положение индикатора по оси X
-    QColor m_backgroundColor; // Цвет фона переключателя
-    QColor m_circleColor; // Цвет фона переключателя
+    bool m_isChecked;
+    int m_radius; 
+    QPropertyAnimation* m_animation;
+    int m_indicatorX;
+    QColor m_backgroundColor;
+    QColor m_circleColor; 
     Theme m_theme;
 };
 

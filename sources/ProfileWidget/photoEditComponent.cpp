@@ -8,6 +8,163 @@
 #include "chatsWidget.h"
 #include "chatsListComponent.h"
 
+StylePhotoEditComponent::StylePhotoEditComponent() {
+    ButtonSkipStyleBothTheme = R"(
+            QPushButton {
+                background-color: transparent;     
+                color: rgb(153, 150, 150);              
+                border: none;        
+                border-radius: 5px;             
+                padding: 5px 10px;              
+                font-family: 'Arial';            
+                font-size: 14px;                 
+            }
+            QPushButton:hover {
+                color: rgb(26, 133, 255);      
+            }
+            QPushButton:pressed {
+                color: rgb(26, 133, 255);      
+            }
+        )";
+
+    DarkButtonStyleBlue = R"(
+    QPushButton {
+        background-color: rgb(21, 119, 232);   
+        color: white;             
+        border: none;   
+        border-radius: 5px;       
+        padding: 5px 10px;        
+        font-family: "Segoe UI";  
+        font-size: 14px;          
+    }
+    QPushButton:hover {
+        background-color: rgb(26, 133, 255);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(26, 133, 255);      
+    }
+)";
+
+    LightButtonStyleBlue = R"(
+    QPushButton {
+        background-color: rgb(26, 133, 255);   
+        color: white;             
+        border: none;   
+        border-radius: 5px;       
+        padding: 5px 10px;        
+        font-family: "Segoe UI";  
+        font-size: 14px;          
+    }
+    QPushButton:hover {
+        background-color: rgb(21, 119, 232);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(21, 119, 232);      
+    }
+)";
+
+    DarkSliderStyle = R"(
+QSlider::groove:horizontal {
+    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
+    height: 8px; /* Высота полосы */
+    border-radius: 4px; /* Закругление углов полосы */
+}
+
+QSlider::handle:horizontal {
+    background-color: white; /* Цвет ручки */
+    width: 16px; /* Ширина ручки */
+    height: 16px; /* Высота ручки */
+    border-radius: 8px; /* Круглая форма ручки */
+    margin: -4px 0; /* Смещение ручки относительно полосы */
+}
+
+QSlider::add-page:horizontal {
+    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+
+QSlider::sub-page:horizontal {
+    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+
+QSlider::groove:vertical {
+    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет полосы */
+    width: 8px; /* Ширина полосы */
+    border-radius: 4px; /* Закругление углов полосы */
+}
+
+QSlider::handle:vertical {
+    background-color: white; /* Цвет ручки */
+    width: 16px; /* Ширина ручки */
+    height: 16px; /* Высота ручки */
+    border-radius: 8px; /* Круглая форма ручки */
+    margin: 0 -4px; /* Смещение ручки относительно полосы */
+}
+
+QSlider::add-page:vertical {
+    background-color: rgb(77, 77, 77); /* Тёмно-серый цвет заполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+
+QSlider::sub-page:vertical {
+    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+)";
+
+    LightSliderStyle = R"(
+QSlider::groove:horizontal {
+    background-color: rgb(168, 168, 168); /* Тёмно-серый цвет полосы */
+    height: 8px; /* Высота полосы */
+    border-radius: 4px; /* Закругление углов полосы */
+}
+
+QSlider::handle:horizontal {
+    background-color: white; /* Цвет ручки */
+    width: 16px; /* Ширина ручки */
+    height: 16px; /* Высота ручки */
+    border-radius: 8px; /* Круглая форма ручки */
+    margin: -4px 0; /* Смещение ручки относительно полосы */
+}
+
+QSlider::add-page:horizontal {
+    background-color: rgb(168, 168, 168); /* Тёмно-серый цвет заполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+
+QSlider::sub-page:horizontal {
+    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+
+QSlider::groove:vertical {
+    background-color: rgb(168, 168, 168); /* Тёмно-серый цвет полосы */
+    width: 8px; /* Ширина полосы */
+    border-radius: 4px; /* Закругление углов полосы */
+}
+
+QSlider::handle:vertical {
+    background-color: white; /* Цвет ручки */
+    width: 16px; /* Ширина ручки */
+    height: 16px; /* Высота ручки */
+    border-radius: 8px; /* Круглая форма ручки */
+    margin: 0 -4px; /* Смещение ручки относительно полосы */
+}
+
+QSlider::add-page:vertical {
+    background-color: rgb(168, 168, 168); /* Тёмно-серый цвет заполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+
+QSlider::sub-page:vertical {
+    background-color: rgb(21, 119, 232); /* Синий цвет незаполненной части */
+    border-radius: 4px; /* Закругление углов */
+}
+)";
+
+};
+
 
 PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
     : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme),
@@ -126,7 +283,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
 void PhotoEditComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (theme == Theme::DARK) {
-        m_cancelButton->setStyleSheet(m_style->buttonSkipStyleBothTheme);
+        m_cancelButton->setStyleSheet(m_style->ButtonSkipStyleBothTheme);
         m_selectImageButton->setStyleSheet(m_style->DarkButtonStyleBlue);
         m_continueButton->setStyleSheet(m_style->DarkButtonStyleBlue);
         m_cropXSlider->setStyleSheet(m_style->DarkSliderStyle);
@@ -134,7 +291,7 @@ void PhotoEditComponent::setTheme(Theme theme) {
 
     }
     if (theme == Theme::LIGHT) {
-        m_cancelButton->setStyleSheet(m_style->buttonSkipStyleBothTheme);
+        m_cancelButton->setStyleSheet(m_style->ButtonSkipStyleBothTheme);
         m_selectImageButton->setStyleSheet(m_style->LightButtonStyleBlue);
         m_continueButton->setStyleSheet(m_style->LightButtonStyleBlue);
         m_cropXSlider->setStyleSheet(m_style->LightSliderStyle);

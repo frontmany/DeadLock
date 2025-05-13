@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QWidget>
 #include <QLineEdit>
 #include <QTextEdit>
@@ -25,6 +24,7 @@
 #include <vector>
 #include <QScrollBar>
 #include <random>
+#include <limits>
 
 #include "chat.h"
 
@@ -35,19 +35,17 @@ struct StyleMessagingAreaComponent {
     QString lightSlider;
     QString DarkTextEditStyle;
     QString LightTextEditStyle;
-
     QString LightErrorLabelStyle;
     QString DarkErrorLabelStyle;
-
     QString buttonTransparentDark;
     QString buttonTransparentLight;
-
 };
 
 class ButtonIcon;
 class ButtonCursor;
 class ChatHeaderComponent;
 class MessagingAreaComponent;
+class DelimiterComponent;
 class MessageComponent;
 class ChatsWidget;
 class Packet;
@@ -196,7 +194,11 @@ public:
     std::vector<MessageComponent*>& getMessagesComponentsVec() { return m_vec_messagesComponents; }
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
+    DelimiterComponent* getDelimiterComponentUnread() { return m_delimiter_component_unread; }
 
+    void removeDelimiterComponentUnread();
+    void moveDelimiterComponentUnreadDown();
+    bool isDelimiterComponentUnread() { return isDelimiterUnread; }
 
 signals:
     void sendMessageData(Message*, Chat* chat);
@@ -208,7 +210,7 @@ public slots:
     void openChatPropertiesDialog();
     void closeChatPropertiesDialog();
 
-    void addMessage(Message* message);
+    void addMessage(Message* message, bool isRecoveringMessages);
     void setAvatar(const QPixmap& pixMap);
     void setName(const QString& name);
     void setErrorLabelText(const QString& errorText);
@@ -241,6 +243,9 @@ private:
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
     QHBoxLayout* m_button_sendHLayout;
+
+    DelimiterComponent* m_delimiter_component_unread;
+    bool isDelimiterUnread = false;
 
     FriendProfileComponent* m_friend_profile_component;
     ChatPropertiesComponent* m_chat_properties_component;

@@ -8,21 +8,17 @@
 #include <QPainter>
 #include <QPixmap>
 
-
-struct StyleLoginWidget {
-    StyleLoginWidget();
-
-    QString buttonStyleBlue;
-    QString buttonStyleGray;
-};
-
-
 class AuthorizationComponent;
 class RegistrationComponent;
 class Client;
 class MainWindow;
 enum Theme;
 
+struct StyleLoginWidget {
+    StyleLoginWidget();
+    QString buttonStyleBlue;
+    QString buttonStyleGray;
+};
 
 class LoginWidget : public QWidget {
     Q_OBJECT

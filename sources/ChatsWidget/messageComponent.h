@@ -1,5 +1,4 @@
 #pragma once
-
 #include <QWidget>
 #include <QLineEdit>
 #include <QTextEdit>
@@ -10,28 +9,22 @@
 #include <QPainterPath>
 #include <QPainter>
 #include <QScrollBar>
-
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QFile>
-
-
-
-struct StyleInnerComponent {
-    StyleInnerComponent();
-
-    QString labelStyleDarkMessage;
-    QString labelStyleLightMessage;
-
-    QString labelStyleDarkTime;
-    QString labelStyleLightTime;
-};
-
 
 class ButtonIcon;
 class MessagingAreaComponent;
 class Message;
 enum Theme;
+
+struct StyleInnerComponent {
+    StyleInnerComponent();
+    QString labelStyleDarkMessage;
+    QString labelStyleLightMessage;
+    QString labelStyleDarkTime;
+    QString labelStyleLightTime;
+};
 
 class InnerComponent : public QWidget {
 public:

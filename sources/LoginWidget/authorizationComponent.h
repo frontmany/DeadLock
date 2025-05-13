@@ -11,10 +11,11 @@
 
 #include "loginWidget.h"
 
+class LoginWidget;
+enum Theme;
 
 struct StyleAuthorizationComponent {
     StyleAuthorizationComponent();
-
     QString DarkButtonStyle;
     QString DarkLineEditStyle;
     QString LightButtonStyle;
@@ -22,9 +23,6 @@ struct StyleAuthorizationComponent {
     QString DarkLineEditStyleRedBorder;
     QString LightLineEditStyleRedBorder;
 };
-
-class LoginWidget;
-enum Theme;
 
 class AuthorizationComponent : public QWidget {
     Q_OBJECT

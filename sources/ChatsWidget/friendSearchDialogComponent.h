@@ -22,9 +22,6 @@ class Chat;
 class ButtonIcon;
 class AvatarIcon;
 
-
-
-
 struct StyleFriendComponent {
     StyleFriendComponent();
 
@@ -52,9 +49,6 @@ struct StyleFriendSearchDialogComponent {
     QString darkSlider;
     QString lightSlider;
 };
-
-
-
 
 class FriendComponent : public QWidget {
     Q_OBJECT

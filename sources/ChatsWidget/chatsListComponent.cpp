@@ -15,7 +15,100 @@
 #include <QPainter>
 #include <QPaintEvent>
 
+StyleChatsListComponent::StyleChatsListComponent() {
+    DarkSlider = R"(
+    QScrollBar:vertical {
+        border: 2px solid rgb(36, 36, 36);      
+        background: rgb(36, 36, 36);        
+        width: 10px;                 
+        border-radius: 5px; 
+    }
 
+    QScrollBar::handle:vertical {
+        background: rgb(56, 56, 56);   
+        border: 2px solid rgb(56, 56, 56);      
+        width: 10px;    
+        border-radius: 5px;           
+    }
+
+    QScrollBar::add-line:vertical, 
+    QScrollBar::sub-line:vertical { 
+        background: none;             
+    }
+)";
+
+    LightSlider = R"(
+    QScrollBar:vertical {
+        border: 2px solid rgb(250, 250, 250);      
+        background: rgb(250, 250, 250);        
+        width: 10px;                 
+        border-radius: 5px; 
+    }
+
+    QScrollBar::handle:vertical {
+        background: rgb(218, 219, 227);   
+        border: 2px solid rgb(218, 219, 227);      
+        width: 10px;    
+        border-radius: 5px;           
+    }
+
+    QScrollBar::add-line:vertical, 
+    QScrollBar::sub-line:vertical { 
+        background: none;             
+    }
+)";
+
+    DarkLineEditStyle = R"(
+    QLineEdit {
+        background-color: #333;    
+        color: white;               
+        border: none;     
+        border-radius: 15px;         
+        padding: 5px;               
+    }
+    QLineEdit:focus {
+        border: 2px solid #888;     
+    }
+)";
+
+    LightLineEditStyle = R"(
+    QLineEdit {
+        background-color: #ffffff;    
+        color: black;                 
+        border: none;       
+        border-radius: 15px;           
+        padding: 5px;                 
+    }
+    QLineEdit:focus {
+        border: 2px solid rgb(237, 237, 237);        
+    }
+)";
+
+    TransparentButtonStyle = R"(
+    QPushButton {
+        background-color: transparent;   
+        color: white;             
+        border: none;   
+        border-radius: 5px;       
+        padding: 5px 10px;        
+    }
+    QPushButton:hover {
+        background-color: rgb(26, 133, 255);   
+    }
+    QPushButton:pressed {
+        background-color: rgb(26, 133, 255);      
+    }
+)";
+
+    DialogStyle = R"(
+    QLineEdit {
+        background-color: #ffffff;                    
+        border: none;       
+        border-radius: 15px;           
+        padding: 5px;                 
+    }
+)";
+}
 
 
 void ChatsListComponent::loadAvatarFromPC(const std::string & login) {
@@ -387,7 +480,7 @@ void ChatsListComponent::setTheme(Theme theme) {
     }
 
     if (theme == DARK) {
-        m_scrollArea->verticalScrollBar()->setStyleSheet(style->darkSlider);
+        m_scrollArea->verticalScrollBar()->setStyleSheet(style->DarkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
         m_newChatButton->setTheme(theme);
         for (auto comp : m_vec_chatComponents) {
@@ -402,7 +495,7 @@ void ChatsListComponent::setTheme(Theme theme) {
         
     }
     else {
-        m_scrollArea->verticalScrollBar()->setStyleSheet(style->lightSlider);
+        m_scrollArea->verticalScrollBar()->setStyleSheet(style->LightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
         m_newChatButton->setTheme(theme);
         for (auto comp : m_vec_chatComponents) {

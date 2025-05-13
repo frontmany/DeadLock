@@ -1,6 +1,32 @@
 #include "helloAreaComponent.h"
 #include "mainwindow.h"
 
+StyleHelloAreaComponent::StyleHelloAreaComponent() {
+    LabelStyleDark = R"(
+    QLabel {
+        background-color: rgba(59, 59, 59, 200); 
+        color: rgb(240, 240, 240); 
+        font-family: 'Segoe UI'; 
+        font-size: 14px; 
+        padding: 10px; 
+        border: none; 
+        border-radius: 20px; 
+    }
+)";
+
+    LabelStyleLight = R"(
+    QLabel {
+        background-color: rgba(148, 148, 148, 200); 
+        color: rgb(240, 240, 240); 
+        font-family: 'Segoe UI'; 
+        font-size: 14px; 
+        padding: 10px; 
+        border: none; 
+        border-radius: 20px; 
+    }
+)";
+}
+
 HelloAreaComponent::HelloAreaComponent(Theme theme)
 	: m_theme(theme){
 
@@ -25,12 +51,12 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
 void HelloAreaComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (theme == DARK) {
-        m_label->setStyleSheet(style->labelStyleDark);
+        m_label->setStyleSheet(style->LabelStyleDark);
         setBackGround(m_theme);
         update();
     }
     else {
-        m_label->setStyleSheet(style->labelStyleLight);
+        m_label->setStyleSheet(style->LabelStyleLight);
         setBackGround(m_theme);
         update();
     }

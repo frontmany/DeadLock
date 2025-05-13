@@ -10,6 +10,8 @@
 #include <QDebug>
 #include <QRegularExpressionValidator>
 
+class LoginWidget;
+enum Theme;
 
 struct StyleRegistrationComponent {
     StyleRegistrationComponent();
@@ -24,11 +26,6 @@ struct StyleRegistrationComponent {
     QString LightLineEditStyle;
     QString LightLineEditStyleRedBorder;
 };
-
-
-class LoginWidget;
-enum Theme;
-
 
 class RegistrationComponent : public QWidget {
     Q_OBJECT

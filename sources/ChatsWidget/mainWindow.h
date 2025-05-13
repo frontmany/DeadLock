@@ -1,5 +1,4 @@
 #pragma once
-
 #include <Qmainwindow>
 #include <QScrollArea>
 #include <Qlayout>
@@ -12,7 +11,6 @@ class GreetWidget;
 class LoginWidget;
 class ChatsWidget;
 class WorkerQt;
-
 
 enum Theme {
 	DARK,
