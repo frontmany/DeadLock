@@ -198,6 +198,14 @@ const std::string PacketsBuilder::getMessageReadConfirmationPacket(const std::st
     return oss.str();
 }
 
+const std::string PacketsBuilder::getTypingPacket(const std::string& myLogin, const std::string& friendLogin, bool isTyping) {
+    std::ostringstream oss;
+    oss << rpl << '\n'
+        << friendLogin << '\n'
+        << myLogin << '\n'
+        << (isTyping ? "1" : "0") << '\n'; 
+    return oss.str();
+}
 
 //BROADCAST
 const std::string PacketsBuilder::getStatusPacket(const std::string& status,

@@ -24,6 +24,8 @@ public:
 	virtual void processFoundUsers(std::vector<FriendInfo*>&& vec) = 0;
 	virtual void updateFriendsStatuses(const std::vector<std::pair<std::string, std::string>>& loginToStatusPairsVec) = 0;
 	virtual void showConfigLoadErrorDialog() = 0;
+	virtual void showTypingLabel(const std::string& friendLogin) = 0;
+	virtual void hideTypingLabel(const std::string& friendLogin) = 0;
 	virtual void onMessageReceive(const std::string& friendLogin, Message* message) = 0;
 	virtual void showNewChatOrUpdateExisting(Chat* chat) = 0;
 	virtual void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) = 0;

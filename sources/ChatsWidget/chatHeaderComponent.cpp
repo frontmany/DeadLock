@@ -63,20 +63,28 @@ StyleChatHeaderComponent::StyleChatHeaderComponent(){
 
 
 ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme, QString name, QString lastSeen, QPixmap avatar)
-    : QWidget(parent), m_theme(theme), m_messaging_area_component(messagingAreaComponent) {
-
-    if (m_theme == DARK) {
-        m_backColor = QColor(36, 36, 36);
-        update();
-    }
-    else {
-        m_backColor = QColor(224, 224, 224);
-        update();
-    }
-
+    : QWidget(parent), m_theme(theme), m_messaging_area_component(messagingAreaComponent) 
+{
     style = new StyleChatHeaderComponent;
 
-    m_mainLayout = new QHBoxLayout(this);
+    // typing component
+    m_typingContainer = new QWidget(this);
+    QHBoxLayout* typingLayout = new QHBoxLayout(m_typingContainer);
+    typingLayout->setContentsMargins(0, 0, 0, 0);
+    typingLayout->setSpacing(4);
+
+    QLabel* typingText = new QLabel("typing", m_typingContainer);
+    typingText->setStyleSheet("color: #5E5E5E; font-size: 12px;");
+
+    QMovie* typingMovie = new QMovie(":/resources/ChatsWidget/typing.gif");
+    QLabel* typingGif = new QLabel(m_typingContainer);
+    typingGif->setMovie(typingMovie);
+    typingMovie->start();
+    typingGif->setFixedSize(20, 12);
+
+    typingLayout->addWidget(typingText, 0, Qt::AlignVCenter);
+    typingLayout->addWidget(typingGif, 0, Qt::AlignVCenter);
+    typingLayout->addStretch();
 
 
     m_leftIcon = new AvatarIcon(this, 32, 50, true, m_theme);
@@ -88,20 +96,19 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
         QIcon icon(avatar);
         m_leftIcon->setIcon(icon);
     }
-
     connect(m_leftIcon, &AvatarIcon::clicked, [this]() {
         m_messaging_area_component->openFriendProfile();
-        });
-
-    m_rightLayout = new QVBoxLayout();
+    });
 
     m_nameLabel = new QLabel(name, this);
-
     m_lastSeenLabel = new QLabel(QString::fromStdString(utility::parseDate(lastSeen.toStdString())), this);
     
-    m_mainLayout->addWidget(m_leftIcon);
+    m_rightLayout = new QVBoxLayout();
     m_rightLayout->addWidget(m_nameLabel);
     m_rightLayout->addWidget(m_lastSeenLabel);
+
+    m_mainLayout = new QHBoxLayout(this);
+    m_mainLayout->addWidget(m_leftIcon);
     m_mainLayout->addLayout(m_rightLayout);
 
     m_rightButton = new ButtonIcon(this, 50, 50);
@@ -116,13 +123,32 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
     m_rightButton->setIconSize(QSize(40, 30));
     connect(m_rightButton, &ButtonIcon::clicked, [this]() {
         m_messaging_area_component->openChatPropertiesDialog();
-        });
+    });
 
     m_mainLayout->addWidget(m_rightButton);
     m_mainLayout->addSpacing(5);
 
     setLayout(m_mainLayout);
     setTheme(m_theme);
+}
+
+void ChatHeaderComponent::swapLastSeenLabel(bool isTyping) {
+    if (isTyping) {
+        if (m_lastSeenLabel != nullptr) {
+            m_rightLayout->removeWidget(m_lastSeenLabel);
+            m_lastSeenLabel->hide();
+            m_rightLayout->insertWidget(1, m_typingContainer);
+            m_typingContainer->show();
+        }
+    }
+    else {
+        if (m_typingContainer != nullptr) {
+            m_rightLayout->removeWidget(m_typingContainer);
+            m_typingContainer->hide();
+            m_rightLayout->insertWidget(1, m_lastSeenLabel);
+            m_lastSeenLabel->show();
+        }
+    }
 }
 
 void ChatHeaderComponent::setAvatar(const QPixmap& pixMap) {

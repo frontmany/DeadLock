@@ -47,5 +47,6 @@
 		<file>arrowDownDark.png</file>
 		<file>arrowDownLightHover.png</file>
 		<file>arrowDownDarkHover.png</file>
+		<file>typing.gif</file>
     </qresource>
 </RCC>

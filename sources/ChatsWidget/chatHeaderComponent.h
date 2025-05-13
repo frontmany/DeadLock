@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 #include <QPainter>
 #include <QPainterPath>
+#include <QMovie>
 
 class ButtonIcon;
 class AvatarIcon;
@@ -34,6 +35,7 @@ public:
     const QString& getLastSeen() const { return m_lastSeenLabel->text(); }
 
 public slots:
+    void swapLastSeenLabel(bool isTyping);
     void setLastSeen(const QString& lastSeen);
     void setAvatar(const QPixmap& pixMap);
     void setName(const QString& name);
@@ -55,9 +57,11 @@ private:
     AvatarIcon*     m_leftIcon;
     ButtonIcon*     m_rightButton;
 
+    QWidget* m_typingContainer = nullptr;
+
     QHBoxLayout* m_mainLayout;
     QVBoxLayout* m_rightLayout;
 
     QLabel*     m_nameLabel;
-    QLabel*     m_lastSeenLabel;
+    QLabel*     m_lastSeenLabel = nullptr;
 };
