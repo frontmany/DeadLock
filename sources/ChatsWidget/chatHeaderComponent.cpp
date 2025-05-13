@@ -77,15 +77,17 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
     typingText->setStyleSheet("color: #5E5E5E; font-size: 12px;");
 
     QMovie* typingMovie = new QMovie(":/resources/ChatsWidget/typing.gif");
-    QLabel* typingGif = new QLabel(m_typingContainer);
+    QLabel* typingGif = new QLabel(this);
     typingGif->setMovie(typingMovie);
+    typingGif->setFixedSize(20, 20);
+    typingGif->setScaledContents(true);
     typingMovie->start();
-    typingGif->setFixedSize(20, 12);
 
     typingLayout->addWidget(typingText, 0, Qt::AlignVCenter);
     typingLayout->addWidget(typingGif, 0, Qt::AlignVCenter);
     typingLayout->addStretch();
-
+    m_typingContainer->hide();
+    //m_typingContainer->hide();
 
     m_leftIcon = new AvatarIcon(this, 32, 50, true, m_theme);
     if (avatar.isNull()) {
