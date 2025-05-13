@@ -77,7 +77,7 @@ void Client::stop() {
 }
 
 void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
-    sendPacket(m_packets_builder->getTypingPacket(friendLogin, m_my_login, isTyping), QueryType::TYPING);
+    sendPacket(m_packets_builder->getTypingPacket(m_my_login, friendLogin, isTyping), QueryType::TYPING);
 }
 
 void Client::authorizeClient(const std::string& login, const std::string& passwordHash) {

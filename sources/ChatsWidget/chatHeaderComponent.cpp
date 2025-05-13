@@ -79,7 +79,8 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
     QMovie* typingMovie = new QMovie(":/resources/ChatsWidget/typing.gif");
     QLabel* typingGif = new QLabel(this);
     typingGif->setMovie(typingMovie);
-    typingGif->setFixedSize(20, 20);
+    typingGif->setFixedSize(25, 25);
+    typingGif->setAlignment(Qt::AlignCenter);
     typingGif->setScaledContents(true);
     typingMovie->start();
 

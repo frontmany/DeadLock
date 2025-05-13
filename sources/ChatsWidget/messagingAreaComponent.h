@@ -69,16 +69,21 @@ public:
         }
     }
 
+    bool m_lastKeyIsBackspaceOrEnter = false;
+
 protected:
     void keyPressEvent(QKeyEvent* event) override {
         if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
             if (event->modifiers() & Qt::ShiftModifier) {
                 QTextEdit::keyPressEvent(event);
+                m_lastKeyIsBackspaceOrEnter = false;
             }
             else {
+                m_lastKeyIsBackspaceOrEnter = true;
                 emit enterPressed();
                 event->accept();
             }
+            
             return;
         }
 
@@ -92,6 +97,7 @@ protected:
                 emit pasteExceeded("Maximum length exceeded (8192 characters limit).");
                 return;
             }
+            m_lastKeyIsBackspaceOrEnter = false;
             QTextEdit::paste();
             emit textLengthChanged(document()->characterCount());
             return;
@@ -99,13 +105,16 @@ protected:
 
         if (event->key() == Qt::Key_Backspace ||
             event->key() == Qt::Key_Delete ||
-            event->modifiers() & Qt::ControlModifier) {
+            event->modifiers() & Qt::ControlModifier) 
+        {
+            m_lastKeyIsBackspaceOrEnter = true;
             QTextEdit::keyPressEvent(event);
             emit textLengthChanged(document()->characterCount());
             return;
         }
 
         if (document()->characterCount() < 8192) {
+            m_lastKeyIsBackspaceOrEnter = false;
             QTextEdit::keyPressEvent(event);
             emit textLengthChanged(document()->characterCount());
         }

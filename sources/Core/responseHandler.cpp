@@ -83,6 +83,9 @@ void ResponseHandler::handleResponse(ownedMessageT& msg) {
     else if (msg.msg.header.type == QueryType::FIND_USER_RESULTS) {
         processFoundUsers(packet);
     }
+    else if (msg.msg.header.type == QueryType::TYPING) {
+        onTyping(packet);
+    }
 }
 
 

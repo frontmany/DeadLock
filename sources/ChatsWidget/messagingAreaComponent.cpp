@@ -405,7 +405,7 @@ void ChatPropertiesComponent::setupUI() {
 
         if (logoutDialog.exec() == QDialog::Accepted) {
         }
-        }); //TODO design
+        });
 
     m_close_button = new ButtonIcon(this, 25, 25);
     QIcon icon1(":/resources/ChatsWidget/closeDark.png");
@@ -598,21 +598,21 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     connect(m_move_slider_down_button, &ButtonIcon::clicked, [this]() {moveSliderDown(false); });
 
     m_typingTimer = new QTimer(this);
-    m_typingTimer->setInterval(1500);
+    m_typingTimer->setInterval(2200);
     connect(m_typingTimer, &QTimer::timeout, this, &MessagingAreaComponent::onTypingTimeout);
 
-    connect(m_messageInputEdit, &MyTextEdit::textChanged, this, [this]() {
+    connect(m_messageInputEdit, &MyTextEdit::textChanged, [this]() {
         adjustTextEditHeight();
         onTypeMessage();
 
         if (!m_isTypingActive) {
-            m_isTypingActive = true;
-            auto client = m_chatsWidget->getClient();
-            client->typingNotify(m_chat->getFriendLogin(), true);
+            if (!m_messageInputEdit->m_lastKeyIsBackspaceOrEnter) {
+                auto client = m_chatsWidget->getClient();
+                client->typingNotify(m_chat->getFriendLogin(), true);
+                m_typingTimer->start();
+            }
         }
-
-        m_typingTimer->start();
-        });
+    });
 
     connect(m_messageInputEdit, &MyTextEdit::enterPressed, this, &MessagingAreaComponent::onSendMessageClicked);
     connect(m_messageInputEdit, &MyTextEdit::pasteExceeded, this, &MessagingAreaComponent::setErrorLabelText);
@@ -846,6 +846,8 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
 
 
 void MessagingAreaComponent::onSendMessageClicked() {
+    onTypingTimeout();
+
     std::string msg = m_messageInputEdit->toPlainText().toStdString();
     if (msg.find_first_not_of(' ') == std::string::npos) {
         return;
