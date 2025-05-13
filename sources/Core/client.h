@@ -95,6 +95,9 @@ public:
 
     std::unordered_map<std::string, Chat*>& getMyChatsMap() { return m_map_friend_login_to_chat; }
 
+    void setIsHidden(bool isHidden) { m_is_hidden = isHidden; }
+    bool getIsHidden() { return m_is_hidden; }
+
 private:
     const std::vector<std::string> getFriendsLoginsVecFromMap();
     void sendPacket(const std::string& packet, QueryType type);
@@ -105,6 +108,7 @@ private:
 
     bool                    m_is_auto_login;
     bool                    m_is_undo_auto_login;
+    bool                    m_is_hidden;
 
     std::atomic<bool>       m_is_ui_ready_to_update;
 

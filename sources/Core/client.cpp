@@ -37,8 +37,9 @@ Client::Client() :
     m_is_ui_ready_to_update(false),
     m_is_has_photo(false),
     m_my_login(""),
-    m_my_name(""),            
-    m_my_photo(nullptr)
+    m_my_name(""),
+    m_my_photo(nullptr),
+    m_is_hidden(false)
 {
     m_db = new Database;
     m_response_handler = new ResponseHandler(this);

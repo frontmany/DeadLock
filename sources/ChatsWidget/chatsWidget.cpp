@@ -22,7 +22,7 @@ ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client
 
     m_background.load(":/resources/LoginWidget/lightLoginBackground.jpg");
     m_current_messagingAreaComponent = nullptr;
-	m_chatsListComponent = new ChatsListComponent(this, this, m_theme);
+	m_chatsListComponent = new ChatsListComponent(this, this, m_theme, m_client->getIsHidden());
 
     if (m_client->getPhoto() != nullptr) {
         m_chatsListComponent->SetAvatar(*m_client->getPhoto());

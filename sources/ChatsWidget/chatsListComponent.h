@@ -11,6 +11,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QHoverEvent>
+#include <QObject>
 #include <QMouseEvent>
 #include <QEvent>
 #include "ChatComponent.h"
@@ -34,13 +35,15 @@ struct StyleChatsListComponent {
     QString LightLineEditStyle;
     QString TransparentButtonStyle;
     QString DialogStyle;
+    QString DarkHideButton;
+    QString LightHideButton;
 };
 
 class ChatsListComponent : public QWidget {
     Q_OBJECT
 
 public:
-    ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme);
+    ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme, bool isHidden);
     ~ChatsListComponent();
 
     void setTheme(Theme theme);
@@ -78,8 +81,15 @@ public slots:
     void popUpComponent(ChatComponent* comp);
     void loadAvatarFromPC(const std::string& login);
 
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private slots:
     void toSendChangeTheme(bool fl);
+
+
+private:
+    void updateHideButton();
 
 private:
     QColor                      m_backgroundColor;
@@ -102,6 +112,9 @@ private:
     ButtonIcon*         m_newChatButton;
     ButtonIcon*         m_logoutButton;
 
+    QPushButton*        m_hideButton;
+    bool                m_is_hidden;
+
     QTimer*                      m_search_timer;
     FriendSearchDialogComponent* m_friend_search_dialog;
     AddChatDialogComponent*      m_chatAddDialog;
@@ -114,4 +127,14 @@ private:
     bool m_isChatAddDialog = false;
     bool m_isEditDialog = false;
     bool m_ableToCreateChat = true;
+
+    QIcon m_hiddenIconDark = QIcon(":/resources/ChatsWidget/hiddenStateButtonDark.png");
+    QIcon m_hiddenIconDarkHover = QIcon(":/resources/ChatsWidget/hiddenStateButtonDarkHover.png");
+    QIcon m_hiddenIconLight = QIcon(":/resources/ChatsWidget/hiddenStateButtonLight.png");
+    QIcon m_hiddenIconLightHover = QIcon(":/resources/ChatsWidget/hiddenStateButtonLightHover.png");
+
+    QIcon m_visibleIconDark = QIcon(":/resources/ChatsWidget/visibleStateButtonDark.png");
+    QIcon m_visibleIconDarkHover = QIcon(":/resources/ChatsWidget/visibleStateButtonDarkHover.png");
+    QIcon m_visibleIconLight = QIcon(":/resources/ChatsWidget/visibleStateButtonLight.png");
+    QIcon m_visibleIconLightHover = QIcon(":/resources/ChatsWidget/visibleStateButtonLightHover.png");
 };

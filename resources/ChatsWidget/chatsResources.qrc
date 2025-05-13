@@ -48,5 +48,13 @@
 		<file>arrowDownLightHover.png</file>
 		<file>arrowDownDarkHover.png</file>
 		<file>typing.gif</file>
+		<file>hiddenStateButtonLight.png</file>
+		<file>hiddenStateButtonDark.png</file>
+		<file>hiddenStateButtonLightHover.png</file>
+		<file>hiddenStateButtonDarkHover.png</file>
+		<file>visibleStateButtonLight.png</file>
+		<file>visibleStateButtonDark.png</file>
+		<file>visibleStateButtonLightHover.png</file>
+		<file>visibleStateButtonDarkHover.png</file>
     </qresource>
 </RCC>

@@ -108,6 +108,80 @@ StyleChatsListComponent::StyleChatsListComponent() {
         padding: 5px;                 
     }
 )";
+
+    DarkHideButton = R"(
+QPushButton {
+    background-color: #343434;
+    border-radius: 15px;
+    padding: 8px 16px;
+    color: #E0E0E0;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background-color: #383838;
+    border-color: #555;
+}
+
+QPushButton:pressed {
+    background-color: #252525;
+}
+
+QPushButton:checked {
+    background-color: #4670db;
+    border-color: #4A7DBF;
+    color: #FFFFFF;
+}
+
+QPushButton:checked:hover {
+    background-color: #5885f5;
+}
+
+QPushButton:disabled {
+    background-color: #252525;
+    color: #707070;
+    border-color: #333;
+}
+)";
+
+    LightHideButton = R"(
+QPushButton {
+    background-color: #dedede;
+    border-radius: 15px;
+    padding: 8px 16px;
+    color: #404040;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+QPushButton:hover {
+    background-color: #F0F0F0;
+    border-color: #B8B8B8;
+}
+
+QPushButton:pressed {
+    background-color: #E8E8E8;
+}
+
+QPushButton:checked {
+    background-color: #D1E3F6;
+    border-color: #7EB1E8;
+    color: #2A5885;
+}
+
+QPushButton:checked:hover {
+    background-color: #C5DDF4;
+}
+
+QPushButton:disabled {
+    background-color: #F0F0F0;
+    color: #A0A0A0;
+    border-color: #E0E0E0;
+}
+)";
 }
 
 
@@ -125,12 +199,11 @@ void ChatsListComponent::loadAvatarFromPC(const std::string & login) {
     SetAvatar(Photo(fullPath.toStdString()));
 }
 
-ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme)
+ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme, bool isHidden)
     : QWidget(parent), m_backgroundColor(Qt::transparent),
     m_chatsWidget(chatsWidget), m_chatAddDialog(nullptr), m_chats_widget(chatsWidget),
-    m_profile_editor_widget(nullptr) 
+    m_profile_editor_widget(nullptr), m_is_hidden(isHidden)
 {
-
     style = new StyleChatsListComponent;
     m_backgroundColor = QColor(20, 20, 20, 200);
     m_theme = theme;
@@ -182,6 +255,33 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_newChatButton->uploadIconsLight(icon4, iconHover4);
     m_profileHLayout->addWidget(m_newChatButton);
 
+    m_hideButton = new QPushButton(this);
+    m_hideButton->setObjectName("hideButton");
+    m_hideButton->setFlat(true);
+    m_hideButton->setCursor(Qt::PointingHandCursor);
+    m_hideButton->setCheckable(true);
+    m_hideButton->setFixedSize(150, 32);
+    m_hideButton->setIconSize(QSize(32, 32));
+    m_hideButton->installEventFilter(this);
+    if (m_is_hidden) {
+        m_hideButton->toggle();
+    }
+    updateHideButton();
+    connect(m_hideButton, &QPushButton::toggled, this, [this](bool checked) {
+        m_is_hidden = checked;
+        updateHideButton();
+
+
+        auto client = m_chatsWidget->getClient();
+        client->setIsHidden(checked);
+        if (checked) {
+            client->broadcastMyStatus(utility::getCurrentDateTime());
+        }
+        else {
+            client->broadcastMyStatus("online");
+        }
+    });
+    m_profileHLayout->addWidget(m_hideButton);
 
     m_moon_icon = new QLabel(this);
     m_moon_icon->setFixedSize(50, 50);
@@ -230,7 +330,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_contentsHLayout->addWidget(m_searchLineEdit);
     m_contentsHLayout->addSpacing(15);
 
-
     m_mainVLayout->addLayout(m_profileHLayout);
     m_mainVLayout->addSpacing(10);
     m_mainVLayout->addLayout(m_contentsHLayout);
@@ -242,13 +341,11 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_containerVLayout->setAlignment(Qt::AlignTop);
     m_containerWidget->setLayout(m_containerVLayout);
 
-
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setMaximumSize(1000, 2080);
     m_scrollArea->setStyleSheet("background: transparent;");
     m_scrollArea->setWidget(m_containerWidget);
-
 
     m_mainVLayout->addWidget(m_scrollArea);
 
@@ -360,12 +457,83 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
 
         if (logoutDialog.exec() == QDialog::Accepted) {
         }
-    }); //TODO design
+    }); 
 
     connect(m_newChatButton, &ButtonIcon::clicked, this, &ChatsListComponent::openAddChatDialog);
     connect(this, &ChatsListComponent::sendCreateChatData, m_chatsWidget, &ChatsWidget::onCreateChatButtonClicked);
     connect(this, &ChatsListComponent::sendChangeTheme, m_chatsWidget, &ChatsWidget::onChangeThemeClicked);
     connect(this, &ChatsListComponent::logoutRequested, m_chatsWidget, &ChatsWidget::onLogoutRequested);
+}
+
+bool ChatsListComponent::eventFilter(QObject* watched, QEvent* event) {
+    if (watched == m_hideButton) {
+        if (event->type() == QEvent::Enter) {
+            if (m_theme == DARK) {
+                if (m_is_hidden) {
+                    m_hideButton->setIcon(m_hiddenIconDarkHover);
+                }
+                else {
+                    m_hideButton->setIcon(m_visibleIconDarkHover);
+                }
+            }
+            else {
+                if (m_is_hidden) {
+                    m_hideButton->setIcon(m_hiddenIconLightHover);
+                }
+                else {
+                    m_hideButton->setIcon(m_visibleIconLightHover);
+                }
+            }
+
+            return true;
+        }
+        else if (event->type() == QEvent::Leave) {
+            if (m_theme == DARK) {
+                if (m_is_hidden) {
+                    m_hideButton->setIcon(m_hiddenIconDark);
+                }
+                else {
+                    m_hideButton->setIcon(m_visibleIconDark);
+                }
+            }
+            else {
+                if (m_is_hidden) {
+                    m_hideButton->setIcon(m_hiddenIconLight);
+                }
+                else {
+                    m_hideButton->setIcon(m_visibleIconLight);
+                }
+            }
+
+            return true;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
+void ChatsListComponent::updateHideButton() {
+    bool isDarkTheme = m_theme == DARK;
+    if (m_theme == DARK) {
+        if (m_is_hidden) {
+            m_hideButton->setIcon(m_hiddenIconDark);
+            m_hideButton->setText("  You are hidden");
+        }
+        else {
+            m_hideButton->setIcon(m_visibleIconDark);
+            m_hideButton->setText("  You are visible");
+        }
+    }
+    else {
+        if (m_is_hidden) {
+            m_hideButton->setIcon(m_hiddenIconLight);
+            m_hideButton->setText("  You are hidden");
+        }
+        else {
+            m_hideButton->setIcon(m_visibleIconLight);
+            m_hideButton->setText("  You are visible");
+        }
+    }
+    m_hideButton->setStyleSheet(isDarkTheme ? style->DarkHideButton : style->LightHideButton);
 }
 
 void ChatsListComponent::removeComponent(const QString& loginOfRemovedComponent) {
@@ -474,6 +642,7 @@ void ChatsListComponent::setTheme(Theme theme) {
     m_logoutButton->setTheme(m_theme);
     m_profileButton->setTheme(m_theme);
     m_friend_search_dialog->setTheme(m_theme);
+    updateHideButton();
 
     if (m_profile_editor_widget != nullptr) {
         m_profile_editor_widget->setTheme(theme);
@@ -492,7 +661,6 @@ void ChatsListComponent::setTheme(Theme theme) {
                 m_chatAddDialog->setTheme(DARK);
             }
         }
-        
     }
     else {
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->LightSlider);
