@@ -230,6 +230,7 @@ protected:
 private:
     void updateRelatedChatComponentLastMessage();
     void handleScroll(int value);
+    void updateSliderButtonPosition();
 
 private:
     StyleMessagingAreaComponent*    m_style;
@@ -244,11 +245,13 @@ private:
     QVBoxLayout* m_containerVLayout;
     QHBoxLayout* m_button_sendHLayout;
 
-    DelimiterComponent* m_delimiter_component_unread;
+    DelimiterComponent* m_delimiter_component_unread = nullptr;
     bool isDelimiterUnread = false;
 
     FriendProfileComponent* m_friend_profile_component;
     ChatPropertiesComponent* m_chat_properties_component;
+
+    ButtonIcon*             m_move_slider_down_button;
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;

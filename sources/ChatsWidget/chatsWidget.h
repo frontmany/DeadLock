@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QLayout>
+#include <QApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>

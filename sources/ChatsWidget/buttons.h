@@ -157,7 +157,6 @@ protected:
 private:
     Theme m_theme;
     QIcon m_icon;
-
     QSize m_iconSize;
     int   m_gradient_size_index;
     int   m_size;

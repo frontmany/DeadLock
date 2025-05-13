@@ -5,7 +5,6 @@
 #include "helloAreaComponent.h"
 #include "chatHeaderComponent.h"
 #include "client.h"
-#include "utility.h"
 #include "message.h"
 #include "photo.h"
 #include "chat.h"
@@ -108,7 +107,6 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
             return;
         }
 
-        //TODO
         int sentCount = 0;
         std::vector<MessageComponent*> skippedVec;
         bool isWasSentAtLeasOneConfirmation = false;

@@ -202,7 +202,6 @@ FriendProfileComponent::FriendProfileComponent(QWidget* parent, MessagingAreaCom
 
 void FriendProfileComponent::setupUI()
 {
-
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setSpacing(10);
     m_mainLayout->setContentsMargins(10, 10, 10, 10);
@@ -584,6 +583,20 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_main_VLayout->setContentsMargins(10, 10, 10, 10);
     m_main_VLayout->setSpacing(5);
 
+    m_move_slider_down_button = new ButtonIcon(this, 50, 50);
+    QIcon icon3(":/resources/ChatsWidget/arrowDownDark.png");
+    QIcon iconHover3(":/resources/ChatsWidget/arrowDownDarkHover.png");
+    m_move_slider_down_button->uploadIconsDark(icon3, iconHover3);
+
+    QIcon icon4(":/resources/ChatsWidget/arrowDownLight.png");
+    QIcon iconHover4(":/resources/ChatsWidget/arrowDownLightHover.png");
+    m_move_slider_down_button->uploadIconsLight(icon4, iconHover4);
+    m_move_slider_down_button->setTheme(m_theme);
+    m_move_slider_down_button->setIconSize(QSize(50, 50));
+    m_move_slider_down_button->hide();
+    updateSliderButtonPosition();
+    connect(m_move_slider_down_button, &ButtonIcon::clicked, [this]() {moveSliderDown(false); });
+
     connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::adjustTextEditHeight);
     connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::onTypeMessage);
     connect(m_messageInputEdit, &MyTextEdit::enterPressed, this, &MessagingAreaComponent::onSendMessageClicked);
@@ -604,7 +617,20 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     }
 }
 
+void MessagingAreaComponent::updateSliderButtonPosition() {
+    if (!m_move_slider_down_button) return;
+
+    const int bottomMargin = 90;
+    QSize btnSize = m_move_slider_down_button->size();
+
+    m_move_slider_down_button->move(
+        (width() - btnSize.width()) / 2,  
+        height() - btnSize.height() - bottomMargin
+    );
+}
+
 void MessagingAreaComponent::resizeEvent(QResizeEvent* event) {
+    updateSliderButtonPosition();
     QWidget::resizeEvent(event);
     if (m_chat_properties_component) {
         m_chat_properties_component->setGeometry(
@@ -617,8 +643,12 @@ void MessagingAreaComponent::resizeEvent(QResizeEvent* event) {
 }
 
 void MessagingAreaComponent::handleScroll(int value) {
-    //TODO
     auto client = m_chatsWidget->getClient();
+
+    QScrollBar* scrollBar = m_scrollArea->verticalScrollBar();
+    bool isNearBottom = (value >= scrollBar->maximum() - 400);
+    if (m_move_slider_down_button) 
+        m_move_slider_down_button->setVisible(!isNearBottom);
 
     int sentCount = 0;
     std::vector<MessageComponent*> skippedVec;
@@ -752,6 +782,12 @@ void MessagingAreaComponent::setTheme(Theme theme) {
 
     m_chat_properties_component->setTheme(m_theme);
     m_friend_profile_component->setTheme(m_theme);
+    m_move_slider_down_button->setTheme(m_theme);
+
+    if (m_delimiter_component_unread != nullptr) {
+        m_delimiter_component_unread->setTheme(m_theme);
+    }
+    
 
     if (m_theme == DARK) {
         m_backColor = QColor(25, 25, 25);
@@ -789,10 +825,6 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
 
 
 void MessagingAreaComponent::onSendMessageClicked() {
-    if (isDelimiterUnread) {
-        removeDelimiterComponentUnread();
-    }
-
     std::string msg = m_messageInputEdit->toPlainText().toStdString();
     if (msg.find_first_not_of(' ') == std::string::npos) {
         return;
@@ -903,12 +935,11 @@ void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessa
 
 
     m_containerVLayout->addWidget(messageComp);
-
     m_containerWidget->adjustSize();
 }
 
 
-void MessagingAreaComponent::removeDelimiterComponentUnread() { // TODO beautifull remove
+void MessagingAreaComponent::removeDelimiterComponentUnread() {
     m_containerVLayout->removeWidget(m_delimiter_component_unread);
     delete m_delimiter_component_unread;
     m_delimiter_component_unread = nullptr;
@@ -928,6 +959,7 @@ void MessagingAreaComponent::moveDelimiterComponentUnreadDown() {
     m_delimiter_component_unread = new DelimiterComponent("unread messages", this, m_theme);
 
     int insertIndex = m_containerVLayout->indexOf(msgComp);
+    isDelimiterUnread = true;
 
     if (insertIndex >= 0) {
         m_containerVLayout->insertWidget(insertIndex, m_delimiter_component_unread);
