@@ -583,7 +583,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_main_VLayout->setContentsMargins(10, 10, 10, 10);
     m_main_VLayout->setSpacing(5);
 
-    m_move_slider_down_button = new ButtonIcon(this, 50, 50);
+    m_move_slider_down_button = new ButtonIcon(this, 40, 40);
     QIcon icon3(":/resources/ChatsWidget/arrowDownDark.png");
     QIcon iconHover3(":/resources/ChatsWidget/arrowDownDarkHover.png");
     m_move_slider_down_button->uploadIconsDark(icon3, iconHover3);
@@ -592,7 +592,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     QIcon iconHover4(":/resources/ChatsWidget/arrowDownLightHover.png");
     m_move_slider_down_button->uploadIconsLight(icon4, iconHover4);
     m_move_slider_down_button->setTheme(m_theme);
-    m_move_slider_down_button->setIconSize(QSize(50, 50));
+    m_move_slider_down_button->setIconSize(QSize(40, 40));
     m_move_slider_down_button->hide();
     updateSliderButtonPosition();
     connect(m_move_slider_down_button, &ButtonIcon::clicked, [this]() {moveSliderDown(false); });

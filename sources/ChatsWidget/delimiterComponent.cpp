@@ -4,11 +4,43 @@
 StyleDelimiterComponent::StyleDelimiterComponent() {
     DarkLabelStyle = R"(
     QLabel {
+        color: rgb(220, 220, 220);  /* Основной цвет текста */
+        font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px;
+        margin: 0;
+        background: transparent;
+        border: none;
+    }
+    
+    QLabel:disabled {
+        color: rgba(220, 220, 220, 60%);  /* Полупрозрачный для disabled */
+    }
+    
+    QLabel[accessibleName="error"] {
+        color: rgb(255, 100, 100);  /* Специальный цвет для ошибок */
     }
 )";
 
     LightLabelStyle = R"(
     QLabel {
+        color: rgb(80, 80, 80);  /* Основной цвет текста */
+        font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px;
+        margin: 0;
+        background: transparent;
+        border: none;
+    }
+    
+    QLabel:disabled {
+        color: rgba(80, 80, 80, 40%);  /* Полупрозрачный для disabled */
+    }
+    
+    QLabel[accessibleName="error"] {
+        color: rgb(200, 50, 50);  /* Специальный цвет для ошибок */
     }
 )";
 };
