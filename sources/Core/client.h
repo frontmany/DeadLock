@@ -51,14 +51,16 @@ public:
     void createChatWith(const std::string& friendLogin);
     void verifyPassword(const std::string& passwordHash);
     void checkIsNewLoginAvailable(const std::string& newLogin);
+    void requestFriendInfoFromServer(const std::string& myLogin);
+    void findUser(const std::string& text);
+    void typingNotify(const std::string& friendLogin, bool isTyping);
+
 
     void sendMessage(const std::string& friendLogin, const Message* message);
     void sendMessageReadConfirmation(const std::string& friendLogin, const Message* message);
 
     void broadcastMyStatus(const std::string& status);
     void getAllFriendsStatuses();
-    void requestFriendInfoFromServer(const std::string& myLogin);
-    void findUser(const std::string& text);
 
     void deleteFriendChatInConfig(const std::string& friendLogin);
     void deleteFriendMessagesInDatabase(const std::string& friendLogin);

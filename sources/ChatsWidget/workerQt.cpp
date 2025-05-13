@@ -199,6 +199,37 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 	}
 }
 
+void WorkerQt::showTypingLabel(const std::string& friendLogin) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+	});
+	MessagingAreaComponent* areaComp = *comp;
+	auto headerComp = areaComp->getChatHeader();
+
+	QMetaObject::invokeMethod(headerComp,
+		"swapLastSeenLabel",
+		Qt::QueuedConnection,
+		Q_ARG(bool, true));
+	
+}
+
+void WorkerQt::hideTypingLabel(const std::string& friendLogin) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+	});
+	MessagingAreaComponent* areaComp = *comp;
+	auto headerComp = areaComp->getChatHeader();
+
+	QMetaObject::invokeMethod(headerComp,
+		"swapLastSeenLabel",
+		Qt::QueuedConnection,
+		Q_ARG(bool, false));
+}
+
 void WorkerQt::showNewChatOrUpdateExisting(Chat* chat) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 

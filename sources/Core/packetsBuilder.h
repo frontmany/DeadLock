@@ -30,6 +30,7 @@ public:
 	//RPL
 	const std::string getMessagePacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);
 	const std::string getMessageReadConfirmationPacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);
+	const std::string getTypingPacket(const std::string& myLogin, const std::string& friendLogin, bool isTyping);
 
 	//BROADCAST
 	const std::string getStatusPacket(const std::string& status, const std::string& myLogin, const std::vector<std::string>& friendsLoginsVec);

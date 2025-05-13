@@ -597,8 +597,23 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     updateSliderButtonPosition();
     connect(m_move_slider_down_button, &ButtonIcon::clicked, [this]() {moveSliderDown(false); });
 
-    connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::adjustTextEditHeight);
-    connect(m_messageInputEdit, &MyTextEdit::textChanged, this, &MessagingAreaComponent::onTypeMessage);
+    m_typingTimer = new QTimer(this);
+    m_typingTimer->setInterval(1500);
+    connect(m_typingTimer, &QTimer::timeout, this, &MessagingAreaComponent::onTypingTimeout);
+
+    connect(m_messageInputEdit, &MyTextEdit::textChanged, this, [this]() {
+        adjustTextEditHeight();
+        onTypeMessage();
+
+        if (!m_isTypingActive) {
+            m_isTypingActive = true;
+            auto client = m_chatsWidget->getClient();
+            client->typingNotify(m_chat->getFriendLogin(), true);
+        }
+
+        m_typingTimer->start();
+        });
+
     connect(m_messageInputEdit, &MyTextEdit::enterPressed, this, &MessagingAreaComponent::onSendMessageClicked);
     connect(m_messageInputEdit, &MyTextEdit::pasteExceeded, this, &MessagingAreaComponent::setErrorLabelText);
 
@@ -615,6 +630,12 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     for (auto message : m_chat->getMessagesVec()) {
         addMessage(message, true);
     }
+}
+
+void MessagingAreaComponent::onTypingTimeout() {
+    m_isTypingActive = false;
+    auto client = m_chatsWidget->getClient();
+    client->typingNotify(m_chat->getFriendLogin(), false);
 }
 
 void MessagingAreaComponent::updateSliderButtonPosition() {

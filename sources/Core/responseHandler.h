@@ -42,6 +42,7 @@ public:
 
 	void onMessageReceive(const std::string& packet);
 	void onUserInfo(const std::string& packet);
+	void onTyping(const std::string& packet);
 	void onMessageReadConfirmationReceive(const std::string& packet);
 
 

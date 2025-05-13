@@ -385,7 +385,28 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
     }
 }
 
+void ResponseHandler::onTyping(const std::string& packet) {
+    std::istringstream iss(packet);
 
+    std::string myLogin;
+    std::getline(iss, myLogin);
+
+    std::string friendLogin;
+    std::getline(iss, friendLogin);
+
+    std::string isTypingStr;
+    std::getline(iss, isTypingStr);
+    bool isTyping = isTypingStr == "1";
+
+    if (isTyping) {
+        m_worker_UI->showTypingLabel(friendLogin);
+    }
+    else {
+        m_worker_UI->hideTypingLabel(friendLogin);
+    }
+
+
+}
 
 void ResponseHandler::onMessageReadConfirmationReceive(const std::string& packet) {
     std::istringstream iss(packet);

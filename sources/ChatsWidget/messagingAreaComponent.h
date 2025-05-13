@@ -231,6 +231,7 @@ private:
     void updateRelatedChatComponentLastMessage();
     void handleScroll(int value);
     void updateSliderButtonPosition();
+    void onTypingTimeout();
 
 private:
     StyleMessagingAreaComponent*    m_style;
@@ -252,6 +253,9 @@ private:
     ChatPropertiesComponent* m_chat_properties_component;
 
     ButtonIcon*             m_move_slider_down_button;
+
+    QTimer* m_typingTimer;
+    bool m_isTypingActive = false;
 
     QString                 m_friendName;
     MyTextEdit*             m_messageInputEdit;
