@@ -232,6 +232,7 @@ void Client::save() const {
     jsonObject["chatsArray"] = chatsArray;
 
     jsonObject["my_login"] = QString::fromStdString(m_my_login);
+    jsonObject["is_hidden"] = QString::fromStdString(m_is_hidden ? "1" : "0");
     jsonObject["my_name"] = QString::fromStdString(m_my_name);
     jsonObject["is_has_photo"] = m_is_has_photo;
 
@@ -284,6 +285,7 @@ bool Client::load(const std::string& fileName) {
 
     QJsonObject jsonObject = loadDoc.object();
     m_my_login = jsonObject["my_login"].toString().toStdString();
+    m_is_hidden = jsonObject["is_hidden"].toString().toStdString() == "1";
     m_my_name = jsonObject["my_name"].toString().toStdString();
     m_is_has_photo = jsonObject["is_has_photo"].toBool();
 
@@ -406,7 +408,7 @@ void Client::updateInConfigFriendLogin(const std::string& oldLogin, const std::s
     file.close();
 }
 
-bool Client::autoLogin() {
+bool Client::autoLoginAndLoad() {
     QString dir = QString::fromStdString(utility::getSaveDir());
     QDir saveDir(dir);
 
@@ -439,7 +441,7 @@ bool Client::autoLogin() {
         if (jsonObject.contains("my_password_hash")) {
             m_my_login = jsonObject["my_login"].toString().toStdString();
             initDatabase(m_my_login);
-
+            m_is_hidden = jsonObject["is_hidden"].toString().toStdString() == "1";
 
             m_my_name = jsonObject["my_name"].toString().toStdString();
             m_my_password_hash = jsonObject["my_password_hash"].toString().toStdString();
@@ -469,6 +471,7 @@ bool Client::autoLogin() {
             m_is_auto_login = true;
 
             qDebug() << "Auto-login configuration found in file:" << fullPath;
+
             return true;
         }
     }

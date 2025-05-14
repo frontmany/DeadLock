@@ -32,7 +32,7 @@ public:
     void initDatabase(const std::string& login);
     void stop();
 
-    bool autoLogin();
+    bool autoLoginAndLoad();
     bool undoAutoLogin();
 
     void save() const;

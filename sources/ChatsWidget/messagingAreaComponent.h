@@ -163,6 +163,7 @@ class ChatPropertiesComponent : public QWidget
 public:
     explicit ChatPropertiesComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme);
     void setTheme(Theme theme);
+    void disable(bool isDisabled);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -204,10 +205,14 @@ public:
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
     DelimiterComponent* getDelimiterComponentUnread() { return m_delimiter_component_unread; }
+    MyTextEdit* getTextEdit() { return m_messageInputEdit; }
+    ChatPropertiesComponent* getChatPropertiesComponent() { return m_chat_properties_component; }
 
     void removeDelimiterComponentUnread();
     void moveDelimiterComponentUnreadDown();
     bool isDelimiterComponentUnread() { return isDelimiterUnread; }
+
+    void markVisibleMessagesAsChecked();
 
 signals:
     void sendMessageData(Message*, Chat* chat);
@@ -223,7 +228,6 @@ public slots:
     void setAvatar(const QPixmap& pixMap);
     void setName(const QString& name);
     void setErrorLabelText(const QString& errorText);
-    void markMessageAsChecked(Message* message);
     void moveSliderDown(bool isCalledFromWorker = false);
     void onChatDelete();
 

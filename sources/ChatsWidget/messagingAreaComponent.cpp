@@ -68,6 +68,11 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
     QTextEdit:focus {
         border: 2px solid #888;     
     }
+    QTextEdit:disabled {
+        background-color: rgb(70, 70, 70);  /* Темнее обычного фона */
+        color: rgb(150, 150, 150);          /* Серый текст */
+        border: 1px solid rgb(70, 70, 70); /* Граница для disabled */
+    }
 )";
 
     LightTextEditStyle = R"(
@@ -80,6 +85,11 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
     }
     QTextEdit:focus {
         border: 2px solid rgb(237, 237, 237);        
+    }
+    QTextEdit:disabled {
+        background-color: rgb(220, 220, 220);  /* Светло-серый фон */
+        color: rgb(150, 150, 150);             /* Серый текст */
+        border: 1px solid rgb(220, 220, 220);  /* Граница для disabled */
     }
 )";
 
@@ -128,14 +138,14 @@ QPushButton {
 }
 
 QPushButton:hover {
-    color: rgba(252, 73, 103, 0.95);
-    background-color: rgba(70, 70, 70, 0.3);
+    color: rgba(255, 94, 113, 0.95);
+    background-color: transparent;
     border: 1px solid transparent;
 }
 
 QPushButton:pressed {
-    color: rgba(252, 73, 103, 1.0);
-    background-color: rgba(70, 70, 70, 0.5);
+    color: rgba(255, 94, 113, 1.0);
+    background-color: transparent;
     border: 1px solid transparent;
     padding-top: 3px;
 }
@@ -167,14 +177,14 @@ QPushButton {
 }
 
 QPushButton:hover {
-    color: rgba(252, 73, 103, 0.95);
-    background-color: rgba(200, 200, 200, 0.3);
+    color: rgba(255, 28, 66, 0.95);
+    background-color: transparent;
     border: 1px solid transparent;
 }
 
 QPushButton:pressed {
-    color: rgba(252, 73, 103, 1.0);
-    background-color: rgba(200, 200, 200, 0.5);
+    color: rgba(255, 28, 66, 1.0);
+    background-color: transparent;
     border: 1px solid transparent;
     padding-top: 3px;
 }
@@ -207,9 +217,11 @@ void FriendProfileComponent::setupUI()
     m_mainLayout->setContentsMargins(10, 10, 10, 10);
 
     m_login_label = new QLabel(this);
+    m_login_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_login_label->setAlignment(Qt::AlignLeft);
 
     m_name_label = new QLabel(this);
+    m_name_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_name_label->setAlignment(Qt::AlignLeft);
 
 
@@ -271,7 +283,7 @@ void FriendProfileComponent::setTheme(Theme theme) {
     else {
         m_close_button->setTheme(m_theme);
         m_color = new QColor(225, 225, 225);
-        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(105, 175, 255);");
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(138, 192, 255);");
         m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(138, 192, 255);");
     }
 }
@@ -289,6 +301,10 @@ ChatPropertiesComponent::ChatPropertiesComponent(QWidget* parent, MessagingAreaC
     setAttribute(Qt::WA_TranslucentBackground);
     setWindowFlags(Qt::FramelessWindowHint);
     setupUI();
+}
+
+void ChatPropertiesComponent::disable(bool isDisabled) {
+    m_delete_chat_button->setDisabled(isDisabled);
 }
 
 void ChatPropertiesComponent::setupUI() {
@@ -493,6 +509,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_containerWidget = new QWidget(this);
 
     m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setWidget(m_containerWidget);
     m_scrollArea->setStyleSheet("background: transparent;");
@@ -558,7 +575,9 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_messageInputEdit->setPlaceholderText("Type your message...");
     m_messageInputEdit->setAcceptRichText(false);
     m_messageInputEdit->setFixedHeight(m_messageInputEdit->document()->size().height());
-
+    bool isHidden = chatsWidget->getClient()->getIsHidden();
+    if (isHidden)
+        m_messageInputEdit->setDisabled(true);
 
     QHBoxLayout* m_button_sendHLayout = new QHBoxLayout;
     m_button_sendHLayout->addWidget(m_messageInputEdit);
@@ -663,6 +682,38 @@ void MessagingAreaComponent::resizeEvent(QResizeEvent* event) {
     }
 }
 
+void MessagingAreaComponent::markVisibleMessagesAsChecked() {
+    auto client = m_chatsWidget->getClient();
+    int sentCount = 0;
+        std::vector<MessageComponent*> skippedVec;
+        bool isWasSentAtLeastOneConfirmation = false;
+        for (auto msgComp : m_vec_unread_messagesComponents) {
+            if (isMessageVisible(msgComp)) {
+                auto message = msgComp->getMessage();
+                message->setIsRead(true);
+                client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
+                isWasSentAtLeastOneConfirmation = true;
+                sentCount++;
+            }
+        }
+
+        if (isWasSentAtLeastOneConfirmation && skippedVec.size() != 0) {
+            for (auto msgComp : skippedVec) {
+                auto message = msgComp->getMessage();
+                message->setIsRead(true);
+                client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
+                sentCount++;
+            }
+        }
+
+        if (sentCount <= m_vec_unread_messagesComponents.size()) {
+            m_vec_unread_messagesComponents.erase(
+                m_vec_unread_messagesComponents.begin(),
+                m_vec_unread_messagesComponents.begin() + sentCount
+            );
+        }
+}
+
 void MessagingAreaComponent::handleScroll(int value) {
     auto client = m_chatsWidget->getClient();
 
@@ -671,34 +722,12 @@ void MessagingAreaComponent::handleScroll(int value) {
     if (m_move_slider_down_button) 
         m_move_slider_down_button->setVisible(!isNearBottom);
 
-    int sentCount = 0;
-    std::vector<MessageComponent*> skippedVec;
-    bool isWasSentAtLeastOneConfirmation = false;
-    for (auto msgComp : m_vec_unread_messagesComponents) {
-        if (isMessageVisible(msgComp)) {
-            auto message = msgComp->getMessage();
-            message->setIsRead(true);
-            client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
-            isWasSentAtLeastOneConfirmation = true;
-            sentCount++;
-        }
-    }
+    bool isHidden = client->getIsHidden();
 
-    if (isWasSentAtLeastOneConfirmation && skippedVec.size() != 0) {
-        for (auto msgComp : skippedVec) {
-            auto message = msgComp->getMessage();
-            message->setIsRead(true);
-            client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
-            sentCount++;
-        }
+    if (!isHidden) {
+        markVisibleMessagesAsChecked();
     }
-
-    if (sentCount <= m_vec_unread_messagesComponents.size()) {
-        m_vec_unread_messagesComponents.erase(
-            m_vec_unread_messagesComponents.begin(),
-            m_vec_unread_messagesComponents.begin() + sentCount
-        );
-    }
+    
 }
 
 std::vector<MessageComponent*>& MessagingAreaComponent::getUreadMessageComponents() {
@@ -1001,13 +1030,6 @@ void MessagingAreaComponent::moveSliderDown(bool isCalledFromWorker) {
             m_scrollArea->ensureWidgetVisible(lastMessage);
         }
     });
-}
-
-void MessagingAreaComponent::markMessageAsChecked(Message* message) {
-    Client* client = m_chatsWidget->getClient();
-    client->sendMessageReadConfirmation(m_chat->getFriendLogin(), { message });
-
-    m_chat->getMessagesVec().back()->setIsRead(true);
 }
 
 

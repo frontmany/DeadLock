@@ -10,9 +10,7 @@
 #include "net.h"
 
 ResponseHandler::ResponseHandler(Client* client)
-	: m_client(client), m_worker_UI(nullptr) {
- 
-}
+	: m_client(client), m_worker_UI(nullptr) {}
 
 void ResponseHandler::setWorkerUI(WorkerUI* workerImpl) {
     m_worker_UI = workerImpl;
@@ -247,14 +245,15 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
         }
     }
 
-    m_client->broadcastMyStatus("online");
+    if (!m_client->getIsHidden()) {
+        m_client->broadcastMyStatus("online");
+    }
     m_worker_UI->updateFriendsStatuses(loginToStatusPairsVec);
 }
 
 
 
 void ResponseHandler::onMessageReceive(const std::string& packet) {
-
     std::istringstream iss(packet);
 
     std::string myLogin;

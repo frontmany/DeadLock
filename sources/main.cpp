@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);
 
-    bool isAutoLogin = client->autoLogin();
+    bool isAutoLogin = client->autoLoginAndLoad();
     if (isAutoLogin == true) {
         client->initDatabase(client->getMyLogin());
         client->authorizeClient(client->getMyLogin(), client->getMyPasswordHash());

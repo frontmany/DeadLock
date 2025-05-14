@@ -6,6 +6,7 @@
 #include "messagingAreaComponent.h"
 #include "friendSearchDialogComponent.h"
 #include "messageComponent.h"
+#include "chatHeaderComponent.h"
 #include "buttons.h"
 #include "photo.h"
 #include "utility.h"
@@ -111,13 +112,13 @@ StyleChatsListComponent::StyleChatsListComponent() {
 
     DarkHideButton = R"(
 QPushButton {
-    background-color: #343434;
+    background-color: rgb(18, 18, 18);
     border-radius: 15px;
     padding: 8px 16px;
     color: #E0E0E0;
     font-family: 'Segoe UI', sans-serif;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 QPushButton:hover {
@@ -126,7 +127,7 @@ QPushButton:hover {
 }
 
 QPushButton:pressed {
-    background-color: #252525;
+    background-color: #383838;
 }
 
 QPushButton:checked {
@@ -148,17 +149,17 @@ QPushButton:disabled {
 
     LightHideButton = R"(
 QPushButton {
-    background-color: #dedede;
+    background-color: #F0F0F0;
     border-radius: 15px;
     padding: 8px 16px;
     color: #404040;
     font-family: 'Segoe UI', sans-serif;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 800;
 }
 
 QPushButton:hover {
-    background-color: #F0F0F0;
+    background-color: #E8E8E8;
     border-color: #B8B8B8;
 }
 
@@ -263,21 +264,38 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_hideButton->setFixedSize(150, 32);
     m_hideButton->setIconSize(QSize(32, 32));
     m_hideButton->installEventFilter(this);
+
     if (m_is_hidden) {
-        m_hideButton->toggle();
+        m_hideButton->click();
     }
     updateHideButton();
+
     connect(m_hideButton, &QPushButton::toggled, this, [this](bool checked) {
         m_is_hidden = checked;
-        updateHideButton();
-
-
         auto client = m_chatsWidget->getClient();
         client->setIsHidden(checked);
-        if (checked) {
+        updateHideButton();
+
+        auto currentMessagingAreaComponent = m_chatsWidget->getCurrentMessagingAreaComponent();
+        if (currentMessagingAreaComponent != nullptr) {
+            currentMessagingAreaComponent->markVisibleMessagesAsChecked();
+        }
+
+        if (m_is_hidden) {
+            
+            auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
+            for (auto comp : messagingAreasVec) {
+                comp->getTextEdit()->setDisabled(true);
+                comp->getChatPropertiesComponent()->disable(true);
+            }
             client->broadcastMyStatus(utility::getCurrentDateTime());
         }
         else {
+            auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
+            for (auto comp : messagingAreasVec) {
+                comp->getTextEdit()->setDisabled(false);
+                comp->getChatPropertiesComponent()->disable(false);
+            }
             client->broadcastMyStatus("online");
         }
     });

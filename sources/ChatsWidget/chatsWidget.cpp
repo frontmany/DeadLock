@@ -91,56 +91,32 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
             ->verticalScrollBar()
             ->minimum();
 
+        bool isHidden = m_client->getIsHidden();
+
         if (isAtMinimum) {
             scrollArea->verticalScrollBar()
                 ->setValue(scrollArea
                     ->verticalScrollBar()
                     ->maximum());
 
-            for (auto msgComp : unreadMessageComponentsVec) {
-                auto message = msgComp->getMessage();
-                message->setIsRead(true);
-                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
-            }
 
+            if (!isHidden) {
+                for (auto msgComp : unreadMessageComponentsVec) {
+                    auto message = msgComp->getMessage();
+                    message->setIsRead(true);
+                    m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
+                }
+            }
+            
             selectChatComponent(component);
             return;
         }
 
-        int sentCount = 0;
-        std::vector<MessageComponent*> skippedVec;
-        bool isWasSentAtLeasOneConfirmation = false;
-        for (auto msgComp : unreadMessageComponentsVec) {
-            if (m_current_messagingAreaComponent->isMessageVisible(msgComp)) {
-                auto message = msgComp->getMessage();
-                message->setIsRead(true);
-                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
-                isWasSentAtLeasOneConfirmation = true;
-                sentCount++;
-            }
-            else {
-                skippedVec.push_back(msgComp);
-            }
+        if (!isHidden) {
+            m_current_messagingAreaComponent->markVisibleMessagesAsChecked();
         }
-
-        if (isWasSentAtLeasOneConfirmation && skippedVec.size() != 0) {
-            for (auto msgComp : skippedVec) {
-                auto message = msgComp->getMessage();
-                message->setIsRead(true);
-                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
-                sentCount++;
-            }
-        }
-        
-        if (sentCount <= unreadMessageComponentsVec.size()) {
-            unreadMessageComponentsVec.erase(
-                unreadMessageComponentsVec.begin(),
-                unreadMessageComponentsVec.begin() + sentCount
-            );
-        }
-    }
-    selectChatComponent(component);
-    
+        selectChatComponent(component);
+    } 
 }
 
 void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
