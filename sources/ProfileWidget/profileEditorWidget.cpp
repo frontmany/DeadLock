@@ -44,17 +44,20 @@ void ProfileEditorWidget::setPhotoEditor() {
 }
 
 void ProfileEditorWidget::setFieldsEditor() {
-    if (utility::getDeviceScaleFactor() >= 1.25) {
-        setFixedHeight(utility::getScaledSize(540));
+    if (utility::getDeviceScaleFactor() >= 1.5) {
+        setFixedHeight(utility::getScaledSize(730));
     }
-    if (utility::getDeviceScaleFactor() > 1.5) {
-        setFixedHeight(utility::getScaledSize(640));
+    else if (utility::getDeviceScaleFactor() >= 1.25) {
+        setFixedHeight(utility::getScaledSize(620));
     }
     else {
         setFixedHeight(utility::getScaledSize(500));
     }
 
     m_fields_edit_component->setMaximumSize(400, utility::getScaledSize(500));
+    if (utility::getDeviceScaleFactor() >= 1.5) {
+        m_fields_edit_component->setMaximumSize(400, utility::getScaledSize(600));
+    }
     m_mainVLayout->removeWidget(m_photo_edit_component);
     m_photo_edit_component->hide();
     m_password_edit_component->hide();

@@ -69,9 +69,9 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
         border: 2px solid #888;     
     }
     QTextEdit:disabled {
-        background-color: rgb(70, 70, 70);  /* Темнее обычного фона */
-        color: rgb(150, 150, 150);          /* Серый текст */
-        border: 1px solid rgb(70, 70, 70); /* Граница для disabled */
+        background-color: rgb(70, 70, 70);
+        color: rgb(150, 150, 150);        
+        border: 1px solid rgb(70, 70, 70); 
     }
 )";
 
@@ -87,9 +87,9 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
         border: 2px solid rgb(237, 237, 237);        
     }
     QTextEdit:disabled {
-        background-color: rgb(220, 220, 220);  /* Светло-серый фон */
-        color: rgb(150, 150, 150);             /* Серый текст */
-        border: 1px solid rgb(220, 220, 220);  /* Граница для disabled */
+        background-color: rgb(220, 220, 220); 
+        color: rgb(150, 150, 150);            
+        border: 1px solid rgb(220, 220, 220);  
     }
 )";
 
