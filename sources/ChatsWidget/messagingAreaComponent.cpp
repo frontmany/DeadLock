@@ -484,13 +484,6 @@ void ChatPropertiesComponent::setTheme(Theme theme) {
     }
 }
 
-
-
-
-
-
-
-
 MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendName, Theme theme, Chat* chat, ChatsWidget* chatsWidget)
     : QWidget(parent), m_friendName(friendName), m_theme(theme), m_chat(chat),
     m_chatsWidget(chatsWidget), m_style(new StyleMessagingAreaComponent())
@@ -527,8 +520,13 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     );
     m_friend_profile_component->raise();
 
+    bool isHiddenv = chatsWidget->getClient()->getIsHidden();
 
     m_chat_properties_component = new ChatPropertiesComponent(this, this, m_theme);
+    if (isHiddenv) {
+        m_chat_properties_component->disable(true);
+    }
+
     m_chat_properties_component->hide();
     m_chat_properties_component->setFixedSize(170, 50);
     m_chat_properties_component->setParent(m_scrollArea->viewport());
@@ -575,8 +573,8 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_messageInputEdit->setPlaceholderText("Type your message...");
     m_messageInputEdit->setAcceptRichText(false);
     m_messageInputEdit->setFixedHeight(m_messageInputEdit->document()->size().height());
-    bool isHidden = chatsWidget->getClient()->getIsHidden();
-    if (isHidden)
+
+    if (isHiddenv)
         m_messageInputEdit->setDisabled(true);
 
     QHBoxLayout* m_button_sendHLayout = new QHBoxLayout;
