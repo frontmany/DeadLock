@@ -19,14 +19,15 @@ public:
 int main(int argc, char* argv[])
 {
     setlocale(LC_ALL, "ru");
-
+  
     QApplication app(argc, argv);
     CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
     app.setStyle(customStyle);
-
+    
     Client* client = new Client;
     client->connectTo("192.168.1.51", 8080);
     client->run();
+    
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);
 

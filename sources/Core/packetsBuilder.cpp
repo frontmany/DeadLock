@@ -167,6 +167,31 @@ const std::string PacketsBuilder::getFindUserPacket(const std::string& myLogin, 
     return oss.str();
 }
 
+const std::string PacketsBuilder::getBindPacket(const std::string& myLogin) {
+    std::ostringstream oss;
+
+    oss << get << '\n'
+        << myLogin;
+
+    return oss.str();
+}
+
+const std::string PacketsBuilder::getPrepareToFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& caption) {
+    std::ostringstream oss;
+
+    oss << get << '\n'
+        << myLogin << '\n'
+        << friendLogin << '\n'
+        << fileName << '\n'
+        << fileId << '\n'
+        << fileSize << '\n'
+        << messageBegin << '\n'
+        << caption << '\n'
+        << messageEnd << '\n';
+
+    return oss.str();
+}
+
 //RPL
 const std::string PacketsBuilder::getMessagePacket(const std::string& myLogin,
     const std::string& friendLogin,

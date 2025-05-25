@@ -11,10 +11,11 @@ enum class QueryType : uint32_t;
 
 namespace net {
 	template <typename T>
-	class owned_message;
-}
+	class message;
+	template <typename T>
+	class file;
 
-typedef net::owned_message<QueryType> ownedMessageT;
+}
 
 class ResponseHandler {
 public:
@@ -23,7 +24,8 @@ public:
 	WorkerUI* getWorkerUI() { return m_worker_UI; }
 
 
-	void handleResponse(ownedMessageT& msg);
+	void handleResponse(net::message<QueryType>& msg);
+	void handleFile(net::file<QueryType>& file);
 
 	void onRegistrationSuccess();
 	void onRegistrationFail();

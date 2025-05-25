@@ -19,19 +19,6 @@
 #include "photo.h"
 #include "chat.h"
 
-void Client::processIncomingMessagesQueue() {
-    net::safe_deque<net::owned_message<QueryType>>& queue = getMessagesQueue();
-    while (true) {
-        if (queue.empty()) {
-            std::this_thread::yield();
-        }
-        else {
-            net::owned_message<QueryType> msg = queue.pop_front();
-            m_response_handler->handleResponse(msg);
-        }
-    }
-}
-
 Client::Client() :
     m_is_auto_login(false),
     m_is_ui_ready_to_update(false),
@@ -66,7 +53,7 @@ void Client::initDatabase(const std::string& login) {
 }
 
 void Client::run() { 
-    m_worker_thread = std::thread([this]() { processIncomingMessagesQueue(); });
+    m_worker_thread = std::thread([this]() { update(); });
 }
 
 void Client::connectTo(const std::string& ipAddress, int port) {
@@ -574,4 +561,69 @@ bool Client::undoAutoLogin() {
     file.close();
     qDebug() << "Successfully removed password hash from:" << oldFileName;
     return true;
+}
+
+// new TODO
+
+void Client::onSendMessageError(net::message<QueryType> unsentMessage) {
+
+}
+
+void Client::onSendFileError(net::file<QueryType> unsentFille){
+
+}
+
+void Client::onDisconnect(std::shared_ptr<net::connection<QueryType>> connection)  {
+
+}
+
+void Client::onMessage(net::message<QueryType> message) {
+    m_response_handler->handleResponse(message);
+}
+
+void Client::onFile(net::file<QueryType> file) {
+    m_response_handler->handleFile(file);
+}
+
+void Client::sendFile(const std::string& filePath, const std::string& friendLogin, const std::string& fileId, const std::string& caption) {
+    if (!std::filesystem::exists(filePath)) {
+        std::cerr << "Error: File " << filePath << " does not exist\n";
+        return;
+    }
+
+    std::ifstream fileStream(filePath, std::ios::binary | std::ios::ate);
+    if (!fileStream) {
+        std::cerr << "Error: Failed to open file " << filePath
+            << " (Error code: " << strerror(errno) << ")\n";
+        return;
+    }
+
+    std::streamsize file_size = fileStream.tellg();
+    if (file_size == -1) {
+        std::cerr << "Error: Could not determine file size\n";
+        fileStream.close();
+        return;
+    }
+
+    fileStream.seekg(0);
+    fileStream.close();
+
+    std::cout << "File " << filePath << " opened successfully. Size: "
+        << file_size << " bytes\n";
+
+    net::message<QueryType> msg;
+    msg.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
+    std::string packetStr = m_packets_builder->getPrepareToFilePacket(m_my_login, friendLogin, std::filesystem::path(filePath).filename().string(), fileId, std::to_string(file_size), caption);
+    msg << packetStr;
+    sendMessageOnFileConnection(msg);
+
+    net::file<QueryType> file{ m_my_login, friendLogin, filePath, fileId, static_cast<uint32_t>(file_size), caption};
+    sendFileOnFileConnection(file);
+}
+
+void Client::bindFileConnectionToMeOnServer() {
+    net::message<QueryType> msg;
+    msg.header.type = QueryType::BIND;
+    msg << m_packets_builder->getBindPacket(m_my_login);
+    sendMessageOnFileConnection(msg);
 }

@@ -7,6 +7,8 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QDialog>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <QVBoxLayout>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
@@ -39,6 +41,12 @@ struct StyleMessagingAreaComponent {
     QString DarkErrorLabelStyle;
     QString buttonTransparentDark;
     QString buttonTransparentLight;
+    QString DarkFileDialogButton;
+    QString LightFileDialogButton;
+    QString buttonTransparentFileDialogLight;
+    QString buttonTransparentFileDialogDark;
+    QString buttonTransparentFileDialogDarkAdd;
+    QString buttonTransparentFileDialogLightAdd;
 };
 
 class ButtonIcon;
@@ -216,6 +224,7 @@ public:
 
 signals:
     void sendMessageData(Message*, Chat* chat);
+    void sendFilesData(const QStringList&, Chat* chat);
 
 public slots:
     void openFriendProfile();
@@ -234,7 +243,9 @@ public slots:
 private slots:
     void adjustTextEditHeight();
     void onSendMessageClicked();
+    void onAttachFileClicked();
     void onTypeMessage();
+    void onSendFiles();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -245,6 +256,7 @@ private:
     void handleScroll(int value);
     void updateSliderButtonPosition();
     void onTypingTimeout();
+    void addFileToDisplayList(QDialog* filesDialog, QVBoxLayout* filesLayout, const QStringList& newFiles);
 
 private:
     StyleMessagingAreaComponent*    m_style;
@@ -255,6 +267,7 @@ private:
     std::vector<MessageComponent*> m_vec_messagesComponents;
 
     QVBoxLayout* m_sendMessage_VLayout;
+    QVBoxLayout* m_attachFile_VLayout;
     QVBoxLayout* m_main_VLayout;
     QVBoxLayout* m_containerVLayout;
     QHBoxLayout* m_button_sendHLayout;
@@ -271,11 +284,17 @@ private:
     bool m_isTypingActive = false;
 
     QString                 m_friendName;
-    MyTextEdit*             m_messageInputEdit;
     ChatHeaderComponent*    m_header;
     QScrollArea*            m_scrollArea;  
     QWidget*                m_containerWidget;
+
+    MyTextEdit*             m_messageInputEdit;
     ButtonCursor*           m_sendMessageButton;
+    ButtonIcon*             m_attachFileButton;
+
+    MyTextEdit*             m_files_caption_edit;
+
+    QStringList             m_selectedFiles;
 
     QLabel*                 m_error_label;
     QHBoxLayout*            m_error_labelLayout;

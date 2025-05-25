@@ -69,6 +69,21 @@ public:
     void waitUntilUIReadyToUpdate();
 
 
+
+    // new
+
+    void onSendMessageError(net::message<QueryType> unsentMessage) override;
+    void onSendFileError(net::file<QueryType> unsentFille) override;
+
+    void onMessage(net::message<QueryType> message) override;
+    void onFile(net::file<QueryType> file) override;
+
+    void onDisconnect(std::shared_ptr<net::connection<QueryType>> connection) override;
+    void bindFileConnectionToMeOnServer();
+
+    void sendFile(const std::string& filePath, const std::string& friendLogin, const std::string& fileId, const std::string& caption);
+
+
     // GET && SET
     bool isAutoLogin() { return m_is_auto_login; };
     void setIsNeedToAutoLogin(bool  isNeedToAutoLogin) { m_is_auto_login = isNeedToAutoLogin; }
@@ -101,7 +116,6 @@ public:
 private:
     const std::vector<std::string> getFriendsLoginsVecFromMap();
     void sendPacket(const std::string& packet, QueryType type);
-    void processIncomingMessagesQueue();
 
 private:
     std::thread             m_worker_thread;

@@ -16,74 +16,80 @@ void ResponseHandler::setWorkerUI(WorkerUI* workerImpl) {
     m_worker_UI = workerImpl;
 }
 
-void ResponseHandler::handleResponse(ownedMessageT& msg) {
-    if (msg.msg.header.type != QueryType::REGISTRATION_SUCCESS && 
-        msg.msg.header.type != QueryType::AUTHORIZATION_SUCCESS &&
-        msg.msg.header.type != QueryType::REGISTRATION_FAIL &&
-        msg.msg.header.type != QueryType::AUTHORIZATION_FAIL) {
+void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
+    if (msg.header.type != QueryType::REGISTRATION_SUCCESS && 
+        msg.header.type != QueryType::AUTHORIZATION_SUCCESS &&
+        msg.header.type != QueryType::REGISTRATION_FAIL &&
+        msg.header.type != QueryType::AUTHORIZATION_FAIL) {
         m_client->waitUntilUIReadyToUpdate();
     }
 
     std::string packet = "";
-    if (msg.msg.body.size() > 0) {
-        msg.msg >> packet;
+    if (msg.body.size() > 0) {
+        msg >> packet;
     }
 
 
-    if (msg.msg.header.type == QueryType::REGISTRATION_SUCCESS) {
+    if (msg.header.type == QueryType::REGISTRATION_SUCCESS) {
         onRegistrationSuccess();
+        m_client->bindFileConnectionToMeOnServer();
     }
-    else if (msg.msg.header.type == QueryType::REGISTRATION_FAIL) {
+    else if (msg.header.type == QueryType::REGISTRATION_FAIL) {
         onRegistrationFail();
     }
-    else if (msg.msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
+    else if (msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
         onAuthorizationSuccess();
+        m_client->bindFileConnectionToMeOnServer();
     }
-    else if (msg.msg.header.type == QueryType::AUTHORIZATION_FAIL) {
+    else if (msg.header.type == QueryType::AUTHORIZATION_FAIL) {
         onAuthorizationFail();
     }
-    else if (msg.msg.header.type == QueryType::CHAT_CREATE_SUCCESS) {
+    else if (msg.header.type == QueryType::CHAT_CREATE_SUCCESS) {
         onChatCreateSuccess(packet);
     }
-    else if (msg.msg.header.type == QueryType::CHAT_CREATE_FAIL) {
+    else if (msg.header.type == QueryType::CHAT_CREATE_FAIL) {
         onChatCreateFail();
     }
-    else if (msg.msg.header.type == QueryType::FRIENDS_STATUSES) {
+    else if (msg.header.type == QueryType::FRIENDS_STATUSES) {
         processFriendsStatusesSuccess(packet);
     }
-    else if (msg.msg.header.type == QueryType::MESSAGE) {
+    else if (msg.header.type == QueryType::MESSAGE) {
         onMessageReceive(packet);
     }
-    else if (msg.msg.header.type == QueryType::USER_INFO) {
+    else if (msg.header.type == QueryType::USER_INFO) {
         onUserInfo(packet);
     }
-    else if (msg.msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
+    else if (msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
         onMessageReadConfirmationReceive(packet);
     }
-    else if (msg.msg.header.type == QueryType::STATUS) {
+    else if (msg.header.type == QueryType::STATUS) {
         onStatusReceive(packet);
     }
-    else if (msg.msg.header.type == QueryType::VERIFY_PASSWORD_FAIL) {
+    else if (msg.header.type == QueryType::VERIFY_PASSWORD_FAIL) {
         onPasswordVerifyFail();
     }
-    else if (msg.msg.header.type == QueryType::VERIFY_PASSWORD_SUCCESS) {
+    else if (msg.header.type == QueryType::VERIFY_PASSWORD_SUCCESS) {
         onPasswordVerifySuccess();
     }
-    else if (msg.msg.header.type == QueryType::NEW_LOGIN_SUCCESS) {
+    else if (msg.header.type == QueryType::NEW_LOGIN_SUCCESS) {
         onCheckNewLoginSuccess(packet);
     }
-    else if (msg.msg.header.type == QueryType::NEW_LOGIN_FAIL) {
+    else if (msg.header.type == QueryType::NEW_LOGIN_FAIL) {
         onPasswordVerifySuccess();
     }
-    else if (msg.msg.header.type == QueryType::ALL_PENDING_MESSAGES_WERE_SENT) {
+    else if (msg.header.type == QueryType::ALL_PENDING_MESSAGES_WERE_SENT) {
         m_client->getAllFriendsStatuses();
     }
-    else if (msg.msg.header.type == QueryType::FIND_USER_RESULTS) {
+    else if (msg.header.type == QueryType::FIND_USER_RESULTS) {
         processFoundUsers(packet);
     }
-    else if (msg.msg.header.type == QueryType::TYPING) {
+    else if (msg.header.type == QueryType::TYPING) {
         onTyping(packet);
     }
+}
+
+void ResponseHandler::handleFile(net::file<QueryType>& file) {
+
 }
 
 
