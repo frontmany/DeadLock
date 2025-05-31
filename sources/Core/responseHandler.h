@@ -1,8 +1,10 @@
 #include <unordered_map>
 #include <string>
-#include <mutex>
 #include <queue>
 #include <sstream>
+#include <iostream>
+#include <filesystem> 
+#include <fstream>
 
 class WorkerUI;
 class Client;
@@ -27,6 +29,7 @@ public:
 	void handleResponse(net::message<QueryType>& msg);
 	void handleFile(net::file<QueryType>& file);
 
+
 	void onRegistrationSuccess();
 	void onRegistrationFail();
 
@@ -47,13 +50,19 @@ public:
 	void onTyping(const std::string& packet);
 	void onMessageReadConfirmationReceive(const std::string& packet);
 
-
+	//new 
+	void prepareToReceiveFile(const std::string& packet);
+	void prepareToReceiveRequestedFile(const std::string& packet);
+	void onFilePreview(const std::string& packet);
+	
 
 	void processFriendsStatusesSuccess(const std::string& packet);
 	void processFoundUsers(const std::string& packet);
 	void onStatusReceive(const std::string& packet);
 
+
 private:
 	WorkerUI* m_worker_UI;
 	Client* m_client;
+	bool m_is_received_file_requested = false;
 };

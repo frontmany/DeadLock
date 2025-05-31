@@ -1,7 +1,7 @@
+#include "theme.h"
 #include "loginWidget.h"
 #include "authorizationComponent.h"
 #include "registrationComponent.h"
-#include "mainwindow.h"
 #include "client.h"
 #include "utility.h"
 #include <QGraphicsBlurEffect>

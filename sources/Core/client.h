@@ -8,11 +8,9 @@
 #include <memory>
 
 #include "net.h"
+#include "queryType.h"
 
-
-enum class OperationResult;
-enum class QueryType : uint32_t;
-
+class      fileWrapper;
 class      Message;
 class      Database;
 class      WorkerUI;
@@ -71,7 +69,7 @@ public:
 
 
     // new
-
+    void requestFile(const fileWrapper& fileWrapper);
     void onSendMessageError(net::message<QueryType> unsentMessage) override;
     void onSendFileError(net::file<QueryType> unsentFille) override;
 
@@ -81,7 +79,8 @@ public:
     void onDisconnect(std::shared_ptr<net::connection<QueryType>> connection) override;
     void bindFileConnectionToMeOnServer();
 
-    void sendFile(const std::string& filePath, const std::string& friendLogin, const std::string& fileId, const std::string& caption);
+
+    void sendFile(const fileWrapper& fileWrapper);
 
 
     // GET && SET
@@ -108,6 +107,8 @@ public:
     void setIsHasPhoto(bool isHasPhoto) { m_is_has_photo = isHasPhoto; }
     const bool getIsHasPhoto() const { return m_is_has_photo; }
 
+
+    std::unordered_map<std::string, Message*>& getMapMessageBlobs() { return m_map_message_blobs; }
     std::unordered_map<std::string, Chat*>& getMyChatsMap() { return m_map_friend_login_to_chat; }
 
     void setIsHidden(bool isHidden) { m_is_hidden = isHidden; }
@@ -138,4 +139,6 @@ private:
     Photo*      m_my_photo;
 
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;    
+
+    std::unordered_map<std::string, Message*> m_map_message_blobs;
 };

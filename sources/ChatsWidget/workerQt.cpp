@@ -1,6 +1,8 @@
+#include "theme.h"
 #include "workerQt.h"
 #include "chatsWidget.h"
 #include "messagingAreaComponent.h"
+#include "fileWrapper.h"
 #include "messageComponent.h"
 #include "mainwindow.h"
 #include "chatsListComponent.h"
@@ -21,7 +23,26 @@
 #include "photo.h"
 
 
+void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrapper& file, bool isError) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+		});
+	MessagingAreaComponent* areaComp = *comp;
+	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
 
+	std::string blobUID = file.file.id;
+	auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
+		return comp->getId() == QString::fromStdString(blobUID);
+	});
+
+	MessageComponent* messageComp = *messageCompIt;
+	QMetaObject::invokeMethod(messageComp,
+		"requestedFileLoaded",
+		Qt::QueuedConnection,
+		Q_ARG(const fileWrapper&, file));
+}
 
 WorkerQt::WorkerQt(MainWindow* mainWindow)
 	: m_main_window(mainWindow) {
@@ -54,8 +75,8 @@ void WorkerQt::onPasswordVerifySuccess() {
 			"showNewPasswordInput",
 			Qt::QueuedConnection);
 	}
-	
 }
+
 void WorkerQt::onPasswordVerifyFail() {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();

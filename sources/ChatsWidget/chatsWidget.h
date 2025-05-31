@@ -65,7 +65,10 @@ public slots:
 	void selectChatComponent(ChatComponent* component);
 	void createMessagingComponent(std::string friendName, Chat* chat);
 	void onChangeThemeClicked();
+
 	void onSendMessageData(Message* message, Chat* chat);
+	void onFilesData(Message* message, Chat* chat, size_t filesCount);
+
 	void onCreateChatButtonClicked(QString login);
 	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
 	void onChatDelete(const QString& loginOfRemovedChat);

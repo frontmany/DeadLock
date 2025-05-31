@@ -1,6 +1,7 @@
+#include "theme.h"
 #include "authorizationComponent.h"
 #include "loginWidget.h"
-#include "mainWindow.h"
+
 
 
 #include <QDebug>

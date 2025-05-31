@@ -29,7 +29,8 @@ public:
 
 	//new 
 	const std::string getBindPacket(const std::string& myLogin);
-	const std::string getPrepareToFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& caption);
+	const std::string getPrepareToFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, uint32_t filesInBlobCount);
+	const std::string getSendMeFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, uint32_t filesInBlobCount);
 
 	//RPL
 	const std::string getMessagePacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);

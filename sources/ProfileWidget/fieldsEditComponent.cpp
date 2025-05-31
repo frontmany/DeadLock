@@ -1,5 +1,5 @@
+#include"theme.h"
 #include"fieldsEditComponent.h"
-#include"mainwindow.h"
 #include"profileEditorWidget.h"
 #include"client.h"
 #include"utility.h"

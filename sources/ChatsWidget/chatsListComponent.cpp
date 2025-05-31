@@ -1,8 +1,8 @@
+#include "theme.h"
 #include "chatsListComponent.h"
 #include "addChatDialogComponent.h"
 #include "fieldsEditComponent.h"
 #include "chatsWidget.h"
-#include "mainwindow.h"
 #include "messagingAreaComponent.h"
 #include "friendSearchDialogComponent.h"
 #include "messageComponent.h"
@@ -11,6 +11,8 @@
 #include "photo.h"
 #include "utility.h"
 #include "client.h"
+#include "chat.h"
+#include "chatComponent.h"
 #include "profileEditorWidget.h"
 
 #include <QPainter>

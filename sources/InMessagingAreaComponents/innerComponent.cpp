@@ -1,9 +1,5 @@
-#include "MessageComponent.h"
-#include "mainwindow.h"
-#include "message.h"
-#include "utility.h"
+#include "innerComponent.h"
 #include "buttons.h"
-
 
 StyleInnerComponent::StyleInnerComponent() {
     labelStyleDarkMessage = R"(
@@ -64,7 +60,7 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
     m_isSent = isSent;
 
     m_main_HLayout = new QHBoxLayout(this);
-    m_main_HLayout->setAlignment(Qt::AlignRight); 
+    m_main_HLayout->setAlignment(Qt::AlignRight);
     m_main_HLayout->setSpacing(5);
     m_main_HLayout->setContentsMargins(5, 5, 5, 5);
 
@@ -108,7 +104,7 @@ InnerComponent::InnerComponent(QWidget* parent, const QString& timestamp, const 
     m_isRead_VLayout->addWidget(m_readStatusBtn);
 
     m_isRead_VLayout->addSpacing(-12);
-    
+
 
     m_main_HLayout->addLayout(m_text_VLayout);
     m_main_HLayout->addLayout(m_time_VLayout);
@@ -141,7 +137,7 @@ void InnerComponent::paintEvent(QPaintEvent* event) {
     QRect rect = this->rect();
     int radius = 20;
     path.addRoundedRect(rect, radius, radius);
-    painter.fillPath(path, m_backColor); 
+    painter.fillPath(path, m_backColor);
 
     QWidget::paintEvent(event);
 }
@@ -171,7 +167,7 @@ void InnerComponent::setTheme(Theme theme) {
             m_textLabel->setStyleSheet(style->labelStyleDarkMessage);
             m_timestampLabel->setStyleSheet(style->labelStyleDarkTime);
         }
-        
+
     }
     else {
         if (m_isSent) {
@@ -185,49 +181,5 @@ void InnerComponent::setTheme(Theme theme) {
             m_timestampLabel->setStyleSheet(style->labelStyleLightTime);
         }
     }
-    update(); 
+    update();
 }
-
-MessageComponent::MessageComponent(QWidget* parent, Message* message, Theme theme)
-    : QWidget(parent), m_theme(theme), m_id(QString::fromStdString(message->getId())), m_isSent(message->getIsSend()),
-    m_isRead(message->getIsRead()), m_message(message)
-{
-    m_innerWidget = new InnerComponent(this, QString::fromStdString(message->getTimestamp()), QString::fromStdString(message->getMessage()), m_theme, m_isSent);
-    this->setStyleSheet("background-color: transparent;");
-
-    m_main_HLayout = new QHBoxLayout(this);
-    if (m_isSent){
-        m_main_HLayout->setAlignment(Qt::AlignRight);
-    }
-    else {
-        m_main_HLayout->setAlignment(Qt::AlignLeft);
-    }
-
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-
-    m_main_HLayout->addWidget(m_innerWidget);
-    m_main_HLayout->addSpacing(5);
-    m_main_HLayout->setContentsMargins(5, 5, 5, 5);
-    m_main_HLayout->setSizeConstraint(QLayout::SetMaximumSize);
-
-
-   
-    setLayout(m_main_HLayout);
-    setIsRead(false);
-    setTheme(theme);
-    m_innerWidget->setReadStatus(false);
-
-   
-}
-
-void MessageComponent::setIsRead(bool isRead) {
-    m_innerWidget->setIsRead(isRead);
-    m_innerWidget->setReadStatus(isRead);
-    m_isRead = isRead;
-}
-
-MessageComponent::~MessageComponent() {
-    delete m_innerWidget;
-}
-
-

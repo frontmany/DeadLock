@@ -61,7 +61,9 @@
 		<file>attachmentDark.png</file>
 		<file>attachmentDarkHover.png</file>
 		<file>fileDark.png</file>
+		<file>fileDarkNeedToLoad.png</file>
 		<file>fileLight.png</file>
+		<file>fileLightNeedToLoad.png</file>
 		<file>imageLight.png</file>
 		<file>imageDark.png</file>
 		<file>trashCanDark.png</file>

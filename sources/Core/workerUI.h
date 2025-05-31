@@ -1,8 +1,12 @@
 #include <string>
+#include <vector>
+
+#include "queryType.h"
 
 class Message;
 class FriendInfo;
 class Chat;
+class fileWrapper;
 
 class WorkerUI {
 public:
@@ -30,4 +34,5 @@ public:
 	virtual void showNewChatOrUpdateExisting(Chat* chat) = 0;
 	virtual void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) = 0;
 	virtual void onStatusReceive(const std::string& friendLogin, const std::string& status) = 0;
+	virtual void updateFileLoadingState(const std::string& friendLogin, fileWrapper& fileWrapper, bool isError) = 0;
 };

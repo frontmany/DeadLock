@@ -2,6 +2,47 @@
 #include "chat.h"
 #include "Windows.h" 
 
+
+
+
+std::string utility::getFileSavePath(const std::string& fileName) {
+    namespace fs = std::filesystem;
+
+#ifdef _WIN32
+    std::string downloadsPath = std::string(std::getenv("USERPROFILE")) + "\\Downloads\\";
+#else
+    std::string downloadsPath = std::string(std::getenv("HOME")) + "/Downloads/";
+#endif
+
+    std::string deadlockDir = downloadsPath + "Deadlock Messenger";
+    if (!fs::exists(deadlockDir)) {
+        fs::create_directory(deadlockDir);
+    }
+
+    std::string filePath = deadlockDir + "/" + fileName;
+#ifdef _WIN32
+    filePath = deadlockDir + "\\" + fileName;
+#endif
+
+    int counter = 1;
+    while (fs::exists(filePath)) {
+        size_t dotPos = fileName.find_last_of('.');
+        std::string nameWithoutExt = fileName.substr(0, dotPos);
+        std::string extension = (dotPos != std::string::npos) ? fileName.substr(dotPos) : "";
+
+#ifdef _WIN32
+        filePath = deadlockDir + "\\" + nameWithoutExt + " (" + std::to_string(counter) + ")" + extension;
+#else
+        filePath = deadlockDir + "/" + nameWithoutExt + " (" + std::to_string(counter) + ")" + extension;
+#endif
+        counter++;
+    }
+
+    return filePath;
+}
+
+
+
 std::string utility::getCurrentDateTime() {
     std::time_t now = std::time(0);
     std::tm* ltm = std::localtime(&now);

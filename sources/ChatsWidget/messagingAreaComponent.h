@@ -212,6 +212,7 @@ public:
     std::vector<MessageComponent*>& getMessagesComponentsVec() { return m_vec_messagesComponents; }
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
+    ChatsWidget* getChatsWidget() { return m_chatsWidget; }
     DelimiterComponent* getDelimiterComponentUnread() { return m_delimiter_component_unread; }
     MyTextEdit* getTextEdit() { return m_messageInputEdit; }
     ChatPropertiesComponent* getChatPropertiesComponent() { return m_chat_properties_component; }
@@ -224,7 +225,7 @@ public:
 
 signals:
     void sendMessageData(Message*, Chat* chat);
-    void sendFilesData(const QStringList&, Chat* chat);
+    void sendFilesData(Message*, Chat* chat, size_t filesCount);
 
 public slots:
     void openFriendProfile();
@@ -257,6 +258,7 @@ private:
     void updateSliderButtonPosition();
     void onTypingTimeout();
     void addFileToDisplayList(QDialog* filesDialog, QVBoxLayout* filesLayout, const QStringList& newFiles);
+   
 
 private:
     StyleMessagingAreaComponent*    m_style;
@@ -292,9 +294,9 @@ private:
     ButtonCursor*           m_sendMessageButton;
     ButtonIcon*             m_attachFileButton;
 
-    MyTextEdit*             m_files_caption_edit;
+    MyTextEdit*             m_files_caption_edit = nullptr;
 
-    QStringList             m_selectedFiles;
+    QStringList             m_vec_selected_files;
 
     QLabel*                 m_error_label;
     QHBoxLayout*            m_error_labelLayout;

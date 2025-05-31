@@ -10,13 +10,13 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QLabel>
 #include <QHoverEvent>
 #include <QObject>
 #include <QMouseEvent>
 #include <QEvent>
-#include "ChatComponent.h"
-#include "mainwindow.h"
 
+enum Theme;
 class AvatarIcon;
 class AddChatDialogComponent;
 class ProfileEditorWidget;
@@ -24,7 +24,10 @@ class MessagingAreaComponent;
 class FriendSearchDialogComponent;
 class ButtonIcon;
 class ToggleSwitch;
+class ChatComponent;
 class Client;
+class Photo;
+class Chat;
 class ChatsWidget;
 
 struct StyleChatsListComponent {

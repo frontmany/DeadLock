@@ -1,5 +1,5 @@
+#include "theme.h"
 #include "registrationComponent.h"
-#include "mainWindow.h"
 #include "loginWidget.h"
 
 StyleRegistrationComponent::StyleRegistrationComponent() {

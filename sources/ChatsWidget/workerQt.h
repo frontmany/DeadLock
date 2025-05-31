@@ -9,6 +9,7 @@
 #include <string>
 
 #include "workerUI.h"
+#include "fileWrapper.h"
 
 class MainWindow;
 class ChatsWidget;
@@ -41,6 +42,8 @@ public:
 	void onMessageReceive(const std::string& friendLogin, Message* message) override;
 	void showNewChatOrUpdateExisting(Chat* chat) override;
 	void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) override;
+	void updateFileLoadingState(const std::string& friendLogin, fileWrapper& fileWrapper, bool isError) override;
+
 	void onStatusReceive(const std::string& friendLogin, const std::string& status);
 
 private:

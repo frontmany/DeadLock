@@ -6,7 +6,6 @@
 #include <QStyleFactory>
 #include <iostream>
 
-
 #include "client.h"
 #include "mainWindow.h"
 
@@ -25,7 +24,7 @@ int main(int argc, char* argv[])
     app.setStyle(customStyle);
     
     Client* client = new Client;
-    client->connectTo("192.168.1.51", 8080);
+    client->connectTo("192.168.1.46", 8080);
     client->run();
     
 

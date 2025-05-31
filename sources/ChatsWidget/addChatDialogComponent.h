@@ -5,6 +5,7 @@
 #include <QIcon>
 #include <QLineEdit>
 #include <QPropertyAnimation>
+#include <QPainterPath>
 #include <QPushButton>
 
 struct StyleEditComponent {

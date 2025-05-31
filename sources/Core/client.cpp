@@ -15,6 +15,7 @@
 #include "workerUI.h"
 #include "utility.h"
 #include "base64.h"
+#include "fileWrapper.h"
 #include "client.h"
 #include "photo.h"
 #include "chat.h"
@@ -585,39 +586,16 @@ void Client::onFile(net::file<QueryType> file) {
     m_response_handler->handleFile(file);
 }
 
-void Client::sendFile(const std::string& filePath, const std::string& friendLogin, const std::string& fileId, const std::string& caption) {
-    if (!std::filesystem::exists(filePath)) {
-        std::cerr << "Error: File " << filePath << " does not exist\n";
-        return;
-    }
 
-    std::ifstream fileStream(filePath, std::ios::binary | std::ios::ate);
-    if (!fileStream) {
-        std::cerr << "Error: Failed to open file " << filePath
-            << " (Error code: " << strerror(errno) << ")\n";
-        return;
-    }
-
-    std::streamsize file_size = fileStream.tellg();
-    if (file_size == -1) {
-        std::cerr << "Error: Could not determine file size\n";
-        fileStream.close();
-        return;
-    }
-
-    fileStream.seekg(0);
-    fileStream.close();
-
-    std::cout << "File " << filePath << " opened successfully. Size: "
-        << file_size << " bytes\n";
-
+void Client::sendFile(const fileWrapper& fileWrapper) {
     net::message<QueryType> msg;
     msg.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
-    std::string packetStr = m_packets_builder->getPrepareToFilePacket(m_my_login, friendLogin, std::filesystem::path(filePath).filename().string(), fileId, std::to_string(file_size), caption);
+    std::string timestamp = utility::getTimeStamp();
+    std::string packetStr = m_packets_builder->getPrepareToFilePacket(m_my_login, fileWrapper.file.receiverLogin, std::filesystem::path(fileWrapper.file.filePath).filename().string(), fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
     msg << packetStr;
     sendMessageOnFileConnection(msg);
 
-    net::file<QueryType> file{ m_my_login, friendLogin, filePath, fileId, static_cast<uint32_t>(file_size), caption};
+    net::file<QueryType> file{ fileWrapper.file.filesInBlobCount, fileWrapper.file.blobUID, m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.filePath, fileWrapper.file.id, timestamp, fileWrapper.file.fileSize, fileWrapper.file.caption };
     sendFileOnFileConnection(file);
 }
 
@@ -626,4 +604,9 @@ void Client::bindFileConnectionToMeOnServer() {
     msg.header.type = QueryType::BIND;
     msg << m_packets_builder->getBindPacket(m_my_login);
     sendMessageOnFileConnection(msg);
+}
+
+void Client::requestFile(const fileWrapper& fileWrapper) {
+    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_login, fileWrapper.file.receiverLogin, std::filesystem::path(fileWrapper.file.filePath).filename().string(), fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
+    sendPacket(packetStr, QueryType::SEND_ME_FILE);
 }

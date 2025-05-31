@@ -176,7 +176,7 @@ const std::string PacketsBuilder::getBindPacket(const std::string& myLogin) {
     return oss.str();
 }
 
-const std::string PacketsBuilder::getPrepareToFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& caption) {
+const std::string PacketsBuilder::getPrepareToFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, uint32_t filesInBlobCount) {
     std::ostringstream oss;
 
     oss << get << '\n'
@@ -185,11 +185,18 @@ const std::string PacketsBuilder::getPrepareToFilePacket(const std::string& myLo
         << fileName << '\n'
         << fileId << '\n'
         << fileSize << '\n'
+        << timestamp << '\n'
         << messageBegin << '\n'
         << caption << '\n'
-        << messageEnd << '\n';
+        << messageEnd << '\n'
+        << std::to_string(filesInBlobCount) << "\n"
+        << blobUID;
 
     return oss.str();
+}
+
+const std::string PacketsBuilder::getSendMeFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, uint32_t filesInBlobCount) {
+    return getPrepareToFilePacket(myLogin, friendLogin, fileName, fileId, fileSize, timestamp, caption, blobUID, filesInBlobCount);
 }
 
 //RPL

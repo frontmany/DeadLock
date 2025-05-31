@@ -1,6 +1,6 @@
+#include "theme.h"
 #include "chatHeaderComponent.h"
 #include "messagingAreaComponent.h"
-#include "mainwindow.h"
 #include "buttons.h"
 #include "utility.h"
 

@@ -6,16 +6,15 @@
 #include <QEvent>
 #include <QDir>
 
+#include <filesystem>
+
+enum Theme;
 class Client;
 class GreetWidget;
 class LoginWidget;
 class ChatsWidget;
 class WorkerQt;
 
-enum Theme {
-	DARK,
-	LIGHT
-};
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT

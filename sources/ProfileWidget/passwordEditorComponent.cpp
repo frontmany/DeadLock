@@ -1,8 +1,7 @@
+#include "theme.h"
 #include <QRegularExpression>
-
 #include "passwordEditorComponent.h"
 #include "profileEditorWidget.h"
-#include "mainwindow.h"
 #include "utility.h"
 #include "client.h"
 

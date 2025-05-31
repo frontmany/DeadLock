@@ -1,10 +1,11 @@
+#include "theme.h"
 #include "MessagingAreaComponent.h"
 #include "chatHeaderComponent.h"
 #include "chatsListComponent.h"
 #include "delimiterComponent.h"
 #include "messageComponent.h"
+#include "chatComponent.h"
 #include "chatsWidget.h"
-#include "mainWindow.h"
 #include "utility.h"
 #include "buttons.h"
 #include "message.h"
@@ -895,8 +896,6 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     connect(this, &MessagingAreaComponent::sendMessageData, m_chatsWidget, &ChatsWidget::onSendMessageData);
 
     connect(m_attachFileButton, &ButtonIcon::clicked, this, &MessagingAreaComponent::onAttachFileClicked);
-    //connect(this, &MessagingAreaComponent::onAttachFileClicked, m_chatsWidget, &ChatsWidget::onAttachFileClicked);
-
 
 
 
@@ -905,7 +904,6 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
 
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     adjustTextEditHeight();
-
     for (auto message : m_chat->getMessagesVec()) {
         addMessage(message, true);
     }
@@ -997,7 +995,7 @@ void MessagingAreaComponent::onAttachFileClicked()
             tr("You can select only 10 files. The rest will be ignored."));
     }
 
-    m_selectedFiles = filePaths;
+    m_vec_selected_files = filePaths;
 
     class OverlayWidget : public QWidget {
     public:
@@ -1063,7 +1061,7 @@ void MessagingAreaComponent::onAttachFileClicked()
     filesLayout->setSpacing(5);
     contentLayout->addLayout(filesLayout);
 
-    addFileToDisplayList(filesDialog, filesLayout, m_selectedFiles);
+    addFileToDisplayList(filesDialog, filesLayout, m_vec_selected_files);
 
     m_files_caption_edit = new MyTextEdit;
     m_files_caption_edit->setMinimumHeight(30);
@@ -1088,7 +1086,7 @@ void MessagingAreaComponent::onAttachFileClicked()
 
     QPushButton* addButton = new QPushButton(tr("add"));
     connect(addButton, &QPushButton::clicked, this, [this, filesDialog, filesLayout]() {
-        int remainingSlots = 10 - m_selectedFiles.size();
+        int remainingSlots = 10 - m_vec_selected_files.size();
         if (remainingSlots <= 0) {
             QMessageBox::information(this,
                 tr("Limit reached"),
@@ -1110,7 +1108,7 @@ void MessagingAreaComponent::onAttachFileClicked()
             QFileInfo newFileInfo(filePath);
             bool isDuplicate = false;
 
-            for (const QString& existingPath : m_selectedFiles) {
+            for (const QString& existingPath : m_vec_selected_files) {
                 QFileInfo existingFileInfo(existingPath);
                 if (newFileInfo == existingFileInfo ||
                     newFileInfo.canonicalFilePath() == existingFileInfo.canonicalFilePath()) {
@@ -1139,7 +1137,7 @@ void MessagingAreaComponent::onAttachFileClicked()
         }
 
         addFileToDisplayList(filesDialog, filesLayout, uniqueNewFiles);
-        m_selectedFiles.append(uniqueNewFiles);
+        m_vec_selected_files.append(uniqueNewFiles);
 
         QTimer::singleShot(0, [filesDialog]() {
             filesDialog->adjustSize();
@@ -1219,15 +1217,56 @@ void MessagingAreaComponent::onSendFiles() {
     }
     m_chat->setLayoutIndex(0);
 
-    updateRelatedChatComponentLastMessage();
+    
+    
+    std::string blobUID = utility::generateId();
+    Message* message = new Message(msg, utility::getTimeStamp(), blobUID, true, false);
+    std::vector<fileWrapper> resultWrappersVec;
+    resultWrappersVec.reserve(m_vec_selected_files.size());
+
+    for (int i = 0; i < m_vec_selected_files.size(); i++) {
+       auto& str = m_vec_selected_files[i];
+
+        net::file<QueryType> tmpFile;
+        tmpFile.filePath = str.toStdString();
+        tmpFile.blobUID = blobUID;
+        tmpFile.filesInBlobCount = m_vec_selected_files.size();
+        tmpFile.id = utility::generateId();
+        tmpFile.receiverLogin = m_chat->getFriendLogin();
+        tmpFile.senderLogin = m_chatsWidget->getClient()->getMyLogin();
+        tmpFile.timestamp = utility::getTimeStamp();
+
+        try {
+            uintmax_t fileSize = std::filesystem::file_size(str.toStdString());
+            tmpFile.fileSize = fileSize;
+        }
+        catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "error: " << e.what() << std::endl;
+        }
+
+        int lastElement = m_vec_selected_files.size() - 1;
+        if (i == lastElement) {
+            tmpFile.caption = msg;
+        }
+        else {
+            tmpFile.caption = "";
+        }
+
+        resultWrappersVec.emplace_back(true, tmpFile);
+    }
+
+    message->setRelatedFilePaths(std::move(resultWrappersVec));
+
+    addMessage(message, false);
 
     m_containerWidget->adjustSize();
-    onTypeMessage();
-    QString s = m_messageInputEdit->toPlainText();
-    m_messageInputEdit->setText("");
-    emit sendFilesData(m_selectedFiles, m_chat);
+    updateRelatedChatComponentLastMessage();
+    m_containerWidget->adjustSize();
+
+    emit sendFilesData(message, m_chat, m_vec_selected_files.size());
 
     moveSliderDown();
+    
 }
 
 void MessagingAreaComponent::addFileToDisplayList(QDialog* filesDialog, QVBoxLayout* filesLayout, const QStringList& newFiles) {
@@ -1294,7 +1333,7 @@ void MessagingAreaComponent::addFileToDisplayList(QDialog* filesDialog, QVBoxLay
 
         connect(deleteButton, &ButtonIcon::clicked, [this, filesDialog, filesLayout, fileRowLayout]() {
             int i = filesLayout->indexOf(fileRowLayout);
-            m_selectedFiles.removeAt(i);
+            m_vec_selected_files.removeAt(i);
 
             QLayoutItem* rowItem = filesLayout->itemAt(i);
             if (rowItem && rowItem->layout()) {
@@ -1325,7 +1364,7 @@ void MessagingAreaComponent::addFileToDisplayList(QDialog* filesDialog, QVBoxLay
                 }
             }
 
-            if (m_selectedFiles.size() == 0) {
+            if (m_vec_selected_files.size() == 0) {
                 filesDialog->close();
             }
 
@@ -1559,7 +1598,53 @@ void MessagingAreaComponent::updateRelatedChatComponentLastMessage() {
 
     if (it != chatCompVec.end()) {
         ChatComponent* relatedComp = *it;
-        relatedComp->setLastMessage(m_messageInputEdit->toPlainText());
+
+        if (m_vec_selected_files.size() == 0) {
+            relatedComp->setLastMessage(m_messageInputEdit->toPlainText());
+        }
+        else {
+            const QString& lastFile = m_vec_selected_files.last();
+
+            static const QStringList imageExtensions = {
+                ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+                ".webp", ".tiff", ".svg"
+            };
+
+            bool isPhoto = false;
+            for (const QString& ext : imageExtensions) {
+                if (lastFile.endsWith(ext, Qt::CaseInsensitive)) {
+                    isPhoto = true;
+                    break;
+                }
+            }
+
+            if (isPhoto && m_files_caption_edit != nullptr) {
+                std::string msg = m_messageInputEdit->toPlainText().toStdString();
+                if (msg.find_first_not_of(' ') == std::string::npos) {
+                    relatedComp->setLastMessage("[Photo]");
+                    m_chat->setLastReceivedOrSentMessage("[Photo]");
+                }
+
+                msg.erase(0, msg.find_first_not_of(' '));
+                msg.erase(msg.find_last_not_of(' ') + 1);
+                
+                relatedComp->setLastMessage(QString::fromStdString(msg));
+                m_chat->setLastReceivedOrSentMessage(msg);
+            }
+            else {
+                std::string msg = m_messageInputEdit->toPlainText().toStdString();
+                if (msg.find_first_not_of(' ') == std::string::npos) {
+                    relatedComp->setLastMessage("[File]");
+                    m_chat->setLastReceivedOrSentMessage("[File]");
+                }
+
+                msg.erase(0, msg.find_first_not_of(' '));
+                msg.erase(msg.find_last_not_of(' ') + 1);
+
+                relatedComp->setLastMessage(QString::fromStdString(msg));
+                m_chat->setLastReceivedOrSentMessage(msg);
+            }
+        }
     }
 
     m_chat->setLastReceivedOrSentMessage((m_messageInputEdit->toPlainText().toStdString()));
@@ -1579,7 +1664,7 @@ void MessagingAreaComponent::onTypeMessage() {
 
 
 void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessages) {
-    MessageComponent* messageComp = new MessageComponent(m_containerWidget, message, m_theme);
+    MessageComponent* messageComp = new MessageComponent(m_containerWidget, this, message, m_theme);
 
     if (message->getIsSend()) {
         messageComp->setIsRead(message->getIsRead());
@@ -1610,8 +1695,6 @@ void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessa
         }
     }
     
-
-
     m_containerVLayout->addWidget(messageComp);
     m_containerWidget->adjustSize();
 }

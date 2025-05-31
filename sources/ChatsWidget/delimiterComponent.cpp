@@ -1,5 +1,6 @@
+#include "theme.h"
 #include "delimiterComponent.h"
-#include "mainwindow.h"
+
 
 StyleDelimiterComponent::StyleDelimiterComponent() {
     DarkLabelStyle = R"(
