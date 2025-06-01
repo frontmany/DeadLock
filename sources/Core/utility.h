@@ -1,4 +1,5 @@
-#include <QString>
+#pragma once
+
 #include <QScreen>
 #include <QApplication>
 
@@ -26,6 +27,7 @@ namespace utility {
 	int getScaledSize(int baseSize);
 
 	bool isDarkMode();
+	bool isHasInternetConnection();
 
 	std::string getFileSavePath(const std::string& fileName);
 

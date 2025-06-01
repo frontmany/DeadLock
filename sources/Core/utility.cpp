@@ -1,6 +1,7 @@
 #include "utility.h"
 #include "chat.h"
 #include "Windows.h" 
+#include <cstdlib>
 
 
 
@@ -106,7 +107,7 @@ std::string utility::parseDate(const std::string& fullDate) {
     if (fullDate == "recently") {
         return fullDate;
     }
-    if (fullDate == "requested status of unknown user") { // tmp should be fixed later
+    if (fullDate == "requested status of unknown user") { 
         return "online";
     }
     if (fullDate.find("last seen:") != 0) {
@@ -240,4 +241,15 @@ qreal utility::getDeviceScaleFactor() {
 int utility::getScaledSize(int baseSize) {
     static qreal scale = getDeviceScaleFactor();
     return static_cast<int>(baseSize / scale);
+}
+
+bool utility::isHasInternetConnection() {
+#ifdef _WIN32
+    const char* ping_cmd = "ping -n 1 1.1.1.1 > nul";
+#else
+    const char* ping_cmd = "ping -c 1 1.1.1.1 > /dev/null";
+#endif
+
+    int result = std::system(ping_cmd);
+    return (result == 0);
 }

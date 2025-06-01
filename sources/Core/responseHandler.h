@@ -60,6 +60,7 @@ public:
 	void processFoundUsers(const std::string& packet);
 	void onStatusReceive(const std::string& packet);
 
+	bool getIsThisFileRequested() { return m_is_received_file_requested; }
 
 private:
 	WorkerUI* m_worker_UI;

@@ -130,14 +130,7 @@ void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
 
 void ChatsWidget::onFilesData(Message* message, Chat* chat, size_t filesCount) {
     chat->getMessagesVec().push_back(message);
-    /*
-    const auto& relatedFiles = message->getRelatedFilePaths();
-    for (auto fileWrapper : relatedFiles) {
-        if (fileWrapper.checkFilePresence()) {
-            m_client->sendFile(fileWrapper);
-        }
-    }
-    */
+    m_client->sendFiles(*message);
 }
 
 void ChatsWidget::onChangeThemeClicked() {

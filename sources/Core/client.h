@@ -46,6 +46,7 @@ public:
     void updateMyPassword(const std::string& newPasswordHash);
     void updateMyPhoto(const Photo& newPhoto);
 
+    void requestFile(const fileWrapper& fileWrapper);
     void createChatWith(const std::string& friendLogin);
     void verifyPassword(const std::string& passwordHash);
     void checkIsNewLoginAvailable(const std::string& newLogin);
@@ -53,7 +54,7 @@ public:
     void findUser(const std::string& text);
     void typingNotify(const std::string& friendLogin, bool isTyping);
 
-
+    void sendFiles(Message& filesMessage);
     void sendMessage(const std::string& friendLogin, const Message* message);
     void sendMessageReadConfirmation(const std::string& friendLogin, const Message* message);
 
@@ -65,22 +66,21 @@ public:
     void deleteFriendFromChatsMap(const std::string& friendLogin);
     
     void waitUntilUIReadyToUpdate();
-
-
-
-    // new
-    void requestFile(const fileWrapper& fileWrapper);
-    void onSendMessageError(net::message<QueryType> unsentMessage) override;
-    void onSendFileError(net::file<QueryType> unsentFille) override;
-
-    void onMessage(net::message<QueryType> message) override;
-    void onFile(net::file<QueryType> file) override;
-
-    void onDisconnect(std::shared_ptr<net::connection<QueryType>> connection) override;
     void bindFileConnectionToMeOnServer();
 
 
-    void sendFile(const fileWrapper& fileWrapper);
+    // new
+    void onMessage(net::message<QueryType> message) override;
+    void onFile(net::file<QueryType> file) override;
+    void onFileSent(net::file<QueryType> sentFile) override;
+
+    void onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) override;
+    void onSendFileError(std::error_code ec, net::file<QueryType> unsentFile) override;
+
+    void onReadMessageError(std::error_code ec) override;
+    void onReadFileError(std::error_code ec, net::file<QueryType> unreadFile) override;
+
+    void onConnectError(std::error_code ec) override;
 
 
     // GET && SET
@@ -116,7 +116,9 @@ public:
 
 private:
     const std::vector<std::string> getFriendsLoginsVecFromMap();
+    void sendFile(const fileWrapper& fileWrapper);
     void sendPacket(const std::string& packet, QueryType type);
+    void onNetworkError();
 
 private:
     std::thread             m_worker_thread;
@@ -132,13 +134,13 @@ private:
     Database*               m_db;
     std::mutex              m_queue_mutex;
 
-    bool        m_is_has_photo;
-    std::string m_my_login;
-    std::string m_my_password_hash;
-    std::string m_my_name;
-    Photo*      m_my_photo;
+    bool                    m_is_has_photo;
+    std::string             m_my_login;
+    std::string             m_my_password_hash;
+    std::string             m_my_name;
+    Photo*                  m_my_photo;
 
+    std::unordered_map<std::string, Message> m_map_currently_sending_file_messages;
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;    
-
     std::unordered_map<std::string, Message*> m_map_message_blobs;
 };

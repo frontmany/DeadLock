@@ -22,6 +22,32 @@
 #include "friendSearchDialogComponent.h"
 #include "photo.h"
 
+void WorkerQt::onMessageSendingError(const std::string& friendLogin, Message* message) {
+	// TODO
+}
+
+void WorkerQt::onRequestedFileError(const std::string& friendLogin, fileWrapper fileWrapper) {
+	// TODO
+	/*
+	auto itChat = m_map_friend_login_to_chat.find(unreadFile.receiverLogin);
+	auto [friendLogin, chat] = *itChat;
+
+	auto& messagesVec = chat->getMessagesVec();
+	auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&unreadFile](Message* msg) {
+		return msg->getId() == unreadFile.blobUID;
+		});
+
+	Message* msg = *msgChatIt;
+	*/
+}
+
+void WorkerQt::onConnectError() {
+	// TODO
+}
+
+void WorkerQt::onNetworkError() {
+	// TODO
+}
 
 void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrapper& file, bool isError) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
@@ -38,10 +64,21 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrappe
 	});
 
 	MessageComponent* messageComp = *messageCompIt;
-	QMetaObject::invokeMethod(messageComp,
-		"requestedFileLoaded",
-		Qt::QueuedConnection,
-		Q_ARG(const fileWrapper&, file));
+	if (!isError) {
+		QMetaObject::invokeMethod(messageComp,
+			"requestedFileLoaded",
+			Qt::QueuedConnection,
+			Q_ARG(const fileWrapper&, file));
+	}
+	else {
+		/*
+		QMetaObject::invokeMethod(messageComp,
+			"requestedFileUnLoadedError",
+			Qt::QueuedConnection,
+			Q_ARG(const fileWrapper&, file));
+		*/
+	}
+	
 }
 
 WorkerQt::WorkerQt(MainWindow* mainWindow)

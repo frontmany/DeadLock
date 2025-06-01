@@ -35,4 +35,9 @@ public:
 	virtual void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) = 0;
 	virtual void onStatusReceive(const std::string& friendLogin, const std::string& status) = 0;
 	virtual void updateFileLoadingState(const std::string& friendLogin, fileWrapper& fileWrapper, bool isError) = 0;
+
+	virtual void onMessageSendingError(const std::string& friendLogin, Message* message) = 0;
+	virtual void onRequestedFileError(const std::string& friendLogin, fileWrapper fileWrapper) = 0;
+	virtual void onConnectError() = 0;
+	virtual void onNetworkError() = 0;
 };

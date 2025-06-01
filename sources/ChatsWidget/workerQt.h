@@ -44,6 +44,11 @@ public:
 	void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) override;
 	void updateFileLoadingState(const std::string& friendLogin, fileWrapper& fileWrapper, bool isError) override;
 
+	void onMessageSendingError(const std::string& friendLogin, Message* message) override;
+	void onRequestedFileError(const std::string& friendLogin, fileWrapper fileWrapper) override;
+	void onConnectError() override;
+	void onNetworkError() override;
+
 	void onStatusReceive(const std::string& friendLogin, const std::string& status);
 
 private:

@@ -564,20 +564,8 @@ bool Client::undoAutoLogin() {
     return true;
 }
 
-// new TODO
 
-void Client::onSendMessageError(net::message<QueryType> unsentMessage) {
-
-}
-
-void Client::onSendFileError(net::file<QueryType> unsentFille){
-
-}
-
-void Client::onDisconnect(std::shared_ptr<net::connection<QueryType>> connection)  {
-
-}
-
+// new 
 void Client::onMessage(net::message<QueryType> message) {
     m_response_handler->handleResponse(message);
 }
@@ -586,6 +574,27 @@ void Client::onFile(net::file<QueryType> file) {
     m_response_handler->handleFile(file);
 }
 
+void Client::onFileSent(net::file<QueryType> sentFile) {
+    auto it = m_map_currently_sending_file_messages.find(sentFile.blobUID);
+    auto& [blobUID, message] = *it;
+    size_t sentFilesCounter = message.getSentFilesCounter();
+    if (sentFilesCounter == message.getRelatedFilesCount()) {
+        m_map_currently_sending_file_messages.erase(blobUID);
+    }
+    else {
+        message.increaseFilesCounter();
+    }
+}
+
+void Client::sendFiles(Message& filesMessage) {
+    m_map_currently_sending_file_messages.insert(std::make_pair(filesMessage.getId(), filesMessage));
+    const auto& relatedFiles = filesMessage.getRelatedFiles();
+    for (auto fileWrapper : relatedFiles) {
+        if (fileWrapper.checkFilePresence()) {
+            sendFile(fileWrapper);
+        }
+    }
+}
 
 void Client::sendFile(const fileWrapper& fileWrapper) {
     net::message<QueryType> msg;
@@ -609,4 +618,191 @@ void Client::bindFileConnectionToMeOnServer() {
 void Client::requestFile(const fileWrapper& fileWrapper) {
     std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_login, fileWrapper.file.receiverLogin, std::filesystem::path(fileWrapper.file.filePath).filename().string(), fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
     sendPacket(packetStr, QueryType::SEND_ME_FILE);
+}
+
+// errors
+void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) {
+    std::string messageStr;
+    unsentMessage >> messageStr;
+    std::istringstream iss(messageStr);
+
+    QueryType type = unsentMessage.header.type;
+
+    if (type == QueryType::MESSAGE) {
+        std::string friendLogin;
+        std::getline(iss, friendLogin);
+
+        std::string myLogin;
+        std::getline(iss, myLogin);
+
+        std::string messageBegin;
+        std::getline(iss, messageBegin);
+
+        std::string message;
+        std::string line;
+        while (std::getline(iss, line)) {
+            if (line == "MESSAGE_END") {
+                break;
+            }
+            else {
+                message += line;
+                message += '\n';
+            }
+        }
+        message.pop_back();
+
+        std::string id;
+        std::getline(iss, id);
+
+        std::string timestamp;
+        std::getline(iss, timestamp);
+
+        auto chatPair = m_map_friend_login_to_chat.find(friendLogin);
+        if (chatPair != m_map_friend_login_to_chat.end()) {
+            Chat* chat = chatPair->second;
+
+            auto& messagesVec = chat->getMessagesVec();
+            auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&id](Message* msg) {
+                return msg->getId() == id;
+            });
+
+            Message* msg = *msgChatIt;
+            msg->setIsNeedToRetry(true);
+            m_response_handler->getWorkerUI()->onMessageSendingError(friendLogin, msg);
+        }
+    }
+    else if (type == QueryType::MESSAGES_READ_CONFIRMATION) {
+        std::string friendLogin;
+        std::getline(iss, friendLogin);
+
+        std::string myLogin;
+        std::getline(iss, myLogin);
+
+        std::string id;
+        std::getline(iss, id);
+
+        auto chatPair = m_map_friend_login_to_chat.find(friendLogin);
+
+        if (chatPair != m_map_friend_login_to_chat.end()) {
+            Chat* chat = chatPair->second;
+
+            auto& messagesVec = chat->getMessagesVec();
+            auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&id](Message* msg) {
+                return msg->getId() == id;
+                });
+            Message* msg = *msgChatIt;
+            msg->setIsRead(false);
+        }
+    }
+    else if (type == QueryType::SEND_ME_FILE) {
+        std::string myLogin;
+        std::getline(iss, myLogin);
+
+        std::string friendLogin;
+        std::getline(iss, friendLogin);
+
+        std::string fileName;
+        std::getline(iss, fileName);
+
+        std::string fileId;
+        std::getline(iss, fileId);
+
+        std::string fileTimestamp;
+        std::getline(iss, fileTimestamp);
+
+        std::string fileSize;
+        std::getline(iss, fileSize);
+
+        std::string messageBegin;
+        std::getline(iss, messageBegin);
+
+        std::string caption;
+        std::string line;
+        while (std::getline(iss, line)) {
+            if (line == "MESSAGE_END") {
+                break;
+            }
+            else {
+                caption += line;
+                caption += '\n';
+            }
+        }
+        caption.pop_back();
+
+        std::string filesCountInBlobStr;
+        std::getline(iss, filesCountInBlobStr);
+        size_t filesCountInBlob = std::stoi(filesCountInBlobStr);
+
+        std::string blobUID;
+        std::getline(iss, blobUID);
+
+        net::file<QueryType> file;
+        file.blobUID = blobUID;
+        file.filesInBlobCount = filesCountInBlob;
+        file.id = fileId;
+
+        m_response_handler->getWorkerUI()->onRequestedFileError(friendLogin, { false, file });
+    }
+
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+    }
+}
+
+void Client::onSendFileError(std::error_code ec, net::file<QueryType> unsentFille) {
+    auto it = m_map_currently_sending_file_messages.find(unsentFille.blobUID);
+    if (it != m_map_currently_sending_file_messages.end()) {
+        auto [blobUID, message] = *it;
+        auto itChat = m_map_friend_login_to_chat.find(message.getRelatedFiles().front().file.senderLogin);
+        auto [friendLogin, chat] = *itChat;
+        auto& messagesVec = chat->getMessagesVec();
+        auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&message](Message* msg) {
+            return msg->getId() == message.getId();
+        });
+
+        Message* msg = *msgChatIt;
+        msg->setIsNeedToRetry(true);
+        m_response_handler->getWorkerUI()->onMessageSendingError(friendLogin, msg);
+    }
+
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+    }
+}
+
+void Client::onReadMessageError(std::error_code ec) {
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+    }
+}
+
+void Client::onReadFileError(std::error_code ec, net::file<QueryType> unreadFile) {
+    bool isRequested = m_response_handler->getIsThisFileRequested();
+    if (isRequested) {
+        m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.receiverLogin, { false, unreadFile });
+    }
+    else {
+        auto it = m_map_message_blobs.find(unreadFile.receiverLogin);
+        auto [blobUID, message] = *it;
+        delete message;
+        m_map_message_blobs.erase(unreadFile.receiverLogin);
+    }
+
+
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+    }
+}
+
+void Client::onConnectError(std::error_code ec) {
+    m_response_handler->getWorkerUI()->onConnectError();
+
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+    }
+}
+
+
+void Client::onNetworkError() {
+    m_response_handler->getWorkerUI()->onNetworkError();
 }
