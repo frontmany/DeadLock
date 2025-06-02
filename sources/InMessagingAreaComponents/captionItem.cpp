@@ -146,7 +146,7 @@ void CaptionItem::updateStyles() {
 
         if (m_isSent) {
             m_messageText->setStyleSheet(m_style.darkSentMessage);
-            m_backgroundColor = QColor(45, 82, 120);
+            m_backgroundColor = QColor(102, 102, 102);
             setStyleSheet(m_style.darkSentWidget);
         }
         else {
@@ -226,8 +226,13 @@ void CaptionItem::updateLayout() {
     setLayout(mainLayout);
 }
 
-void CaptionItem::setChecked() {
-    m_isRead = true;
-    m_readStatusIcon->setIcon(QIcon("C:/prj/test_project_qt/check.png"));
+void CaptionItem::setIsRead(bool isRead) {
+    m_isRead = isRead;
+    if (isRead) {
+        m_readStatusIcon->setIcon(QIcon("C:/prj/test_project_qt/check.png"));
+    }
+    else {
+        m_readStatusIcon->setIcon(QIcon("C:/prj/test_project_qt/notCheck.png"));
+    }
     m_readStatusIcon->setIconSize(QSize(16, 16));
 }

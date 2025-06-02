@@ -744,8 +744,10 @@ void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unse
         m_response_handler->getWorkerUI()->onRequestedFileError(friendLogin, { false, file });
     }
 
-    if (!utility::isHasInternetConnection()) {
-        onNetworkError();
+    if (type != QueryType::AUTHORIZATION) {
+        if (!utility::isHasInternetConnection()) {
+            onNetworkError();
+        }
     }
 }
 
@@ -784,6 +786,19 @@ void Client::onReadFileError(std::error_code ec, net::file<QueryType> unreadFile
     else {
         auto it = m_map_message_blobs.find(unreadFile.receiverLogin);
         auto [blobUID, message] = *it;
+        for (auto& file : message->getRelatedFiles()) {
+            std::string path = file.file.filePath;
+            if (path.empty()) {
+            }
+
+            std::error_code ec;
+            bool removed = std::filesystem::remove(path, ec);
+
+            if (ec) {
+                std::cerr << "Failed to delete (onReadFileError)" << path << ": " << ec.message() << "\n";
+            }
+        }
+
         delete message;
         m_map_message_blobs.erase(unreadFile.receiverLogin);
     }
@@ -796,10 +811,6 @@ void Client::onReadFileError(std::error_code ec, net::file<QueryType> unreadFile
 
 void Client::onConnectError(std::error_code ec) {
     m_response_handler->getWorkerUI()->onConnectError();
-
-    if (!utility::isHasInternetConnection()) {
-        onNetworkError();
-    }
 }
 
 

@@ -78,6 +78,24 @@ namespace net {
 			m_on_file_sent = std::move(callback);
 		}
 
+		bool removePartiallyDownloadedFile() {
+			std::string path = m_file_tmp.filePath;
+
+			if (path.empty()) {
+				return false;
+			}
+
+			std::error_code ec;
+			bool removed = std::filesystem::remove(path, ec);
+
+			if (ec) {
+				std::cerr << "Failed to delete " << path << ": " << ec.message() << "\n";
+				return false;
+			}
+
+			return removed;
+		}
+
 		// errors
 		void setOnSendMessageError(std::function<void(std::error_code, net::message<T>)> callback) {
 			m_on_send_message_error = std::move(callback);
@@ -98,26 +116,6 @@ namespace net {
 		void setOnConnectError(std::function<void(std::error_code)> callback) {
 			m_on_connect_error = std::move(callback);
 		}
-
-
-		bool removePartiallyDownloadedFile() {
-			std::string path = m_file_tmp.filePath;
-
-			if (path.empty()) {
-				return false;
-			}
-
-			std::error_code ec;
-			bool removed = std::filesystem::remove(path, ec);
-
-			if (ec) {
-				std::cerr << "Failed to delete " << path << ": " << ec.message() << "\n";
-				return false;
-			}
-
-			return removed;
-		}
-
 
 		void connectToServer(const asio::ip::tcp::resolver::results_type& endpoint) {
 			if (m_owner_type == owner::client) {

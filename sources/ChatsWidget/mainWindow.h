@@ -24,6 +24,7 @@ public:
 	~MainWindow();
 
 public slots:
+	void showConnectionErrorDialog();
 	void updateRegistrationUIRedBorder();
 	void updateAuthorizationUIRedBorder();
 	void setupChatsWidget();

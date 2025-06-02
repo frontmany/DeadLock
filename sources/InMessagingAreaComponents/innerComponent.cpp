@@ -142,9 +142,9 @@ void InnerComponent::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 }
 
-void InnerComponent::setReadStatus(bool read) {
-
-    if (read) {
+void InnerComponent::setIsRead(bool isRead) {
+    m_is_read = isRead;
+    if (isRead) {
         m_is_read = true;
         m_readStatusBtn->setTheme(LIGHT);
     }
@@ -152,6 +152,29 @@ void InnerComponent::setReadStatus(bool read) {
         m_is_read = false;
         m_readStatusBtn->setTheme(DARK);
     }
+}
+
+void InnerComponent::setRetryStyle(bool isNeedToRetry) {
+    m_is_need_to_retry = isNeedToRetry;
+
+    if (m_theme == DARK) {
+        if (m_isSent && isNeedToRetry) {
+            m_backColor = QColor(189, 170, 170);
+        }
+        else {
+            m_backColor = QColor(102, 102, 102);
+        }
+
+    }
+    else {
+        if (m_isSent && isNeedToRetry) {
+            m_backColor = QColor(255, 212, 212);
+        }
+        else {
+            m_backColor = QColor(212, 229, 255);
+        }
+    }
+    update();
 }
 
 void InnerComponent::setTheme(Theme theme) {

@@ -7,7 +7,7 @@
 StyleFileItem::StyleFileItem() {
     darkThemeStyle = R"(
         QWidget {
-            background-color: rgb(60, 60, 60);
+            background-color: transparent;
             border-radius: 5px;
         }
         QLabel {
@@ -21,7 +21,7 @@ StyleFileItem::StyleFileItem() {
 
     lightThemeStyle = R"(
         QWidget {
-            background-color: rgb(230, 230, 230);
+            background-color: transparent;
             border-radius: 5px;
         }
         QLabel {
@@ -35,7 +35,7 @@ StyleFileItem::StyleFileItem() {
 
     highlightedDarkStyle = R"(
         QWidget {
-            background-color: rgb(80, 80, 120);
+            background-color: transparent;
             border-radius: 5px;
         }
         QLabel {
@@ -49,7 +49,7 @@ StyleFileItem::StyleFileItem() {
 
     highlightedLightStyle = R"(
         QWidget {
-            background-color: rgb(200, 220, 255);
+            background-color: transparent;
             border-radius: 5px;
         }
         QLabel {
@@ -70,15 +70,15 @@ StyleFileItem::StyleFileItem() {
     )";
 }
 
-
 FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, Theme theme)
     : QWidget(parent),
     m_files_component(filesComponent),
     m_file_wrapper(fileWrapper),
     m_theme(theme),
-    m_isHovered(false),
-    m_style(new StyleFileItem())
+    m_isHovered(false)
 {
+    m_style = new StyleFileItem;
+
     initUI();
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setMouseTracking(true);
@@ -139,8 +139,6 @@ void FileItem::stopLoadingAnimation() {
 
 
 void FileItem::initUI() {
-    m_style = new StyleFileItem;
-
     QHBoxLayout* layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 5, 5, 5);
 
@@ -163,6 +161,11 @@ void FileItem::initUI() {
     layout->addSpacing(50);
     layout->addWidget(m_sizeLabel);
     setTheme(m_theme);
+}
+
+void FileItem::setRetryStyle(bool isNeedToRetry) {
+    m_isNeedToRetry = isNeedToRetry;
+    update();
 }
 
 void FileItem::setTheme(Theme theme) {
@@ -229,31 +232,53 @@ void FileItem::paintEvent(QPaintEvent* event) {
         painter.restore();
     }
 
-    if (m_isHovered) {
-        QPainterPath path;
-        path.addRoundedRect(rect(), 0, 0);
+    
+    QPainterPath path;
+    path.addRoundedRect(rect(), 0, 0);
 
-        QColor bgColor;
+    QColor bgColor;
 
-        if (m_theme == Theme::DARK) {
-            if (m_isHovered) {
-                bgColor = QColor(132, 132, 132);
+    if (m_theme == Theme::DARK) {
+        if (m_isHovered) {
+            if (m_isNeedToRetry) {
+                bgColor = QColor(207, 186, 186);
             }
             else {
-                bgColor = QColor(112, 112, 112);
+                bgColor = QColor(133, 133, 133);
             }
         }
         else {
-            if (m_isHovered) {
-                bgColor = QColor(230, 230, 230);
+            if (m_isNeedToRetry) {
+                bgColor = QColor(189, 170, 170);
             }
             else {
-                bgColor = QColor(162, 162, 162);
+                 bgColor = QColor(112, 112, 112);
             }
         }
-
-        painter.fillPath(path, bgColor);
     }
+
+    else {
+        if (m_isHovered) {
+            if (m_isNeedToRetry) {
+                bgColor = QColor(255, 201, 201);
+            }
+            else {
+                bgColor = QColor(230, 230, 230);
+            }
+            
+        }
+        else {
+            if (m_isNeedToRetry) {
+                bgColor = QColor(255, 212, 212); 
+            }
+            else {
+                bgColor = QColor(225, 225, 225);
+            }
+        }
+    }
+
+    painter.fillPath(path, bgColor);
+    
 
     QWidget::paintEvent(event);
 }

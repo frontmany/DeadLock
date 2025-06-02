@@ -40,6 +40,8 @@ struct StyleChatsListComponent {
     QString DialogStyle;
     QString DarkHideButton;
     QString LightHideButton;
+    QString DarkNoConnectionLabelStyle;
+    QString LightNoConnectionLabelStyle;
 };
 
 class ChatsListComponent : public QWidget {
@@ -72,6 +74,8 @@ signals:
 
 
 public slots:
+    void showNoConnectionLabel();
+
     void addChatComponent(Theme theme, Chat* chat, bool isSelected);
 
     void openAddChatDialog();
@@ -116,6 +120,7 @@ private:
     ButtonIcon*         m_logoutButton;
 
     QPushButton*        m_hideButton;
+    QLabel*             m_noConnectionLabel;
     bool                m_is_hidden;
 
     QTimer*                      m_search_timer;

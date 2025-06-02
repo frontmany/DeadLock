@@ -24,13 +24,12 @@ int main(int argc, char* argv[])
     app.setStyle(customStyle);
     
     Client* client = new Client;
-    client->connectTo("192.168.1.46", 8080);
+    bool isAutoLogin = client->autoLoginAndLoad();
+    client->connectTo("192.168.56.1", 8080);
     client->run();
-    
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);
-
-    bool isAutoLogin = client->autoLoginAndLoad();
+    
     if (isAutoLogin == true) {
         client->initDatabase(client->getMyLogin());
         client->authorizeClient(client->getMyLogin(), client->getMyPasswordHash());

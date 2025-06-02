@@ -9,6 +9,8 @@
 #include <QScrollArea>
 #include <QPainterPath>
 #include <QPainter>
+#include <QEvent>
+#include <QPushButton>
 #include <QScrollBar>
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -22,8 +24,14 @@ class MessagingAreaComponent;
 class Message;
 enum Theme;
 
+
 class MessageComponent : public QWidget {
     Q_OBJECT
+private:
+    enum class ComponentStructure {
+        FILES_COMPONENT,
+        MESSAGE_COMPONENT
+    };
 
 public:
     explicit MessageComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Message* message, Theme theme);
@@ -41,17 +49,19 @@ public:
     const QString& getTimestamp() const;
 
     bool getReadStatus() const;
-
     bool getIsSent() const { return  m_isSent; }
-
     bool getIsRead() const { return  m_isRead; }
-   
     const QString& getId() const { return m_id; }
 
 public slots:
+    void setRetry();
+    void requestedFileUnLoadedError(const fileWrapper& fileWrapper);
     void onSendMeFile(const fileWrapper& fileWrapper);
     void requestedFileLoaded(const fileWrapper& fileWrapper);
     void setIsRead(bool isRead);
+
+private:
+    void removeRetry();
 
 private:
     Message* m_message;
@@ -62,6 +72,11 @@ private:
     QHBoxLayout* m_main_HLayout;
     MessagingAreaComponent* m_messaging_area_component;
 
+    QWidget* m_retryButtonContainer = nullptr;
+    QPushButton* m_retryButton = nullptr;
+
     InnerComponent* m_inner_component = nullptr;
     FilesComponent* m_files_component = nullptr;
+
+    ComponentStructure m_component_structure;
 };

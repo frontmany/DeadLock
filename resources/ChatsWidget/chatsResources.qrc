@@ -70,5 +70,8 @@
 		<file>trashCanDarkHover.png</file>
 		<file>trashCanLight.png</file>
 		<file>trashCanLightHover.png</file>
+		<file>reloadDark.png</file>
+		<file>reloadLight.png</file>
+		<file>networkError.png</file>
     </qresource>
 </RCC>

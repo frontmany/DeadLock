@@ -33,8 +33,9 @@ class FileItem : public QWidget {
 public:
     FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, Theme theme);
     ~FileItem() { delete m_style; }
-    void setTheme(Theme theme);
 
+    void setTheme(Theme theme);
+    void setRetryStyle(bool isNeedToRetry);
     const fileWrapper& getFileWrapper() { return m_file_wrapper; }
     void updateFileInfo(const fileWrapper& wrapper);
     void startLoadingAnimation();
@@ -54,6 +55,7 @@ private:
 
     Theme              m_theme;
     bool               m_isHovered;
+    bool               m_isNeedToRetry;
     fileWrapper&       m_file_wrapper;
 
     QVariantAnimation* m_loadingAnimation = nullptr;

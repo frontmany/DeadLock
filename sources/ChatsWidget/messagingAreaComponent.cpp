@@ -1662,6 +1662,14 @@ void MessagingAreaComponent::onTypeMessage() {
     }
 }
 
+void MessagingAreaComponent::onRetryClicked(Message* messageToRetry) {
+    if (messageToRetry->getRelatedFiles().size() == 0) {
+        m_chatsWidget->getClient()->sendMessage(m_chat->getFriendLogin(), messageToRetry);
+    }
+    else {
+        m_chatsWidget->getClient()->sendFiles(*messageToRetry);
+    }
+}
 
 void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessages) {
     MessageComponent* messageComp = new MessageComponent(m_containerWidget, this, message, m_theme);

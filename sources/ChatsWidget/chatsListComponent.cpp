@@ -185,6 +185,28 @@ QPushButton:disabled {
     border-color: #E0E0E0;
 }
 )";
+
+    DarkNoConnectionLabelStyle = R"(
+    QLabel {
+        background-color: rgb(255, 102, 102);
+        color: rgb(255, 102, 102);             
+        font-size: 16px;            
+        padding: 5px;                 
+        border-radius: 10px;       
+        qproperty-alignment: 'AlignCenter'; 
+    }
+)";
+
+    LightNoConnectionLabelStyle = R"(
+    QLabel {
+        background-color: rgb(255, 181, 181);
+        color: rgb(255, 59, 59);               
+        font-size: 16px;              
+        padding: 5px;              
+        border-radius: 10px;         
+        qproperty-alignment: 'AlignCenter'; 
+    }
+)";
 }
 
 
@@ -232,7 +254,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
     m_profileHLayout->setAlignment(Qt::AlignLeft);
-
 
     m_profileButton = new AvatarIcon(this, 32, 50, true, m_theme);
     QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
@@ -284,10 +305,10 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
         }
 
         if (m_is_hidden) {
-            
             auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
             for (auto comp : messagingAreasVec) {
                 comp->getTextEdit()->setDisabled(true);
+                comp->getAttachFileButton()->setDisabled(true);
                 comp->getChatPropertiesComponent()->disable(true);
             }
             client->broadcastMyStatus(utility::getCurrentDateTime());
@@ -296,12 +317,19 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
             auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
             for (auto comp : messagingAreasVec) {
                 comp->getTextEdit()->setDisabled(false);
+                comp->getAttachFileButton()->setDisabled(false);
                 comp->getChatPropertiesComponent()->disable(false);
             }
             client->broadcastMyStatus("online");
         }
     });
     m_profileHLayout->addWidget(m_hideButton);
+
+    m_noConnectionLabel = new QLabel;
+    m_noConnectionLabel->setText("Lost in Space (Offline)");
+    m_noConnectionLabel->hide();
+    m_profileHLayout->addWidget(m_noConnectionLabel);
+
 
     m_moon_icon = new QLabel(this);
     m_moon_icon->setFixedSize(50, 50);
@@ -669,6 +697,7 @@ void ChatsListComponent::setTheme(Theme theme) {
     }
 
     if (theme == DARK) {
+        m_noConnectionLabel->setStyleSheet(style->DarkNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->DarkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
         m_newChatButton->setTheme(theme);
@@ -683,6 +712,7 @@ void ChatsListComponent::setTheme(Theme theme) {
         }
     }
     else {
+        m_noConnectionLabel->setStyleSheet(style->LightNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->LightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
         m_newChatButton->setTheme(theme);
@@ -706,4 +736,10 @@ void ChatsListComponent::popUpComponent(ChatComponent* comp) {
 void ChatsListComponent::SetAvatar(const Photo& photo) {
     QIcon avatarIcon(QString::fromStdString(photo.getPhotoPath()));
     m_profileButton->setIcon(avatarIcon);
+}
+
+void ChatsListComponent::showNoConnectionLabel() {
+    m_hideButton->hide();
+    m_hideButton->setChecked(true);
+    m_noConnectionLabel->show();
 }

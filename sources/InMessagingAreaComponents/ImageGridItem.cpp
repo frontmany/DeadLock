@@ -1,5 +1,6 @@
 #include "ImageGridItem.h"
 #include "filesComponent.h"
+#include "fileWrapper.h"
 
 ImageGridItem::ImageGridItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, int rowHeight)
     : QWidget(parent), m_file_wrapper(fileWrapper),

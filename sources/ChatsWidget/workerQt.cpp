@@ -23,30 +23,40 @@
 #include "photo.h"
 
 void WorkerQt::onMessageSendingError(const std::string& friendLogin, Message* message) {
-	// TODO
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+		});
+	MessagingAreaComponent* areaComp = *comp;
+	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
+
+	auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [message](MessageComponent* comp) {
+		return comp->getId() == QString::fromStdString(message->getId());
+	});
+	MessageComponent* messageComp = *messageCompIt;
+	QMetaObject::invokeMethod(messageComp,
+		"setRetry",
+		Qt::QueuedConnection);
+
 }
 
 void WorkerQt::onRequestedFileError(const std::string& friendLogin, fileWrapper fileWrapper) {
-	// TODO
-	/*
-	auto itChat = m_map_friend_login_to_chat.find(unreadFile.receiverLogin);
-	auto [friendLogin, chat] = *itChat;
-
-	auto& messagesVec = chat->getMessagesVec();
-	auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&unreadFile](Message* msg) {
-		return msg->getId() == unreadFile.blobUID;
-		});
-
-	Message* msg = *msgChatIt;
-	*/
+	updateFileLoadingState(friendLogin, fileWrapper, true);
 }
 
 void WorkerQt::onConnectError() {
-	// TODO
+	QMetaObject::invokeMethod(m_main_window,
+		"showConnectionErrorDialog",
+		Qt::QueuedConnection);
 }
 
 void WorkerQt::onNetworkError() {
-	// TODO
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	QMetaObject::invokeMethod(chatsList,
+		"showNoConnectionLabel",
+		Qt::QueuedConnection);
 }
 
 void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrapper& file, bool isError) {
@@ -71,14 +81,12 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrappe
 			Q_ARG(const fileWrapper&, file));
 	}
 	else {
-		/*
 		QMetaObject::invokeMethod(messageComp,
 			"requestedFileUnLoadedError",
 			Qt::QueuedConnection,
 			Q_ARG(const fileWrapper&, file));
-		*/
+		
 	}
-	
 }
 
 WorkerQt::WorkerQt(MainWindow* mainWindow)

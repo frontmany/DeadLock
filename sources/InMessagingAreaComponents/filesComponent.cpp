@@ -28,6 +28,7 @@ FilesComponent::FilesComponent(QWidget* parent, MessageComponent* messageCompone
 
     m_contentWrapper = new QWidget(this);
     m_contentWrapper->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     m_mainVLayout = new QVBoxLayout(m_contentWrapper);
     m_mainVLayout->setContentsMargins(0, 0, 0, 0);
@@ -58,7 +59,7 @@ FilesComponent::FilesComponent(QWidget* parent, MessageComponent* messageCompone
 
     m_is_files = !otherFiles.empty();
 
-    if (m_caption == "") {
+    if (m_caption == "" && otherFiles.size() != 0) {
         if (images.size() > 0) {
             m_mainVLayout->addSpacing(-42);
         }
@@ -124,9 +125,9 @@ FilesComponent::~FilesComponent() {
     clearLayout();
 }
 
-void FilesComponent::setChecked() {
-    m_isRead = true;
-    m_captionItem->setChecked();
+void FilesComponent::setIsRead(bool isRead) {
+    m_isRead = isRead;
+    m_captionItem->setIsRead(isRead);
 }
 
 void FilesComponent::onFileClicked(const fileWrapper& fileWrapper) {
@@ -207,7 +208,7 @@ void FilesComponent::setTheme(Theme theme) {
     m_captionItem->setTheme(m_theme);
 
     updateContainerStyle();
-    updateFileContainerStyle(m_filesContainer);
+
     for (auto item : m_vec_file_items) {
         item->setTheme(m_theme);
     }
@@ -215,25 +216,39 @@ void FilesComponent::setTheme(Theme theme) {
 
 void FilesComponent::updateContainerStyle() {
     QString style;
-    if (m_theme == Theme::DARK) {
-        style = "background-color: rgb(112, 112, 112); border-radius: 8px;";
+    if (m_is_need_to_retry) {
+        setRetryStyle(m_is_need_to_retry);
     }
     else {
-        style = "background-color: rgb(225, 225, 225); border-radius: 8px;";
+        if (m_theme == Theme::DARK) {
+            style = "background-color: rgb(112, 112, 112); border-radius: 8px;";
+        }
+        else {
+            style = "background-color: rgb(225, 225, 225); border-radius: 8px;";
+        }
+        m_contentWrapper->setStyleSheet(style);
     }
-    m_contentWrapper->setStyleSheet(style);
 }
 
-void FilesComponent::updateFileContainerStyle(QWidget* container) {
+void FilesComponent::setRetryStyle(bool isNeedToRetry) {
+    m_is_need_to_retry = isNeedToRetry;
     QString style;
-    if (m_theme == Theme::DARK) {
-        style = "background-color: rgb(112, 112, 112); border-radius: 0px;";
+    if (isNeedToRetry) {
+        if (m_theme == Theme::DARK) {
+            style = "background-color: rgb(189, 170, 170); border-radius: 8px;";
+            
+        }
+        else {
+            style = "background-color: rgb(255, 212, 212); border-radius: 8px;";
+        }
+        m_contentWrapper->setStyleSheet(style);
     }
     else {
-        style = "background-color: rgb(225, 225, 225); border-radius: 0px;";
+        updateContainerStyle();
     }
-    if (container != nullptr) {
-        container->setStyleSheet(style);
+    
+    for (auto f : m_vec_file_items) {
+        f->setRetryStyle(isNeedToRetry);
     }
 }
 
@@ -279,6 +294,17 @@ void FilesComponent::requestedFileLoaded(const fileWrapper& fileWrapper) {
     for (auto* fileItem : m_vec_file_items) {
         if (fileItem->getFileWrapper().file.id == fileWrapper.file.id) {
             fileItem->updateFileInfo(fileWrapper);
+            fileItem->stopLoadingAnimation();
+            fileItem->setTheme(m_theme);
+            fileItem->update();
+            break;
+        }
+    }
+}
+
+void FilesComponent::requestedFileUnLoaded(const fileWrapper& fileWrapper) {
+    for (auto* fileItem : m_vec_file_items) {
+        if (fileItem->getFileWrapper().file.id == fileWrapper.file.id) {
             fileItem->stopLoadingAnimation();
             fileItem->setTheme(m_theme);
             fileItem->update();

@@ -209,6 +209,7 @@ public:
     QScrollArea* getScrollArea() { return m_scrollArea; }
 
     ChatHeaderComponent* getChatHeader() { return m_header; }
+    ButtonIcon* getAttachFileButton() { return m_attachFileButton; }
     std::vector<MessageComponent*>& getMessagesComponentsVec() { return m_vec_messagesComponents; }
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
@@ -228,6 +229,7 @@ signals:
     void sendFilesData(Message*, Chat* chat, size_t filesCount);
 
 public slots:
+    void onRetryClicked(Message* messageToRetry);
     void openFriendProfile();
     void closeFriendProfile();
 

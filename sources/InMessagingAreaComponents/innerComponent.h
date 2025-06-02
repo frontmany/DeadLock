@@ -33,6 +33,7 @@ public:
     InnerComponent(QWidget* parent, const QString& timestamp, const QString& text, Theme theme, bool isSent);
     ~InnerComponent();
 
+    void setRetryStyle(bool isNeedToRetry);
     void setTheme(Theme theme);
 
     void setText(const QString& text) { m_textLabel->setText(text); }
@@ -40,8 +41,7 @@ public:
     void setTimestamp(const QString& text) { m_timestampLabel->setText(text); }
     const QString& getTimestamp() { return m_timestampLabel->text(); }
     bool getIsRead() const { return m_is_read; }
-    void setIsRead(bool isRead) { m_is_read = isRead; }
-    void setReadStatus(bool read);
+    void setIsRead(bool isRead);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -49,6 +49,8 @@ protected:
 private:
     bool m_is_read = false;
     bool m_isSent = false;
+    bool m_is_need_to_retry = false;
+
     StyleInnerComponent* style;
     Theme m_theme;
     QColor m_backColor;

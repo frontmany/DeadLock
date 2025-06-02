@@ -42,10 +42,12 @@ public:
     explicit FilesComponent(QWidget* parent, MessageComponent* messageComponent, Message* parentMessage, std::vector<fileWrapper>& fileWrappersVec,
         const QString& caption, const QString& timestamp, bool isRead, bool isSent, Theme theme);
     ~FilesComponent();
-    void setTheme(Theme theme);
 
-    void setChecked(); 
+    void setTheme(Theme theme);
+    void setRetryStyle(bool isNeedToRetry);
+    void setIsRead(bool isRead);
     void requestedFileLoaded(const fileWrapper& fileWrapper);
+    void requestedFileUnLoaded(const fileWrapper& fileWrapper);
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
@@ -55,19 +57,20 @@ private:
     int calculateOptimalRowHeight(std::vector<fileWrapper*>& rowImages) const;
     bool isImage(const QString& filePath) const;
     void clearLayout();
-
-    void updateFileContainerStyle(QWidget* container);
     void updateContainerStyle();
 
 private:
     std::vector<fileWrapper>& m_vec_file_wrappers;
     std::vector<FileItem*> m_vec_file_items;
     
+    QWidget* m_retryButtonContainer = nullptr;
+    QPushButton* m_retryButton = nullptr;
 
     Message* m_parent_message;
     QString  m_caption;
     Theme    m_theme;
     QString  m_timestamp;
+    bool     m_is_need_to_retry = false;
     bool     m_is_files = false;
     bool     m_isRead;
     bool     m_isSent;

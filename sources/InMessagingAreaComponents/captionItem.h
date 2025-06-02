@@ -39,7 +39,7 @@ public:
     void setMessage(const QString& message);
     void setTimestamp(const QString& timestamp);
     void setTheme(Theme theme);
-    void setChecked();
+    void setIsRead(bool isRead);
 
 protected:
     void paintEvent(QPaintEvent* event) override;
