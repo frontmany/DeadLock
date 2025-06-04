@@ -139,6 +139,8 @@ private:
     std::string             m_my_name;
     Photo*                  m_my_photo;
 
+    bool m_is_able_to_send_next_blob = true;
+
     // blobUID to pair of current sent file index and message
     std::unordered_map<std::string, Message> m_map_currently_sending_file_messages;
 

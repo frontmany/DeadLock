@@ -1236,10 +1236,21 @@ void MessagingAreaComponent::onSendFiles() {
         QFileInfo fileInfo(str);
         QString nativePath = QDir::toNativeSeparators(fileInfo.absoluteFilePath());
 
+        QDir storageDir("DeadlockStorage");
+        if (!storageDir.exists()) {
+            storageDir.mkpath(".");
+        }
+        QString newFilePath = storageDir.filePath(fileInfo.fileName());
+
+        if (QFile::exists(nativePath) && !QFile::exists(newFilePath)) {
+            if (!QFile::copy(nativePath, newFilePath)) {
+                qDebug() << "Failed to copy file to DeadlockStorage!";
+            }
+        }
+
         net::file<QueryType> tmpFile;
-
-        tmpFile.filePath = nativePath.toUtf8().constData();
-
+        tmpFile.filePath = newFilePath.toUtf8().constData();
+        tmpFile.fileName = fileInfo.fileName().toUtf8().constData();
         tmpFile.blobUID = blobUID;
         tmpFile.filesInBlobCount = m_vec_selected_files.size();
         tmpFile.id = utility::generateId();

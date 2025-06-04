@@ -177,8 +177,8 @@ namespace net {
 			}
 		}
 
-		void supplyFileData(std::string myLogin, std::string friendLogin, std::string filePath, std::string fileId, uint32_t fileSize, std::string fileTimestamp, std::string caption, const std::string& blobUID, size_t filesInBlobCount) {
-			m_files_connection->supplyFileData(myLogin, friendLogin, filePath, fileId, fileSize, fileTimestamp, caption, blobUID, filesInBlobCount);
+		void supplyFileData(std::string myLogin, std::string friendLogin, std::string filePath, std::string fileName, std::string fileId, uint32_t fileSize, std::string fileTimestamp, std::string caption, const std::string& blobUID, size_t filesInBlobCount) {
+			m_files_connection->supplyFileData(myLogin, friendLogin, filePath, fileName, fileId, fileSize, fileTimestamp, caption, blobUID, filesInBlobCount);
 			m_files_connection->readFile();
 		}
 

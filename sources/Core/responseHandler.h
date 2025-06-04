@@ -27,7 +27,7 @@ public:
 
 
 	void handleResponse(net::message<QueryType>& msg);
-	void handleFile(net::file<QueryType>& file);
+	void handleFile(const net::file<QueryType>& file);
 
 
 	void onRegistrationSuccess();

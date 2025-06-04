@@ -103,7 +103,7 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     }
 }
 
-void ResponseHandler::handleFile(net::file<QueryType>& file) {
+void ResponseHandler::handleFile(const net::file<QueryType>& file) {
     auto& messageBlobsMap = m_client->getMapMessageBlobs();
 
     if (m_is_received_file_requested) {
@@ -330,7 +330,7 @@ void ResponseHandler::prepareToReceiveFile(const std::string& packet) {
 
     std::string filePath = utility::getFileSavePath(fileName);
 
-    m_client->supplyFileData(myLogin, friendLogin, filePath, fileId, std::stoi(fileSize), fileTimestamp, caption, blobUID, filesInBlobCount);
+    m_client->supplyFileData(myLogin, friendLogin, filePath, fileName, fileId, std::stoi(fileSize), fileTimestamp, caption, blobUID, filesInBlobCount);
 }
 
 

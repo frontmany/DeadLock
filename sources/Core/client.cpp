@@ -583,12 +583,20 @@ void Client::onFileSent(net::file<QueryType> sentFile) {
     size_t sentFilesCounter = message.getSentFilesCounter();
     if (sentFilesCounter == message.getRelatedFilesCount()) {
         m_map_currently_sending_file_messages.erase(blobUID);
+        if (m_map_currently_sending_file_messages.size() != 0) {
+            auto it = m_map_currently_sending_file_messages.begin();
+            auto [blobUID, filesMessage] = *it;
+            sendFile(filesMessage.getRelatedFiles()[0]);
+        }
+        else {
+            m_is_able_to_send_next_blob = true;
+        }
     }
     else {
         while (getFilesConnection()->m_current_bytes_sent > 0) {
             std::this_thread::yield();
         }
-        std::cout << "start sending next file\n";
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         sendFile(message.getRelatedFiles()[sentFilesCounter]);
     }
 
@@ -598,18 +606,21 @@ void Client::sendFiles(Message& filesMessage) {
     std::string id = filesMessage.getId();
     m_map_currently_sending_file_messages.insert(std::make_pair(id, filesMessage));
     const auto& relatedFiles = filesMessage.getRelatedFiles();
-    sendFile(relatedFiles[0]);
+    if (m_is_able_to_send_next_blob) {
+        sendFile(relatedFiles[0]);
+    }
+
 }
 
 void Client::sendFile(const fileWrapper& fileWrapper) {
     net::message<QueryType> msg;
     msg.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
     std::string timestamp = utility::getTimeStamp();
-    std::string packetStr = m_packets_builder->getPrepareToFilePacket(m_my_login, fileWrapper.file.receiverLogin, std::filesystem::path(fileWrapper.file.filePath).filename().string(), fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
+    std::string packetStr = m_packets_builder->getPrepareToFilePacket(m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.fileName, fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
     msg << packetStr;
     sendMessageOnFileConnection(msg);
 
-    net::file<QueryType> file{ fileWrapper.file.filesInBlobCount, fileWrapper.file.blobUID, m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.filePath, fileWrapper.file.id, timestamp, fileWrapper.file.fileSize, fileWrapper.file.caption };
+    net::file<QueryType> file{ fileWrapper.file.filesInBlobCount, fileWrapper.file.blobUID, m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.filePath, fileWrapper.file.fileName, fileWrapper.file.id, timestamp, fileWrapper.file.fileSize, fileWrapper.file.caption };
     sendFileOnFileConnection(file);
 }
 
