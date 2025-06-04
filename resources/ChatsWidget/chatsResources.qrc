@@ -73,5 +73,6 @@
 		<file>reloadDark.png</file>
 		<file>reloadLight.png</file>
 		<file>networkError.png</file>
+		<file>warning.png</file>
     </qresource>
 </RCC>

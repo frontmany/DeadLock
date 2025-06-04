@@ -1,5 +1,4 @@
 #pragma once
-#include <thread>
 #include <mutex>
 #include <thread>
 #include <queue>
@@ -140,7 +139,9 @@ private:
     std::string             m_my_name;
     Photo*                  m_my_photo;
 
+    // blobUID to pair of current sent file index and message
     std::unordered_map<std::string, Message> m_map_currently_sending_file_messages;
+
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;    
     std::unordered_map<std::string, Message*> m_map_message_blobs;
 };

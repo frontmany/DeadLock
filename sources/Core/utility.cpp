@@ -2,6 +2,7 @@
 #include "chat.h"
 #include "Windows.h" 
 #include <cstdlib>
+#include <QSharedMemory>
 
 
 
@@ -236,6 +237,20 @@ bool utility::isDarkMode() {
 qreal utility::getDeviceScaleFactor() {
     QScreen* screen = QApplication::primaryScreen();
     return screen->devicePixelRatio();
+}
+
+bool utility::isApplicationAlreadyRunning() {
+    static QSharedMemory sharedMemory("YourAppUniqueKey_12345");
+    if (sharedMemory.attach()) {
+        return true; 
+    }
+
+    if (sharedMemory.create(1)) {
+        return false;
+    }
+
+    qWarning() << "Shared memory error:" << sharedMemory.errorString();
+    return false; 
 }
 
 int utility::getScaledSize(int baseSize) {

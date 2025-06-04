@@ -27,7 +27,8 @@ Client::Client() :
     m_my_login(""),
     m_my_name(""),
     m_my_photo(nullptr),
-    m_is_hidden(false)
+    m_is_hidden(false),
+    m_is_undo_auto_login(false)
 {
     m_db = new Database;
     m_response_handler = new ResponseHandler(this);
@@ -577,23 +578,27 @@ void Client::onFile(net::file<QueryType> file) {
 void Client::onFileSent(net::file<QueryType> sentFile) {
     auto it = m_map_currently_sending_file_messages.find(sentFile.blobUID);
     auto& [blobUID, message] = *it;
+
+    message.increaseFilesCounter();
     size_t sentFilesCounter = message.getSentFilesCounter();
     if (sentFilesCounter == message.getRelatedFilesCount()) {
         m_map_currently_sending_file_messages.erase(blobUID);
     }
     else {
-        message.increaseFilesCounter();
+        while (getFilesConnection()->m_current_bytes_sent > 0) {
+            std::this_thread::yield();
+        }
+        std::cout << "start sending next file\n";
+        sendFile(message.getRelatedFiles()[sentFilesCounter]);
     }
+
 }
 
 void Client::sendFiles(Message& filesMessage) {
-    m_map_currently_sending_file_messages.insert(std::make_pair(filesMessage.getId(), filesMessage));
+    std::string id = filesMessage.getId();
+    m_map_currently_sending_file_messages.insert(std::make_pair(id, filesMessage));
     const auto& relatedFiles = filesMessage.getRelatedFiles();
-    for (auto fileWrapper : relatedFiles) {
-        if (fileWrapper.checkFilePresence()) {
-            sendFile(fileWrapper);
-        }
-    }
+    sendFile(relatedFiles[0]);
 }
 
 void Client::sendFile(const fileWrapper& fileWrapper) {

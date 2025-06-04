@@ -897,7 +897,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
 
     connect(m_attachFileButton, &ButtonIcon::clicked, this, &MessagingAreaComponent::onAttachFileClicked);
 
-
+    connect(this, &MessagingAreaComponent::sendFilesData, m_chatsWidget, &ChatsWidget::onFilesData);
 
     connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged,
         this, &MessagingAreaComponent::handleScroll);
@@ -988,14 +988,20 @@ void MessagingAreaComponent::onAttachFileClicked()
         return;
     }
 
-    if (filePaths.size() > 10) {
-        filePaths = filePaths.mid(0, 10);
+    // Преобразование путей для корректной обработки в Windows
+    QStringList correctedPaths;
+    for (const QString& path : filePaths) {
+        correctedPaths.append(QDir::toNativeSeparators(path));
+    }
+
+    if (correctedPaths.size() > 10) {
+        correctedPaths = correctedPaths.mid(0, 10);
         QMessageBox::information(this,
             tr("Information"),
             tr("You can select only 10 files. The rest will be ignored."));
     }
 
-    m_vec_selected_files = filePaths;
+    m_vec_selected_files = correctedPaths;
 
     class OverlayWidget : public QWidget {
     public:
@@ -1151,7 +1157,6 @@ void MessagingAreaComponent::onAttachFileClicked()
         filesDialog->close();
     });
     QPushButton* okButton = new QPushButton(tr("send"));
-    connect(okButton, &QPushButton::clicked, filesDialog, &QDialog::accept);
     if (m_theme == Theme::DARK) {
         addButton->setStyleSheet(m_style->buttonTransparentFileDialogDarkAdd);
         cancelButton->setStyleSheet(m_style->buttonTransparentDark);
@@ -1175,8 +1180,12 @@ void MessagingAreaComponent::onAttachFileClicked()
     contentLayout->addLayout(editHla);
     contentLayout->addLayout(buttonsHla);
 
-    connect(okButton, &QPushButton::clicked, this, &MessagingAreaComponent::onSendFiles);
-    connect(this, &MessagingAreaComponent::sendFilesData, m_chatsWidget, &ChatsWidget::onFilesData);
+    connect(okButton, &QPushButton::clicked, this, [this, filesDialog]() {
+        onSendFiles();
+        m_files_caption_edit->deleteLater();
+        m_files_caption_edit = nullptr;
+        filesDialog->close();
+    });
 
     QObject::connect(filesDialog, &QDialog::finished, overlay, &QWidget::deleteLater);
     filesDialog->exec();
@@ -1184,9 +1193,6 @@ void MessagingAreaComponent::onAttachFileClicked()
 
 void MessagingAreaComponent::onSendFiles() {
     std::string msg = m_files_caption_edit->toPlainText().toStdString();
-    if (msg.find_first_not_of(' ') == std::string::npos) {
-        return;
-    }
 
     msg.erase(0, msg.find_first_not_of(' '));
     msg.erase(msg.find_last_not_of(' ') + 1);
@@ -1225,10 +1231,15 @@ void MessagingAreaComponent::onSendFiles() {
     resultWrappersVec.reserve(m_vec_selected_files.size());
 
     for (int i = 0; i < m_vec_selected_files.size(); i++) {
-       auto& str = m_vec_selected_files[i];
+        auto& str = m_vec_selected_files[i];
+
+        QFileInfo fileInfo(str);
+        QString nativePath = QDir::toNativeSeparators(fileInfo.absoluteFilePath());
 
         net::file<QueryType> tmpFile;
-        tmpFile.filePath = str.toStdString();
+
+        tmpFile.filePath = nativePath.toUtf8().constData();
+
         tmpFile.blobUID = blobUID;
         tmpFile.filesInBlobCount = m_vec_selected_files.size();
         tmpFile.id = utility::generateId();
@@ -1237,21 +1248,22 @@ void MessagingAreaComponent::onSendFiles() {
         tmpFile.timestamp = utility::getTimeStamp();
 
         try {
-            uintmax_t fileSize = std::filesystem::file_size(str.toStdString());
+#ifdef _WIN32
+            std::filesystem::path fsPath(nativePath.toStdWString());
+#else
+            std::filesystem::path fsPath(nativePath.toStdString());
+#endif
+
+            uintmax_t fileSize = std::filesystem::file_size(fsPath);
             tmpFile.fileSize = fileSize;
         }
         catch (const std::filesystem::filesystem_error& e) {
-            std::cerr << "error: " << e.what() << std::endl;
+            std::cerr << "Error accessing file: " << nativePath.toStdString()
+                << " - " << e.what() << std::endl;
+            continue;
         }
 
-        int lastElement = m_vec_selected_files.size() - 1;
-        if (i == lastElement) {
-            tmpFile.caption = msg;
-        }
-        else {
-            tmpFile.caption = "";
-        }
-
+        tmpFile.caption = (i == m_vec_selected_files.size() - 1) ? msg : "";
         resultWrappersVec.emplace_back(true, tmpFile);
     }
 

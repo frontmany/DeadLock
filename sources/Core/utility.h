@@ -24,6 +24,8 @@ namespace utility {
 	std::string getTimeStamp();
 
 	qreal getDeviceScaleFactor();
+	bool isApplicationAlreadyRunning();
+
 	int getScaledSize(int baseSize);
 
 	bool isDarkMode();

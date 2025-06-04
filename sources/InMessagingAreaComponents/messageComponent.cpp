@@ -20,9 +20,10 @@ MessageComponent::MessageComponent(QWidget* parent, MessagingAreaComponent* mess
     else {
         m_main_HLayout->setAlignment(Qt::AlignLeft);
     }
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     this->setStyleSheet("background-color: transparent;");
+
     if (message->getRelatedFiles().size() == 0) {
         m_component_structure = ComponentStructure::MESSAGE_COMPONENT;
         m_inner_component = new InnerComponent(this, QString::fromStdString(message->getTimestamp()), QString::fromStdString(message->getMessage()), m_theme, m_isSent);

@@ -3,6 +3,8 @@
 #include <QScrollArea>
 #include <Qlayout>
 #include <QDebug>
+#include <QSharedMemory>
+#include <QScreen>
 #include <QEvent>
 #include <QDir>
 
@@ -15,6 +17,16 @@ class LoginWidget;
 class ChatsWidget;
 class WorkerQt;
 
+class OverlayWidget : public QWidget {
+public:
+	using QWidget::QWidget;
+protected:
+	void paintEvent(QPaintEvent*) override {
+		setGeometry(QApplication::primaryScreen()->geometry());
+		QPainter painter(this);
+		painter.fillRect(rect(), QColor(25, 25, 25, 160));
+	}
+};
 
 class MainWindow : public QMainWindow {
 	Q_OBJECT
@@ -24,7 +36,10 @@ public:
 	~MainWindow();
 
 public slots:
+	void showDoubleConnectionErrorDialog();
 	void showConnectionErrorDialog();
+	void showAlreadyRunningDialog();
+
 	void updateRegistrationUIRedBorder();
 	void updateAuthorizationUIRedBorder();
 	void setupChatsWidget();

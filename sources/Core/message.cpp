@@ -118,7 +118,6 @@ Message* Message::deserialize(const std::string& data) {
             if (index + FIELDS_PER_FILE - 1 >= tokens.size()) {
                 throw std::runtime_error("Not enough tokens for file data");
             }
-            /*
             fileWrapper file_entry;
             file_entry.isPresent = (tokens[index++] == "true");
 
@@ -132,7 +131,6 @@ Message* Message::deserialize(const std::string& data) {
             file_entry.file.caption = unescape(tokens[index++]);
 
             msg->m_vec_related_files.push_back(file_entry);
-            */
         }
     }
     catch (...) {

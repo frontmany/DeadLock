@@ -4,10 +4,12 @@
 #include <QPainter>
 #include <QMainWindow>
 #include <QStyleFactory>
+#include <QTimer>
 #include <iostream>
 
 #include "client.h"
 #include "mainWindow.h"
+#include "utility.h"
 
 
 class CustomStyle : public QProxyStyle {
@@ -29,7 +31,13 @@ int main(int argc, char* argv[])
     client->run();
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);
-    
+    if (utility::isApplicationAlreadyRunning()) {
+        QTimer::singleShot(0, [&mainWindow]() {
+            mainWindow->showAlreadyRunningDialog();
+        });
+    }
+
+
     if (isAutoLogin == true) {
         client->initDatabase(client->getMyLogin());
         client->authorizeClient(client->getMyLogin(), client->getMyPasswordHash());

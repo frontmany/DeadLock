@@ -182,6 +182,8 @@ namespace net {
 			m_files_connection->readFile();
 		}
 
+		std::unique_ptr<connection<T>>& getFilesConnection() { return m_files_connection; }
+
 	protected:
 		virtual void onMessage(net::message<T> message) = 0;
 		virtual void onFile(net::file<T> file) = 0;

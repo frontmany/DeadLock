@@ -203,7 +203,7 @@ void FileItem::paintEvent(QPaintEvent* event) {
     if (m_isLoading) {
         painter.save();
         QPen pen(Qt::white, 2);
-        pen.setColor(QColor(61, 139, 255));
+        pen.setColor(QColor(255, 255, 255));
         painter.setPen(pen);
 
         int size = qMin(width(), height()) / 3;
