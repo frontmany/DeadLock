@@ -95,7 +95,6 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     }
     else if (msg.header.type == QueryType::PREPARE_TO_RECEIVE_REQUESTED_FILE) {
         prepareToReceiveRequestedFile(packet);
-
     }
 
     else if (msg.header.type == QueryType::FILE_PREVIEW) {

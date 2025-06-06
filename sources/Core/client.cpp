@@ -596,7 +596,6 @@ void Client::onFileSent(net::file<QueryType> sentFile) {
         while (getFilesConnection()->m_current_bytes_sent > 0) {
             std::this_thread::yield();
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         sendFile(message.getRelatedFiles()[sentFilesCounter]);
     }
 
@@ -619,7 +618,7 @@ void Client::sendFile(const fileWrapper& fileWrapper) {
     std::string packetStr = m_packets_builder->getPrepareToFilePacket(m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.fileName, fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
     msg << packetStr;
     sendMessageOnFileConnection(msg);
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
     net::file<QueryType> file{ fileWrapper.file.filesInBlobCount, fileWrapper.file.blobUID, m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.filePath, fileWrapper.file.fileName, fileWrapper.file.id, timestamp, fileWrapper.file.fileSize, fileWrapper.file.caption };
     sendFileOnFileConnection(file);
 }

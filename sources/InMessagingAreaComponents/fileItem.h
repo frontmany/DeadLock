@@ -55,7 +55,7 @@ private:
 
     Theme              m_theme;
     bool               m_isHovered;
-    bool               m_isNeedToRetry;
+    bool               m_isNeedToRetry = false;
     fileWrapper&       m_file_wrapper;
 
     QVariantAnimation* m_loadingAnimation = nullptr;
