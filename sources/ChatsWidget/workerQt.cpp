@@ -68,12 +68,12 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrappe
 	MessagingAreaComponent* areaComp = *comp;
 	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
 
-	std::string blobUID = file.file.id;
+	std::string blobUID = file.file.blobUID;
 	auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
 		return comp->getId() == QString::fromStdString(blobUID);
 	});
 
-	MessageComponent* messageComp = *messageCompIt;
+	MessageComponent* messageComp = *messageCompIt; 
 	if (!isError) {
 		QMetaObject::invokeMethod(messageComp,
 			"requestedFileLoaded",

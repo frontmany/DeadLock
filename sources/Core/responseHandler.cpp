@@ -171,11 +171,11 @@ void ResponseHandler::handleFile(const net::file<QueryType>& file) {
 void ResponseHandler::onFilePreview(const std::string& packet) {
     std::istringstream iss(packet);
 
-    std::string myLogin;
-    std::getline(iss, myLogin);
-
     std::string friendLogin;
     std::getline(iss, friendLogin);
+
+    std::string myLogin;
+    std::getline(iss, myLogin);
 
     std::string fileName;
     std::getline(iss, fileName);
@@ -249,10 +249,22 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
         if (it != chatsMap.end()) {
             Chat* chat = it->second;
             chat->getMessagesVec().push_back(msgFile);
-
             m_worker_UI->onMessageReceive(friendLogin, msgFile);
         }
+        else {
+            Chat* chat = new Chat;
+            chat->setFriendLastSeen("online");
+            chat->setFriendLogin(friendLogin);
+            auto& msgsVec = chat->getMessagesVec();
+            msgsVec.push_back(msgFile);
 
+            utility::incrementAllChatLayoutIndexes(chatsMap);
+            chat->setLayoutIndex(0);
+
+            chatsMap[friendLogin] = chat;
+
+            m_client->requestFriendInfoFromServer(friendLogin);
+        }
 
     }
     else {

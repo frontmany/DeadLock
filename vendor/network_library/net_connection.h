@@ -179,7 +179,7 @@ namespace net {
 				if (isAbleToWrite) {
 					writeHeader();
 				}
-				});
+			});
 		}
 
 		void readFile() {
