@@ -33,14 +33,12 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
 
     if (msg.header.type == QueryType::REGISTRATION_SUCCESS) {
         onRegistrationSuccess();
-        m_client->bindFileConnectionToMeOnServer();
     }
     else if (msg.header.type == QueryType::REGISTRATION_FAIL) {
         onRegistrationFail();
     }
     else if (msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
         onAuthorizationSuccess();
-        m_client->bindFileConnectionToMeOnServer();
     }
     else if (msg.header.type == QueryType::AUTHORIZATION_FAIL) {
         onAuthorizationFail();
@@ -89,14 +87,6 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     }
 
     // new
-    else if (msg.header.type == QueryType::PREPARE_TO_RECEIVE_FILE) {
-        prepareToReceiveFile(packet);
-        
-    }
-    else if (msg.header.type == QueryType::PREPARE_TO_RECEIVE_REQUESTED_FILE) {
-        prepareToReceiveRequestedFile(packet);
-    }
-
     else if (msg.header.type == QueryType::FILE_PREVIEW) {
         onFilePreview(packet);
     }
@@ -274,77 +264,6 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     std::string filePath = utility::getFileSavePath(fileName);
 }
 
-void ResponseHandler::prepareToReceiveRequestedFile(const std::string& packet) {
-    prepareToReceiveFile(packet);
-    m_is_received_file_requested = true;
-}
-
-void ResponseHandler::prepareToReceiveFile(const std::string& packet) {
-    std::istringstream iss(packet);
-
-    std::string myLogin;
-    std::getline(iss, myLogin);
-
-    std::string friendLogin;
-    std::getline(iss, friendLogin);
-
-    std::string fileName;
-    std::getline(iss, fileName);
-
-    std::string fileId;
-    std::getline(iss, fileId);
-
-    std::string fileSize;
-    std::getline(iss, fileSize);
-
-    std::string fileTimestamp;
-    std::getline(iss, fileTimestamp);
-
-    std::string messageBegin;
-    std::getline(iss, messageBegin);
-
-    std::string caption;
-    std::string line;
-    while (std::getline(iss, line)) {
-        if (line == "MESSAGE_END") {
-            break;
-        }
-        else {
-            caption += line;
-            caption += '\n';
-        }
-    }
-    if (!caption.empty()) {
-        caption.pop_back(); 
-    }
-
-    std::string filesInBlobCountStr;
-    std::getline(iss, filesInBlobCountStr);
-    size_t filesInBlobCount = std::stoi(filesInBlobCountStr);
-
-    std::string blobUID;
-    std::getline(iss, blobUID);
-
-    auto& messageBlobsMap = m_client->getMapMessageBlobs();
-
-    Message* msgFile = new Message();
-    msgFile->setIsRead(false);
-    msgFile->setIsSend(false);
-    msgFile->setMessage(caption);
-    msgFile->setId(blobUID);
-    msgFile->setTimestamp(fileTimestamp);
-
-    if (messageBlobsMap.contains(blobUID)) {}
-    else {
-        messageBlobsMap.emplace(blobUID, msgFile);
-    }
-
-    std::string filePath = utility::getFileSavePath(fileName);
-
-    m_client->supplyFileData(myLogin, friendLogin, filePath, fileName, fileId, std::stoi(fileSize), fileTimestamp, caption, blobUID, filesInBlobCount);
-}
-
-
 void ResponseHandler::onRegistrationSuccess() {
     const std::string& myLogin = m_client->getMyLogin();
     m_client->initDatabase(myLogin);
@@ -357,8 +276,6 @@ void ResponseHandler::onRegistrationSuccess() {
 void ResponseHandler::onRegistrationFail() {
     m_worker_UI->onRegistrationFail();
 }
-
-
 
 void ResponseHandler::onAuthorizationSuccess() {
     if (m_client->isAutoLogin() != true) {
@@ -375,6 +292,7 @@ void ResponseHandler::onAuthorizationSuccess() {
     }
     
     m_client->setNeedToUndoAutoLogin(false);
+    m_client->connectFilesSocket(m_client->getMyLogin(), m_client->getServerIpAddress(), m_client->geServerPort());
     m_worker_UI->onAuthorizationSuccess();
 }
 
@@ -508,8 +426,6 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
     }
     m_worker_UI->updateFriendsStatuses(loginToStatusPairsVec);
 }
-
-
 
 void ResponseHandler::onMessageReceive(const std::string& packet) {
     std::istringstream iss(packet);

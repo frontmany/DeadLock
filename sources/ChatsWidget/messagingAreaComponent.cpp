@@ -1690,7 +1690,7 @@ void MessagingAreaComponent::onRetryClicked(Message* messageToRetry) {
         m_chatsWidget->getClient()->sendMessage(m_chat->getFriendLogin(), messageToRetry);
     }
     else {
-        m_chatsWidget->getClient()->sendFiles(*messageToRetry);
+        m_chatsWidget->getClient()->sendFilesMessage(*messageToRetry);
     }
 }
 

@@ -51,8 +51,6 @@ public:
 	void onMessageReadConfirmationReceive(const std::string& packet);
 
 	//new 
-	void prepareToReceiveFile(const std::string& packet);
-	void prepareToReceiveRequestedFile(const std::string& packet);
 	void onFilePreview(const std::string& packet);
 	
 

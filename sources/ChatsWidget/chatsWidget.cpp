@@ -130,7 +130,7 @@ void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
 
 void ChatsWidget::onFilesData(Message* message, Chat* chat, size_t filesCount) {
     chat->getMessagesVec().push_back(message);
-    m_client->sendFiles(*message);
+    m_client->sendFilesMessage(*message);
 }
 
 void ChatsWidget::onChangeThemeClicked() {

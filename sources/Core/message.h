@@ -32,9 +32,6 @@ public:
 	void setIsNeedToRetry(bool isNeedToRetry) { m_is_need_to_retry = isNeedToRetry; }
 	bool getIsNeedToRetry() const { return m_is_need_to_retry; }
 
-	size_t getSentFilesCounter() { return m_sent_files; }
-	void increaseFilesCounter() { m_sent_files++; }
-
 	size_t getRelatedFilesCount() { return m_vec_related_files.size(); }
 	void addRelatedFile(const fileWrapper& fileWrapper) { m_vec_related_files.emplace_back(fileWrapper); }
 	std::vector<fileWrapper>& getRelatedFiles() { return m_vec_related_files; }
@@ -46,7 +43,6 @@ public:
 
 private:
 	std::vector<fileWrapper> m_vec_related_files;
-	size_t m_sent_files = 0;
 
 	std::string m_message;
 	std::string m_timestamp;
