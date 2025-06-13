@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QTimer>
 #include <QFileInfo>
 #include <QPainter>
 #include <QEvent>
@@ -32,14 +33,17 @@ class FileItem : public QWidget {
 
 public:
     FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, Theme theme);
-    ~FileItem() { delete m_style; }
+    ~FileItem();
 
     void setTheme(Theme theme);
     void setRetryStyle(bool isNeedToRetry);
-    const fileWrapper& getFileWrapper() { return m_file_wrapper; }
     void updateFileInfo(const fileWrapper& wrapper);
-    void startLoadingAnimation();
-    void stopLoadingAnimation();
+    const fileWrapper& getFileWrapper() { return m_file_wrapper; }
+
+    // new
+    void setProgress(int percent);
+    void startProgressAnimation();
+    void stopProgressAnimation();
 
 signals:
     void clicked();
@@ -51,20 +55,25 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
-    void initUI();
+    void setDownloadState(bool inProgress);
 
+    // new
+    int  m_arcDirection = 1;
+    int  m_currentArcLength = 20;
+    int  m_rotationAngle = 0;
+    int  m_progress = 0;
+    int  m_animatedProgress = 0;
+    bool m_isLoading = false;
+
+    QTimer* m_progressAnimationTimer = nullptr;
     Theme              m_theme;
     bool               m_isHovered;
     bool               m_isNeedToRetry = false;
-    fileWrapper&       m_file_wrapper;
-
+    fileWrapper& m_file_wrapper;
     QVariantAnimation* m_loadingAnimation = nullptr;
-    int m_rotationAngle = 0;
-    bool m_isLoading = false;
-
-    FilesComponent*     m_files_component;
-    StyleFileItem*      m_style;
-    QPushButton*       m_iconBtn;
-    QLabel*            m_nameLabel;
-    QLabel*            m_sizeLabel;
+    FilesComponent* m_files_component;
+    StyleFileItem* m_style;
+    QPushButton* m_iconBtn;
+    QLabel* m_nameLabel;
+    QLabel* m_sizeLabel;
 };
