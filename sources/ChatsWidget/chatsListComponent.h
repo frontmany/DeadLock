@@ -75,6 +75,7 @@ signals:
 
 public slots:
     void showNoConnectionLabel();
+    void showServerOfflineLabel();
 
     void addChatComponent(Theme theme, Chat* chat, bool isSelected);
 

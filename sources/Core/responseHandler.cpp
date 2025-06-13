@@ -33,14 +33,12 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
 
     if (msg.header.type == QueryType::REGISTRATION_SUCCESS) {
         onRegistrationSuccess();
-        m_client->bindFileConnectionToMeOnServer();
     }
     else if (msg.header.type == QueryType::REGISTRATION_FAIL) {
         onRegistrationFail();
     }
     else if (msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
         onAuthorizationSuccess();
-        m_client->bindFileConnectionToMeOnServer();
     }
     else if (msg.header.type == QueryType::AUTHORIZATION_FAIL) {
         onAuthorizationFail();
@@ -89,25 +87,17 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     }
 
     // new
-    else if (msg.header.type == QueryType::PREPARE_TO_RECEIVE_FILE) {
-        prepareToReceiveFile(packet);
-        
-    }
-    else if (msg.header.type == QueryType::PREPARE_TO_RECEIVE_REQUESTED_FILE) {
-        prepareToReceiveRequestedFile(packet);
-    }
-
     else if (msg.header.type == QueryType::FILE_PREVIEW) {
         onFilePreview(packet);
     }
 }
 
-void ResponseHandler::handleFile(const net::file<QueryType>& file) {
+void ResponseHandler::handleFile(net::file<QueryType>& file) {
     auto& messageBlobsMap = m_client->getMapMessageBlobs();
 
-    if (m_is_received_file_requested) {
+    if (file.isRequested) {
         auto& chatsMap = m_client->getMyChatsMap();
-        auto it = chatsMap.find(file.receiverLogin);
+        auto it = chatsMap.find(file.senderLogin);
         if (it != chatsMap.end()) {
             Chat* chat = it->second;
             auto& chatsVec = chat->getMessagesVec();
@@ -126,7 +116,7 @@ void ResponseHandler::handleFile(const net::file<QueryType>& file) {
                 wrap.isPresent = true;
                 wrap.file = file;
 
-                m_worker_UI->updateFileLoadingState(file.receiverLogin, wrap, false);
+                m_worker_UI->updateFileLoadingState(file.senderLogin, wrap, false);
                 return;
             }
         }
@@ -135,35 +125,47 @@ void ResponseHandler::handleFile(const net::file<QueryType>& file) {
         }
     }
 
-    Message* message = messageBlobsMap[file.blobUID];
+    Message* message = nullptr;
+    if (messageBlobsMap.contains(file.blobUID)) {
+        message = messageBlobsMap[file.blobUID];
+    }
+    else {
+        message = new Message();
+        message->setId(file.blobUID);
+        messageBlobsMap.emplace(file.blobUID, message);
+    }
+
+    uint32_t filesCountInBlob = file.filesInBlobCount;
+    std::string friendLogin = file.senderLogin;
+
     fileWrapper fileWrapper;
     fileWrapper.isPresent = true;
     fileWrapper.file = std::move(file);
 
     message->addRelatedFile(fileWrapper);
 
-    if (message->getRelatedFilesCount() == file.filesInBlobCount) {
+    if (message->getRelatedFilesCount() == filesCountInBlob) {
         auto& chatsMap = m_client->getMyChatsMap();
-        auto it = chatsMap.find(file.receiverLogin);
+        auto it = chatsMap.find(friendLogin);
         if (it != chatsMap.end()) {
             Chat* chat = it->second;
             chat->getMessagesVec().push_back(message);
 
-            m_worker_UI->onMessageReceive(file.receiverLogin, message);
+            m_worker_UI->onMessageReceive(friendLogin, message);
         }
         else {
             Chat* chat = new Chat;
             chat->setFriendLastSeen("online");
-            chat->setFriendLogin(file.receiverLogin);
+            chat->setFriendLogin(friendLogin);
             auto& msgsVec = chat->getMessagesVec();
             msgsVec.push_back(message);
 
             utility::incrementAllChatLayoutIndexes(chatsMap);
             chat->setLayoutIndex(0);
 
-            chatsMap[file.receiverLogin] = chat;
+            chatsMap[friendLogin] = chat;
 
-            m_client->requestFriendInfoFromServer(file.receiverLogin);
+            m_client->requestFriendInfoFromServer(friendLogin);
         }
     }
 }
@@ -209,14 +211,23 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 
     std::string filesInBlobCountStr;
     std::getline(iss, filesInBlobCountStr);
-    size_t filesInBlobCount = std::stoi(filesInBlobCountStr);
+    uint32_t filesInBlobCount = static_cast<uint32_t>(std::stoul(filesInBlobCountStr));
 
     std::string blobUID;
     std::getline(iss, blobUID);
 
     auto& messageBlobsMap = m_client->getMapMessageBlobs();
 
-    Message* msgFile = new Message();
+    Message* msgFile = nullptr;
+    if (messageBlobsMap.contains(blobUID)) {
+        msgFile = messageBlobsMap[blobUID];
+    }
+    else {
+        msgFile = new Message();
+        msgFile->setId(blobUID);
+        messageBlobsMap.emplace(blobUID, msgFile);
+    }
+
     msgFile->setIsRead(false);
     msgFile->setIsSend(false);
     msgFile->setMessage(caption);
@@ -226,7 +237,8 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     net::file<QueryType> file;
     file.blobUID = blobUID;
     file.caption = caption;
-    file.filePath = fileName;
+    file.filePath = "";
+    file.fileName = fileName;
     file.filesInBlobCount = filesInBlobCount;
     file.fileSize = std::stoi(fileSize);
     file.id = fileId;
@@ -234,6 +246,7 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     file.senderLogin = myLogin;
     file.timestamp = fileTimestamp;
 
+    
 
     fileWrapper fileWrapper;
     fileWrapper.isPresent = false;
@@ -242,8 +255,7 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     msgFile->addRelatedFile(fileWrapper);
 
 
-    if (messageBlobsMap.contains(blobUID)) {}
-    else if (filesInBlobCount == 1) {
+    if (msgFile->getRelatedFilesCount() == filesInBlobCount) {
         auto& chatsMap = m_client->getMyChatsMap();
         auto it = chatsMap.find(friendLogin);
         if (it != chatsMap.end()) {
@@ -265,85 +277,8 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 
             m_client->requestFriendInfoFromServer(friendLogin);
         }
-
     }
-    else {
-        messageBlobsMap.emplace(blobUID, msgFile);
-    }
-
-    std::string filePath = utility::getFileSavePath(fileName);
 }
-
-void ResponseHandler::prepareToReceiveRequestedFile(const std::string& packet) {
-    prepareToReceiveFile(packet);
-    m_is_received_file_requested = true;
-}
-
-void ResponseHandler::prepareToReceiveFile(const std::string& packet) {
-    std::istringstream iss(packet);
-
-    std::string myLogin;
-    std::getline(iss, myLogin);
-
-    std::string friendLogin;
-    std::getline(iss, friendLogin);
-
-    std::string fileName;
-    std::getline(iss, fileName);
-
-    std::string fileId;
-    std::getline(iss, fileId);
-
-    std::string fileSize;
-    std::getline(iss, fileSize);
-
-    std::string fileTimestamp;
-    std::getline(iss, fileTimestamp);
-
-    std::string messageBegin;
-    std::getline(iss, messageBegin);
-
-    std::string caption;
-    std::string line;
-    while (std::getline(iss, line)) {
-        if (line == "MESSAGE_END") {
-            break;
-        }
-        else {
-            caption += line;
-            caption += '\n';
-        }
-    }
-    if (!caption.empty()) {
-        caption.pop_back(); 
-    }
-
-    std::string filesInBlobCountStr;
-    std::getline(iss, filesInBlobCountStr);
-    size_t filesInBlobCount = std::stoi(filesInBlobCountStr);
-
-    std::string blobUID;
-    std::getline(iss, blobUID);
-
-    auto& messageBlobsMap = m_client->getMapMessageBlobs();
-
-    Message* msgFile = new Message();
-    msgFile->setIsRead(false);
-    msgFile->setIsSend(false);
-    msgFile->setMessage(caption);
-    msgFile->setId(blobUID);
-    msgFile->setTimestamp(fileTimestamp);
-
-    if (messageBlobsMap.contains(blobUID)) {}
-    else {
-        messageBlobsMap.emplace(blobUID, msgFile);
-    }
-
-    std::string filePath = utility::getFileSavePath(fileName);
-
-    m_client->supplyFileData(myLogin, friendLogin, filePath, fileName, fileId, std::stoi(fileSize), fileTimestamp, caption, blobUID, filesInBlobCount);
-}
-
 
 void ResponseHandler::onRegistrationSuccess() {
     const std::string& myLogin = m_client->getMyLogin();
@@ -351,14 +286,13 @@ void ResponseHandler::onRegistrationSuccess() {
     m_client->setIsNeedToAutoLogin(true);
     m_client->setNeedToUndoAutoLogin(false);
 
+    m_client->connectFilesSocket(myLogin, m_client->getServerIpAddress(), m_client->geServerPort());
     m_worker_UI->onRegistrationSuccess();
 }
 
 void ResponseHandler::onRegistrationFail() {
     m_worker_UI->onRegistrationFail();
 }
-
-
 
 void ResponseHandler::onAuthorizationSuccess() {
     if (m_client->isAutoLogin() != true) {
@@ -375,6 +309,7 @@ void ResponseHandler::onAuthorizationSuccess() {
     }
     
     m_client->setNeedToUndoAutoLogin(false);
+    m_client->connectFilesSocket(m_client->getMyLogin(), m_client->getServerIpAddress(), m_client->geServerPort());
     m_worker_UI->onAuthorizationSuccess();
 }
 
@@ -508,8 +443,6 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
     }
     m_worker_UI->updateFriendsStatuses(loginToStatusPairsVec);
 }
-
-
 
 void ResponseHandler::onMessageReceive(const std::string& packet) {
     std::istringstream iss(packet);

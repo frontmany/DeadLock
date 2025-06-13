@@ -107,6 +107,7 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
 
 
     m_progressAnimationTimer = new QTimer(this);
+    m_progressAnimationTimer->setInterval(30);
     connect(m_progressAnimationTimer, &QTimer::timeout, [this]() {
         if (m_animatedProgress < m_progress) {
             m_animatedProgress++;
@@ -115,14 +116,14 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
         else {
             m_progressAnimationTimer->stop();
         }
-        });
+    });
 
     connect(this, &FileItem::clicked, [this, filesComponent]() {
         if (m_file_wrapper.isPresent) {
             QString filePath = QString::fromStdString(m_file_wrapper.file.filePath);
             QUrl fileUrl = QUrl::fromLocalFile(filePath);
             if (!QDesktopServices::openUrl(fileUrl)) {
-                qWarning() << "Не удалось открыть файл:" << filePath;
+                qWarning() << "пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ:" << filePath;
             }
         }
         else {
@@ -141,31 +142,21 @@ FileItem::~FileItem() {
     delete m_loadingAnimation;
 }
 
-void FileItem::setProgress(int percent)
-{
+void FileItem::setProgress(int percent) {
     percent = qBound(0, percent, 100);
 
-    if (m_progress == percent) {
-        return;
-    }
+    if (m_progress != percent) {
+        m_progress = percent;
 
-    m_progress = percent;
-
-    if (percent >= 100) {
-        stopProgressAnimation();
-        m_animatedProgress = 100;
-        update();
-        return;
-    }
-
-    if (!m_isLoading) {
-        startProgressAnimation();
-    }
-
-    if (m_isLoading && m_progressAnimationTimer) {
-        if (!m_progressAnimationTimer->isActive()) {
-            m_progressAnimationTimer->start(30);
+        if (percent >= 100) {
+            stopProgressAnimation();
+            m_animatedProgress = 100;
         }
+        else if (!m_progressAnimationTimer->isActive()) {
+            m_progressAnimationTimer->start();
+        }
+
+        update();
     }
 }
 
@@ -184,9 +175,12 @@ void FileItem::setDownloadState(bool inProgress)
 }
 
 void FileItem::startProgressAnimation() {
-    setDownloadState(true);
-    setProgress(0);
+    m_isLoading = true;
+    m_progress = 0;
+    m_animatedProgress = 0;
     setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    update(); 
+    m_progressAnimationTimer->start();
 }
 
 void FileItem::stopProgressAnimation() {
@@ -195,6 +189,10 @@ void FileItem::stopProgressAnimation() {
     setAttribute(Qt::WA_TransparentForMouseEvents, false);
 }
 
+void FileItem::setDownloadState(bool inProgress)
+{
+    if (m_isLoading != inProgress) {
+        m_isLoading = inProgress;
 
 void FileItem::updateFileInfo(const fileWrapper& wrapper) {
     m_file_wrapper = wrapper;
@@ -266,7 +264,7 @@ void FileItem::paintEvent(QPaintEvent* event) {
         }
     }
 
-
+    
     QPainterPath path;
     path.addRoundedRect(rect(), 0, 0);
 

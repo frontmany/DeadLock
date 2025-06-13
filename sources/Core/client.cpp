@@ -28,7 +28,8 @@ Client::Client() :
     m_my_name(""),
     m_my_photo(nullptr),
     m_is_hidden(false),
-    m_is_undo_auto_login(false)
+    m_is_undo_auto_login(false),
+    m_is_error(false)
 {
     m_db = new Database;
     m_response_handler = new ResponseHandler(this);
@@ -59,7 +60,10 @@ void Client::run() {
 }
 
 void Client::connectTo(const std::string& ipAddress, int port) {
-    connect(ipAddress, port);
+    m_server_ipAddress = ipAddress;
+    m_server_port = port;
+    connectMessagesSocket(ipAddress, port);
+    runContextThread();
 }
 
 void Client::stop() {
@@ -72,7 +76,14 @@ void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
 
 void Client::authorizeClient(const std::string& login, const std::string& passwordHash) {
     m_my_password_hash = passwordHash;
-    sendPacket(m_packets_builder->getAuthorizationPacket(login, passwordHash), QueryType::AUTHORIZATION);
+    while (!is_messages_socket_validated) {
+        if (m_is_error) {
+            break;
+        }
+    }
+    if (!m_is_error) {
+        sendPacket(m_packets_builder->getAuthorizationPacket(login, passwordHash), QueryType::AUTHORIZATION);
+    }
 }
 
 void Client::registerClient(const std::string& login, const std::string& passwordHash, const std::string& name) {
@@ -576,62 +587,18 @@ void Client::onFile(net::file<QueryType> file) {
 }
 
 void Client::onFileSent(net::file<QueryType> sentFile) {
-    auto it = m_map_currently_sending_file_messages.find(sentFile.blobUID);
-    auto& [blobUID, message] = *it;
-
-    message.increaseFilesCounter();
-    size_t sentFilesCounter = message.getSentFilesCounter();
-    if (sentFilesCounter == message.getRelatedFilesCount()) {
-        m_map_currently_sending_file_messages.erase(blobUID);
-        if (m_map_currently_sending_file_messages.size() != 0) {
-            auto it = m_map_currently_sending_file_messages.begin();
-            auto [blobUID, filesMessage] = *it;
-            sendFile(filesMessage.getRelatedFiles()[0]);
-        }
-        else {
-            m_is_able_to_send_next_blob = true;
-        }
-    }
-    else {
-        while (getFilesConnection()->m_current_bytes_sent > 0) {
-            std::this_thread::yield();
-        }
-        sendFile(message.getRelatedFiles()[sentFilesCounter]);
-    }
-
+    //TODO
 }
 
-void Client::sendFiles(Message& filesMessage) {
-    std::string id = filesMessage.getId();
-    m_map_currently_sending_file_messages.insert(std::make_pair(id, filesMessage));
+void Client::sendFilesMessage(Message& filesMessage) {
     const auto& relatedFiles = filesMessage.getRelatedFiles();
-    if (m_is_able_to_send_next_blob) {
-        sendFile(relatedFiles[0]);
+    for (auto& wrapper : relatedFiles) {
+        sendFile(wrapper.file);
     }
-
-}
-
-void Client::sendFile(const fileWrapper& fileWrapper) {
-    net::message<QueryType> msg;
-    msg.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
-    std::string timestamp = utility::getTimeStamp();
-    std::string packetStr = m_packets_builder->getPrepareToFilePacket(m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.fileName, fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
-    msg << packetStr;
-    sendMessageOnFileConnection(msg);
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
-    net::file<QueryType> file{ fileWrapper.file.filesInBlobCount, fileWrapper.file.blobUID, m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.filePath, fileWrapper.file.fileName, fileWrapper.file.id, timestamp, fileWrapper.file.fileSize, fileWrapper.file.caption };
-    sendFileOnFileConnection(file);
-}
-
-void Client::bindFileConnectionToMeOnServer() {
-    net::message<QueryType> msg;
-    msg.header.type = QueryType::BIND;
-    msg << m_packets_builder->getBindPacket(m_my_login);
-    sendMessageOnFileConnection(msg);
 }
 
 void Client::requestFile(const fileWrapper& fileWrapper) {
-    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_login, fileWrapper.file.receiverLogin, std::filesystem::path(fileWrapper.file.filePath).filename().string(), fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
+    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.fileName, fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
     sendPacket(packetStr, QueryType::SEND_ME_FILE);
 }
 
@@ -761,40 +728,44 @@ void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unse
 
     if (type != QueryType::AUTHORIZATION) {
         if (!utility::isHasInternetConnection()) {
-            onNetworkError();
+            m_response_handler->getWorkerUI()->onNetworkError();
         }
     }
 }
 
 void Client::onSendFileError(std::error_code ec, net::file<QueryType> unsentFille) {
-    auto it = m_map_currently_sending_file_messages.find(unsentFille.blobUID);
-    if (it != m_map_currently_sending_file_messages.end()) {
-        auto [blobUID, message] = *it;
-        auto itChat = m_map_friend_login_to_chat.find(message.getRelatedFiles().front().file.senderLogin);
-        auto [friendLogin, chat] = *itChat;
+        auto itChat = m_map_friend_login_to_chat.find(unsentFille.receiverLogin);
+        auto& [friendLogin, chat] = *itChat;
         auto& messagesVec = chat->getMessagesVec();
-        auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&message](Message* msg) {
-            return msg->getId() == message.getId();
+        auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&unsentFille](Message* msg) {
+            return msg->getId() == unsentFille.blobUID;
         });
 
         Message* msg = *msgChatIt;
         msg->setIsNeedToRetry(true);
         m_response_handler->getWorkerUI()->onMessageSendingError(friendLogin, msg);
-    }
+}
 
+void Client::onReceiveMessageError(std::error_code ec) {
     if (!utility::isHasInternetConnection()) {
         onNetworkError();
     }
-}
-
-void Client::onReadMessageError(std::error_code ec) {
-    if (!utility::isHasInternetConnection()) {
-        onNetworkError();
+    else {
+        onServerDown();
     }
 }
 
-void Client::onReadFileError(std::error_code ec, net::file<QueryType> unreadFile) {
-    bool isRequested = m_response_handler->getIsThisFileRequested();
+void Client::onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) {
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+        return;
+    }
+    if (unreadFile.senderLogin == "" && unreadFile.receiverLogin == "") {
+        onServerDown();
+        return;
+    }
+
+    bool isRequested = unreadFile.isRequested;
     if (isRequested) {
         m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.receiverLogin, { false, unreadFile });
     }
@@ -817,18 +788,34 @@ void Client::onReadFileError(std::error_code ec, net::file<QueryType> unreadFile
         delete message;
         m_map_message_blobs.erase(unreadFile.receiverLogin);
     }
-
-
-    if (!utility::isHasInternetConnection()) {
-        onNetworkError();
-    }
 }
 
 void Client::onConnectError(std::error_code ec) {
     m_response_handler->getWorkerUI()->onConnectError();
+    m_is_error = true;
 }
 
-
 void Client::onNetworkError() {
+    if (!isStopped()) {
+    }
     m_response_handler->getWorkerUI()->onNetworkError();
+}
+
+void Client::onServerDown() {
+    m_response_handler->getWorkerUI()->onServerDown();
+}
+
+void  Client::attemptReconnect() {
+    connectMessagesSocket(m_server_ipAddress, m_server_port);
+    runContextThread();
+    connectFilesSocket(m_my_login, m_server_ipAddress, m_server_port);
+
+}
+
+void Client::onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+    m_response_handler->getWorkerUI()->updateFileSendingProgress(file.receiverLogin, file, progressPercent);
+}
+
+void Client::onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+    m_response_handler->getWorkerUI()->updateFileLoadingProgress(file.senderLogin, file, progressPercent);
 }

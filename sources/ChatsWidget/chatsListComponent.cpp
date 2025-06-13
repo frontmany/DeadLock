@@ -6,6 +6,7 @@
 #include "messagingAreaComponent.h"
 #include "friendSearchDialogComponent.h"
 #include "messageComponent.h"
+#include "mainwindow.h"
 #include "chatHeaderComponent.h"
 #include "buttons.h"
 #include "photo.h"
@@ -187,26 +188,32 @@ QPushButton:disabled {
 )";
 
     DarkNoConnectionLabelStyle = R"(
-    QLabel {
-        background-color: rgb(255, 102, 102);
-        color: rgb(255, 102, 102);             
-        font-size: 16px;            
-        padding: 5px;                 
-        border-radius: 10px;       
-        qproperty-alignment: 'AlignCenter'; 
-    }
+QLabel {
+    background-color: #D94A4A;        
+    color: #FFF0F0;                   
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 10px 16px;
+    border-radius: 15px;
+    qproperty-alignment: 'AlignCenter';
+}
 )";
 
     LightNoConnectionLabelStyle = R"(
-    QLabel {
-        background-color: rgb(255, 181, 181);
-        color: rgb(255, 59, 59);               
-        font-size: 16px;              
-        padding: 5px;              
-        border-radius: 10px;         
-        qproperty-alignment: 'AlignCenter'; 
-    }
+QLabel {
+    background-color: #FFD6D6;       
+    color: #B22222;                    
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 10px 16px;
+    border-radius: 15px;
+    qproperty-alignment: 'AlignCenter';
+}
 )";
+
+
 }
 
 
@@ -326,8 +333,9 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->addWidget(m_hideButton);
 
     m_noConnectionLabel = new QLabel;
-    m_noConnectionLabel->setText("Lost in Space (Offline)");
     m_noConnectionLabel->hide();
+    m_noConnectionLabel->setFixedSize(240, 36);
+
     m_profileHLayout->addWidget(m_noConnectionLabel);
 
 
@@ -741,5 +749,13 @@ void ChatsListComponent::SetAvatar(const Photo& photo) {
 void ChatsListComponent::showNoConnectionLabel() {
     m_hideButton->hide();
     m_hideButton->setChecked(true);
+    m_noConnectionLabel->setText("Lost in Space (No internet connection)");
+    m_noConnectionLabel->show();
+}
+
+void ChatsListComponent::showServerOfflineLabel() {
+    m_hideButton->hide();
+    m_hideButton->setChecked(true);
+    m_noConnectionLabel->setText("Galactic Silence (Server Down)");
     m_noConnectionLabel->show();
 }

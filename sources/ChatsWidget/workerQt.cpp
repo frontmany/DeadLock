@@ -59,12 +59,20 @@ void WorkerQt::onNetworkError() {
 		Qt::QueuedConnection);
 }
 
+void WorkerQt::onServerDown() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	QMetaObject::invokeMethod(chatsList,
+		"showServerOfflineLabel",
+		Qt::QueuedConnection);
+}
+
 void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrapper& file, bool isError) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
 	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
 		return comp->getChat()->getFriendLogin() == friendLogin;
-		});
+	});
 	MessagingAreaComponent* areaComp = *comp;
 	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
 
@@ -87,6 +95,32 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrappe
 			Q_ARG(const fileWrapper&, file));
 		
 	}
+}
+
+void WorkerQt::updateFileLoadingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+	});
+	MessagingAreaComponent* areaComp = *comp;
+	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
+	std::string blobUID = file.blobUID;
+	auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
+		return comp->getId() == QString::fromStdString(blobUID);
+	});
+
+	MessageComponent* messageComp = *messageCompIt;
+
+	QMetaObject::invokeMethod(messageComp,
+		"setProgress",
+		Qt::QueuedConnection,
+		Q_ARG(const net::file<QueryType>&, file),
+		Q_ARG(int, progressPercent));
+}
+
+void WorkerQt::updateFileSendingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) {
+	updateFileLoadingProgress(friendLogin, file, progressPercent);
 }
 
 WorkerQt::WorkerQt(MainWindow* mainWindow)

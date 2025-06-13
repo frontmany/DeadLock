@@ -53,7 +53,7 @@ public:
     void findUser(const std::string& text);
     void typingNotify(const std::string& friendLogin, bool isTyping);
 
-    void sendFiles(Message& filesMessage);
+    void sendFilesMessage(Message& filesMessage);
     void sendMessage(const std::string& friendLogin, const Message* message);
     void sendMessageReadConfirmation(const std::string& friendLogin, const Message* message);
 
@@ -65,7 +65,6 @@ public:
     void deleteFriendFromChatsMap(const std::string& friendLogin);
     
     void waitUntilUIReadyToUpdate();
-    void bindFileConnectionToMeOnServer();
 
 
     // new
@@ -76,11 +75,13 @@ public:
     void onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) override;
     void onSendFileError(std::error_code ec, net::file<QueryType> unsentFile) override;
 
-    void onReadMessageError(std::error_code ec) override;
-    void onReadFileError(std::error_code ec, net::file<QueryType> unreadFile) override;
+    void onReceiveMessageError(std::error_code ec) override;
+    void onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) override;
 
     void onConnectError(std::error_code ec) override;
 
+    void onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
+    void onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
 
     // GET && SET
     bool isAutoLogin() { return m_is_auto_login; };
@@ -106,6 +107,11 @@ public:
     void setIsHasPhoto(bool isHasPhoto) { m_is_has_photo = isHasPhoto; }
     const bool getIsHasPhoto() const { return m_is_has_photo; }
 
+    const std::string& getServerIpAddress() const {return m_server_ipAddress; }
+    void setServerIpAddress(const std::string& ipAddress) { m_server_ipAddress = ipAddress; }
+
+    int geServerPort() const {return m_server_port; }
+    void setServerPort(int port) {m_server_port = port; }
 
     std::unordered_map<std::string, Message*>& getMapMessageBlobs() { return m_map_message_blobs; }
     std::unordered_map<std::string, Chat*>& getMyChatsMap() { return m_map_friend_login_to_chat; }
@@ -115,9 +121,11 @@ public:
 
 private:
     const std::vector<std::string> getFriendsLoginsVecFromMap();
-    void sendFile(const fileWrapper& fileWrapper);
     void sendPacket(const std::string& packet, QueryType type);
+
     void onNetworkError();
+    void onServerDown();
+    void attemptReconnect();
 
 private:
     std::thread             m_worker_thread;
@@ -125,13 +133,12 @@ private:
     bool                    m_is_auto_login;
     bool                    m_is_undo_auto_login;
     bool                    m_is_hidden;
-
+    bool                    m_is_error;
     std::atomic<bool>       m_is_ui_ready_to_update;
 
     ResponseHandler*        m_response_handler;
     PacketsBuilder*         m_packets_builder;
     Database*               m_db;
-    std::mutex              m_queue_mutex;
 
     bool                    m_is_has_photo;
     std::string             m_my_login;
@@ -139,10 +146,8 @@ private:
     std::string             m_my_name;
     Photo*                  m_my_photo;
 
-    bool m_is_able_to_send_next_blob = true;
-
-    // blobUID to pair of current sent file index and message
-    std::unordered_map<std::string, Message> m_map_currently_sending_file_messages;
+    std::string m_server_ipAddress = "";
+    int m_server_port = 0;
 
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;    
     std::unordered_map<std::string, Message*> m_map_message_blobs;

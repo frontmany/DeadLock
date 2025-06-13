@@ -41,7 +41,7 @@ public:
     const fileWrapper& getFileWrapper() { return m_file_wrapper; }
 
     // new
-    void setProgress(int percent);
+    void setProgress(int percent); 
     void startProgressAnimation();
     void stopProgressAnimation();
 
@@ -65,15 +65,15 @@ private:
     int  m_animatedProgress = 0;
     bool m_isLoading = false;
 
-    QTimer* m_progressAnimationTimer = nullptr;
+    QTimer*            m_progressAnimationTimer = nullptr;
     Theme              m_theme;
     bool               m_isHovered;
     bool               m_isNeedToRetry = false;
-    fileWrapper& m_file_wrapper;
+    fileWrapper&       m_file_wrapper;
     QVariantAnimation* m_loadingAnimation = nullptr;
-    FilesComponent* m_files_component;
-    StyleFileItem* m_style;
-    QPushButton* m_iconBtn;
-    QLabel* m_nameLabel;
-    QLabel* m_sizeLabel;
+    FilesComponent*    m_files_component;
+    StyleFileItem*     m_style;
+    QPushButton*       m_iconBtn;
+    QLabel*            m_nameLabel;
+    QLabel*            m_sizeLabel;
 };

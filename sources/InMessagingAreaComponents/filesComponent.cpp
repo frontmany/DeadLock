@@ -276,6 +276,15 @@ void FilesComponent::clearLayout() {
     }
 }
 
+void FilesComponent::setProgress(const net::file<QueryType>& file, int percent) {
+    for (auto* fileItem : m_vec_file_items) {
+        if (fileItem->getFileWrapper().file.id == file.id) {
+            fileItem->setProgress(percent);
+            break;
+        }
+    }
+}
+
 void FilesComponent::requestedFileLoaded(const fileWrapper& fileWrapper) {
     bool fileFound = false;
     for (auto& file : m_vec_file_wrappers) {
@@ -294,7 +303,7 @@ void FilesComponent::requestedFileLoaded(const fileWrapper& fileWrapper) {
     for (auto* fileItem : m_vec_file_items) {
         if (fileItem->getFileWrapper().file.id == fileWrapper.file.id) {
             fileItem->updateFileInfo(fileWrapper);
-            fileItem->stopLoadingAnimation();
+            fileItem->stopProgressAnimation();
             fileItem->setTheme(m_theme);
             fileItem->update();
             break;
@@ -305,7 +314,7 @@ void FilesComponent::requestedFileLoaded(const fileWrapper& fileWrapper) {
 void FilesComponent::requestedFileUnLoaded(const fileWrapper& fileWrapper) {
     for (auto* fileItem : m_vec_file_items) {
         if (fileItem->getFileWrapper().file.id == fileWrapper.file.id) {
-            fileItem->stopLoadingAnimation();
+            fileItem->stopProgressAnimation();
             fileItem->setTheme(m_theme);
             fileItem->update();
             break;

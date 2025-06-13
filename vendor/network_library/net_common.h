@@ -24,3 +24,16 @@
 #include "asio.hpp"
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
+
+
+namespace net {
+	enum class owner {
+		server,
+		client
+	};
+
+	enum class connection_type {
+		messages,
+		files
+	};
+}

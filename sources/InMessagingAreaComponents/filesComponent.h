@@ -48,6 +48,7 @@ public:
     void setIsRead(bool isRead);
     void requestedFileLoaded(const fileWrapper& fileWrapper);
     void requestedFileUnLoaded(const fileWrapper& fileWrapper);
+    void setProgress(const net::file<QueryType>& file, int percent);
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;

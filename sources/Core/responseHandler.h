@@ -27,7 +27,7 @@ public:
 
 
 	void handleResponse(net::message<QueryType>& msg);
-	void handleFile(const net::file<QueryType>& file);
+	void handleFile(net::file<QueryType>& file);
 
 
 	void onRegistrationSuccess();
@@ -51,8 +51,6 @@ public:
 	void onMessageReadConfirmationReceive(const std::string& packet);
 
 	//new 
-	void prepareToReceiveFile(const std::string& packet);
-	void prepareToReceiveRequestedFile(const std::string& packet);
 	void onFilePreview(const std::string& packet);
 	
 
@@ -60,10 +58,7 @@ public:
 	void processFoundUsers(const std::string& packet);
 	void onStatusReceive(const std::string& packet);
 
-	bool getIsThisFileRequested() { return m_is_received_file_requested; }
-
 private:
 	WorkerUI* m_worker_UI;
 	Client* m_client;
-	bool m_is_received_file_requested = false;
 };

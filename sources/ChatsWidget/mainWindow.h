@@ -35,6 +35,10 @@ public:
 	MainWindow(QWidget* parent, Client* client);
 	~MainWindow();
 
+	LoginWidget* getLoginWidget();
+	ChatsWidget* getChatsWidget();
+
+
 public slots:
 	void showDoubleConnectionErrorDialog();
 	void showConnectionErrorDialog();
@@ -46,9 +50,8 @@ public slots:
 	void setupLoginWidget();
 	void setupGreetWidget();
 
-	LoginWidget* getLoginWidget();
-	ChatsWidget* getChatsWidget();
-
+	//logic
+	void stopClient();
 
 private:
 	WorkerQt*		m_worker_Qt;
