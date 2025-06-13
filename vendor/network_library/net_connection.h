@@ -44,8 +44,8 @@ namespace net {
 		}
 
 		void disconnect() {
-			if (m_socket.is_open()) {
-				asio::post(m_asio_context, [this]() { m_socket.close(); });
+			if (isConnected()) {
+				m_socket.close();
 			}
 		}
 

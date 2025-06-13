@@ -23,7 +23,6 @@ std::string Message::serialize() const {
         return result;
         };
 
-
     oss << escape(m_message) << "|"
         << escape(m_timestamp) << "|"
         << escape(m_id) << "|"
@@ -32,9 +31,8 @@ std::string Message::serialize() const {
 
     oss << std::to_string(m_vec_related_files.size()) << "|";
 
-
     for (const auto& file_entry : m_vec_related_files) {
-        const auto& file = file_entry.file;  
+        const auto& file = file_entry.file;
 
         oss << (file_entry.isPresent ? "true" : "false") << "|"
             << escape(file.blobUID) << "|"
@@ -44,7 +42,9 @@ std::string Message::serialize() const {
             << escape(file.id) << "|"
             << escape(file.timestamp) << "|"
             << file.fileSize << "|"
-            << escape(file.caption) << "|";
+            << escape(file.caption) << "|"
+            << escape(file.fileName) << "|"
+            << file.filesInBlobCount << "|";
     }
 
     return oss.str();
@@ -95,8 +95,7 @@ Message* Message::deserialize(const std::string& data) {
         tokens.push_back(current);
     }
 
-
-    const size_t MIN_TOKENS = 6; 
+    const size_t MIN_TOKENS = 6;
     if (tokens.size() < MIN_TOKENS) {
         return nullptr;
     }
@@ -113,7 +112,7 @@ Message* Message::deserialize(const std::string& data) {
 
         size_t file_count = std::stoul(tokens[index++]);
 
-        const size_t FIELDS_PER_FILE = 9;
+        const size_t FIELDS_PER_FILE = 11;
         for (size_t i = 0; i < file_count; ++i) {
             if (index + FIELDS_PER_FILE - 1 >= tokens.size()) {
                 throw std::runtime_error("Not enough tokens for file data");
@@ -129,6 +128,8 @@ Message* Message::deserialize(const std::string& data) {
             file_entry.file.timestamp = unescape(tokens[index++]);
             file_entry.file.fileSize = std::stoul(tokens[index++]);
             file_entry.file.caption = unescape(tokens[index++]);
+            file_entry.file.fileName = unescape(tokens[index++]); 
+            file_entry.file.filesInBlobCount = std::stoul(tokens[index++]);
 
             msg->m_vec_related_files.push_back(file_entry);
         }

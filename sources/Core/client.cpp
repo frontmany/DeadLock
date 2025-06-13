@@ -63,6 +63,7 @@ void Client::connectTo(const std::string& ipAddress, int port) {
     m_server_ipAddress = ipAddress;
     m_server_port = port;
     connectMessagesSocket(ipAddress, port);
+    runContextThread();
 }
 
 void Client::stop() {
@@ -597,7 +598,7 @@ void Client::sendFilesMessage(Message& filesMessage) {
 }
 
 void Client::requestFile(const fileWrapper& fileWrapper) {
-    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_login, fileWrapper.file.receiverLogin, std::filesystem::path(fileWrapper.file.filePath).filename().string(), fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
+    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.fileName, fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
     sendPacket(packetStr, QueryType::SEND_ME_FILE);
 }
 
@@ -727,14 +728,14 @@ void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unse
 
     if (type != QueryType::AUTHORIZATION) {
         if (!utility::isHasInternetConnection()) {
-            onNetworkError();
+            m_response_handler->getWorkerUI()->onNetworkError();
         }
     }
 }
 
 void Client::onSendFileError(std::error_code ec, net::file<QueryType> unsentFille) {
         auto itChat = m_map_friend_login_to_chat.find(unsentFille.receiverLogin);
-        auto [friendLogin, chat] = *itChat;
+        auto& [friendLogin, chat] = *itChat;
         auto& messagesVec = chat->getMessagesVec();
         auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&unsentFille](Message* msg) {
             return msg->getId() == unsentFille.blobUID;
@@ -749,10 +750,22 @@ void Client::onReceiveMessageError(std::error_code ec) {
     if (!utility::isHasInternetConnection()) {
         onNetworkError();
     }
+    else {
+        onServerDown();
+    }
 }
 
 void Client::onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) {
-    bool isRequested = m_response_handler->getIsThisFileRequested();
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+        return;
+    }
+    if (unreadFile.senderLogin == "" && unreadFile.receiverLogin == "") {
+        onServerDown();
+        return;
+    }
+
+    bool isRequested = unreadFile.isRequested;
     if (isRequested) {
         m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.receiverLogin, { false, unreadFile });
     }
@@ -775,11 +788,6 @@ void Client::onReceiveFileError(std::error_code ec, net::file<QueryType> unreadF
         delete message;
         m_map_message_blobs.erase(unreadFile.receiverLogin);
     }
-
-
-    if (!utility::isHasInternetConnection()) {
-        onNetworkError();
-    }
 }
 
 void Client::onConnectError(std::error_code ec) {
@@ -787,15 +795,27 @@ void Client::onConnectError(std::error_code ec) {
     m_is_error = true;
 }
 
-
 void Client::onNetworkError() {
+    if (!isStopped()) {
+    }
     m_response_handler->getWorkerUI()->onNetworkError();
 }
 
+void Client::onServerDown() {
+    m_response_handler->getWorkerUI()->onServerDown();
+}
+
+void  Client::attemptReconnect() {
+    connectMessagesSocket(m_server_ipAddress, m_server_port);
+    runContextThread();
+    connectFilesSocket(m_my_login, m_server_ipAddress, m_server_port);
+
+}
+
 void Client::onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
-    // TODO
+    m_response_handler->getWorkerUI()->updateFileSendingProgress(file.receiverLogin, file, progressPercent);
 }
 
 void Client::onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
-    // TODO
+    m_response_handler->getWorkerUI()->updateFileLoadingProgress(file.senderLogin, file, progressPercent);
 }

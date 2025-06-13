@@ -4,6 +4,7 @@
 #include "net_safe_deque.h"
 #include "net_message.h"
 #include "net_file.h"
+#include "queryType.h"
 
 #include <fstream>              
 #include <filesystem>          
@@ -28,8 +29,8 @@ namespace net {
 			std::function<void(std::error_code, net::file<T>)> errorReceiveCallback,
 			std::function<void(std::error_code, net::file<T>)> errorSendCallback,
 			std::function<void(net::file<T>)> onFileSent,
-			std::function<void(const net::file<T>&, uint32_t)> onSendProgressUpdate,
-			std::function<void(const net::file<T>&, uint32_t)> onReceiveProgressUpdate)
+			std::optional<std::function<void(const net::file<T>&, uint32_t)>> onSendProgressUpdate,
+			std::optional<std::function<void(const net::file<T>&, uint32_t)>> onReceiveProgressUpdate)
 			: m_asio_context(asioContext),
 			m_socket(std::move(socket)),
 			m_safe_deque_incoming_files(safeDequeIncomingFiles),
@@ -56,11 +57,10 @@ namespace net {
 				bool isAbleToWrite = m_safe_deque_outgoing_files.empty();
 				m_safe_deque_outgoing_files.push_back(file);
 				if (isAbleToWrite) {
-					writeFileChunk();
+					writeFirstFromQueueFileMetadata();
 				}
 			});
 		}
-
 
 		bool isConnected() const {
 			return m_socket.is_open();
@@ -75,7 +75,7 @@ namespace net {
 			}
 
 			if (isConnected()) {
-				asio::post(m_asio_context, [this]() { m_socket.close(); });
+				m_socket.close();
 			}
 		}
 
@@ -141,7 +141,10 @@ namespace net {
 						if (m_received_file_size < m_file_tmp.fileSize) {
 							if (m_file_tmp.isRequested && m_owner == owner::client) {
 								if (m_on_receive_progress_update.has_value()) {
-									(*m_on_receive_progress_update)(m_file_tmp, ((m_received_file_size / m_file_tmp.fileSize) * c_hundredPercent));
+									double progress = (static_cast<double>(m_received_file_size) / m_file_tmp.fileSize) * c_hundredPercent;
+									progress = std::clamp(progress, 0.0, static_cast<double>(c_hundredPercent));
+									(*m_on_receive_progress_update)(m_file_tmp, progress);
+										
 								}
 							}
 							readFileChunk();
@@ -180,10 +183,16 @@ namespace net {
 							m_total_bytes_sent += c_chunkSize;
 							if (m_total_bytes_sent < m_safe_deque_outgoing_files.front().fileSize && m_owner == owner::client) {
 								if (m_on_send_progress_update.has_value()) {
-									(*m_on_send_progress_update)(
-										m_safe_deque_outgoing_files.front(),
-										static_cast<uint32_t>((m_total_bytes_sent / m_safe_deque_outgoing_files.front().fileSize) * c_hundredPercent)
-										);
+									const auto& front_file = m_safe_deque_outgoing_files.front();
+
+									uint32_t progress_percent = 0;
+									if (front_file.fileSize > 0) {
+										double progress = (static_cast<double>(m_total_bytes_sent) / front_file.fileSize) * c_hundredPercent;
+										progress = std::clamp(progress, 0.0, static_cast<double>(c_hundredPercent));
+										progress_percent = static_cast<uint32_t>(progress);
+									}
+
+									(*m_on_send_progress_update)(front_file, progress_percent);
 								}
 							}
 							writeFileChunk();
@@ -193,6 +202,8 @@ namespace net {
 			}
 			else {
 				m_send_file_stream.close();
+				m_msg_tmp_for_send_metadata = message<T>();
+
 				if (m_owner == owner::client) {
 					if (m_on_send_progress_update.has_value()) {
 						(*m_on_send_progress_update)(
@@ -204,11 +215,65 @@ namespace net {
 				m_on_file_sent(m_safe_deque_outgoing_files.pop_front());
 				if (!m_safe_deque_outgoing_files.empty())
 				{
-					writeFileChunk();
+					writeFirstFromQueueFileMetadata();
 				}
 			}
 		}
 
+		void writeFirstFromQueueFileMetadata() {
+			const auto& file = m_safe_deque_outgoing_files.front();
+
+			std::ostringstream oss;
+
+			oss << file.senderLogin << '\n'
+				<< file.receiverLogin << '\n'
+				<< file.fileName << '\n'
+				<< file.id << '\n'
+				<< file.fileSize << '\n'
+				<< file.timestamp << '\n'
+				<< "MESSAGE_BEGIN" << '\n'
+				<< file.caption << '\n'
+				<< "MESSAGE_END" << '\n'
+				<< std::to_string(file.filesInBlobCount) << "\n"
+				<< file.blobUID << "\n"
+				<< (file.isRequested ? "true" : "false");
+
+			m_msg_tmp_for_send_metadata.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
+			m_msg_tmp_for_send_metadata << oss.str();
+			m_msg_tmp_for_send_metadata.header.size = m_msg_tmp_for_send_metadata.size();
+
+			asio::async_write(
+				m_socket,
+				asio::buffer(&m_msg_tmp_for_send_metadata.header, sizeof(message_header<T>)),
+				[this](std::error_code ec, std::size_t length) {
+					if (ec)
+					{
+						disconnect();
+						m_on_send_error(ec, m_safe_deque_outgoing_files.pop_front());
+					}
+					else
+					{
+						asio::async_write(
+							m_socket,
+							asio::buffer(m_msg_tmp_for_send_metadata.body.data(),
+								m_msg_tmp_for_send_metadata.body.size()),
+							[this](std::error_code ec, std::size_t length)
+							{
+								if (ec) {
+									disconnect();
+									m_on_send_error(ec, m_safe_deque_outgoing_files.pop_front());
+								}
+								else {
+									writeFileChunk();
+								}
+							}
+						);
+
+					}
+
+				}
+			);
+		}
 
 		bool openFirstFromQueueFileForSending() {
 			const auto& file = m_safe_deque_outgoing_files.front();
@@ -332,9 +397,12 @@ namespace net {
 					(*m_on_receive_progress_update)(m_file_tmp, c_hundredPercent);
 				}
 			}
+			m_last_packet_size = 0;
 			m_received_file_size = 0;
 			m_curent_number_of_occurrences = 0;
 			m_number_of_full_occurrences = 0;
+			m_total_bytes_sent = 0;
+
 			queueReceivedFile();
 			readPreviewHeader();
 		}
@@ -344,6 +412,8 @@ namespace net {
 				m_safe_deque_incoming_files.push_back({ this->shared_from_this(), m_file_tmp });
 			else
 				m_safe_deque_incoming_files.push_back({ nullptr, m_file_tmp });
+
+			m_file_tmp = file<T>();
 		}
 
 		std::string createFilePath(const std::string& fileName, const std::string& fileId) {
@@ -412,7 +482,7 @@ namespace net {
 				std::cerr << "Failed to delete " << path << ": " << ec.message() << "\n";
 			}
 		}
-		
+
 
 	private:
 		uint32_t					  m_total_bytes_sent;
@@ -429,12 +499,13 @@ namespace net {
 
 		owner						  m_owner;
 		asio::ip::tcp::socket		  m_socket;
-		asio::io_context&			  m_asio_context;
+		asio::io_context& m_asio_context;
 
 		message<T>					  m_file_preview_message_tmp;
+		message<T>					  m_msg_tmp_for_send_metadata;
 
 		safe_deque<file<T>>			  m_safe_deque_outgoing_files;
-		safe_deque<owned_file<T>>&	  m_safe_deque_incoming_files;
+		safe_deque<owned_file<T>>& m_safe_deque_incoming_files;
 		file<T>						  m_file_tmp;
 
 		// callbacks

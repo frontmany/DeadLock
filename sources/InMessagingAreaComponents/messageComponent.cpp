@@ -141,6 +141,9 @@ void MessageComponent::removeRetry() {
     }
 }
 
+void MessageComponent::setProgress(const net::file<QueryType>& file, int percent) {
+    m_files_component->setProgress(file, percent);
+}
 
 void MessageComponent::onSendMeFile(const fileWrapper& fileWrapper) {
     m_messaging_area_component->getChatsWidget()->getClient()->requestFile(fileWrapper);

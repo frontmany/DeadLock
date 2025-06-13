@@ -29,13 +29,15 @@ namespace net {
 			disconnect();
 		}
 
+		void runContextThread() {
+			m_context_thread = std::thread([this]() {m_context.run(); });
+		}
+
 		bool connectMessagesSocket(const std::string& host, const uint16_t port) {
 			try {
 				asio::ip::tcp::resolver resolver(m_context);
 				asio::ip::tcp::resolver::results_type endpoint = resolver.resolve(host, std::to_string(port));
 				m_validator->connectMessagesSocketToServer(endpoint);
-
-				m_context_thread = std::thread([this]() {m_context.run(); });
 
 				return true;
 			}
@@ -60,6 +62,12 @@ namespace net {
 		}
 
 		void disconnect() {
+			if (std::this_thread::get_id() == m_context_thread.get_id()) {
+				// Не вызываем disconnect() из потока io_context!
+				std::cerr << "Error: disconnect() called from io_context thread!\n";
+				return;
+			}
+
 			try {
 				if (m_messages_connection) {
 					m_messages_connection->disconnect();
@@ -83,8 +91,8 @@ namespace net {
 		}
 
 		bool isConnected() {
-			if (m_messages_connection && m_files_connection) {
-				return m_messages_connection->isConnected() && m_files_connection->isConnected();
+			if (m_messages_connection) {
+				return m_messages_connection->isConnected();
 			}
 			else {
 				return false;
@@ -107,6 +115,10 @@ namespace net {
 			else {
 				disconnect();
 			}
+		}
+
+		bool isStopped() {
+			return m_context.stopped();
 		}
 
 		void update(size_t maxMessagesCount = std::numeric_limits<size_t>::max()) {

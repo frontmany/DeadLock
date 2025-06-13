@@ -11,6 +11,9 @@
 #include "utility.h"
 #include "client.h"
 
+void MainWindow::stopClient() {
+    m_client->stop();
+}
 
 MainWindow::MainWindow(QWidget* parent, Client* client)
     : QMainWindow(parent), m_worker_Qt(nullptr), m_client(client),

@@ -5,11 +5,7 @@
 StyleDelimiterComponent::StyleDelimiterComponent() {
     DarkLabelStyle = R"(
     QLabel {
-<<<<<<< HEAD
-        color: rgb(220, 220, 220);  
-=======
-        color: rgb(220, 220, 220);  /* Основной цвет текста */
->>>>>>> origin/master
+        color: rgb(220, 220, 220);
         font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
         font-size: 12px;
         font-weight: 600;
@@ -17,27 +13,12 @@ StyleDelimiterComponent::StyleDelimiterComponent() {
         margin: 0;
         background: transparent;
         border: none;
-<<<<<<< HEAD
-=======
-    }
-    
-    QLabel:disabled {
-        color: rgba(220, 220, 220, 60%);  /* Полупрозрачный для disabled */
-    }
-    
-    QLabel[accessibleName="error"] {
-        color: rgb(255, 100, 100);  /* Специальный цвет для ошибок */
->>>>>>> origin/master
     }
 )";
 
     LightLabelStyle = R"(
     QLabel {
-<<<<<<< HEAD
-        color: rgb(80, 80, 80);  
-=======
-        color: rgb(80, 80, 80);  /* Основной цвет текста */
->>>>>>> origin/master
+        color: rgb(80, 80, 80);
         font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
         font-size: 12px;
         font-weight: 600;
@@ -45,19 +26,7 @@ StyleDelimiterComponent::StyleDelimiterComponent() {
         margin: 0;
         background: transparent;
         border: none;
-<<<<<<< HEAD
-    } 
-=======
     }
-    
-    QLabel:disabled {
-        color: rgba(80, 80, 80, 40%);  /* Полупрозрачный для disabled */
-    }
-    
-    QLabel[accessibleName="error"] {
-        color: rgb(200, 50, 50);  /* Специальный цвет для ошибок */
-    }
->>>>>>> origin/master
 )";
 };
 

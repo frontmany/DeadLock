@@ -79,66 +79,9 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
 {
     m_style = new StyleFileItem;
 
-    initUI();
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     setMouseTracking(true);
 
-    connect(this, &FileItem::clicked, this, [this, filesComponent]() {
-        if (m_file_wrapper.isPresent) {
-            QString filePath = QString::fromStdString(m_file_wrapper.file.filePath);
-            QUrl fileUrl = QUrl::fromLocalFile(filePath);
-            if (!QDesktopServices::openUrl(fileUrl)) {
-                qWarning() << "Не удалось открыть файл:" << filePath;
-            }
-        }
-        else {
-            if (!m_isLoading) {
-                startLoadingAnimation();
-                setAttribute(Qt::WA_TransparentForMouseEvents, true);
-                filesComponent->onFileClicked(m_file_wrapper);
-            }
-            
-        }
-    });
-}
-
-void FileItem::updateFileInfo(const fileWrapper& wrapper) {
-    m_file_wrapper = wrapper;
-}
-
-void FileItem::startLoadingAnimation() {
-    if (!m_loadingAnimation) {
-        m_loadingAnimation = new QVariantAnimation(this);
-        m_loadingAnimation->setDuration(1000);
-        m_loadingAnimation->setLoopCount(-1);
-        m_loadingAnimation->setStartValue(0);
-        m_loadingAnimation->setEndValue(360); 
-
-        connect(m_loadingAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant& value) {
-            m_rotationAngle = value.toInt();
-            update(); 
-            });
-    }
-
-    if (m_loadingAnimation->state() != QAbstractAnimation::Running) {
-        m_loadingAnimation->start();
-    }
-
-    m_isLoading = true;
-    update();
-}
-
-void FileItem::stopLoadingAnimation() {
-    if (m_loadingAnimation && m_loadingAnimation->state() == QAbstractAnimation::Running) {
-        m_loadingAnimation->stop();
-    }
-    m_isLoading = false;
-    setAttribute(Qt::WA_TransparentForMouseEvents, false);
-    update();
-}
-
-
-void FileItem::initUI() {
     QHBoxLayout* layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 5, 5, 5);
 
@@ -147,7 +90,7 @@ void FileItem::initUI() {
     m_iconBtn->setFlat(true);
     m_iconBtn->installEventFilter(this);
 
-    m_nameLabel = new QLabel(std::filesystem::path(m_file_wrapper.file.filePath).filename().string().c_str(), this);
+    m_nameLabel = new QLabel(m_file_wrapper.file.fileName.c_str(), this);
     m_nameLabel->setWordWrap(true);
     m_nameLabel->installEventFilter(this);
 
@@ -161,6 +104,94 @@ void FileItem::initUI() {
     layout->addSpacing(50);
     layout->addWidget(m_sizeLabel);
     setTheme(m_theme);
+
+
+    m_progressAnimationTimer = new QTimer(this);
+    m_progressAnimationTimer->setInterval(30);
+    connect(m_progressAnimationTimer, &QTimer::timeout, [this]() {
+        if (m_animatedProgress < m_progress) {
+            m_animatedProgress++;
+            update();
+        }
+        else {
+            m_progressAnimationTimer->stop();
+        }
+    });
+
+    connect(this, &FileItem::clicked, [this, filesComponent]() {
+        if (m_file_wrapper.isPresent) {
+            QString filePath = QString::fromStdString(m_file_wrapper.file.filePath);
+            QUrl fileUrl = QUrl::fromLocalFile(filePath);
+            if (!QDesktopServices::openUrl(fileUrl)) {
+                qWarning() << "Не удалось открыть файл:" << filePath;
+            }
+        }
+        else {
+            if (!m_isLoading) {
+                startProgressAnimation();
+                setAttribute(Qt::WA_TransparentForMouseEvents, true);
+                filesComponent->onFileClicked(m_file_wrapper);
+            }
+            
+        }
+    });
+}
+
+FileItem::~FileItem() {
+    delete m_style;
+    delete m_loadingAnimation;
+}
+
+void FileItem::setProgress(int percent) {
+    percent = qBound(0, percent, 100);
+
+    if (m_progress != percent) {
+        m_progress = percent;
+
+        if (percent >= 100) {
+            stopProgressAnimation();
+            m_animatedProgress = 100;
+        }
+        else if (!m_progressAnimationTimer->isActive()) {
+            m_progressAnimationTimer->start();
+        }
+
+        update();
+    }
+}
+
+void FileItem::setDownloadState(bool inProgress)
+{
+    if (m_isLoading != inProgress) {
+        m_isLoading = inProgress;
+
+        if (!inProgress && m_progress < 100) {
+            m_progress = 100;
+            m_animatedProgress = 100;
+        }
+
+        update();
+    }
+}
+
+void FileItem::startProgressAnimation() {
+    m_isLoading = true;
+    m_progress = 0;
+    m_animatedProgress = 0;
+    setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    update(); 
+    m_progressAnimationTimer->start();
+}
+
+void FileItem::stopProgressAnimation() {
+    setDownloadState(false);
+    setProgress(100);
+    setAttribute(Qt::WA_TransparentForMouseEvents, false);
+}
+
+
+void FileItem::updateFileInfo(const fileWrapper& wrapper) {
+    m_file_wrapper = wrapper;
 }
 
 void FileItem::setRetryStyle(bool isNeedToRetry) {
@@ -200,36 +231,33 @@ void FileItem::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    if (m_isLoading) {
-        painter.save();
-        QPen pen(Qt::white, 2);
-        pen.setColor(QColor(255, 255, 255));
-        painter.setPen(pen);
+    if (m_isLoading || m_animatedProgress < 100) {
+        int margin = 4;
+        int progressBarHeight = 3;
+        QRect progressRect(margin,
+            height() - progressBarHeight - margin,
+            width() - 2 * margin,
+            progressBarHeight);
 
-        int size = qMin(width(), height()) / 3;
-        QRect loadingRect(width() - size - 60, height() - size - 15, size, size);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(m_theme == DARK ? QColor(80, 80, 80) : QColor(200, 200, 200));
+        painter.drawRoundedRect(progressRect, progressBarHeight / 2, progressBarHeight / 2);
 
-        static int arcDirection = 1; 
-        static int currentArcLength = 20;
+        int fillWidth = progressRect.width() * m_animatedProgress / 100;
+        QRect fillRect(progressRect.x(), progressRect.y(), fillWidth, progressRect.height());
 
-        currentArcLength += arcDirection * 2; 
+        QColor progressColor = m_theme == DARK ? QColor(100, 180, 255) : QColor(70, 140, 255);
+        painter.setBrush(progressColor);
+        painter.drawRoundedRect(fillRect, progressBarHeight / 2, progressBarHeight / 2);
 
-        if (currentArcLength >= 300) {
-            currentArcLength = 300;
-            arcDirection = -1;
+        if (m_isLoading) {
+            painter.setPen(m_theme == DARK ? Qt::white : Qt::black);
+            painter.setFont(QFont("Segoe UI", 8));
+            QString progressText = QString("%1%").arg(m_animatedProgress);
+            painter.drawText(progressRect.adjusted(0, -progressBarHeight - 15, 0, 0),
+                Qt::AlignRight | Qt::AlignTop,
+                progressText);
         }
-        else if (currentArcLength <= 20) {
-            currentArcLength = 20;
-            arcDirection = 1;
-        }
-
-        painter.translate(loadingRect.center());
-        painter.rotate(m_rotationAngle);
-        painter.translate(-loadingRect.center());
-
-        painter.drawArc(loadingRect, 0, currentArcLength * 16);
-
-        painter.restore();
     }
 
     
@@ -286,12 +314,14 @@ void FileItem::paintEvent(QPaintEvent* event) {
 void FileItem::enterEvent(QEnterEvent* event) {
     m_isHovered = true;
     update();
+
     QWidget::enterEvent(event);
 }
 
 void FileItem::leaveEvent(QEvent* event) {
     m_isHovered = false;
     update();
+
     QWidget::leaveEvent(event);
 }
 

@@ -122,7 +122,10 @@ public:
 private:
     const std::vector<std::string> getFriendsLoginsVecFromMap();
     void sendPacket(const std::string& packet, QueryType type);
+
     void onNetworkError();
+    void onServerDown();
+    void attemptReconnect();
 
 private:
     std::thread             m_worker_thread;
@@ -131,22 +134,20 @@ private:
     bool                    m_is_undo_auto_login;
     bool                    m_is_hidden;
     bool                    m_is_error;
-
     std::atomic<bool>       m_is_ui_ready_to_update;
 
     ResponseHandler*        m_response_handler;
     PacketsBuilder*         m_packets_builder;
     Database*               m_db;
-    std::mutex              m_queue_mutex;
-
-    std::string m_server_ipAddress;
-    int m_server_port;
 
     bool                    m_is_has_photo;
     std::string             m_my_login;
     std::string             m_my_password_hash;
     std::string             m_my_name;
     Photo*                  m_my_photo;
+
+    std::string m_server_ipAddress = "";
+    int m_server_port = 0;
 
     std::unordered_map<std::string, Chat*> m_map_friend_login_to_chat;    
     std::unordered_map<std::string, Message*> m_map_message_blobs;
