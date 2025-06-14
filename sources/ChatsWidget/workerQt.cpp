@@ -257,10 +257,18 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 			Q_ARG(ChatComponent*, chatComp));
 	}
 
+	QString msg = "";
+	if (message->getRelatedFiles().size() > 0) {
+		msg = "file";
+	}
+	else {
+		msg = QString::fromStdString(message->getMessage());
+	}
+
 	QMetaObject::invokeMethod(chatComp,
 		"setLastMessage",
 		Qt::QueuedConnection,
-		Q_ARG(const QString&, QString::fromStdString(message->getMessage())));
+		Q_ARG(const QString&, msg));
 
 	if (chatsWidget->getCurrentMessagingAreaComponent() == nullptr) {
 		QMetaObject::invokeMethod(chatComp,
@@ -310,14 +318,16 @@ void WorkerQt::showTypingLabel(const std::string& friendLogin) {
 	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
 		return comp->getChat()->getFriendLogin() == friendLogin;
 	});
-	MessagingAreaComponent* areaComp = *comp;
-	auto headerComp = areaComp->getChatHeader();
 
-	QMetaObject::invokeMethod(headerComp,
-		"swapLastSeenLabel",
-		Qt::QueuedConnection,
-		Q_ARG(bool, true));
-	
+	if (comp != compsVec.end()) {
+		MessagingAreaComponent* areaComp = *comp;
+		auto headerComp = areaComp->getChatHeader();
+
+		QMetaObject::invokeMethod(headerComp,
+			"swapLastSeenLabel",
+			Qt::QueuedConnection,
+			Q_ARG(bool, true));
+	}
 }
 
 void WorkerQt::hideTypingLabel(const std::string& friendLogin) {
@@ -326,13 +336,15 @@ void WorkerQt::hideTypingLabel(const std::string& friendLogin) {
 	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
 		return comp->getChat()->getFriendLogin() == friendLogin;
 	});
-	MessagingAreaComponent* areaComp = *comp;
-	auto headerComp = areaComp->getChatHeader();
+	if (comp != compsVec.end()) {
+		MessagingAreaComponent* areaComp = *comp;
+		auto headerComp = areaComp->getChatHeader();
 
-	QMetaObject::invokeMethod(headerComp,
-		"swapLastSeenLabel",
-		Qt::QueuedConnection,
-		Q_ARG(bool, false));
+		QMetaObject::invokeMethod(headerComp,
+			"swapLastSeenLabel",
+			Qt::QueuedConnection,
+			Q_ARG(bool, false));
+	}
 }
 
 void WorkerQt::showNewChatOrUpdateExisting(Chat* chat) {

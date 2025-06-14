@@ -135,6 +135,10 @@ void ResponseHandler::handleFile(net::file<QueryType>& file) {
         messageBlobsMap.emplace(file.blobUID, message);
     }
 
+    if (file.caption != "") {
+        message->setMessage(file.caption);
+    }
+
     uint32_t filesCountInBlob = file.filesInBlobCount;
     std::string friendLogin = file.senderLogin;
 
