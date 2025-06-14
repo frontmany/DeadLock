@@ -1,6 +1,49 @@
 #include "utility.h"
 #include "chat.h"
 #include "Windows.h" 
+#include <cstdlib>
+#include <QSharedMemory>
+
+
+
+
+std::string utility::getFileSavePath(const std::string& fileName) {
+    namespace fs = std::filesystem;
+
+#ifdef _WIN32
+    std::string downloadsPath = std::string(std::getenv("USERPROFILE")) + "\\Downloads\\";
+#else
+    std::string downloadsPath = std::string(std::getenv("HOME")) + "/Downloads/";
+#endif
+
+    std::string deadlockDir = downloadsPath + "Deadlock Messenger";
+    if (!fs::exists(deadlockDir)) {
+        fs::create_directory(deadlockDir);
+    }
+
+    std::string filePath = deadlockDir + "/" + fileName;
+#ifdef _WIN32
+    filePath = deadlockDir + "\\" + fileName;
+#endif
+
+    int counter = 1;
+    while (fs::exists(filePath)) {
+        size_t dotPos = fileName.find_last_of('.');
+        std::string nameWithoutExt = fileName.substr(0, dotPos);
+        std::string extension = (dotPos != std::string::npos) ? fileName.substr(dotPos) : "";
+
+#ifdef _WIN32
+        filePath = deadlockDir + "\\" + nameWithoutExt + " (" + std::to_string(counter) + ")" + extension;
+#else
+        filePath = deadlockDir + "/" + nameWithoutExt + " (" + std::to_string(counter) + ")" + extension;
+#endif
+        counter++;
+    }
+
+    return filePath;
+}
+
+
 
 std::string utility::getCurrentDateTime() {
     std::time_t now = std::time(0);
@@ -65,7 +108,7 @@ std::string utility::parseDate(const std::string& fullDate) {
     if (fullDate == "recently") {
         return fullDate;
     }
-    if (fullDate == "requested status of unknown user") { // tmp should be fixed later
+    if (fullDate == "requested status of unknown user") { 
         return "online";
     }
     if (fullDate.find("last seen:") != 0) {
@@ -196,7 +239,32 @@ qreal utility::getDeviceScaleFactor() {
     return screen->devicePixelRatio();
 }
 
+bool utility::isApplicationAlreadyRunning() {
+    static QSharedMemory sharedMemory("YourAppUniqueKey_12345");
+    if (sharedMemory.attach()) {
+        return true; 
+    }
+
+    if (sharedMemory.create(1)) {
+        return false;
+    }
+
+    qWarning() << "Shared memory error:" << sharedMemory.errorString();
+    return false; 
+}
+
 int utility::getScaledSize(int baseSize) {
     static qreal scale = getDeviceScaleFactor();
     return static_cast<int>(baseSize / scale);
+}
+
+bool utility::isHasInternetConnection() {
+#ifdef _WIN32
+    const char* ping_cmd = "ping -n 1 1.1.1.1 > nul";
+#else
+    const char* ping_cmd = "ping -c 1 1.1.1.1 > /dev/null";
+#endif
+
+    int result = std::system(ping_cmd);
+    return (result == 0);
 }

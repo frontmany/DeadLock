@@ -3,18 +3,29 @@
 #include <QScrollArea>
 #include <Qlayout>
 #include <QDebug>
+#include <QSharedMemory>
+#include <QScreen>
 #include <QEvent>
 #include <QDir>
 
+#include <filesystem>
+
+enum Theme;
 class Client;
 class GreetWidget;
 class LoginWidget;
 class ChatsWidget;
 class WorkerQt;
 
-enum Theme {
-	DARK,
-	LIGHT
+class OverlayWidget : public QWidget {
+public:
+	using QWidget::QWidget;
+protected:
+	void paintEvent(QPaintEvent*) override {
+		setGeometry(QApplication::primaryScreen()->geometry());
+		QPainter painter(this);
+		painter.fillRect(rect(), QColor(25, 25, 25, 160));
+	}
 };
 
 class MainWindow : public QMainWindow {
@@ -24,16 +35,23 @@ public:
 	MainWindow(QWidget* parent, Client* client);
 	~MainWindow();
 
+	LoginWidget* getLoginWidget();
+	ChatsWidget* getChatsWidget();
+
+
 public slots:
+	void showDoubleConnectionErrorDialog();
+	void showConnectionErrorDialog();
+	void showAlreadyRunningDialog();
+
 	void updateRegistrationUIRedBorder();
 	void updateAuthorizationUIRedBorder();
 	void setupChatsWidget();
 	void setupLoginWidget();
 	void setupGreetWidget();
 
-	LoginWidget* getLoginWidget();
-	ChatsWidget* getChatsWidget();
-
+	//logic
+	void stopClient();
 
 private:
 	WorkerQt*		m_worker_Qt;

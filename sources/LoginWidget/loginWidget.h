@@ -55,7 +55,7 @@ private:
     QHBoxLayout*            m_switchersHLayout;
     QHBoxLayout*            m_FormsHLayout;
 
-    AuthorizationComponent* m_authorizationWidget;
+    AuthorizationComponent* m_authorizationWidget = nullptr;
     RegistrationComponent*  m_registrationWidget;
 
     QPushButton*            m_switchToAuthorizeButton;

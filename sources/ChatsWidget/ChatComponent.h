@@ -10,14 +10,15 @@
 #include <QMouseEvent>
 #include <QEvent>
 
-#include <chat.h>
+#include "theme.h"
 
 
 
-enum Theme;
+
 class ChatsWidget;
 class ButtonIcon;
 class AvatarIcon;
+class Chat;
 
 class ChatComponent : public QWidget {
     Q_OBJECT

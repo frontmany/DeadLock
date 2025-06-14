@@ -167,6 +167,25 @@ const std::string PacketsBuilder::getFindUserPacket(const std::string& myLogin, 
     return oss.str();
 }
 
+const std::string PacketsBuilder::getSendMeFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, uint32_t filesInBlobCount) {
+    std::ostringstream oss;
+
+    oss << get << '\n'
+        << myLogin << '\n'
+        << friendLogin << '\n'
+        << fileName << '\n'
+        << fileId << '\n'
+        << fileSize << '\n'
+        << timestamp << '\n'
+        << messageBegin << '\n'
+        << caption << '\n'
+        << messageEnd << '\n'
+        << std::to_string(filesInBlobCount) << "\n"
+        << blobUID;
+
+    return oss.str();
+}
+
 //RPL
 const std::string PacketsBuilder::getMessagePacket(const std::string& myLogin,
     const std::string& friendLogin,

@@ -15,22 +15,10 @@
 #include "workerUI.h"
 #include "utility.h"
 #include "base64.h"
+#include "fileWrapper.h"
 #include "client.h"
 #include "photo.h"
 #include "chat.h"
-
-void Client::processIncomingMessagesQueue() {
-    net::safe_deque<net::owned_message<QueryType>>& queue = getMessagesQueue();
-    while (true) {
-        if (queue.empty()) {
-            std::this_thread::yield();
-        }
-        else {
-            net::owned_message<QueryType> msg = queue.pop_front();
-            m_response_handler->handleResponse(msg);
-        }
-    }
-}
 
 Client::Client() :
     m_is_auto_login(false),
@@ -39,7 +27,9 @@ Client::Client() :
     m_my_login(""),
     m_my_name(""),
     m_my_photo(nullptr),
-    m_is_hidden(false)
+    m_is_hidden(false),
+    m_is_undo_auto_login(false),
+    m_is_error(false)
 {
     m_db = new Database;
     m_response_handler = new ResponseHandler(this);
@@ -66,11 +56,14 @@ void Client::initDatabase(const std::string& login) {
 }
 
 void Client::run() { 
-    m_worker_thread = std::thread([this]() { processIncomingMessagesQueue(); });
+    m_worker_thread = std::thread([this]() { update(); });
 }
 
 void Client::connectTo(const std::string& ipAddress, int port) {
-    connect(ipAddress, port);
+    m_server_ipAddress = ipAddress;
+    m_server_port = port;
+    connectMessagesSocket(ipAddress, port);
+    runContextThread();
 }
 
 void Client::stop() {
@@ -83,7 +76,14 @@ void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
 
 void Client::authorizeClient(const std::string& login, const std::string& passwordHash) {
     m_my_password_hash = passwordHash;
-    sendPacket(m_packets_builder->getAuthorizationPacket(login, passwordHash), QueryType::AUTHORIZATION);
+    while (!is_messages_socket_validated) {
+        if (m_is_error) {
+            break;
+        }
+    }
+    if (!m_is_error) {
+        sendPacket(m_packets_builder->getAuthorizationPacket(login, passwordHash), QueryType::AUTHORIZATION);
+    }
 }
 
 void Client::registerClient(const std::string& login, const std::string& passwordHash, const std::string& name) {
@@ -574,4 +574,250 @@ bool Client::undoAutoLogin() {
     file.close();
     qDebug() << "Successfully removed password hash from:" << oldFileName;
     return true;
+}
+
+
+// new 
+void Client::onMessage(net::message<QueryType> message) {
+    m_response_handler->handleResponse(message);
+}
+
+void Client::onFile(net::file<QueryType> file) {
+    m_response_handler->handleFile(file);
+}
+
+void Client::onFileSent(net::file<QueryType> sentFile) {
+    //TODO
+}
+
+void Client::sendFilesMessage(Message& filesMessage) {
+    const auto& relatedFiles = filesMessage.getRelatedFiles();
+    for (auto& wrapper : relatedFiles) {
+        sendFile(wrapper.file);
+    }
+}
+
+void Client::requestFile(const fileWrapper& fileWrapper) {
+    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_login, fileWrapper.file.receiverLogin, fileWrapper.file.fileName, fileWrapper.file.id, std::to_string(fileWrapper.file.fileSize), fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
+    sendPacket(packetStr, QueryType::SEND_ME_FILE);
+}
+
+// errors
+void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) {
+    std::string messageStr;
+    unsentMessage >> messageStr;
+    std::istringstream iss(messageStr);
+
+    QueryType type = unsentMessage.header.type;
+
+    if (type == QueryType::MESSAGE) {
+        std::string friendLogin;
+        std::getline(iss, friendLogin);
+
+        std::string myLogin;
+        std::getline(iss, myLogin);
+
+        std::string messageBegin;
+        std::getline(iss, messageBegin);
+
+        std::string message;
+        std::string line;
+        while (std::getline(iss, line)) {
+            if (line == "MESSAGE_END") {
+                break;
+            }
+            else {
+                message += line;
+                message += '\n';
+            }
+        }
+        message.pop_back();
+
+        std::string id;
+        std::getline(iss, id);
+
+        std::string timestamp;
+        std::getline(iss, timestamp);
+
+        auto chatPair = m_map_friend_login_to_chat.find(friendLogin);
+        if (chatPair != m_map_friend_login_to_chat.end()) {
+            Chat* chat = chatPair->second;
+
+            auto& messagesVec = chat->getMessagesVec();
+            auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&id](Message* msg) {
+                return msg->getId() == id;
+            });
+
+            Message* msg = *msgChatIt;
+            msg->setIsNeedToRetry(true);
+            m_response_handler->getWorkerUI()->onMessageSendingError(friendLogin, msg);
+        }
+    }
+    else if (type == QueryType::MESSAGES_READ_CONFIRMATION) {
+        std::string friendLogin;
+        std::getline(iss, friendLogin);
+
+        std::string myLogin;
+        std::getline(iss, myLogin);
+
+        std::string id;
+        std::getline(iss, id);
+
+        auto chatPair = m_map_friend_login_to_chat.find(friendLogin);
+
+        if (chatPair != m_map_friend_login_to_chat.end()) {
+            Chat* chat = chatPair->second;
+
+            auto& messagesVec = chat->getMessagesVec();
+            auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&id](Message* msg) {
+                return msg->getId() == id;
+                });
+            Message* msg = *msgChatIt;
+            msg->setIsRead(false);
+        }
+    }
+    else if (type == QueryType::SEND_ME_FILE) {
+        std::string myLogin;
+        std::getline(iss, myLogin);
+
+        std::string friendLogin;
+        std::getline(iss, friendLogin);
+
+        std::string fileName;
+        std::getline(iss, fileName);
+
+        std::string fileId;
+        std::getline(iss, fileId);
+
+        std::string fileTimestamp;
+        std::getline(iss, fileTimestamp);
+
+        std::string fileSize;
+        std::getline(iss, fileSize);
+
+        std::string messageBegin;
+        std::getline(iss, messageBegin);
+
+        std::string caption;
+        std::string line;
+        while (std::getline(iss, line)) {
+            if (line == "MESSAGE_END") {
+                break;
+            }
+            else {
+                caption += line;
+                caption += '\n';
+            }
+        }
+        caption.pop_back();
+
+        std::string filesCountInBlobStr;
+        std::getline(iss, filesCountInBlobStr);
+        size_t filesCountInBlob = std::stoi(filesCountInBlobStr);
+
+        std::string blobUID;
+        std::getline(iss, blobUID);
+
+        net::file<QueryType> file;
+        file.blobUID = blobUID;
+        file.filesInBlobCount = filesCountInBlob;
+        file.id = fileId;
+
+        m_response_handler->getWorkerUI()->onRequestedFileError(friendLogin, { false, file });
+    }
+
+    if (type != QueryType::AUTHORIZATION) {
+        if (!utility::isHasInternetConnection()) {
+            m_response_handler->getWorkerUI()->onNetworkError();
+        }
+    }
+}
+
+void Client::onSendFileError(std::error_code ec, net::file<QueryType> unsentFille) {
+        auto itChat = m_map_friend_login_to_chat.find(unsentFille.receiverLogin);
+        auto& [friendLogin, chat] = *itChat;
+        auto& messagesVec = chat->getMessagesVec();
+        auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&unsentFille](Message* msg) {
+            return msg->getId() == unsentFille.blobUID;
+        });
+
+        Message* msg = *msgChatIt;
+        msg->setIsNeedToRetry(true);
+        m_response_handler->getWorkerUI()->onMessageSendingError(friendLogin, msg);
+}
+
+void Client::onReceiveMessageError(std::error_code ec) {
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+    }
+    else {
+        onServerDown();
+    }
+}
+
+void Client::onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) {
+    if (!utility::isHasInternetConnection()) {
+        onNetworkError();
+        return;
+    }
+    if (unreadFile.senderLogin == "" && unreadFile.receiverLogin == "") {
+        onServerDown();
+        return;
+    }
+
+    bool isRequested = unreadFile.isRequested;
+    if (isRequested) {
+        m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.receiverLogin, { false, unreadFile });
+    }
+    else {
+        auto it = m_map_message_blobs.find(unreadFile.receiverLogin);
+        auto [blobUID, message] = *it;
+        for (auto& file : message->getRelatedFiles()) {
+            std::string path = file.file.filePath;
+            if (path.empty()) {
+            }
+
+            std::error_code ec;
+            bool removed = std::filesystem::remove(path, ec);
+
+            if (ec) {
+                std::cerr << "Failed to delete (onReadFileError)" << path << ": " << ec.message() << "\n";
+            }
+        }
+
+        delete message;
+        m_map_message_blobs.erase(unreadFile.receiverLogin);
+    }
+}
+
+void Client::onConnectError(std::error_code ec) {
+    m_response_handler->getWorkerUI()->onConnectError();
+    m_is_error = true;
+}
+
+void Client::onNetworkError() {
+    if (!isStopped()) {
+    }
+    m_response_handler->getWorkerUI()->onNetworkError();
+}
+
+void Client::onServerDown() {
+    m_response_handler->getWorkerUI()->onServerDown();
+}
+
+void  Client::attemptReconnect() {
+    connectMessagesSocket(m_server_ipAddress, m_server_port);
+    runContextThread();
+    connectFilesSocket(m_my_login, m_server_ipAddress, m_server_port);
+
+}
+
+void Client::onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+    waitUntilUIReadyToUpdate();
+    m_response_handler->getWorkerUI()->updateFileSendingProgress(file.receiverLogin, file, progressPercent);
+}
+
+void Client::onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+    waitUntilUIReadyToUpdate();
+    m_response_handler->getWorkerUI()->updateFileLoadingProgress(file.senderLogin, file, progressPercent);
 }

@@ -1,4 +1,5 @@
-#include <QString>
+#pragma once
+
 #include <QScreen>
 #include <QApplication>
 
@@ -23,9 +24,14 @@ namespace utility {
 	std::string getTimeStamp();
 
 	qreal getDeviceScaleFactor();
+	bool isApplicationAlreadyRunning();
+
 	int getScaledSize(int baseSize);
 
 	bool isDarkMode();
+	bool isHasInternetConnection();
+
+	std::string getFileSavePath(const std::string& fileName);
 
 	void incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap);
 	void increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);

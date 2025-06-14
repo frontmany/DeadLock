@@ -1,8 +1,10 @@
 #include <unordered_map>
 #include <string>
-#include <mutex>
 #include <queue>
 #include <sstream>
+#include <iostream>
+#include <filesystem> 
+#include <fstream>
 
 class WorkerUI;
 class Client;
@@ -11,10 +13,11 @@ enum class QueryType : uint32_t;
 
 namespace net {
 	template <typename T>
-	class owned_message;
-}
+	class message;
+	template <typename T>
+	class file;
 
-typedef net::owned_message<QueryType> ownedMessageT;
+}
 
 class ResponseHandler {
 public:
@@ -23,7 +26,9 @@ public:
 	WorkerUI* getWorkerUI() { return m_worker_UI; }
 
 
-	void handleResponse(ownedMessageT& msg);
+	void handleResponse(net::message<QueryType>& msg);
+	void handleFile(net::file<QueryType>& file);
+
 
 	void onRegistrationSuccess();
 	void onRegistrationFail();
@@ -45,7 +50,9 @@ public:
 	void onTyping(const std::string& packet);
 	void onMessageReadConfirmationReceive(const std::string& packet);
 
-
+	//new 
+	void onFilePreview(const std::string& packet);
+	
 
 	void processFriendsStatusesSuccess(const std::string& packet);
 	void processFoundUsers(const std::string& packet);

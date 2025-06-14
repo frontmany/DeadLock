@@ -1,10 +1,11 @@
+#include "theme.h"
 #include "MessagingAreaComponent.h"
 #include "chatHeaderComponent.h"
 #include "chatsListComponent.h"
 #include "delimiterComponent.h"
 #include "messageComponent.h"
+#include "chatComponent.h"
 #include "chatsWidget.h"
-#include "mainWindow.h"
 #include "utility.h"
 #include "buttons.h"
 #include "message.h"
@@ -199,6 +200,243 @@ QPushButton:focus {
     border: 1px solid transparent;
 }
 )";
+
+
+
+    DarkFileDialogButton = R"(
+QPushButton {
+    background-color: rgb(21, 21, 21);
+    border-radius: 15px;
+    padding: 8px 16px;
+    color: #E0E0E0;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+QPushButton:hover {
+    background-color: rgb(21, 21, 21);
+    border-color: #555;
+}
+
+QPushButton:pressed {
+    background-color: rgb(21, 21, 21);
+}
+
+QPushButton:checked {
+    background-color: #4670db;
+    border-color: #4A7DBF;
+    color: #FFFFFF;
+}
+
+QPushButton:checked:hover {
+    background-color: #5885f5;
+}
+
+QPushButton:disabled {
+    background-color: #252525;
+    color: #707070;
+    border-color: #333;
+}
+)";
+
+    LightFileDialogButton = R"(
+QPushButton {
+    background-color: rgb(240, 240, 240);
+    border-radius: 15px;
+    padding: 8px 16px;
+    color: #404040;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+QPushButton:hover {
+    background-color: rgb(240, 240, 240);
+    border-color: #B8B8B8;
+}
+
+QPushButton:pressed {
+    background-color: rgb(240, 240, 240);
+}
+
+QPushButton:checked {
+    background-color: #D1E3F6;
+    border-color: #7EB1E8;
+    color: #2A5885;
+}
+
+QPushButton:checked:hover {
+    background-color: #C5DDF4;
+}
+
+QPushButton:disabled {
+    background-color: #F0F0F0;
+    color: #A0A0A0;
+    border-color: #E0E0E0;
+}
+)";
+
+
+
+
+    buttonTransparentFileDialogDarkAdd = R"(
+QPushButton {
+    background-color: transparent;
+    color: rgba(127, 127, 127, 0.9);
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.2px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    color: rgba(171, 171, 171, 0.95);
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+QPushButton:pressed {
+    color: rgba(171, 171, 171, 1.0);
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding-top: 3px;
+}
+
+QPushButton:disabled {
+    color: rgba(150, 150, 150, 0.5);
+    background-color: transparent;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: 1px solid transparent;
+}
+)";
+
+    buttonTransparentFileDialogLightAdd = R"(
+QPushButton {
+    background-color: transparent;
+    color: rgba(186, 186, 186, 0.9);
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.2px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    color: rgba(171, 171, 171, 0.95);
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+QPushButton:pressed {
+    color: rgba(171, 171, 171, 1.0);
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding-top: 3px;
+}
+
+QPushButton:disabled {
+    color: rgba(150, 150, 150, 0.5);
+    background-color: transparent;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: 1px solid transparent;
+}
+)";
+
+
+    buttonTransparentFileDialogDark = R"(
+QPushButton {
+    background-color: transparent;
+    color: rgba(181, 202, 255, 0.9);
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.2px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    color: rgba(209, 222, 255, 0.95);
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+QPushButton:pressed {
+    color: rgba(209, 222, 255, 1.0);
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding-top: 3px;
+}
+
+QPushButton:disabled {
+    color: rgba(150, 150, 150, 0.5);
+    background-color: transparent;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: 1px solid transparent;
+}
+)";
+
+    buttonTransparentFileDialogLight = R"(
+QPushButton {
+    background-color: transparent;
+    color: rgba(66, 119, 252, 0.9);
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    letter-spacing: 0.2px;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    min-width: 60px;
+}
+
+QPushButton:hover {
+    color: rgba(36, 98, 255, 0.95);
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+QPushButton:pressed {
+    color: rgba(36, 98, 255, 1.0);
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding-top: 3px;
+}
+
+QPushButton:disabled {
+    color: rgba(110, 110, 110, 0.5);
+    background-color: transparent;
+}
+
+QPushButton:focus {
+    outline: none;
+    border: 1px solid transparent;
+}
+)";
+
 };
 
 
@@ -562,10 +800,28 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_sendMessageButton->setTheme(m_theme);
     m_sendMessageButton->hide();
 
-
     m_sendMessage_VLayout = new QVBoxLayout;
     m_sendMessage_VLayout->setAlignment(Qt::AlignBottom);
     m_sendMessage_VLayout->addWidget(m_sendMessageButton);
+
+
+    m_attachFileButton = new ButtonIcon(this, 30, 30);
+    QIcon icon01(":/resources/ChatsWidget/attachmentDark.png");
+    QIcon iconHover01(":/resources/ChatsWidget/attachmentDarkHover.png");
+    m_attachFileButton->uploadIconsDark(icon01, iconHover01);
+
+    QIcon icon02(":/resources/ChatsWidget/attachmentLight.png");
+    QIcon iconHover02(":/resources/ChatsWidget/attachmentLightHover.png");
+    m_attachFileButton->uploadIconsLight(icon02, iconHover02);
+    m_attachFileButton->setTheme(m_theme);
+    m_attachFileButton->setIconSize(QSize(26, 26));
+
+
+    m_attachFile_VLayout = new QVBoxLayout;
+    m_attachFile_VLayout->setAlignment(Qt::AlignBottom);
+    m_attachFile_VLayout->addWidget(m_attachFileButton);
+    m_attachFile_VLayout->addSpacing(3);
+
 
 
     m_messageInputEdit = new MyTextEdit(this);
@@ -578,6 +834,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
         m_messageInputEdit->setDisabled(true);
 
     QHBoxLayout* m_button_sendHLayout = new QHBoxLayout;
+    m_button_sendHLayout->addLayout(m_attachFile_VLayout);
     m_button_sendHLayout->addWidget(m_messageInputEdit);
     m_button_sendHLayout->addLayout(m_sendMessage_VLayout);
 
@@ -638,12 +895,15 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     connect(m_sendMessageButton, &ButtonCursor::clicked, this, &MessagingAreaComponent::onSendMessageClicked);
     connect(this, &MessagingAreaComponent::sendMessageData, m_chatsWidget, &ChatsWidget::onSendMessageData);
 
+    connect(m_attachFileButton, &ButtonIcon::clicked, this, &MessagingAreaComponent::onAttachFileClicked);
+
+    connect(this, &MessagingAreaComponent::sendFilesData, m_chatsWidget, &ChatsWidget::onFilesData);
+
     connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged,
         this, &MessagingAreaComponent::handleScroll);
 
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     adjustTextEditHeight();
-
     for (auto message : m_chat->getMessagesVec()) {
         addMessage(message, true);
     }
@@ -680,6 +940,8 @@ void MessagingAreaComponent::resizeEvent(QResizeEvent* event) {
     }
 }
 
+
+
 void MessagingAreaComponent::markVisibleMessagesAsChecked() {
     auto client = m_chatsWidget->getClient();
     int sentCount = 0;
@@ -710,6 +972,435 @@ void MessagingAreaComponent::markVisibleMessagesAsChecked() {
                 m_vec_unread_messagesComponents.begin() + sentCount
             );
         }
+}
+
+
+void MessagingAreaComponent::onAttachFileClicked()
+{
+    QStringList filePaths = QFileDialog::getOpenFileNames(
+        this,
+        tr("Select Files"),
+        QDir::homePath(),
+        tr("All Files (*)")
+    );
+
+    if (filePaths.isEmpty()) {
+        return;
+    }
+
+    // Преобразование путей для корректной обработки в Windows
+    QStringList correctedPaths;
+    for (const QString& path : filePaths) {
+        correctedPaths.append(QDir::toNativeSeparators(path));
+    }
+
+    if (correctedPaths.size() > 10) {
+        correctedPaths = correctedPaths.mid(0, 10);
+        QMessageBox::information(this,
+            tr("Information"),
+            tr("You can select only 10 files. The rest will be ignored."));
+    }
+
+    m_vec_selected_files = correctedPaths;
+
+    class OverlayWidget : public QWidget {
+    public:
+        using QWidget::QWidget;
+    protected:
+        void paintEvent(QPaintEvent*) override {
+            setGeometry(QApplication::primaryScreen()->geometry());
+            QPainter painter(this);
+            painter.fillRect(rect(), QColor(25, 25, 25, 160));
+        }
+    };
+
+    OverlayWidget* overlay = new OverlayWidget(nullptr);
+    overlay->setWindowFlags(Qt::FramelessWindowHint |
+        Qt::WindowStaysOnTopHint |
+        Qt::Tool);
+    overlay->setAttribute(Qt::WA_TranslucentBackground);
+    overlay->showMaximized();
+
+    QDialog* filesDialog = new QDialog(overlay);
+    filesDialog->setWindowTitle(tr("Selected Files"));
+    filesDialog->setMinimumWidth(500);
+
+    filesDialog->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    filesDialog->setAttribute(Qt::WA_TranslucentBackground);
+
+    QGraphicsDropShadowEffect* shadowEffect = new QGraphicsDropShadowEffect();
+    shadowEffect->setBlurRadius(20);
+    shadowEffect->setXOffset(0);
+    shadowEffect->setYOffset(0);
+    shadowEffect->setColor(QColor(0, 0, 0, 120));
+
+    QWidget* mainWidget = new QWidget(filesDialog);
+    mainWidget->setGraphicsEffect(shadowEffect);
+    mainWidget->setObjectName("mainWidget");
+
+    QString mainWidgetStyle;
+    if (m_theme == Theme::DARK) {
+        mainWidgetStyle =
+            "QWidget#mainWidget {"
+            "   background-color: rgb(21, 21, 21);"
+            "   border-radius: 12px;"
+            "   border: 1px solid rgb(20, 20, 20);"
+            "}";
+    }
+    else {
+        mainWidgetStyle =
+            "QWidget#mainWidget {"
+            "   background-color: rgb(240, 240, 240);"
+            "   border-radius: 12px;"
+            "   border: 1px solid rgb(230, 230, 230);"
+            "}";
+    }
+    mainWidget->setStyleSheet(mainWidgetStyle);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(filesDialog);
+    mainLayout->addWidget(mainWidget);
+
+    QVBoxLayout* contentLayout = new QVBoxLayout(mainWidget);
+    contentLayout->setContentsMargins(16, 16, 16, 16);
+
+    QVBoxLayout* filesLayout = new QVBoxLayout();
+    filesLayout->setSpacing(5);
+    contentLayout->addLayout(filesLayout);
+
+    addFileToDisplayList(filesDialog, filesLayout, m_vec_selected_files);
+
+    m_files_caption_edit = new MyTextEdit;
+    m_files_caption_edit->setMinimumHeight(30);
+    m_files_caption_edit->setPlaceholderText("Type your message...");
+    m_files_caption_edit->setAcceptRichText(false);
+    m_files_caption_edit->setFixedHeight(m_files_caption_edit->document()->size().height() + 12);
+    if (m_theme == Theme::DARK) {
+        m_files_caption_edit->setStyleSheet(m_style->DarkTextEditStyle);
+    }
+    else {
+        m_files_caption_edit->setStyleSheet(m_style->LightTextEditStyle);
+    }
+    connect(m_files_caption_edit, &MyTextEdit::textChanged, [this]() {
+        m_files_caption_edit->setFixedHeight(m_files_caption_edit->document()->size().height() + 12);
+    });
+     
+    QHBoxLayout* editHla = new QHBoxLayout;
+    editHla->setContentsMargins(14, 14, 14, 14);
+    editHla->setAlignment(Qt::AlignCenter);
+    editHla->addWidget(m_files_caption_edit);
+
+
+    QPushButton* addButton = new QPushButton(tr("add"));
+    connect(addButton, &QPushButton::clicked, this, [this, filesDialog, filesLayout]() {
+        int remainingSlots = 10 - m_vec_selected_files.size();
+        if (remainingSlots <= 0) {
+            QMessageBox::information(this,
+                tr("Limit reached"),
+                tr("You can't add more than 10 files"));
+            return;
+        }
+
+        QStringList newFiles = QFileDialog::getOpenFileNames(
+            filesDialog,
+            tr("Select Files to Add (Remaining: %1").arg(remainingSlots),
+            QDir::homePath(),
+            tr("All Files (*)")
+        );
+
+        if (newFiles.isEmpty()) return;
+
+        QStringList uniqueNewFiles;
+        for (const QString& filePath : newFiles) {
+            QFileInfo newFileInfo(filePath);
+            bool isDuplicate = false;
+
+            for (const QString& existingPath : m_vec_selected_files) {
+                QFileInfo existingFileInfo(existingPath);
+                if (newFileInfo == existingFileInfo ||
+                    newFileInfo.canonicalFilePath() == existingFileInfo.canonicalFilePath()) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+
+            if (!isDuplicate) {
+                uniqueNewFiles.append(filePath);
+            }
+        }
+
+        if (uniqueNewFiles.isEmpty()) {
+            QMessageBox::information(this,
+                tr("Duplicate files"),
+                tr("All selected files are already added"));
+            return;
+        }
+
+        if (uniqueNewFiles.size() > remainingSlots) {
+            uniqueNewFiles = uniqueNewFiles.mid(0, remainingSlots);
+            QMessageBox::information(this,
+                tr("Files limit"),
+                tr("Only %1 unique files were added").arg(remainingSlots));
+        }
+
+        addFileToDisplayList(filesDialog, filesLayout, uniqueNewFiles);
+        m_vec_selected_files.append(uniqueNewFiles);
+
+        QTimer::singleShot(0, [filesDialog]() {
+            filesDialog->adjustSize();
+        });
+    });
+
+    QPushButton* cancelButton = new QPushButton(tr("cancel"));
+    connect(cancelButton, &QPushButton::clicked, [this, filesDialog]() {
+        m_files_caption_edit->deleteLater();
+        m_files_caption_edit = nullptr;
+        filesDialog->close();
+    });
+    QPushButton* okButton = new QPushButton(tr("send"));
+    if (m_theme == Theme::DARK) {
+        addButton->setStyleSheet(m_style->buttonTransparentFileDialogDarkAdd);
+        cancelButton->setStyleSheet(m_style->buttonTransparentDark);
+        okButton->setStyleSheet(m_style->buttonTransparentFileDialogDark);
+    }
+    else {
+        addButton->setStyleSheet(m_style->buttonTransparentFileDialogLightAdd);
+        cancelButton->setStyleSheet(m_style->buttonTransparentLight);
+        okButton->setStyleSheet(m_style->buttonTransparentFileDialogLight);
+    }
+
+    QHBoxLayout* buttonsHla = new QHBoxLayout;
+    buttonsHla->setContentsMargins(10, 0, 10, 0);
+    buttonsHla->addWidget(addButton, 0, Qt::AlignLeft);
+
+    buttonsHla->addStretch(1);
+
+    buttonsHla->addWidget(cancelButton, 0, Qt::AlignRight);
+    buttonsHla->addWidget(okButton, 0, Qt::AlignRight);
+
+    contentLayout->addLayout(editHla);
+    contentLayout->addLayout(buttonsHla);
+
+    connect(okButton, &QPushButton::clicked, this, [this, filesDialog]() {
+        onSendFiles();
+        m_files_caption_edit->deleteLater();
+        m_files_caption_edit = nullptr;
+        filesDialog->close();
+    });
+
+    QObject::connect(filesDialog, &QDialog::finished, overlay, &QWidget::deleteLater);
+    filesDialog->exec();
+}
+
+void MessagingAreaComponent::onSendFiles() {
+    std::string msg = m_files_caption_edit->toPlainText().toStdString();
+
+    msg.erase(0, msg.find_first_not_of(' '));
+    msg.erase(msg.find_last_not_of(' ') + 1);
+
+    size_t spaceCount = std::count(msg.begin(), msg.end(), ' ');
+    if (spaceCount > 1 && msg.length() > 18) {
+        msg += '\n';
+    }
+
+    auto& map = m_chatsWidget->getClient()->getMyChatsMap();
+
+
+    auto chatsList = m_chatsWidget->getChatsList();
+    auto& chatCompsVec = chatsList->getChatComponentsVec();
+    auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [this](ChatComponent* comp) {
+        return m_chat->getFriendLogin() == comp->getChat()->getFriendLogin();
+        });
+    if (itComp != chatCompsVec.end()) {
+        ChatComponent* foundComp = *itComp;
+        int index = foundComp->getChat()->getLayoutIndex();
+        if (index != 0)
+            chatsList->popUpComponent(foundComp);
+    }
+
+
+    if (m_chat->getLayoutIndex() != 0) {
+        utility::increasePreviousChatIndexes(map, m_chat);
+    }
+    m_chat->setLayoutIndex(0);
+
+    
+    
+    std::string blobUID = utility::generateId();
+    Message* message = new Message(msg, utility::getTimeStamp(), blobUID, true, false);
+    std::vector<fileWrapper> resultWrappersVec;
+    resultWrappersVec.reserve(m_vec_selected_files.size());
+
+    for (int i = 0; i < m_vec_selected_files.size(); i++) {
+        auto& str = m_vec_selected_files[i];
+
+        QFileInfo fileInfo(str);
+        QString nativePath = QDir::toNativeSeparators(fileInfo.absoluteFilePath());
+
+        QDir storageDir("DeadlockStorage");
+        if (!storageDir.exists()) {
+            storageDir.mkpath(".");
+        }
+        QString newFilePath = storageDir.filePath(fileInfo.fileName());
+
+        if (QFile::exists(nativePath) && !QFile::exists(newFilePath)) {
+            if (!QFile::copy(nativePath, newFilePath)) {
+                qDebug() << "Failed to copy file to DeadlockStorage!";
+            }
+        }
+
+        net::file<QueryType> tmpFile;
+        tmpFile.filePath = newFilePath.toUtf8().constData();
+        tmpFile.fileName = fileInfo.fileName().toUtf8().constData();
+        tmpFile.blobUID = blobUID;
+        tmpFile.filesInBlobCount = m_vec_selected_files.size();
+        tmpFile.id = utility::generateId();
+        tmpFile.receiverLogin = m_chat->getFriendLogin();
+        tmpFile.senderLogin = m_chatsWidget->getClient()->getMyLogin();
+        tmpFile.timestamp = utility::getTimeStamp();
+        tmpFile.isRequested = false;
+
+        try {
+#ifdef _WIN32
+            std::filesystem::path fsPath(nativePath.toStdWString());
+#else
+            std::filesystem::path fsPath(nativePath.toStdString());
+#endif
+
+            uintmax_t fileSize = std::filesystem::file_size(fsPath);
+            tmpFile.fileSize = fileSize;
+        }
+        catch (const std::filesystem::filesystem_error& e) {
+            std::cerr << "Error accessing file: " << nativePath.toStdString()
+                << " - " << e.what() << std::endl;
+            continue;
+        }
+
+        tmpFile.caption = (i == m_vec_selected_files.size() - 1) ? msg : "";
+        resultWrappersVec.emplace_back(true, tmpFile);
+    }
+
+    message->setRelatedFilePaths(std::move(resultWrappersVec));
+
+    addMessage(message, false);
+
+    m_containerWidget->adjustSize();
+    updateRelatedChatComponentLastMessage();
+    m_containerWidget->adjustSize();
+
+    emit sendFilesData(message, m_chat, m_vec_selected_files.size());
+
+    moveSliderDown();
+    
+}
+
+void MessagingAreaComponent::addFileToDisplayList(QDialog* filesDialog, QVBoxLayout* filesLayout, const QStringList& newFiles) {
+    for (const QString& filePath : newFiles) {
+        QFileInfo fileInfo(filePath);
+
+        QHBoxLayout* fileRowLayout = new QHBoxLayout();
+        fileRowLayout->setContentsMargins(0, 0, 0, 0); 
+        fileRowLayout->setSpacing(5);
+
+        QPushButton* fileButton = new QPushButton();
+        fileButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        bool isImage = false;
+        QStringList imageExtensions = { "png", "jpg", "jpeg", "bmp", "gif", "svg" };
+        if (imageExtensions.contains(fileInfo.suffix().toLower())) {
+            isImage = true;
+        }
+
+        if (m_theme == Theme::DARK) {
+            QIcon icon1 = isImage ? QIcon(":/resources/ChatsWidget/imageDark.png")
+                : QIcon(":/resources/ChatsWidget/fileDark.png");
+            fileButton->setIcon(icon1);
+            fileButton->setStyleSheet(m_style->DarkFileDialogButton +
+                " text-align: left; padding-left: 10px;");
+        }
+        else {
+            QIcon icon2 = isImage ? QIcon(":/resources/ChatsWidget/imageLight.png")
+                : QIcon(":/resources/ChatsWidget/fileLight.png");
+            fileButton->setIcon(icon2);
+            fileButton->setStyleSheet(m_style->LightFileDialogButton +
+                " text-align: left; padding-left: 10px;");
+        }
+
+
+        fileButton->setIconSize(QSize(52, 52));
+        fileButton->setStyleSheet(fileButton->styleSheet() + " text-align: left;");
+
+        QString sizeText;
+        qint64 size = fileInfo.size();
+        if (size < 1024) {
+            sizeText = QString("%1 bytes").arg(size);
+        }
+        else if (size < 1024 * 1024) {
+            sizeText = QString("%1 KB").arg(size / 1024);
+        }
+        else {
+            sizeText = QString("%1 MB").arg(size / (1024 * 1024), 0, 'f', 1);
+        }
+
+        fileButton->setText(QString("%1 (%2)").arg("     " + fileInfo.fileName()).arg(sizeText));
+        fileButton->setToolTip(fileInfo.absoluteFilePath());
+
+        ButtonIcon* deleteButton = new ButtonIcon(this, 26, 26);
+        QIcon icon1(":/resources/ChatsWidget/trashCanDark.png");
+        QIcon iconHover1(":/resources/ChatsWidget/trashCanDarkHover.png");
+        deleteButton->uploadIconsDark(icon1, iconHover1);
+        QIcon icon2(":/resources/ChatsWidget/trashCanLight.png");
+        QIcon iconHover2(":/resources/ChatsWidget/trashCanLightHover.png");
+        deleteButton->uploadIconsLight(icon2, iconHover2);
+        deleteButton->setTheme(m_theme);
+
+        deleteButton->setToolTip(tr("Remove file"));
+        deleteButton->setFixedSize(30, 30);
+
+        connect(deleteButton, &ButtonIcon::clicked, [this, filesDialog, filesLayout, fileRowLayout]() {
+            int i = filesLayout->indexOf(fileRowLayout);
+            m_vec_selected_files.removeAt(i);
+
+            QLayoutItem* rowItem = filesLayout->itemAt(i);
+            if (rowItem && rowItem->layout()) {
+                QLayout* rowLayout = rowItem->layout();
+                QLayoutItem* child;
+                while ((child = rowLayout->takeAt(0))) {
+                    if (child->widget()) {
+                        child->widget()->deleteLater();
+                    }
+                    delete child;
+                }
+                filesLayout->removeItem(rowItem);
+                delete rowItem;
+            }
+
+            for (int j = i; j < filesLayout->count(); ++j) {
+                QLayoutItem* currentRowItem = filesLayout->itemAt(j);
+                if (currentRowItem && currentRowItem->layout()) {
+                    QLayoutItem* widgetItem = currentRowItem->layout()->itemAt(1);
+                    if (widgetItem && widgetItem->widget()) {
+                        QWidget* widget = widgetItem->widget();
+                        int currentIndex = widget->objectName().toInt();
+                        if (currentIndex > i) {
+                            widget->setObjectName(QString::number(currentIndex - 1));
+                        }
+                    }
+
+                }
+            }
+
+            if (m_vec_selected_files.size() == 0) {
+                filesDialog->close();
+            }
+
+            filesDialog->layout()->activate();
+            filesDialog->adjustSize();
+
+            });
+
+        fileRowLayout->addWidget(fileButton, 1);
+        fileRowLayout->addWidget(deleteButton, 0, Qt::AlignRight);
+        filesLayout->addLayout(fileRowLayout);
+    }
 }
 
 void MessagingAreaComponent::handleScroll(int value) {
@@ -827,7 +1518,7 @@ void MessagingAreaComponent::adjustTextEditHeight() {
 
 void MessagingAreaComponent::setTheme(Theme theme) {
     m_theme = theme;
-
+    m_attachFileButton->setTheme(m_theme);
     m_chat_properties_component->setTheme(m_theme);
     m_friend_profile_component->setTheme(m_theme);
     m_move_slider_down_button->setTheme(m_theme);
@@ -931,7 +1622,53 @@ void MessagingAreaComponent::updateRelatedChatComponentLastMessage() {
 
     if (it != chatCompVec.end()) {
         ChatComponent* relatedComp = *it;
-        relatedComp->setLastMessage(m_messageInputEdit->toPlainText());
+
+        if (m_vec_selected_files.size() == 0) {
+            relatedComp->setLastMessage(m_messageInputEdit->toPlainText());
+        }
+        else {
+            const QString& lastFile = m_vec_selected_files.last();
+
+            static const QStringList imageExtensions = {
+                ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+                ".webp", ".tiff", ".svg"
+            };
+
+            bool isPhoto = false;
+            for (const QString& ext : imageExtensions) {
+                if (lastFile.endsWith(ext, Qt::CaseInsensitive)) {
+                    isPhoto = true;
+                    break;
+                }
+            }
+
+            if (isPhoto && m_files_caption_edit != nullptr) {
+                std::string msg = m_messageInputEdit->toPlainText().toStdString();
+                if (msg.find_first_not_of(' ') == std::string::npos) {
+                    relatedComp->setLastMessage("[Photo]");
+                    m_chat->setLastReceivedOrSentMessage("[Photo]");
+                }
+
+                msg.erase(0, msg.find_first_not_of(' '));
+                msg.erase(msg.find_last_not_of(' ') + 1);
+                
+                relatedComp->setLastMessage(QString::fromStdString(msg));
+                m_chat->setLastReceivedOrSentMessage(msg);
+            }
+            else {
+                std::string msg = m_messageInputEdit->toPlainText().toStdString();
+                if (msg.find_first_not_of(' ') == std::string::npos) {
+                    relatedComp->setLastMessage("[File]");
+                    m_chat->setLastReceivedOrSentMessage("[File]");
+                }
+
+                msg.erase(0, msg.find_first_not_of(' '));
+                msg.erase(msg.find_last_not_of(' ') + 1);
+
+                relatedComp->setLastMessage(QString::fromStdString(msg));
+                m_chat->setLastReceivedOrSentMessage(msg);
+            }
+        }
     }
 
     m_chat->setLastReceivedOrSentMessage((m_messageInputEdit->toPlainText().toStdString()));
@@ -949,9 +1686,17 @@ void MessagingAreaComponent::onTypeMessage() {
     }
 }
 
+void MessagingAreaComponent::onRetryClicked(Message* messageToRetry) {
+    if (messageToRetry->getRelatedFiles().size() == 0) {
+        m_chatsWidget->getClient()->sendMessage(m_chat->getFriendLogin(), messageToRetry);
+    }
+    else {
+        m_chatsWidget->getClient()->sendFilesMessage(*messageToRetry);
+    }
+}
 
 void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessages) {
-    MessageComponent* messageComp = new MessageComponent(m_containerWidget, message, m_theme);
+    MessageComponent* messageComp = new MessageComponent(m_containerWidget, this, message, m_theme);
 
     if (message->getIsSend()) {
         messageComp->setIsRead(message->getIsRead());
@@ -982,8 +1727,6 @@ void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessa
         }
     }
     
-
-
     m_containerVLayout->addWidget(messageComp);
     m_containerWidget->adjustSize();
 }

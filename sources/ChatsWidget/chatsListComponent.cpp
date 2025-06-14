@@ -1,16 +1,19 @@
+#include "theme.h"
 #include "chatsListComponent.h"
 #include "addChatDialogComponent.h"
 #include "fieldsEditComponent.h"
 #include "chatsWidget.h"
-#include "mainwindow.h"
 #include "messagingAreaComponent.h"
 #include "friendSearchDialogComponent.h"
 #include "messageComponent.h"
+#include "mainwindow.h"
 #include "chatHeaderComponent.h"
 #include "buttons.h"
 #include "photo.h"
 #include "utility.h"
 #include "client.h"
+#include "chat.h"
+#include "chatComponent.h"
 #include "profileEditorWidget.h"
 
 #include <QPainter>
@@ -183,6 +186,34 @@ QPushButton:disabled {
     border-color: #E0E0E0;
 }
 )";
+
+    DarkNoConnectionLabelStyle = R"(
+QLabel {
+    background-color: #D94A4A;        
+    color: #FFF0F0;                   
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 10px 16px;
+    border-radius: 15px;
+    qproperty-alignment: 'AlignCenter';
+}
+)";
+
+    LightNoConnectionLabelStyle = R"(
+QLabel {
+    background-color: #FFD6D6;       
+    color: #B22222;                    
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 10px 16px;
+    border-radius: 15px;
+    qproperty-alignment: 'AlignCenter';
+}
+)";
+
+
 }
 
 
@@ -230,7 +261,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
     m_profileHLayout->setAlignment(Qt::AlignLeft);
-
 
     m_profileButton = new AvatarIcon(this, 32, 50, true, m_theme);
     QIcon avatarIcon(":/resources/ChatsWidget/userFriend.png");
@@ -282,10 +312,10 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
         }
 
         if (m_is_hidden) {
-            
             auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
             for (auto comp : messagingAreasVec) {
                 comp->getTextEdit()->setDisabled(true);
+                comp->getAttachFileButton()->setDisabled(true);
                 comp->getChatPropertiesComponent()->disable(true);
             }
             client->broadcastMyStatus(utility::getCurrentDateTime());
@@ -294,12 +324,20 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
             auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
             for (auto comp : messagingAreasVec) {
                 comp->getTextEdit()->setDisabled(false);
+                comp->getAttachFileButton()->setDisabled(false);
                 comp->getChatPropertiesComponent()->disable(false);
             }
             client->broadcastMyStatus("online");
         }
     });
     m_profileHLayout->addWidget(m_hideButton);
+
+    m_noConnectionLabel = new QLabel;
+    m_noConnectionLabel->hide();
+    m_noConnectionLabel->setFixedSize(240, 36);
+
+    m_profileHLayout->addWidget(m_noConnectionLabel);
+
 
     m_moon_icon = new QLabel(this);
     m_moon_icon->setFixedSize(50, 50);
@@ -667,6 +705,7 @@ void ChatsListComponent::setTheme(Theme theme) {
     }
 
     if (theme == DARK) {
+        m_noConnectionLabel->setStyleSheet(style->DarkNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->DarkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
         m_newChatButton->setTheme(theme);
@@ -681,6 +720,7 @@ void ChatsListComponent::setTheme(Theme theme) {
         }
     }
     else {
+        m_noConnectionLabel->setStyleSheet(style->LightNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->LightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
         m_newChatButton->setTheme(theme);
@@ -704,4 +744,18 @@ void ChatsListComponent::popUpComponent(ChatComponent* comp) {
 void ChatsListComponent::SetAvatar(const Photo& photo) {
     QIcon avatarIcon(QString::fromStdString(photo.getPhotoPath()));
     m_profileButton->setIcon(avatarIcon);
+}
+
+void ChatsListComponent::showNoConnectionLabel() {
+    m_hideButton->hide();
+    m_hideButton->setChecked(true);
+    m_noConnectionLabel->setText("Lost in Space (No internet connection)");
+    m_noConnectionLabel->show();
+}
+
+void ChatsListComponent::showServerOfflineLabel() {
+    m_hideButton->hide();
+    m_hideButton->setChecked(true);
+    m_noConnectionLabel->setText("Galactic Silence (Server Down)");
+    m_noConnectionLabel->show();
 }

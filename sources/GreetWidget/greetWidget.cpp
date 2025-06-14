@@ -1,3 +1,4 @@
+#include "theme.h"
 #include "greetWidget.h"
 #include "mainwindow.h"
 #include "client.h"

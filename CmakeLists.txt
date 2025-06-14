@@ -18,6 +18,9 @@ source_group("Source Files\\ChatsUI Files" FILES ${CHATS_FILES})
 file(GLOB GREET_FILES "sources/GreetWidget/*.cpp" "sources/GreetWidget/*.h")
 source_group("Source Files\\GreetUI Files" FILES ${GREET_FILES})
 
+file(GLOB IN_MESSAGING_AREA_FILES "sources/InMessagingAreaComponents/*.cpp" "sources/InMessagingAreaComponents/*.h")
+source_group("Source Files\\InMessagingArea Files" FILES ${IN_MESSAGING_AREA_FILES})
+
 file(GLOB CORE_FILES "sources/Core/*.cpp" "sources/Core/*.h" "vendor/base_64/base64.h" "vendor/base_64/base64.cpp")
 source_group("Source Files\\Core Files" FILES ${CORE_FILES})
 
@@ -29,7 +32,7 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 qt_standard_project_setup()
 set(CMAKE_AUTOMOC ON)
 
-include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/Core" "sources/GreetWidget" "sources/ProfileWidget" "vendor" "vendor/base_64" "vendor/network_library")
+include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/InMessagingAreaComponents" "sources/Core" "sources/GreetWidget" "sources/ProfileWidget" "vendor" "vendor/base_64" "vendor/network_library")
 link_directories("vendor/sqlite")
 
 qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/GreetWidget/greetResources.qrc resources/ChatsWidget/chatsResources.qrc)
@@ -38,5 +41,5 @@ qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/G
 set(RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.rc")
 
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${CHATS_FILES} ${CORE_FILES} ${QRC_FILES} ${GREET_FILES} ${PROFILE_FILES} ${NET_LIB} ${RC_FILE})
+add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${IN_MESSAGING_AREA_FILES} ${CHATS_FILES} ${CORE_FILES} ${QRC_FILES} ${GREET_FILES} ${PROFILE_FILES} ${NET_LIB} ${RC_FILE})
 target_link_libraries(${PROJECT_NAME} Qt6::Widgets ws2_32 sqlite.lib)

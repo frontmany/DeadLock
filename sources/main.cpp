@@ -4,11 +4,12 @@
 #include <QPainter>
 #include <QMainWindow>
 #include <QStyleFactory>
+#include <QTimer>
 #include <iostream>
-
 
 #include "client.h"
 #include "mainWindow.h"
+#include "utility.h"
 
 
 class CustomStyle : public QProxyStyle {
@@ -19,18 +20,24 @@ public:
 int main(int argc, char* argv[])
 {
     setlocale(LC_ALL, "ru");
-
+  
     QApplication app(argc, argv);
     CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
     app.setStyle(customStyle);
-
+    
     Client* client = new Client;
-    client->connectTo("192.168.1.51", 8080);
+    bool isAutoLogin = client->autoLoginAndLoad();
+    client->connectTo("192.168.56.1", 8080);
     client->run();
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);
+    if (utility::isApplicationAlreadyRunning()) {
+        QTimer::singleShot(0, [&mainWindow]() {
+            mainWindow->showAlreadyRunningDialog();
+        });
+    }
 
-    bool isAutoLogin = client->autoLoginAndLoad();
+
     if (isAutoLogin == true) {
         client->initDatabase(client->getMyLogin());
         client->authorizeClient(client->getMyLogin(), client->getMyPasswordHash());

@@ -1,6 +1,7 @@
+#include "theme.h"
 #include "authorizationComponent.h"
 #include "loginWidget.h"
-#include "mainWindow.h"
+
 
 
 #include <QDebug>
@@ -103,10 +104,10 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
 }
 
 AuthorizationComponent::AuthorizationComponent(QWidget* parent, LoginWidget* loginWidget)
-    : QWidget(parent) {
-
-    style = new StyleAuthorizationComponent;
-    m_backgroundColor = QColor(30, 30, 30, 200);
+    : QWidget(parent)
+{
+   style = new StyleAuthorizationComponent;
+   m_backgroundColor = QColor(30, 30, 30, 200);
 
    m_loginEdit = new QLineEdit(this);
    m_loginEdit->setPlaceholderText("Login"); 

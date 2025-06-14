@@ -56,5 +56,24 @@
 		<file>visibleStateButtonDark.png</file>
 		<file>visibleStateButtonLightHover.png</file>
 		<file>visibleStateButtonDarkHover.png</file>
+		<file>attachmentLight.png</file>
+		<file>attachmentLightHover.png</file>
+		<file>attachmentDark.png</file>
+		<file>attachmentDarkHover.png</file>
+		<file>fileDark.png</file>
+		<file>fileDarkNeedToLoad.png</file>
+		<file>fileLight.png</file>
+		<file>fileLightNeedToLoad.png</file>
+		<file>imageLight.png</file>
+		<file>imageDark.png</file>
+		<file>trashCanDark.png</file>
+		<file>trashCanDarkHover.png</file>
+		<file>trashCanLight.png</file>
+		<file>trashCanLightHover.png</file>
+		<file>reloadDark.png</file>
+		<file>reloadLight.png</file>
+		<file>networkError.png</file>
+		<file>warning.png</file>
+		<file>loading.gif</file>
     </qresource>
 </RCC>

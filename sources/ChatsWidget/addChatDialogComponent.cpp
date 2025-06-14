@@ -1,7 +1,8 @@
+#include "theme.h"
 #include "addChatDialogComponent.h"
 #include "chatsListComponent.h"
 #include "buttons.h"
-#include "mainwindow.h"
+
 
 StyleAddChatDialogComponent::StyleAddChatDialogComponent() {
     AddButtonStyle = R"(

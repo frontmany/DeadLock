@@ -1,6 +1,8 @@
+#include "theme.h"
 #include "workerQt.h"
 #include "chatsWidget.h"
 #include "messagingAreaComponent.h"
+#include "fileWrapper.h"
 #include "messageComponent.h"
 #include "mainwindow.h"
 #include "chatsListComponent.h"
@@ -20,8 +22,111 @@
 #include "friendSearchDialogComponent.h"
 #include "photo.h"
 
+void WorkerQt::onMessageSendingError(const std::string& friendLogin, Message* message) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+		});
+	MessagingAreaComponent* areaComp = *comp;
+	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
 
+	auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [message](MessageComponent* comp) {
+		return comp->getId() == QString::fromStdString(message->getId());
+	});
+	MessageComponent* messageComp = *messageCompIt;
+	QMetaObject::invokeMethod(messageComp,
+		"setRetry",
+		Qt::QueuedConnection);
 
+}
+
+void WorkerQt::onRequestedFileError(const std::string& friendLogin, fileWrapper fileWrapper) {
+	updateFileLoadingState(friendLogin, fileWrapper, true);
+}
+
+void WorkerQt::onConnectError() {
+	QMetaObject::invokeMethod(m_main_window,
+		"showConnectionErrorDialog",
+		Qt::QueuedConnection);
+}
+
+void WorkerQt::onNetworkError() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	QMetaObject::invokeMethod(chatsList,
+		"showNoConnectionLabel",
+		Qt::QueuedConnection);
+}
+
+void WorkerQt::onServerDown() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	QMetaObject::invokeMethod(chatsList,
+		"showServerOfflineLabel",
+		Qt::QueuedConnection);
+}
+
+void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrapper& file, bool isError) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+	});
+	MessagingAreaComponent* areaComp = *comp;
+	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
+
+	std::string blobUID = file.file.blobUID;
+	auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
+		return comp->getId() == QString::fromStdString(blobUID);
+	});
+
+	MessageComponent* messageComp = *messageCompIt; 
+	if (!isError) {
+		QMetaObject::invokeMethod(messageComp,
+			"requestedFileLoaded",
+			Qt::QueuedConnection,
+			Q_ARG(const fileWrapper&, file));
+	}
+	else {
+		QMetaObject::invokeMethod(messageComp,
+			"requestedFileUnLoadedError",
+			Qt::QueuedConnection,
+			Q_ARG(const fileWrapper&, file));
+		
+	}
+}
+
+void WorkerQt::updateFileLoadingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+	});
+	if (comp != compsVec.end()) {
+		MessagingAreaComponent* areaComp = *comp;
+		auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
+		std::string blobUID = file.blobUID;
+		auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
+			return comp->getId() == QString::fromStdString(blobUID);
+		});
+
+		if (messageCompIt != messagesCompsVec.end()) {
+			MessageComponent* messageComp = *messageCompIt;
+
+			QMetaObject::invokeMethod(messageComp,
+				"setProgress",
+				Qt::QueuedConnection,
+				Q_ARG(const net::file<QueryType>&, file),
+				Q_ARG(int, progressPercent));
+		}
+	}
+	
+}
+
+void WorkerQt::updateFileSendingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) {
+	updateFileLoadingProgress(friendLogin, file, progressPercent);
+}
 
 WorkerQt::WorkerQt(MainWindow* mainWindow)
 	: m_main_window(mainWindow) {
@@ -54,8 +159,8 @@ void WorkerQt::onPasswordVerifySuccess() {
 			"showNewPasswordInput",
 			Qt::QueuedConnection);
 	}
-	
 }
+
 void WorkerQt::onPasswordVerifyFail() {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();

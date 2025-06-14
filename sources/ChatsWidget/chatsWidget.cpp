@@ -1,3 +1,4 @@
+#include "theme.h"
 #include "chatsWidget.h"
 #include "ChatsListComponent.h"
 #include "messagingAreaComponent.h"
@@ -7,10 +8,13 @@
 #include "client.h"
 #include "message.h"
 #include "photo.h"
+#include "utility.h"
 #include "chat.h"
 #include "chatComponent.h"
 #include "messageComponent.h"
 #include "mainWindow.h"
+#include "filewrapper.h"
+
 
 
 ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, Theme theme) 
@@ -121,8 +125,12 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
 
 void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
     chat->getMessagesVec().push_back(message);
-    chat->setLastReceivedOrSentMessage(message->getMessage());
     m_client->sendMessage(chat->getFriendLogin(), message);
+}
+
+void ChatsWidget::onFilesData(Message* message, Chat* chat, size_t filesCount) {
+    chat->getMessagesVec().push_back(message);
+    m_client->sendFilesMessage(*message);
 }
 
 void ChatsWidget::onChangeThemeClicked() {

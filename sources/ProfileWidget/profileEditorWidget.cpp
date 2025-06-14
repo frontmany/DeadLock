@@ -1,3 +1,4 @@
+#include "theme.h"
 #include "profileEditorWidget.h"
 #include "passwordEditorComponent.h"
 #include "fieldsEditComponent.h"
@@ -7,6 +8,7 @@
 #include "photo.h"
 #include "utility.h"
 #include "chatsWidget.h"
+
 
 ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, Theme theme)
     : QWidget(parent), m_client(client), m_theme(theme), m_chats_list_component(chatsListComponent) {

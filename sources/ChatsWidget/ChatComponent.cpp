@@ -1,9 +1,10 @@
+#include "theme.h"
 #include "chatComponent.h"
 #include "chatsWidget.h"
 #include "addChatDialogComponent.h"
 #include "buttons.h"
 #include "photo.h"
-#include "mainwindow.h"
+#include "chat.h"
 
 ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
     : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat), m_isClicked(true), m_isSelected(false) {
@@ -175,8 +176,8 @@ void ChatComponent::setLastMessage(const QString& message) {
     QString cleanedMessage = message;
     cleanedMessage.replace('\n', ' ');
 
-    if (cleanedMessage.length() > 15) {
-        cleanedMessage = cleanedMessage.left(15) + "...";
+    if (cleanedMessage.length() > 10) {
+        cleanedMessage = cleanedMessage.left(10) + "...";
     }
 
     m_lastMessageLabel->setText(cleanedMessage);

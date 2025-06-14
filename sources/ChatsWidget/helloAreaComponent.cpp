@@ -1,5 +1,6 @@
+#include "theme.h"
 #include "helloAreaComponent.h"
-#include "mainwindow.h"
+
 
 StyleHelloAreaComponent::StyleHelloAreaComponent() {
     LabelStyleDark = R"(

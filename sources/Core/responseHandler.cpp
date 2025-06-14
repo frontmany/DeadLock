@@ -5,6 +5,7 @@
 #include "client.h"
 #include "utility.h"
 #include "queryType.h"
+#include "message.h"
 #include "photo.h"
 #include "chat.h"
 #include "net.h"
@@ -16,76 +17,268 @@ void ResponseHandler::setWorkerUI(WorkerUI* workerImpl) {
     m_worker_UI = workerImpl;
 }
 
-void ResponseHandler::handleResponse(ownedMessageT& msg) {
-    if (msg.msg.header.type != QueryType::REGISTRATION_SUCCESS && 
-        msg.msg.header.type != QueryType::AUTHORIZATION_SUCCESS &&
-        msg.msg.header.type != QueryType::REGISTRATION_FAIL &&
-        msg.msg.header.type != QueryType::AUTHORIZATION_FAIL) {
+void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
+    if (msg.header.type != QueryType::REGISTRATION_SUCCESS && 
+        msg.header.type != QueryType::AUTHORIZATION_SUCCESS &&
+        msg.header.type != QueryType::REGISTRATION_FAIL &&
+        msg.header.type != QueryType::AUTHORIZATION_FAIL) {
         m_client->waitUntilUIReadyToUpdate();
     }
 
     std::string packet = "";
-    if (msg.msg.body.size() > 0) {
-        msg.msg >> packet;
+    if (msg.body.size() > 0) {
+        msg >> packet;
     }
 
 
-    if (msg.msg.header.type == QueryType::REGISTRATION_SUCCESS) {
+    if (msg.header.type == QueryType::REGISTRATION_SUCCESS) {
         onRegistrationSuccess();
     }
-    else if (msg.msg.header.type == QueryType::REGISTRATION_FAIL) {
+    else if (msg.header.type == QueryType::REGISTRATION_FAIL) {
         onRegistrationFail();
     }
-    else if (msg.msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
+    else if (msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
         onAuthorizationSuccess();
     }
-    else if (msg.msg.header.type == QueryType::AUTHORIZATION_FAIL) {
+    else if (msg.header.type == QueryType::AUTHORIZATION_FAIL) {
         onAuthorizationFail();
     }
-    else if (msg.msg.header.type == QueryType::CHAT_CREATE_SUCCESS) {
+    else if (msg.header.type == QueryType::CHAT_CREATE_SUCCESS) {
         onChatCreateSuccess(packet);
     }
-    else if (msg.msg.header.type == QueryType::CHAT_CREATE_FAIL) {
+    else if (msg.header.type == QueryType::CHAT_CREATE_FAIL) {
         onChatCreateFail();
     }
-    else if (msg.msg.header.type == QueryType::FRIENDS_STATUSES) {
+    else if (msg.header.type == QueryType::FRIENDS_STATUSES) {
         processFriendsStatusesSuccess(packet);
     }
-    else if (msg.msg.header.type == QueryType::MESSAGE) {
+    else if (msg.header.type == QueryType::MESSAGE) {
         onMessageReceive(packet);
     }
-    else if (msg.msg.header.type == QueryType::USER_INFO) {
+    else if (msg.header.type == QueryType::USER_INFO) {
         onUserInfo(packet);
     }
-    else if (msg.msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
+    else if (msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
         onMessageReadConfirmationReceive(packet);
     }
-    else if (msg.msg.header.type == QueryType::STATUS) {
+    else if (msg.header.type == QueryType::STATUS) {
         onStatusReceive(packet);
     }
-    else if (msg.msg.header.type == QueryType::VERIFY_PASSWORD_FAIL) {
+    else if (msg.header.type == QueryType::VERIFY_PASSWORD_FAIL) {
         onPasswordVerifyFail();
     }
-    else if (msg.msg.header.type == QueryType::VERIFY_PASSWORD_SUCCESS) {
+    else if (msg.header.type == QueryType::VERIFY_PASSWORD_SUCCESS) {
         onPasswordVerifySuccess();
     }
-    else if (msg.msg.header.type == QueryType::NEW_LOGIN_SUCCESS) {
+    else if (msg.header.type == QueryType::NEW_LOGIN_SUCCESS) {
         onCheckNewLoginSuccess(packet);
     }
-    else if (msg.msg.header.type == QueryType::NEW_LOGIN_FAIL) {
+    else if (msg.header.type == QueryType::NEW_LOGIN_FAIL) {
         onPasswordVerifySuccess();
     }
-    else if (msg.msg.header.type == QueryType::ALL_PENDING_MESSAGES_WERE_SENT) {
+    else if (msg.header.type == QueryType::ALL_PENDING_MESSAGES_WERE_SENT) {
         m_client->getAllFriendsStatuses();
     }
-    else if (msg.msg.header.type == QueryType::FIND_USER_RESULTS) {
+    else if (msg.header.type == QueryType::FIND_USER_RESULTS) {
         processFoundUsers(packet);
     }
-    else if (msg.msg.header.type == QueryType::TYPING) {
+    else if (msg.header.type == QueryType::TYPING) {
         onTyping(packet);
+    }
+
+    // new
+    else if (msg.header.type == QueryType::FILE_PREVIEW) {
+        onFilePreview(packet);
     }
 }
 
+void ResponseHandler::handleFile(net::file<QueryType>& file) {
+    auto& messageBlobsMap = m_client->getMapMessageBlobs();
+
+    if (file.isRequested) {
+        auto& chatsMap = m_client->getMyChatsMap();
+        auto it = chatsMap.find(file.senderLogin);
+        if (it != chatsMap.end()) {
+            Chat* chat = it->second;
+            auto& chatsVec = chat->getMessagesVec();
+            auto it = std::find_if(chatsVec.begin(), chatsVec.end(), [&file](Message* msg) {
+                return msg->getId() == file.blobUID;
+            });
+
+            if (it != chatsVec.end()) {
+                Message* message = *it;
+                auto& relatedFilesVec = message->getRelatedFiles();
+                auto itFileWrapper = std::find_if(relatedFilesVec.begin(), relatedFilesVec.end(), [&file](fileWrapper fileWrapper) {
+                    return fileWrapper.file.id == file.id;
+                });
+
+                fileWrapper& wrap = *itFileWrapper;
+                wrap.isPresent = true;
+                wrap.file = file;
+
+                m_worker_UI->updateFileLoadingState(file.senderLogin, wrap, false);
+                return;
+            }
+        }
+        else {
+            // impossible
+        }
+    }
+
+    Message* message = nullptr;
+    if (messageBlobsMap.contains(file.blobUID)) {
+        message = messageBlobsMap[file.blobUID];
+    }
+    else {
+        message = new Message();
+        message->setId(file.blobUID);
+        messageBlobsMap.emplace(file.blobUID, message);
+    }
+
+    uint32_t filesCountInBlob = file.filesInBlobCount;
+    std::string friendLogin = file.senderLogin;
+
+    fileWrapper fileWrapper;
+    fileWrapper.isPresent = true;
+    fileWrapper.file = std::move(file);
+
+    message->addRelatedFile(fileWrapper);
+
+    if (message->getRelatedFilesCount() == filesCountInBlob) {
+        auto& chatsMap = m_client->getMyChatsMap();
+        auto it = chatsMap.find(friendLogin);
+        if (it != chatsMap.end()) {
+            Chat* chat = it->second;
+            chat->getMessagesVec().push_back(message);
+
+            m_worker_UI->onMessageReceive(friendLogin, message);
+        }
+        else {
+            Chat* chat = new Chat;
+            chat->setFriendLastSeen("online");
+            chat->setFriendLogin(friendLogin);
+            auto& msgsVec = chat->getMessagesVec();
+            msgsVec.push_back(message);
+
+            utility::incrementAllChatLayoutIndexes(chatsMap);
+            chat->setLayoutIndex(0);
+
+            chatsMap[friendLogin] = chat;
+
+            m_client->requestFriendInfoFromServer(friendLogin);
+        }
+    }
+}
+
+void ResponseHandler::onFilePreview(const std::string& packet) {
+    std::istringstream iss(packet);
+
+    std::string friendLogin;
+    std::getline(iss, friendLogin);
+
+    std::string myLogin;
+    std::getline(iss, myLogin);
+
+    std::string fileName;
+    std::getline(iss, fileName);
+
+    std::string fileId;
+    std::getline(iss, fileId);
+
+    std::string fileSize;
+    std::getline(iss, fileSize);
+
+    std::string fileTimestamp;
+    std::getline(iss, fileTimestamp);
+
+    std::string messageBegin;
+    std::getline(iss, messageBegin);
+
+    std::string caption;
+    std::string line;
+    while (std::getline(iss, line)) {
+        if (line == "MESSAGE_END") {
+            break;
+        }
+        else {
+            caption += line;
+            caption += '\n';
+        }
+    }
+    if (!caption.empty()) {
+        caption.pop_back();
+    }
+
+    std::string filesInBlobCountStr;
+    std::getline(iss, filesInBlobCountStr);
+    uint32_t filesInBlobCount = static_cast<uint32_t>(std::stoul(filesInBlobCountStr));
+
+    std::string blobUID;
+    std::getline(iss, blobUID);
+
+    auto& messageBlobsMap = m_client->getMapMessageBlobs();
+
+    Message* msgFile = nullptr;
+    if (messageBlobsMap.contains(blobUID)) {
+        msgFile = messageBlobsMap[blobUID];
+    }
+    else {
+        msgFile = new Message();
+        msgFile->setId(blobUID);
+        messageBlobsMap.emplace(blobUID, msgFile);
+    }
+
+    msgFile->setIsRead(false);
+    msgFile->setIsSend(false);
+    msgFile->setMessage(caption);
+    msgFile->setId(blobUID);
+    msgFile->setTimestamp(fileTimestamp);
+
+    net::file<QueryType> file;
+    file.blobUID = blobUID;
+    file.caption = caption;
+    file.filePath = "";
+    file.fileName = fileName;
+    file.filesInBlobCount = filesInBlobCount;
+    file.fileSize = std::stoi(fileSize);
+    file.id = fileId;
+    file.receiverLogin = friendLogin;
+    file.senderLogin = myLogin;
+    file.timestamp = fileTimestamp;
+
+    
+
+    fileWrapper fileWrapper;
+    fileWrapper.isPresent = false;
+    fileWrapper.file = std::move(file);
+
+    msgFile->addRelatedFile(fileWrapper);
+
+
+    if (msgFile->getRelatedFilesCount() == filesInBlobCount) {
+        auto& chatsMap = m_client->getMyChatsMap();
+        auto it = chatsMap.find(friendLogin);
+        if (it != chatsMap.end()) {
+            Chat* chat = it->second;
+            chat->getMessagesVec().push_back(msgFile);
+            m_worker_UI->onMessageReceive(friendLogin, msgFile);
+        }
+        else {
+            Chat* chat = new Chat;
+            chat->setFriendLastSeen("online");
+            chat->setFriendLogin(friendLogin);
+            auto& msgsVec = chat->getMessagesVec();
+            msgsVec.push_back(msgFile);
+
+            utility::incrementAllChatLayoutIndexes(chatsMap);
+            chat->setLayoutIndex(0);
+
+            chatsMap[friendLogin] = chat;
+
+            m_client->requestFriendInfoFromServer(friendLogin);
+        }
+    }
+}
 
 void ResponseHandler::onRegistrationSuccess() {
     const std::string& myLogin = m_client->getMyLogin();
@@ -93,14 +286,13 @@ void ResponseHandler::onRegistrationSuccess() {
     m_client->setIsNeedToAutoLogin(true);
     m_client->setNeedToUndoAutoLogin(false);
 
+    m_client->connectFilesSocket(myLogin, m_client->getServerIpAddress(), m_client->geServerPort());
     m_worker_UI->onRegistrationSuccess();
 }
 
 void ResponseHandler::onRegistrationFail() {
     m_worker_UI->onRegistrationFail();
 }
-
-
 
 void ResponseHandler::onAuthorizationSuccess() {
     if (m_client->isAutoLogin() != true) {
@@ -117,6 +309,7 @@ void ResponseHandler::onAuthorizationSuccess() {
     }
     
     m_client->setNeedToUndoAutoLogin(false);
+    m_client->connectFilesSocket(m_client->getMyLogin(), m_client->getServerIpAddress(), m_client->geServerPort());
     m_worker_UI->onAuthorizationSuccess();
 }
 
@@ -250,8 +443,6 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
     }
     m_worker_UI->updateFriendsStatuses(loginToStatusPairsVec);
 }
-
-
 
 void ResponseHandler::onMessageReceive(const std::string& packet) {
     std::istringstream iss(packet);

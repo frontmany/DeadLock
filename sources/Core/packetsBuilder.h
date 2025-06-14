@@ -27,6 +27,9 @@ public:
 	const std::string getVerifyPasswordPacket(const std::string& login, const std::string& passwordHash);
 	const std::string getCheckIsNewLoginAvailablePacket(const std::string& newLogin);
 
+	//new 
+	const std::string getSendMeFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, uint32_t filesInBlobCount);
+
 	//RPL
 	const std::string getMessagePacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);
 	const std::string getMessageReadConfirmationPacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);

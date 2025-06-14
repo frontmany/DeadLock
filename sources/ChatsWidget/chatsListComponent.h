@@ -10,13 +10,13 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QLabel>
 #include <QHoverEvent>
 #include <QObject>
 #include <QMouseEvent>
 #include <QEvent>
-#include "ChatComponent.h"
-#include "mainwindow.h"
 
+enum Theme;
 class AvatarIcon;
 class AddChatDialogComponent;
 class ProfileEditorWidget;
@@ -24,7 +24,10 @@ class MessagingAreaComponent;
 class FriendSearchDialogComponent;
 class ButtonIcon;
 class ToggleSwitch;
+class ChatComponent;
 class Client;
+class Photo;
+class Chat;
 class ChatsWidget;
 
 struct StyleChatsListComponent {
@@ -37,6 +40,8 @@ struct StyleChatsListComponent {
     QString DialogStyle;
     QString DarkHideButton;
     QString LightHideButton;
+    QString DarkNoConnectionLabelStyle;
+    QString LightNoConnectionLabelStyle;
 };
 
 class ChatsListComponent : public QWidget {
@@ -69,6 +74,9 @@ signals:
 
 
 public slots:
+    void showNoConnectionLabel();
+    void showServerOfflineLabel();
+
     void addChatComponent(Theme theme, Chat* chat, bool isSelected);
 
     void openAddChatDialog();
@@ -113,6 +121,7 @@ private:
     ButtonIcon*         m_logoutButton;
 
     QPushButton*        m_hideButton;
+    QLabel*             m_noConnectionLabel;
     bool                m_is_hidden;
 
     QTimer*                      m_search_timer;
