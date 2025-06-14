@@ -813,9 +813,11 @@ void  Client::attemptReconnect() {
 }
 
 void Client::onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+    waitUntilUIReadyToUpdate();
     m_response_handler->getWorkerUI()->updateFileSendingProgress(file.receiverLogin, file, progressPercent);
 }
 
 void Client::onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+    waitUntilUIReadyToUpdate();
     m_response_handler->getWorkerUI()->updateFileLoadingProgress(file.senderLogin, file, progressPercent);
 }

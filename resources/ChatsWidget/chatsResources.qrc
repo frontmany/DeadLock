@@ -74,5 +74,6 @@
 		<file>reloadLight.png</file>
 		<file>networkError.png</file>
 		<file>warning.png</file>
+		<file>loading.gif</file>
     </qresource>
 </RCC>

@@ -12,6 +12,7 @@
 #include <QEvent>
 #include <QPainterPath>
 #include <QVariantAnimation>
+#include <QMovie>
 
 #include "theme.h"
 #include "fileWrapper.h"
@@ -40,8 +41,7 @@ public:
     void updateFileInfo(const fileWrapper& wrapper);
     const fileWrapper& getFileWrapper() { return m_file_wrapper; }
 
-    // new
-    void setProgress(int percent); 
+    void setProgress(int percent);
     void startProgressAnimation();
     void stopProgressAnimation();
 
@@ -56,24 +56,21 @@ protected:
 
 private:
     void setDownloadState(bool inProgress);
+    void updateProgressLabel();
 
-    // new
-    int  m_arcDirection = 1;
-    int  m_currentArcLength = 20;
-    int  m_rotationAngle = 0;
-    int  m_progress = 0;
-    int  m_animatedProgress = 0;
-    bool m_isLoading = false;
-
-    QTimer*            m_progressAnimationTimer = nullptr;
-    Theme              m_theme;
-    bool               m_isHovered;
-    bool               m_isNeedToRetry = false;
-    fileWrapper&       m_file_wrapper;
-    QVariantAnimation* m_loadingAnimation = nullptr;
-    FilesComponent*    m_files_component;
-    StyleFileItem*     m_style;
-    QPushButton*       m_iconBtn;
-    QLabel*            m_nameLabel;
-    QLabel*            m_sizeLabel;
+    Theme               m_theme;
+    bool                m_isHovered;
+    bool                m_isNeedToRetry = false;
+    fileWrapper&        m_file_wrapper;
+    FilesComponent*     m_files_component;
+    StyleFileItem*      m_style;
+    QPushButton*        m_iconBtn;
+    QLabel*             m_nameLabel;
+    QLabel*             m_sizeLabel;
+    QLabel*             m_progressLabel;
+    QLabel*             m_loadingAnimationLabel;
+    QMovie*             m_loadingMovie;
+    int                 m_progress = 0;
+    bool                m_isLoading = false;
+    bool                m_isAnimationStarted = false;
 };

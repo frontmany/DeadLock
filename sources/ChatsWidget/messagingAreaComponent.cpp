@@ -1257,6 +1257,7 @@ void MessagingAreaComponent::onSendFiles() {
         tmpFile.receiverLogin = m_chat->getFriendLogin();
         tmpFile.senderLogin = m_chatsWidget->getClient()->getMyLogin();
         tmpFile.timestamp = utility::getTimeStamp();
+        tmpFile.isRequested = false;
 
         try {
 #ifdef _WIN32

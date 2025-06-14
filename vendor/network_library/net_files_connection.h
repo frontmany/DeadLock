@@ -201,6 +201,7 @@ namespace net {
 				);
 			}
 			else {
+				m_total_bytes_sent = 0;
 				m_send_file_stream.close();
 				m_msg_tmp_for_send_metadata = message<T>();
 
@@ -499,13 +500,13 @@ namespace net {
 
 		owner						  m_owner;
 		asio::ip::tcp::socket		  m_socket;
-		asio::io_context& m_asio_context;
+		asio::io_context&			  m_asio_context;
 
 		message<T>					  m_file_preview_message_tmp;
 		message<T>					  m_msg_tmp_for_send_metadata;
 
 		safe_deque<file<T>>			  m_safe_deque_outgoing_files;
-		safe_deque<owned_file<T>>& m_safe_deque_incoming_files;
+		safe_deque<owned_file<T>>&	  m_safe_deque_incoming_files;
 		file<T>						  m_file_tmp;
 
 		// callbacks
