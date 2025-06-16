@@ -95,7 +95,7 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
     m_nameLabel->installEventFilter(this);
 
     m_loadingAnimationLabel = new QLabel(this);
-    m_loadingMovie = new QMovie(":/resources/ChatsWidget/loading.gif"); 
+    m_loadingMovie = new QMovie(":/resources/ChatsWidget/loading.gif");
     m_loadingAnimationLabel->setMovie(m_loadingMovie);
     m_loadingAnimationLabel->setFixedSize(32, 32);
     m_loadingAnimationLabel->setVisible(false);
@@ -123,7 +123,7 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
             QString filePath = QString::fromStdString(m_file_wrapper.file.filePath);
             QUrl fileUrl = QUrl::fromLocalFile(filePath);
             if (!QDesktopServices::openUrl(fileUrl)) {
-                qWarning() << "ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚ÑŒ Ñ„Ð°Ð¹Ð»:" << filePath;
+                qWarning() << "Íå óäàëîñü îòêðûòü ôàéë:" << filePath;
             }
         }
         else {
@@ -133,7 +133,7 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
                 filesComponent->onFileClicked(m_file_wrapper);
             }
         }
-    });
+        });
 }
 
 FileItem::~FileItem() {

@@ -16,6 +16,7 @@
 
 class EditDialogComponent;
 class ProfileEditorWidget;
+class ButtonIcon;
 class Client;
 class Photo;
 enum  Theme;
@@ -49,6 +50,9 @@ public:
     void setTheme(Theme theme);
     void updateAvatar(const Photo& photo);
 
+signals:
+    void logoutRequested();
+
 public slots:
     void setErrorText(const QString& text);
 
@@ -74,7 +78,7 @@ private:
     QPushButton*    m_password_button;
     QPushButton*    m_save_button;
     QPushButton*    m_cancel_button;
-
+    ButtonIcon*     m_logoutButton;
 
     ProfileEditorWidget* m_profile_editor_widget;
     Client* m_client;

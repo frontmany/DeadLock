@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
     
     Client* client = new Client;
     bool isAutoLogin = client->autoLoginAndLoad();
-    client->connectTo("192.168.56.1", 8080);
+    client->connectTo("192.168.1.46", 8080);
     client->run();
 
     MainWindow* mainWindow = new MainWindow(nullptr, client);

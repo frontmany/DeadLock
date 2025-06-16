@@ -70,7 +70,6 @@ public:
 signals:
     void sendCreateChatData(QString login);
     void sendChangeTheme();
-    void logoutRequested();
 
 
 public slots:
@@ -118,17 +117,16 @@ private:
 
     AvatarIcon*         m_profileButton;
     ButtonIcon*         m_newChatButton;
-    ButtonIcon*         m_logoutButton;
 
     QPushButton*        m_hideButton;
     QLabel*             m_noConnectionLabel;
     bool                m_is_hidden;
 
-    QTimer*                      m_search_timer;
+    QTimer* m_search_timer;
     FriendSearchDialogComponent* m_friend_search_dialog;
-    AddChatDialogComponent*      m_chatAddDialog;
+    AddChatDialogComponent* m_chatAddDialog;
 
-    ChatsWidget*         m_chats_widget;
+    ChatsWidget* m_chats_widget;
     ProfileEditorWidget* m_profile_editor_widget;
 
     std::vector<ChatComponent*> m_vec_chatComponents;

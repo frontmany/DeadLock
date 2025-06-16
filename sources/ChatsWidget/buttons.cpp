@@ -62,7 +62,7 @@ ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
 
     if (m_theme == DARK) {
         m_circleColor = QColor(102, 102, 102);
-        m_backgroundColor = QColor(52, 52, 52);
+        m_backgroundColor = QColor(25, 25, 25);
 
     }
     else {
@@ -122,7 +122,7 @@ void ToggleSwitch::setTheme(Theme theme) {
     m_theme = theme;
     if (m_theme == DARK) {
         m_circleColor = QColor(102, 102, 102);
-        m_backgroundColor = QColor(52, 52, 52);
+        m_backgroundColor = QColor(30, 30, 30);
 
     }
     else {

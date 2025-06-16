@@ -1,28 +1,36 @@
 #include "ImageGridItem.h"
 #include "filesComponent.h"
-#include "fileWrapper.h"
 
-ImageGridItem::ImageGridItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, int rowHeight)
-    : QWidget(parent), m_file_wrapper(fileWrapper),
-    m_cornerRadius(5), m_rowHeight(rowHeight),
-    m_aspectRatio(1.0), m_files_component(filesComponent)
+ImageGridItem::ImageGridItem(QWidget* parent, FilesComponent* filesComponent, Image& image, const QString& filePath)
+    : QWidget(parent),
+    m_image(image),
+    m_cornerRadius(5),
+    m_aspectRatio(static_cast<double>(image.width) / image.height),
+    m_filePath(filePath),
+    m_files_component(filesComponent),
+    m_hovered(false)
 {
     setAttribute(Qt::WA_Hover);
     setMouseTracking(true);
 
-    QPixmap pixmap(m_file_wrapper.file.filePath.c_str());
-    if (!pixmap.isNull()) {
-        m_originalPixmap = pixmap;
-        m_aspectRatio = static_cast<double>(pixmap.width()) / pixmap.height();
+    // Устанавливаем фиксированный размер согласно переданным параметрам
+    setFixedSize(m_image.width, m_image.height);
+
+    if (!m_image.image.isNull()) {
+        QPixmap pixmap = QPixmap::fromImage(m_image.image.scaled(
+            m_image.width,
+            m_image.height,
+            Qt::KeepAspectRatio,
+            Qt::SmoothTransformation
+        ));
+
+        if (!pixmap.isNull()) {
+            m_originalPixmap = pixmap;
+            updateRoundedPixmap();
+        }
     }
 
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    setMinimumHeight(m_rowHeight);
-    updateSizeConstraints();
-    updatePixmaps();
-
-    connect(this, &ImageGridItem::clicked, this, [this, fileWrapper]() {
-        QString filePath = QString::fromStdString(fileWrapper.file.filePath);
+    connect(this, &ImageGridItem::clicked, this, [this, filePath]() {
         QUrl fileUrl = QUrl::fromLocalFile(filePath);
         if (!QDesktopServices::openUrl(fileUrl)) {
             qWarning() << "Не удалось открыть файл:" << filePath;
@@ -30,88 +38,64 @@ ImageGridItem::ImageGridItem(QWidget* parent, FilesComponent* filesComponent, fi
         });
 }
 
-void ImageGridItem::updateSizeConstraints() {
-    int minWidth = static_cast<int>(m_rowHeight * m_aspectRatio * 0.8);
-    int maxWidth = static_cast<int>(m_rowHeight * m_aspectRatio * 1.0);
+void ImageGridItem::updateRoundedPixmap() {
+    if (m_originalPixmap.isNull()) return;
 
-    setMinimumWidth(minWidth);
-    setMaximumWidth(maxWidth);
-    updateGeometry();
-}
+    // Создаем pixmap с нужными размерами
+    QPixmap rounded(size());
+    rounded.fill(Qt::transparent);
 
-void ImageGridItem::setRowHeight(int height) {
-    m_rowHeight = height;
-    setFixedHeight(height);
-    updateSizeConstraints();
-    updatePixmaps();
-    update();
+    QPainter painter(&rounded);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Рассчитываем область для отрисовки с сохранением aspect ratio
+    QRect targetRect(0, 0, width(), height());
+    QPixmap scaledPixmap = m_originalPixmap.scaled(
+        targetRect.size(),
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+    );
+
+    // Центрируем изображение
+    QRect centeredRect = scaledPixmap.rect();
+    centeredRect.moveCenter(targetRect.center());
+
+    QPainterPath path;
+    path.addRoundedRect(targetRect, m_cornerRadius, m_cornerRadius);
+    painter.setClipPath(path);
+    painter.drawPixmap(centeredRect, scaledPixmap);
+
+    m_roundedPixmap = rounded;
 }
 
 void ImageGridItem::setCornerRadius(int radius) {
     m_cornerRadius = radius;
-    updatePixmaps();
+    updateRoundedPixmap();
     update();
-}
-
-double ImageGridItem::aspectRatio() const {
-    return m_aspectRatio;
 }
 
 void ImageGridItem::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QRect targetRect = rect();
-
     if (!m_roundedPixmap.isNull()) {
-        QPainterPath clipPath;
-        clipPath.addRoundedRect(targetRect, m_cornerRadius, m_cornerRadius);
-        painter.setClipPath(clipPath);
-
-        painter.drawPixmap(targetRect, m_roundedPixmap);
+        painter.drawPixmap(rect(), m_roundedPixmap);
 
         if (m_hovered) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(0, 0, 0, 30));
-            painter.drawRoundedRect(targetRect, m_cornerRadius, m_cornerRadius);
+            painter.drawRoundedRect(rect(), m_cornerRadius, m_cornerRadius);
         }
     }
 }
 
-QSize ImageGridItem::calculateDisplaySize() const {
-    int maxWidth = width();
-    int calculatedHeight = m_rowHeight;
-    int calculatedWidth = static_cast<int>(calculatedHeight * m_aspectRatio);
-
-    if (calculatedWidth > maxWidth) {
-        calculatedWidth = maxWidth;
-        calculatedHeight = static_cast<int>(maxWidth / m_aspectRatio);
-    }
-
-    return QSize(calculatedWidth, calculatedHeight);
+void ImageGridItem::resizeEvent(QResizeEvent* event) {
+    // Не изменяем размеры, так как они фиксированы
+    updateRoundedPixmap();
+    QWidget::resizeEvent(event);
 }
 
-void ImageGridItem::updatePixmaps() {
-    if (m_originalPixmap.isNull()) return;
-
-    QSize displaySize = calculateDisplaySize();
-    m_scaledPixmap = m_originalPixmap.scaled(
-        displaySize,
-        Qt::KeepAspectRatio,
-        Qt::SmoothTransformation
-    );
-
-    m_roundedPixmap = QPixmap(displaySize);
-    m_roundedPixmap.fill(Qt::transparent);
-
-    QPainter painter(&m_roundedPixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
-    QPainterPath path;
-    path.addRoundedRect(m_roundedPixmap.rect(), m_cornerRadius, m_cornerRadius);
-    painter.setClipPath(path);
-    painter.drawPixmap(0, 0, m_scaledPixmap);
-}
-
+// Остальные методы остаются без изменений
 void ImageGridItem::hoverEnter(QHoverEvent* event) {
     m_hovered = true;
     setCursor(Qt::PointingHandCursor);

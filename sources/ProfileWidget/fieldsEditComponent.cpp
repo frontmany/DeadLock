@@ -4,6 +4,7 @@
 #include"client.h"
 #include"utility.h"
 #include"photo.h"
+#include"buttons.h"
 
 StyleFieldsEditComponent::StyleFieldsEditComponent() {
     DarkLabelStyle = R"(
@@ -221,22 +222,139 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
     m_password_button = new QPushButton("Change Password");
     m_password_button->setFixedHeight(35);
-    
-    
     connect(m_password_button, &QPushButton::clicked, m_profile_editor_widget, &ProfileEditorWidget::setPasswordEditor);
 
    
+    m_logoutButton = new ButtonIcon(this, 40, 40);
+    QIcon icon1(":/resources/ChatsWidget/logoutDark.png");
+    QIcon iconHover1(":/resources/ChatsWidget/logoutHoverDark.png");
+    m_logoutButton->uploadIconsDark(icon1, iconHover1);
+    QIcon icon2(":/resources/ChatsWidget/logoutLight.png");
+    QIcon iconHover2(":/resources/ChatsWidget/logoutHoverLight.png");
+    m_logoutButton->uploadIconsLight(icon2, iconHover2);
+    m_logoutButton->setIconSize(QSize(25, 25));
+    connect(m_logoutButton, &ButtonIcon::clicked, [this]() {
+        QDialog logoutDialog(this);
+        logoutDialog.setWindowTitle(tr("Exit Confirmation"));
+        logoutDialog.setMinimumSize(300, 150);
+
+        QString dialogStyle;
+        QString buttonStyle;
+
+        if (m_theme == Theme::DARK) {
+            dialogStyle = R"(
+            QDialog {
+                background-color: #333333;
+                color: #f0f0f0;
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 1px solid #444444;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #f0f0f0;
+            }
+        )";
+
+            buttonStyle = R"(
+            QPushButton {
+                background-color: #444444;
+                color: #f0f0f0;
+                border: 1px solid #555555;
+                border-radius: 4px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+            QPushButton:pressed {
+                background-color: #3a3a3a;
+            }
+        )";
+        }
+        else {
+            dialogStyle = R"(
+            QDialog {
+                background-color: #ffffff;
+                color: #333333;
+                font-family: 'Segoe UI';
+                font-size: 14px;
+                border: 1px solid #dddddd;
+                border-radius: 8px;
+            }
+            QLabel {
+                color: #333333;
+            }
+        )";
+
+            buttonStyle = R"(
+            QPushButton {
+                background-color: #f0f0f0;
+                color: #333333;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 6px 12px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #e5e5e5;
+            }
+            QPushButton:pressed {
+                background-color: #d9d9d9;
+            }
+        )";
+        }
+
+        logoutDialog.setStyleSheet(dialogStyle);
+
+        QVBoxLayout* layout = new QVBoxLayout(&logoutDialog);
+
+        QLabel* messageLabel = new QLabel(tr("Are you sure you want to quit?"), &logoutDialog);
+        messageLabel->setAlignment(Qt::AlignCenter);
+        messageLabel->setStyleSheet("font-size: 16px; padding: 20px;");
+
+        QHBoxLayout* buttonLayout = new QHBoxLayout();
+        QPushButton* confirmButton = new QPushButton(tr("quit"), &logoutDialog);
+        QPushButton* cancelButton = new QPushButton(tr("cancel"), &logoutDialog);
+
+        confirmButton->setStyleSheet(buttonStyle);
+        cancelButton->setStyleSheet(buttonStyle);
+
+        buttonLayout->addStretch();
+        buttonLayout->addWidget(confirmButton);
+        buttonLayout->addWidget(cancelButton);
+        buttonLayout->addStretch();
+
+        layout->addWidget(messageLabel);
+        layout->addLayout(buttonLayout);
+
+        connect(confirmButton, &QPushButton::clicked, [&]() {
+            logoutDialog.accept();
+            m_client->undoAutoLogin();
+            m_client->setNeedToUndoAutoLogin(true);
+            QApplication::quit();
+        });
+
+        connect(cancelButton, &QPushButton::clicked, [&]() {
+            logoutDialog.reject();
+        });
+
+        if (logoutDialog.exec() == QDialog::Accepted) {
+        }
+        });
 
 
     m_photo_password_buttonsHLayout = new QHBoxLayout();
     m_photo_password_buttonsHLayout->setAlignment(Qt::AlignRight);
+    m_photo_password_buttonsHLayout->addWidget(m_logoutButton);
+    m_photo_password_buttonsHLayout->addSpacing(20);
     m_photo_password_buttonsHLayout->addWidget(m_change_photo_button);
     m_photo_password_buttonsHLayout->addWidget(m_password_button);
     m_photo_password_buttonsHLayout->addSpacing(16);
 
     m_save_button = new QPushButton("Save");
     m_save_button->setMinimumHeight(30);
-
 
     connect(m_save_button, &QPushButton::clicked, [this]() {
         std::string name = m_name_edit->text().toStdString();
@@ -302,6 +420,8 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
 
 void FieldsEditComponent::setTheme(Theme theme) {
+    m_logoutButton->setTheme(theme);
+
     if (theme == Theme::DARK) {
         m_error_label->setStyleSheet("color: rgb(250, 132, 132);");
         m_login_label->setStyleSheet(m_style->DarkLabelStyle);

@@ -6,201 +6,337 @@
 #include "captionItem.h"
 #include "message.h"
 
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <limits>
+#include <cmath>
+#include <queue>
+
+
 FilesComponent::FilesComponent(QWidget* parent, MessageComponent* messageComponent, Message* parentMessage,
-    std::vector<fileWrapper>& fileWrappersVec,
-    const QString& caption,
-    const QString& timestamp,
-    bool isRead,
-    bool isSent,
     Theme theme)
     : QWidget(parent),
-    m_vec_file_wrappers(fileWrappersVec),
     m_parent_message(parentMessage),
     m_message_component(messageComponent),
-    m_caption(caption),
-    m_theme(theme),
-    m_timestamp(timestamp),
-    m_isRead(isRead),
-    m_isSent(isSent)
+    m_theme(theme)
 {
-    m_mainHLayout = new QHBoxLayout(this);
-    m_mainHLayout->setContentsMargins(0, 0, 0, 0);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    setMaximumSize(400, 8000);
 
-    m_contentWrapper = new QWidget(this);
-    m_contentWrapper->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-
-    m_mainVLayout = new QVBoxLayout(m_contentWrapper);
+    m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_filesLayout = new QVBoxLayout();
-    m_filesLayout->setContentsMargins(0, 5, 0, 0);
+    m_imagesVLayout = new QVBoxLayout();
+    m_imagesVLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_mainVLayout->addLayout(m_filesLayout);
+    m_filesVLayout = new QVBoxLayout();
+    m_filesVLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_captionItem = new CaptionItem(m_contentWrapper, m_isSent, m_theme);
-    m_captionItem->setContentsMargins(0, 0, 0, 0);
-    m_captionItem->setMessage(m_caption);
-    m_captionItem->setTimestamp(m_timestamp);
-    m_captionItem->setTheme(m_theme);
+    m_imagesHMainLayout = new QHBoxLayout();
+    m_imagesHMainLayout->setContentsMargins(0, 0, 0, 0);
 
-    std::vector<fileWrapper*> images;
+    m_captionItem = new CaptionItem(this, m_parent_message->getIsSend(), m_theme);
+    m_captionItem->setMessage(QString::fromStdString(m_parent_message->getMessage()));
+    m_captionItem->setTimestamp(QString::fromStdString(m_parent_message->getTimestamp()));
+
+    QVector<std::pair<QString, QImage>> images;
     std::vector<fileWrapper*> otherFiles;
 
-    for (auto& fileWrapper : m_vec_file_wrappers) {
+    for (auto& fileWrapper : m_message_component->getMessage()->getRelatedFiles()) {
         QString filePath = QString::fromStdString(fileWrapper.file.filePath);
         if (isImage(filePath)) {
-            images.push_back(&fileWrapper);
+            QImage img(filePath);
+            if (!img.isNull()) {
+                images.emplace_back(filePath, img);
+            }
+            else {
+                qWarning() << "Failed to load image:" << filePath;
+            }
         }
         else {
             otherFiles.push_back(&fileWrapper);
         }
     }
 
-    m_is_files = !otherFiles.empty();
-
-    if (m_caption == "" && otherFiles.size() != 0) {
-        if (images.size() > 0) {
-            m_mainVLayout->addSpacing(-42);
-        }
-        else {
-            m_mainVLayout->addSpacing(-32);
-        }
-    }
-    m_mainVLayout->addWidget(m_captionItem);
-    m_mainHLayout->addWidget(m_contentWrapper);
-
-    if (m_is_files) {
-        m_mainVLayout->insertSpacing(1, -6);
-    }
-
-    if (!images.empty()) { 
-        QVector<ImageRow> imageRows = calculateImageRows(images);
-        for (ImageRow& row : imageRows) {
+    if (!images.empty()) {
+        Image exceptionImage{};
+        std::vector<ImageRow> imageRows = arrangeImages(images, exceptionImage);
+        
+        for (ImageRow& imgRow : imageRows) {  
             QHBoxLayout* rowLayout = new QHBoxLayout();
-            rowLayout->setSpacing(7);
-            rowLayout->setContentsMargins(5, 0, 5, 0);
+            rowLayout->setContentsMargins(0, 0, 0, 0);
 
-            for (fileWrapper* file : row.images) {
-                ImageGridItem* item = new ImageGridItem(this, this, *file, row.optimalHeight);
-                item->setCornerRadius(5);
+            for (Image& img : imgRow.imagesVec) {
+                ImageGridItem* item = new ImageGridItem(this, this, img, img.filePath);
                 rowLayout->addWidget(item);
-                
             }
-            m_filesLayout->addLayout(rowLayout);
-        }
-    }
 
-    m_filesLayout->addSpacing(4);
+            m_imagesVLayout->addLayout(rowLayout);
+        }
+
+        if (exceptionImage.filePath != "") {
+            ImageGridItem* item = new ImageGridItem(this, this, exceptionImage, exceptionImage.filePath);
+            m_imagesHMainLayout->addWidget(item);
+        }
+        
+        m_imagesHMainLayout->addLayout(m_imagesVLayout);
+    }
 
     if (!otherFiles.empty()) {
-        m_filesContainer = new QWidget(this);
-
-        QVBoxLayout* containerLayout = new QVBoxLayout(m_filesContainer);
-        containerLayout->setContentsMargins(0, 15, 0, 0);
-        containerLayout->setSpacing(2);
-
         for (fileWrapper* file : otherFiles) {
             FileItem* fileWidget = new FileItem(this, this, *file, m_theme);
             m_vec_file_items.push_back(fileWidget);
-            containerLayout->addWidget(fileWidget);
+            m_filesVLayout->addWidget(fileWidget);
         }
-
-        if (!images.empty())
-            m_filesLayout->addSpacing(-10);
-
-        m_filesLayout->addWidget(m_filesContainer);
-
-        if (!images.empty())
-            m_filesLayout->addSpacing(10);
     }
 
-    connect(this, &FilesComponent::fileClicked, m_message_component, &MessageComponent::onSendMeFile);
+    m_mainVLayout->addLayout(m_imagesHMainLayout);
+    if (images.empty()) {
+        m_mainVLayout->addSpacing(6);
+    }
+    m_mainVLayout->addLayout(m_filesVLayout);
+    m_mainVLayout->addWidget(m_captionItem);
 
+    connect(this, &FilesComponent::fileClicked, m_message_component, &MessageComponent::onSendMeFile);
+    
     setTheme(m_theme);
 }
 
+std::optional<Image> FilesComponent::findExceptionImage(const std::vector<Image>& imagesVec) {
+    for (const auto& image : imagesVec) {
+        if (image.height > image.width) {
+            double ratio = static_cast<double>(image.height) / image.width;
+            if (ratio > 2.5) {
+                return image;
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
+
+std::vector<ImageRow> FilesComponent::arrangeImages(const QVector<std::pair<QString, QImage>>& images, Image& exceptionImage) {
+    if (images.empty()) {
+        return {};
+    }
+
+    const double containerWidth = 400.0;
+    const double containerHeight = 600.0;
+     
+    std::vector<Image> imagesVec;
+    for (const auto& img : images) {
+        imagesVec.push_back({ img.second, img.first, img.second.width(), img.second.height() });
+    }
+    
+    auto optionalExceptionImage = findExceptionImage(imagesVec);
+    if (optionalExceptionImage.has_value()) {
+        exceptionImage = optionalExceptionImage.value();
+    }
+
+    
+    imagesVec.erase(
+        std::remove_if(
+            imagesVec.begin(),
+            imagesVec.end(),
+            [&exceptionImage](const Image& img) {
+                return img.filePath == exceptionImage.filePath;
+            }
+        ),
+        imagesVec.end()
+    );
+
+    if (imagesVec.size() == 1) {
+        Image image = imagesVec[0];
+        double ratioCoefficient = 0;
+        if (image.width > image.height) {
+            ratioCoefficient = static_cast<double>(image.width) / image.height;
+        }
+        else {
+            ratioCoefficient = static_cast<double>(image.height) / image.width;
+        }
+
+        double newWidth, newHeight;
+
+        if (image.width > image.height) {
+            newWidth = containerWidth;
+            newHeight = containerWidth / ratioCoefficient;
+
+            if (newHeight > containerHeight) {
+                newHeight = containerHeight;
+                newWidth = containerHeight * ratioCoefficient;
+            }
+        }
+        else {
+            newHeight = containerHeight;
+            newWidth = containerHeight / ratioCoefficient;
+
+            if (newWidth > containerWidth) {
+                newWidth = containerWidth;
+                newHeight = containerWidth * ratioCoefficient;
+            }
+        }
+
+        Image scaledImage;
+        scaledImage.width = static_cast<int>(newWidth);
+        scaledImage.height = static_cast<int>(newHeight);
+        scaledImage.filePath = image.filePath;
+        scaledImage.image = image.image;
+
+        ImageRow row;
+        row.imagesVec.push_back(scaledImage);
+
+        std::vector<ImageRow> vec;
+        vec.push_back(row);
+        return vec;
+    }
+
+    else {
+        double totalArea = 0;
+        for (const auto& img : imagesVec) {
+            totalArea += img.width * img.height;
+        }
+
+        const double containerArea = containerWidth * containerHeight;
+        const double scaleCoeff = 1; // Additional scaling coefficient
+
+        double c_s = std::sqrt(totalArea / containerArea);
+        double maxWidth = 0, maxHeight = 0;
+        for (const auto& img : imagesVec) {
+            if (img.width > maxWidth) maxWidth = img.width;
+            if (img.height > maxHeight) maxHeight = img.height;
+        }
+
+        double c_w = maxWidth / containerWidth;
+        double c_h = maxHeight / containerHeight;
+        double c_base = std::max({ c_s, c_w, c_h });
+        double c = c_base * scaleCoeff;
+
+        std::vector<Image> scaledImages;
+        for (const auto& img : imagesVec) {
+            Image scaled;
+            scaled.width = img.width / c;
+            scaled.height = img.height / c;
+            scaled.filePath = img.filePath;
+            scaled.image = img.image;
+            scaledImages.push_back(scaled);
+        }
+
+        double avgWidth = 0, avgHeight = 0;
+        for (const auto& img : scaledImages) {
+            avgWidth += img.width;
+            avgHeight += img.height;
+        }
+        avgWidth /= scaledImages.size();
+        avgHeight /= scaledImages.size();
+
+        std::vector<Image> equalHeightImages;
+        for (const auto& img : scaledImages) {
+            Image scaled;
+            double factor = avgHeight / img.height;
+            scaled.width = img.width * factor;
+            scaled.height = avgHeight;
+            scaled.filePath = img.filePath;
+            scaled.image = img.image;
+            equalHeightImages.push_back(scaled);
+        }
+
+
+        std::vector<ImageRow> result;
+
+        std::sort(equalHeightImages.begin(), equalHeightImages.end(),
+            [](const Image& a, const Image& b) { return a.width > b.width; });
+
+        std::vector<Image> currentRow;
+        double currentRowWidth = 0;
+
+        for (const auto& img : equalHeightImages) {
+            if (currentRowWidth + img.width <= containerWidth) {
+                currentRow.push_back(img);
+                currentRowWidth += img.width;
+            }
+            else {
+                if (!currentRow.empty()) {
+                    double scaleFactor = containerWidth / currentRowWidth;
+                    ImageRow row;
+                    for (auto& rowImg : currentRow) {
+                        Image scaled;
+                        scaled.width = rowImg.width * scaleFactor;
+                        scaled.height = rowImg.height * scaleFactor;
+                        scaled.filePath = rowImg.filePath;
+                        scaled.image = rowImg.image;
+                        row.imagesVec.push_back(scaled);
+                    }
+                    result.push_back(row);
+                }
+
+                currentRow.clear();
+                currentRow.push_back(img);
+                currentRowWidth = img.width;
+            }
+        }
+
+        if (!currentRow.empty()) {
+            double scaleFactor = containerWidth / currentRowWidth;
+            ImageRow row;
+            for (auto& rowImg : currentRow) {
+                Image scaled;
+                scaled.width = rowImg.width * scaleFactor;
+                scaled.height = rowImg.height * scaleFactor;
+                scaled.filePath = rowImg.filePath;
+                scaled.image = rowImg.image;
+                row.imagesVec.push_back(scaled);
+            }
+            result.push_back(row);
+        }
+
+
+        double totalRowsHeight = 0;
+        if (!result.empty()) {
+            for (const auto& row : result) {
+                if (!row.imagesVec.empty()) {
+                    totalRowsHeight += row.imagesVec[0].height;
+                }
+            }
+        }
+        else {
+            totalRowsHeight = containerHeight / 3;
+        }
+
+        
+        if (optionalExceptionImage.has_value()) {
+            Image scaled;
+            scaled.image = exceptionImage.image;
+            scaled.filePath = exceptionImage.filePath;
+
+            double ratio = static_cast<double>(exceptionImage.height) / exceptionImage.width;
+            scaled.height = totalRowsHeight;
+            scaled.width = totalRowsHeight / ratio;
+
+            if (scaled.width > containerWidth) {
+                double scaleFactor = containerWidth / scaled.width;
+                scaled.width = containerWidth;
+                scaled.height *= scaleFactor;
+            }
+
+            exceptionImage = scaled;
+        }
+        
+        return result;
+    }
+}
 
 FilesComponent::~FilesComponent() {
     clearLayout();
 }
 
 void FilesComponent::setIsRead(bool isRead) {
-    m_isRead = isRead;
     m_captionItem->setIsRead(isRead);
 }
 
 void FilesComponent::onFileClicked(const fileWrapper& fileWrapper) {
     emit fileClicked(fileWrapper);
-}
-
-
-QVector<FilesComponent::ImageRow> FilesComponent::calculateImageRows(std::vector<fileWrapper*>& images) const {
-    QVector<ImageRow> rows;
-    const int maxRowWidth = 200;
-    const int minRowHeight = 50;
-    const int maxRowHeight = 150;
-
-    std::sort(images.begin(), images.end(),
-        [](const fileWrapper* a, const fileWrapper* b) {
-            QPixmap pixmapA(QString::fromStdString(a->file.filePath));
-            QPixmap pixmapB(QString::fromStdString(b->file.filePath));
-            double arA = pixmapA.width() / (double)pixmapA.height();
-            double arB = pixmapB.width() / (double)pixmapB.height();
-            return arA > arB;
-        });
-
-    ImageRow currentRow;
-    double currentRowAspect = 0;
-
-    for (fileWrapper* file : images) {
-        QString filePath = QString::fromStdString(file->file.filePath);
-        QPixmap pixmap(filePath);
-        if (pixmap.isNull()) continue;
-
-        double aspect = pixmap.width() / (double)pixmap.height();
-
-        if (currentRow.images.empty() ||
-            (currentRowAspect + aspect) * minRowHeight <= maxRowWidth) {
-            currentRow.images.push_back(file);
-            currentRowAspect += aspect;
-        }
-        else {
-            currentRow.optimalHeight = calculateOptimalRowHeight(currentRow.images);
-            rows.append(currentRow);
-
-            currentRow = ImageRow();
-            currentRow.images.push_back(file);
-            currentRowAspect = aspect;
-        }
-    }
-
-    if (!currentRow.images.empty()) {
-        currentRow.optimalHeight = calculateOptimalRowHeight(currentRow.images);
-        rows.append(currentRow);
-    }
-
-    return rows;
-}
-
-int FilesComponent::calculateOptimalRowHeight(std::vector<fileWrapper*>& rowImages) const {
-    const int maxRowWidth = 600;
-    const int minRowHeight = 150;
-    const int maxRowHeight = 300;
-
-    double totalAspect = 0;
-    for (const fileWrapper* file : rowImages) {
-        QString filePath = QString::fromStdString(file->file.filePath);
-        QPixmap pixmap(filePath);
-        if (!pixmap.isNull()) {
-            totalAspect += pixmap.width() / (double)pixmap.height();
-        }
-    }
-
-    if (totalAspect == 0) return minRowHeight;
-
-    int optimalHeight = static_cast<int>(maxRowWidth / totalAspect);
-    return qBound(minRowHeight, optimalHeight, maxRowHeight);
 }
 
 void FilesComponent::setTheme(Theme theme) {
@@ -214,20 +350,32 @@ void FilesComponent::setTheme(Theme theme) {
     }
 }
 
-void FilesComponent::updateContainerStyle() {
-    QString style;
+void FilesComponent::paintEvent(QPaintEvent* event)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    QRect rect = this->rect();
+
+    // Choose background color based on theme
+    QColor bgColor;
     if (m_is_need_to_retry) {
-        setRetryStyle(m_is_need_to_retry);
+        bgColor = (m_theme == Theme::DARK) ? QColor(189, 170, 170) : QColor(255, 212, 212);
     }
     else {
-        if (m_theme == Theme::DARK) {
-            style = "background-color: rgb(112, 112, 112); border-radius: 8px;";
-        }
-        else {
-            style = "background-color: rgb(225, 225, 225); border-radius: 8px;";
-        }
-        m_contentWrapper->setStyleSheet(style);
+        bgColor = (m_theme == Theme::DARK) ? QColor(112, 112, 112) : QColor(225, 225, 225);
     }
+
+    // Draw rounded rectangle background
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(bgColor);
+    painter.drawRoundedRect(rect, 8, 8);
+
+    QWidget::paintEvent(event);
+}
+
+void FilesComponent::updateContainerStyle() {
+    update();
 }
 
 void FilesComponent::setRetryStyle(bool isNeedToRetry) {
@@ -236,17 +384,17 @@ void FilesComponent::setRetryStyle(bool isNeedToRetry) {
     if (isNeedToRetry) {
         if (m_theme == Theme::DARK) {
             style = "background-color: rgb(189, 170, 170); border-radius: 8px;";
-            
+
         }
         else {
             style = "background-color: rgb(255, 212, 212); border-radius: 8px;";
         }
-        m_contentWrapper->setStyleSheet(style);
+        setStyleSheet(style);
     }
     else {
         updateContainerStyle();
     }
-    
+
     for (auto f : m_vec_file_items) {
         f->setRetryStyle(isNeedToRetry);
     }
@@ -268,7 +416,7 @@ bool FilesComponent::isImage(const QString& filePath) const {
 
 void FilesComponent::clearLayout() {
     QLayoutItem* child;
-    while ((child = m_filesLayout->takeAt(0)) != nullptr) {
+    while ((child = m_filesVLayout->takeAt(0)) != nullptr) {
         if (child->widget()) {
             delete child->widget();
         }
@@ -287,7 +435,7 @@ void FilesComponent::setProgress(const net::file<QueryType>& file, int percent) 
 
 void FilesComponent::requestedFileLoaded(const fileWrapper& fileWrapper) {
     bool fileFound = false;
-    for (auto& file : m_vec_file_wrappers) {
+    for (auto& file : m_message_component->getMessage()->getRelatedFiles()) {
         if (file.file.id == fileWrapper.file.id) {
             file = fileWrapper;
             fileFound = true;
@@ -302,7 +450,6 @@ void FilesComponent::requestedFileLoaded(const fileWrapper& fileWrapper) {
 
     for (auto* fileItem : m_vec_file_items) {
         if (fileItem->getFileWrapper().file.id == fileWrapper.file.id) {
-            fileItem->updateFileInfo(fileWrapper);
             fileItem->stopProgressAnimation();
             fileItem->setTheme(m_theme);
             fileItem->update();

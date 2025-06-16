@@ -60,7 +60,6 @@ public slots:
 	void createAndAddChatComponentToList(Chat* chat);
 	void createAndSetMessagingAreaComponent(Chat* chat);
 	void removeRightComponent();
-	void onLogoutRequested();
 	void closeAddChatDialog();
 	void selectChatComponent(ChatComponent* component);
 	void createMessagingComponent(std::string friendName, Chat* chat);

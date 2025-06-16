@@ -1618,7 +1618,7 @@ void MessagingAreaComponent::updateRelatedChatComponentLastMessage() {
     std::vector<ChatComponent*> chatCompVec = comp->getChatComponentsVec();
     auto it = std::find_if(chatCompVec.begin(), chatCompVec.end(), [this](ChatComponent* chatComp) {
         return chatComp->getChat()->getFriendLogin() == m_chat->getFriendLogin();
-        });
+    });
 
     if (it != chatCompVec.end()) {
         ChatComponent* relatedComp = *it;
@@ -1645,28 +1645,31 @@ void MessagingAreaComponent::updateRelatedChatComponentLastMessage() {
             if (isPhoto && m_files_caption_edit != nullptr) {
                 std::string msg = m_messageInputEdit->toPlainText().toStdString();
                 if (msg.find_first_not_of(' ') == std::string::npos) {
-                    relatedComp->setLastMessage("[Photo]");
-                    m_chat->setLastReceivedOrSentMessage("[Photo]");
+                    relatedComp->setLastMessage("Photo");
+                    m_chat->setLastReceivedOrSentMessage("Photo");
                 }
+                else {
+                    msg.erase(0, msg.find_first_not_of(' '));
+                    msg.erase(msg.find_last_not_of(' ') + 1);
 
-                msg.erase(0, msg.find_first_not_of(' '));
-                msg.erase(msg.find_last_not_of(' ') + 1);
+                    relatedComp->setLastMessage(QString::fromStdString(msg));
+                    m_chat->setLastReceivedOrSentMessage(msg);
+                }
                 
-                relatedComp->setLastMessage(QString::fromStdString(msg));
-                m_chat->setLastReceivedOrSentMessage(msg);
             }
             else {
                 std::string msg = m_messageInputEdit->toPlainText().toStdString();
                 if (msg.find_first_not_of(' ') == std::string::npos) {
-                    relatedComp->setLastMessage("[File]");
-                    m_chat->setLastReceivedOrSentMessage("[File]");
+                    relatedComp->setLastMessage("File");
+                    m_chat->setLastReceivedOrSentMessage("File");
                 }
+                else {
+                    msg.erase(0, msg.find_first_not_of(' '));
+                    msg.erase(msg.find_last_not_of(' ') + 1);
 
-                msg.erase(0, msg.find_first_not_of(' '));
-                msg.erase(msg.find_last_not_of(' ') + 1);
-
-                relatedComp->setLastMessage(QString::fromStdString(msg));
-                m_chat->setLastReceivedOrSentMessage(msg);
+                    relatedComp->setLastMessage(QString::fromStdString(msg));
+                    m_chat->setLastReceivedOrSentMessage(msg);
+                }
             }
         }
     }
@@ -1684,6 +1687,11 @@ void MessagingAreaComponent::onTypeMessage() {
     else {
         m_sendMessageButton->show();
     }
+}
+
+
+void  MessagingAreaComponent::hideSendMessageButton() {
+    m_sendMessageButton->hide();
 }
 
 void MessagingAreaComponent::onRetryClicked(Message* messageToRetry) {

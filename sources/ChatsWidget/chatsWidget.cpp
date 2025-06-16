@@ -240,7 +240,6 @@ void ChatsWidget::restoreChatComponents() {
         }
         else {
             comp->setUnreadMessageDot(!vec.back()->getIsRead() && !vec.back()->getIsSend());
-            comp->setLastMessage(QString::fromStdString(vec.back()->getMessage()));
         }
     }
 }
@@ -276,12 +275,6 @@ void ChatsWidget::selectChatComponent(ChatComponent* component) {
         chatComp->setSelected(false);
     }
     component->setSelected(true);
-}
-
-void ChatsWidget::onLogoutRequested() {
-    m_client->undoAutoLogin();
-    m_client->setNeedToUndoAutoLogin(true);
-    QApplication::quit();
 }
 
 void ChatsWidget::createAndSetMessagingAreaComponent(Chat* chat) {

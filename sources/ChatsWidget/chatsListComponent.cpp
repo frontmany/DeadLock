@@ -115,12 +115,12 @@ StyleChatsListComponent::StyleChatsListComponent() {
 
     DarkHideButton = R"(
 QPushButton {
-    background-color: rgb(18, 18, 18);
+    background-color: rgb(25, 25, 25);
     border-radius: 15px;
     padding: 8px 16px;
     color: #E0E0E0;
     font-family: 'Segoe UI', sans-serif;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 800;
 }
 
@@ -152,12 +152,12 @@ QPushButton:disabled {
 
     LightHideButton = R"(
 QPushButton {
-    background-color: #F0F0F0;
+    background-color: rgb(224, 224, 224);
     border-radius: 15px;
     padding: 8px 16px;
     color: #404040;
     font-family: 'Segoe UI', sans-serif;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 800;
 }
 
@@ -267,16 +267,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileButton->setIcon(avatarIcon);
     m_profileHLayout->addWidget(m_profileButton);
 
-    m_logoutButton = new ButtonIcon(this, 40, 40);
-    QIcon icon1(":/resources/ChatsWidget/logoutDark.png");
-    QIcon iconHover1(":/resources/ChatsWidget/logoutHoverDark.png");
-    m_logoutButton->uploadIconsDark(icon1, iconHover1);
-    QIcon icon2(":/resources/ChatsWidget/logoutLight.png");
-    QIcon iconHover2(":/resources/ChatsWidget/logoutHoverLight.png");
-    m_logoutButton->uploadIconsLight(icon2, iconHover2);
-    m_logoutButton->setIconSize(QSize(25,25));
-    m_profileHLayout->addWidget(m_logoutButton);
-
     m_newChatButton = new ButtonIcon(this, 50, 50);
     QIcon icon3(":/resources/ChatsWidget/startChatDark.png");
     QIcon iconHover3(":/resources/ChatsWidget/startChatHoverDark.png");
@@ -291,7 +281,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_hideButton->setFlat(true);
     m_hideButton->setCursor(Qt::PointingHandCursor);
     m_hideButton->setCheckable(true);
-    m_hideButton->setFixedSize(150, 32);
+    m_hideButton->setFixedSize(125, 32);
     m_hideButton->setIconSize(QSize(32, 32));
     m_hideButton->installEventFilter(this);
 
@@ -317,7 +307,13 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
                 comp->getTextEdit()->setDisabled(true);
                 comp->getAttachFileButton()->setDisabled(true);
                 comp->getChatPropertiesComponent()->disable(true);
+                comp->hideSendMessageButton();
             }
+            if (m_isEditDialog) {
+                closeEditUserDialogWidnow();
+            }
+            m_profileButton->setDisabled(true);
+
             client->broadcastMyStatus(utility::getCurrentDateTime());
         }
         else {
@@ -327,6 +323,8 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
                 comp->getAttachFileButton()->setDisabled(false);
                 comp->getChatPropertiesComponent()->disable(false);
             }
+            m_profileButton->setDisabled(false);
+
             client->broadcastMyStatus("online");
         }
     });
@@ -406,119 +404,10 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout->addWidget(m_scrollArea);
 
     connect(m_profileButton, &AvatarIcon::clicked, this, &ChatsListComponent::openEditUserDialogWidnow);
-    connect(m_logoutButton, &ButtonIcon::clicked, [this]() {
-        QDialog logoutDialog(this);
-        logoutDialog.setWindowTitle(tr("Exit Confirmation"));
-        logoutDialog.setMinimumSize(300, 150);
-
-        QString dialogStyle;
-        QString buttonStyle;
-
-        if (m_theme == Theme::DARK) {
-            dialogStyle = R"(
-            QDialog {
-                background-color: #333333;
-                color: #f0f0f0;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                border: 1px solid #444444;
-                border-radius: 8px;
-            }
-            QLabel {
-                color: #f0f0f0;
-            }
-        )";
-
-            buttonStyle = R"(
-            QPushButton {
-                background-color: #444444;
-                color: #f0f0f0;
-                border: 1px solid #555555;
-                border-radius: 4px;
-                padding: 6px 12px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-            QPushButton:pressed {
-                background-color: #3a3a3a;
-            }
-        )";
-        }
-        else {
-            dialogStyle = R"(
-            QDialog {
-                background-color: #ffffff;
-                color: #333333;
-                font-family: 'Segoe UI';
-                font-size: 14px;
-                border: 1px solid #dddddd;
-                border-radius: 8px;
-            }
-            QLabel {
-                color: #333333;
-            }
-        )";
-
-            buttonStyle = R"(
-            QPushButton {
-                background-color: #f0f0f0;
-                color: #333333;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 6px 12px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #e5e5e5;
-            }
-            QPushButton:pressed {
-                background-color: #d9d9d9;
-            }
-        )";
-        }
-
-        logoutDialog.setStyleSheet(dialogStyle);
-
-        QVBoxLayout* layout = new QVBoxLayout(&logoutDialog);
-
-        QLabel* messageLabel = new QLabel(tr("Are you sure you want to quit?"), &logoutDialog);
-        messageLabel->setAlignment(Qt::AlignCenter);
-        messageLabel->setStyleSheet("font-size: 16px; padding: 20px;");
-
-        QHBoxLayout* buttonLayout = new QHBoxLayout();
-        QPushButton* confirmButton = new QPushButton(tr("quit"), &logoutDialog);
-        QPushButton* cancelButton = new QPushButton(tr("cancel"), &logoutDialog);
-
-        confirmButton->setStyleSheet(buttonStyle);
-        cancelButton->setStyleSheet(buttonStyle);
-
-        buttonLayout->addStretch();
-        buttonLayout->addWidget(confirmButton);
-        buttonLayout->addWidget(cancelButton);
-        buttonLayout->addStretch();
-
-        layout->addWidget(messageLabel);
-        layout->addLayout(buttonLayout);
-
-        connect(confirmButton, &QPushButton::clicked, [&]() {
-            logoutDialog.accept();
-            emit logoutRequested(); 
-            });
-
-        connect(cancelButton, &QPushButton::clicked, [&]() {
-            logoutDialog.reject();
-            });
-
-        if (logoutDialog.exec() == QDialog::Accepted) {
-        }
-    }); 
-
     connect(m_newChatButton, &ButtonIcon::clicked, this, &ChatsListComponent::openAddChatDialog);
     connect(this, &ChatsListComponent::sendCreateChatData, m_chatsWidget, &ChatsWidget::onCreateChatButtonClicked);
     connect(this, &ChatsListComponent::sendChangeTheme, m_chatsWidget, &ChatsWidget::onChangeThemeClicked);
-    connect(this, &ChatsListComponent::logoutRequested, m_chatsWidget, &ChatsWidget::onLogoutRequested);
+   
 }
 
 bool ChatsListComponent::eventFilter(QObject* watched, QEvent* event) {
@@ -572,21 +461,21 @@ void ChatsListComponent::updateHideButton() {
     if (m_theme == DARK) {
         if (m_is_hidden) {
             m_hideButton->setIcon(m_hiddenIconDark);
-            m_hideButton->setText("  You are hidden");
+            m_hideButton->setText("  Hidden");
         }
         else {
             m_hideButton->setIcon(m_visibleIconDark);
-            m_hideButton->setText("  You are visible");
+            m_hideButton->setText("  Visible");
         }
     }
     else {
         if (m_is_hidden) {
             m_hideButton->setIcon(m_hiddenIconLight);
-            m_hideButton->setText("  You are hidden");
+            m_hideButton->setText("  Hidden");
         }
         else {
             m_hideButton->setIcon(m_visibleIconLight);
-            m_hideButton->setText("  You are visible");
+            m_hideButton->setText("  Visible");
         }
     }
     m_hideButton->setStyleSheet(isDarkTheme ? style->DarkHideButton : style->LightHideButton);
@@ -666,7 +555,15 @@ void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelect
     }
     else {
         auto lastMessage = messagesVec.back();
-        chatComponent->setLastMessage(QString::fromStdString(lastMessage->getMessage()));
+        QString msg = "";
+        if (lastMessage->getRelatedFilesCount() > 0) {
+            msg = "File";
+        }
+        else{
+            msg = QString::fromStdString(lastMessage->getMessage());
+        }
+
+        chatComponent->setLastMessage(msg);
     }
 
 }
@@ -695,7 +592,6 @@ ChatsWidget* ChatsListComponent::getChatsWidget() const {
 void ChatsListComponent::setTheme(Theme theme) {
     m_theme = theme;
     m_darkModeSwitch->setTheme(m_theme);
-    m_logoutButton->setTheme(m_theme);
     m_profileButton->setTheme(m_theme);
     m_friend_search_dialog->setTheme(m_theme);
     updateHideButton();

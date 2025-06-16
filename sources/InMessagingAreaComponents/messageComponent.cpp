@@ -9,12 +9,13 @@
 #include "utility.h"
 
 
+
 MessageComponent::MessageComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Message* message, Theme theme)
     : QWidget(parent), m_messaging_area_component(messagingAreaComponent), m_theme(theme), m_id(QString::fromStdString(message->getId())), m_isSent(message->getIsSend()),
     m_isRead(message->getIsRead()), m_message(message)
 {
     m_main_HLayout = new QHBoxLayout(this);
-    if (m_isSent){
+    if (m_isSent) {
         m_main_HLayout->setAlignment(Qt::AlignRight);
     }
     else {
@@ -22,21 +23,20 @@ MessageComponent::MessageComponent(QWidget* parent, MessagingAreaComponent* mess
     }
 
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-    this->setStyleSheet("background-color: transparent;");
 
     if (message->getRelatedFiles().size() == 0) {
-        m_component_structure = ComponentStructure::MESSAGE_COMPONENT;
+        m_component_structure_type = ComponentStructureType::MESSAGE_COMPONENT;
         m_inner_component = new InnerComponent(this, QString::fromStdString(message->getTimestamp()), QString::fromStdString(message->getMessage()), m_theme, m_isSent);
         m_main_HLayout->addWidget(m_inner_component);
     }
     else {
-        m_component_structure = ComponentStructure::FILES_COMPONENT;
-        m_files_component = new FilesComponent(this, this, m_message, message->getRelatedFiles(), QString::fromStdString(message->getMessage()), QString::fromStdString(message->getTimestamp()), message->getIsRead(), message->getIsSend(), m_theme);
+        m_component_structure_type = ComponentStructureType::FILES_COMPONENT;
+        m_files_component = new FilesComponent(this, this, m_message, m_theme);
         m_main_HLayout->addWidget(m_files_component);
     }
     m_main_HLayout->addSpacing(5);
     m_main_HLayout->setContentsMargins(5, 5, 5, 5);
-   
+
     setLayout(m_main_HLayout);
     setIsRead(m_isRead);
     setTheme(m_theme);
@@ -45,7 +45,7 @@ MessageComponent::MessageComponent(QWidget* parent, MessagingAreaComponent* mess
 void MessageComponent::setIsRead(bool isRead) {
     m_isRead = isRead;
 
-    if (m_component_structure == ComponentStructure::MESSAGE_COMPONENT) {
+    if (m_component_structure_type == ComponentStructureType::MESSAGE_COMPONENT) {
         m_inner_component->setIsRead(isRead);
     }
     else {
@@ -54,13 +54,13 @@ void MessageComponent::setIsRead(bool isRead) {
 }
 
 void MessageComponent::requestedFileUnLoadedError(const fileWrapper& fileWrapper) {
-    if (m_component_structure == ComponentStructure::FILES_COMPONENT) {
+    if (m_component_structure_type == ComponentStructureType::FILES_COMPONENT) {
         m_files_component->requestedFileUnLoaded(fileWrapper);
     }
 }
 
 MessageComponent::~MessageComponent() {
-    if (m_component_structure == ComponentStructure::MESSAGE_COMPONENT) {
+    if (m_component_structure_type == ComponentStructureType::MESSAGE_COMPONENT) {
         delete m_inner_component;
     }
     else {
@@ -70,10 +70,10 @@ MessageComponent::~MessageComponent() {
 
 void MessageComponent::setRetry() {
     if (!m_message->getIsSend() || m_retryButtonContainer) {
-        return; 
+        return;
     }
 
-    if (m_component_structure == ComponentStructure::MESSAGE_COMPONENT) {
+    if (m_component_structure_type == ComponentStructureType::MESSAGE_COMPONENT) {
         m_inner_component->setRetryStyle(true);
     }
     else {
@@ -117,11 +117,13 @@ void MessageComponent::setRetry() {
 
     connect(m_retryButton, &QPushButton::clicked, [this]() {
         qDebug() << "Retry button clicked for message:" << m_id;
+        /*
         if (m_messaging_area_component) {
             m_messaging_area_component->onRetryClicked(m_message);
         }
+        */
         removeRetry();
-    });
+        });
 }
 
 void MessageComponent::removeRetry() {
@@ -132,7 +134,7 @@ void MessageComponent::removeRetry() {
         m_retryButtonContainer = nullptr;
         m_retryButton = nullptr;
 
-        if (m_component_structure == ComponentStructure::MESSAGE_COMPONENT) {
+        if (m_component_structure_type == ComponentStructureType::MESSAGE_COMPONENT) {
             m_inner_component->setRetryStyle(false);
         }
         else {
@@ -164,7 +166,7 @@ bool MessageComponent::getReadStatus() const { return  m_inner_component->getIsR
 void MessageComponent::setTheme(Theme theme) {
     m_theme = theme;
 
-    if (m_component_structure == ComponentStructure::MESSAGE_COMPONENT) {
+    if (m_component_structure_type == ComponentStructureType::MESSAGE_COMPONENT) {
         m_inner_component->setTheme(theme);
     }
     else {

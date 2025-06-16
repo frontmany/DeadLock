@@ -14,22 +14,21 @@
 
 class FilesComponent;
 class fileWrapper;
+struct Image;
 
 class ImageGridItem : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ImageGridItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, int rowHeight);
-    void updateSizeConstraints();
+    explicit ImageGridItem(QWidget* parent, FilesComponent* filesComponent, Image& image, const QString& filePath);
     void setCornerRadius(int radius);
-    void setRowHeight(int height);
-    double aspectRatio() const;
 
 signals:
     void clicked();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
     bool event(QEvent* event) override {
         switch (event->type()) {
@@ -51,20 +50,19 @@ protected:
     void hoverLeave(QHoverEvent* event);
     void hoverMove(QHoverEvent* event);
     void mouseReleaseEvent(QMouseEvent* event) override;
+    void updateRoundedPixmap();
 
 private:
-    void updatePixmaps();
-    QSize calculateDisplaySize() const;
-
-    fileWrapper& m_file_wrapper;
+    QString m_filePath;
+    Image& m_image;
 
     FilesComponent* m_files_component;
 
     QPixmap m_originalPixmap;
     QPixmap m_scaledPixmap;
     QPixmap m_roundedPixmap;
+
     int     m_cornerRadius;
-    int     m_rowHeight;
     double  m_aspectRatio;
-    bool    m_hovered = false;
+    bool    m_hovered;
 };

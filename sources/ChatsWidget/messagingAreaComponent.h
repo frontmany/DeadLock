@@ -223,6 +223,7 @@ public:
     bool isDelimiterComponentUnread() { return isDelimiterUnread; }
 
     void markVisibleMessagesAsChecked();
+    void hideSendMessageButton();
 
 signals:
     void sendMessageData(Message*, Chat* chat);

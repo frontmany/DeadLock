@@ -16,6 +16,9 @@
 #include <QJsonDocument>
 #include <QFile>
 
+#include "theme.h"
+#include "net_file.h"
+#include "queryType.h"
 #include "fileWrapper.h"
 
 class InnerComponent;
@@ -28,7 +31,7 @@ enum Theme;
 class MessageComponent : public QWidget {
     Q_OBJECT
 private:
-    enum class ComponentStructure {
+    enum class ComponentStructureType {
         FILES_COMPONENT,
         MESSAGE_COMPONENT
     };
@@ -70,14 +73,14 @@ private:
     QString m_id;
     bool m_isSent;
     bool m_isRead;
-    QHBoxLayout* m_main_HLayout;
-    MessagingAreaComponent* m_messaging_area_component;
 
-    QWidget* m_retryButtonContainer = nullptr;
+    QWidget*     m_retryButtonContainer = nullptr;
     QPushButton* m_retryButton = nullptr;
+    QHBoxLayout* m_main_HLayout;
 
     InnerComponent* m_inner_component = nullptr;
     FilesComponent* m_files_component = nullptr;
 
-    ComponentStructure m_component_structure;
+    MessagingAreaComponent* m_messaging_area_component;
+    ComponentStructureType  m_component_structure_type;
 };

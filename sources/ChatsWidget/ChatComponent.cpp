@@ -69,7 +69,7 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     m_statusVLayout = new  QVBoxLayout;
     m_statusVLayout->setAlignment(Qt::AlignBottom);
     m_statusVLayout->addWidget(m_UnreadDot);
-    m_statusVLayout->addSpacing(-2);
+    m_statusVLayout->addSpacing(-5);
 
     m_mainHLayout = new QHBoxLayout();
     m_mainHLayout->setContentsMargins(10, 10, 10, 10);
@@ -167,7 +167,6 @@ void ChatComponent::setUnreadMessageDot(bool isUnreadMessages) {
 }
 
 void ChatComponent::setName(const QString& name) {
-    std::cout << "---------------------------------------label changed\n";
     m_nameLabel->setText(name);
     update();
 }
@@ -184,7 +183,6 @@ void ChatComponent::setLastMessage(const QString& message) {
 }
 
 void ChatComponent::setAvatar(const QPixmap& avatar) {
-    std::cout << "---------------------------------------photo changed\n";
     m_avatar = avatar.scaled(m_avatarSize, m_avatarSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QIcon avatarIcon(m_avatar);
     m_avatar_ico->setIcon(avatarIcon);
