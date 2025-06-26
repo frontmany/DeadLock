@@ -12,6 +12,7 @@ class AuthorizationComponent;
 class RegistrationComponent;
 class Client;
 class MainWindow;
+class ConfigManager;
 enum Theme;
 
 struct StyleLoginWidget {
@@ -24,7 +25,7 @@ class LoginWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client);
+    explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager);
     void setTheme(Theme& theme);
 
     AuthorizationComponent* getAuthorizationComponent();
@@ -50,6 +51,7 @@ private:
     QPixmap                 m_background;
     SwithcState             m_switchState;
     Client*                 m_client;
+    std::shared_ptr<ConfigManager> m_config_manager;
 
     QVBoxLayout*            m_mainVLayout;
     QHBoxLayout*            m_switchersHLayout;

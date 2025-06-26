@@ -6,6 +6,7 @@
 #include "utility.h"
 #include "photo.h"
 #include "chatsWidget.h"
+#include "configManager.h"
 #include "chatsListComponent.h"
 
 StylePhotoEditComponent::StylePhotoEditComponent() {
@@ -166,9 +167,9 @@ QSlider::sub-page:vertical {
 };
 
 
-PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
+PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme)
     : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme),
-    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100) {
+    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_config_manager(configManager) {
     m_style = new StylePhotoEditComponent;
 
     m_mainVLayout = new QVBoxLayout(this);
@@ -215,8 +216,8 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     connect(m_continueButton, &QPushButton::clicked, [this]() {
         saveCroppedImage();
         Photo* photo = new Photo(m_filePath.toStdString());
-        m_client->setIsHasPhoto(true);
-        m_client->setPhoto(photo);
+        m_config_manager->setIsHasPhoto(true);
+        m_config_manager->setPhoto(photo);
         m_client->updateMyPhoto(*photo);
 
         m_profile_editor_widget->setFieldsEditor();
@@ -459,7 +460,7 @@ void PhotoEditComponent::saveCroppedImage() {
         return;
     }
 
-    QString fileName = QString::fromStdString(m_client->getMyLogin()) + "myMainPhoto.png";
+    QString fileName = QString::fromStdString(m_config_manager->getMyLoginHash()) + "myMainPhoto.png";
     m_filePath = QDir(saveDir).filePath(fileName);
 
     QImage image = croppedImage.toImage();

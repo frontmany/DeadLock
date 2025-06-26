@@ -25,6 +25,7 @@ class MainWindow;
 class ChatsWidget;
 enum  Theme;
 class PacketsBuilder;
+class ConfigManager;
 
 struct StyleGreetWidget {
     StyleGreetWidget();
@@ -41,7 +42,7 @@ class GreetWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv);
+    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme, std::string login, ChatsWidget* cv);
     void startWelcomeAnimation();
     void setBackGround(Theme theme);
     void setWelcomeLabelText(const std::string& text);
@@ -64,6 +65,7 @@ private:
     MainWindow*             m_mainWindow;
     StyleGreetWidget*       m_style;
     Client*                 m_client;
+    std::shared_ptr<ConfigManager> m_config_manager;
     ChatsWidget*            m_chatsWidget;
     PacketsBuilder*   m_sender;
 

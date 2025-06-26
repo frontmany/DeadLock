@@ -2,6 +2,7 @@
 
 #include <QScreen>
 #include <QApplication>
+#include <QSharedMemory>
 
 #include <iostream>
 #include <ctime>
@@ -12,28 +13,63 @@
 #include <random>
 #include <iomanip>
 #include <algorithm>
+#include <cstdlib>
+#include <cassert>  
+
+#include <rsa.h> 
 
 class Chat;
 
+
+
 namespace utility {
-	std::string hashPassword(std::string password);
-	std::string getCurrentDateTime();
-	std::string generateId();
-	std::string getSaveDir();
-	std::string parseDate(const std::string& fulldate);
-	std::string getTimeStamp();
+    // Utility functions
+    std::string calculateHash(const std::string& text);
+    std::string getCurrentDateTime();
+    std::string generateId();
+    std::string getSaveDir();
+    std::string parseDate(const std::string& fulldate);
+    std::string getTimeStamp();
 
-	qreal getDeviceScaleFactor();
-	bool isApplicationAlreadyRunning();
+    // System functions
+    qreal getDeviceScaleFactor();
+    bool isApplicationAlreadyRunning();
+    int getScaledSize(int baseSize);
+    bool isDarkMode();
+    bool isHasInternetConnection();
+    std::string getFileSavePath(const std::string& fileName);
 
-	int getScaledSize(int baseSize);
+    // Chat management
+    void incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap);
+    void increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
+    void decreaseFollowingChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
 
-	bool isDarkMode();
-	bool isHasInternetConnection();
+    // Cryptography functions
+    void generateRSAKeyPair(CryptoPP::RSA::PrivateKey& privateKey, CryptoPP::RSA::PublicKey& publicKey);
+    void generateAESKey(CryptoPP::SecByteBlock& key);
 
-	std::string getFileSavePath(const std::string& fileName);
+    // RSA operations
+    std::string RSAEncrypt(const CryptoPP::RSA::PublicKey& publicKey, const CryptoPP::SecByteBlock& data);
+    CryptoPP::SecByteBlock RSADecrypt(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& cipher);
 
-	void incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap);
-	void increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
-	void decreaseFollowingChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
+    // AES operations
+    std::string AESEncrypt(const CryptoPP::SecByteBlock& key, const std::string& plain);
+    std::string AESDecrypt(const CryptoPP::SecByteBlock& key, const std::string& cipher);
+    std::array<char, 8220> AESEncrypt(const CryptoPP::SecByteBlock& key, const std::array<char, 8192>& plain);
+    std::array<char, 8192> AESDecrypt(const CryptoPP::SecByteBlock& key, const std::array<char, 8220>& cipher);
+
+    // Key serialization
+    std::string serializeKey(const CryptoPP::RSA::PublicKey& key);
+    std::string serializeKey(const CryptoPP::RSA::PrivateKey& key);
+    CryptoPP::RSA::PublicKey deserializePublicKey(const std::string& keyStr);
+    CryptoPP::RSA::PrivateKey deserializePrivateKey(const std::string& keyStr);
+
+    // Key validation
+    bool validateKeys(const CryptoPP::RSA::PublicKey& publicKey, const CryptoPP::RSA::PrivateKey& privateKey);
+    bool validatePublicKey(const CryptoPP::RSA::PublicKey& key);
+    bool validatePrivateKey(const CryptoPP::RSA::PrivateKey& key);
+
+    // Server crypto operations
+    std::string encryptWithServerKey(const std::string& plaintext, const std::string& keyStr);
+    std::string decryptWithServerKey(const std::string& ciphertext, const std::string& keyStr);
 }

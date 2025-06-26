@@ -2,8 +2,8 @@
 #include "loginWidget.h"
 #include "authorizationComponent.h"
 #include "registrationComponent.h"
+#include "configManager.h"
 #include "client.h"
-#include "utility.h"
 #include <QGraphicsBlurEffect>
 #include <QPainterPath>
 
@@ -45,8 +45,8 @@ StyleLoginWidget::StyleLoginWidget() {
 }
 
 
-LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
-    : QWidget(parent), m_client(client){
+LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager)
+    : QWidget(parent), m_client(client), m_config_manager(configManager) {
 
     m_switchState = AUTHORIZATION;
     style = new StyleLoginWidget;
@@ -84,14 +84,12 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client)
 }
 
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
-    m_client->authorizeClient(login.toStdString(), utility::hashPassword(password.toStdString()));
-    m_client->setMyLogin(login.toStdString());
+    m_client->authorizeClient(utility::calculateHash(login.toStdString()), utility::calculateHash(password.toStdString()));
+    m_config_manager->setMyLogin(login.toStdString());
 }
 
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
-    m_client->registerClient(login.toStdString(), utility::hashPassword(password.toStdString()), name.toStdString());
-     m_client->setMyLogin(login.toStdString());
-    m_client->setMyName(name.toStdString());
+    m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
 }
 
 void LoginWidget::switchToAuthorize() {

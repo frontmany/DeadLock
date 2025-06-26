@@ -7,6 +7,7 @@
 #include "net_safe_deque.h"
 #include "net_message.h"
 #include "net_file.h"
+#include "rsa.h"
 
 namespace net {
 
@@ -47,11 +48,11 @@ namespace net {
 			}
 		}
 
-		bool connectFilesSocket(const std::string& login, const std::string& host, const uint16_t port) {
+		bool connectFilesSocket(const std::string& loginHash, const std::string& host, const uint16_t port) {
 			try {
 				asio::ip::tcp::resolver resolver(m_context);
 				asio::ip::tcp::resolver::results_type endpoint = resolver.resolve(host, std::to_string(port));
-				m_validator->connectFilesSocketToServer(std::move(login), endpoint);
+				m_validator->connectFilesSocketToServer(std::move(loginHash), endpoint);
 
 				return true;
 			}
@@ -63,7 +64,6 @@ namespace net {
 
 		void disconnect() {
 			if (std::this_thread::get_id() == m_context_thread.get_id()) {
-				// Не вызываем disconnect() из потока io_context!
 				std::cerr << "Error: disconnect() called from io_context thread!\n";
 				return;
 			}
@@ -140,6 +140,10 @@ namespace net {
 			}
 		}
 
+		void setServerPublicKey(CryptoPP::RSA::PublicKey serverPublicKey) {
+			m_server_public_key = serverPublicKey;
+		}
+
 	protected:
 		virtual void onMessage(net::message<T> message) = 0;
 		virtual void onFile(net::file<T> file) = 0;
@@ -178,6 +182,7 @@ namespace net {
 				m_context,
 				std::move(filesSocket),
 				m_safe_deque_of_incoming_files,
+				&m_my_private_key,
 				[this](std::error_code ec, net::file<T> unreadFile) {onReceiveFileError(ec, unreadFile); },
 				[this](std::error_code ec, net::file<T> unsentFile) {onSendFileError(ec, unsentFile); },
 				[this](net::file<T> file) {onFileSent(file); },
@@ -194,6 +199,12 @@ namespace net {
 		std::unique_ptr<files_connection<T>> m_files_connection;
 		safe_deque<owned_message<T>> m_safe_deque_of_incoming_messages;
 		safe_deque<owned_file<T>> m_safe_deque_of_incoming_files;
+
+
+	protected:
+		CryptoPP::RSA::PublicKey  m_server_public_key;
+		CryptoPP::RSA::PrivateKey m_my_private_key;
+		CryptoPP::RSA::PublicKey  m_my_public_key;
 	};
 }
 

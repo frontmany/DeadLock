@@ -489,7 +489,7 @@ void ChatsListComponent::removeComponent(const QString& loginOfRemovedComponent)
     if (it != m_vec_chatComponents.end()) {
         ChatComponent* foundComp = *it;
         m_containerVLayout->removeWidget(foundComp);
-        utility::decreaseFollowingChatIndexes(m_chats_widget->getClient()->getMyChatsMap(), foundComp->getChat());
+        utility::decreaseFollowingChatIndexes(m_chats_widget->getClient()->getMyHashChatsMap(), foundComp->getChat());
 
         delete foundComp;
         m_vec_chatComponents.erase(it);
@@ -502,7 +502,7 @@ void ChatsListComponent::openEditUserDialogWidnow() {
     }
     else {
         m_isEditDialog = true;
-        m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClient(), m_theme);
+        m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClient(), m_chatsWidget->getConfigManager(), m_theme);
         m_containerVLayout->insertWidget(0, m_profile_editor_widget);
     }
      

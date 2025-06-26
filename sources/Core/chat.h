@@ -1,16 +1,25 @@
 #pragma once
 #include<vector>
 #include<QJsonObject>
-
-
 #include"message.h"
+
+#include "secblock.h"
+#include "secblockfwd.h"
+#include "rsa.h"
 
 class Database;
 class Photo;
 
+
 class Chat {
 public:
 	Chat() : m_is_friend_has_photo(false), m_index_at_layout(100000), m_friend_photo(nullptr) {}
+	~Chat() {
+		for (auto msg : m_vec_messages) {
+			delete msg;
+		}
+		delete m_friend_photo;
+	}
 
 	std::vector<Message*>& getMessagesVec() { return m_vec_messages; }
 	const std::vector<Message*> getUnreadSendMessagesVec() const;
@@ -37,16 +46,23 @@ public:
 	void setLayoutIndex(int index) { m_index_at_layout = index; }
 	const int getLayoutIndex() const { return m_index_at_layout; }
 
-	QJsonObject serialize(const std::string& myLogin, const Database& db) const;
-	static Chat* deserialize(const std::string& myLogin, const QJsonObject& jsonObject, const Database& db);
+	void setPublicKey(CryptoPP::RSA::PublicKey key);
+	CryptoPP::RSA::PublicKey getPublicKey();
+
+	CryptoPP::SecByteBlock& getChatConfigKey() { return m_AESE_chat_configKey; }
+
+	QJsonObject serialize(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myLogin, const Database& db);
+	static Chat* deserialize(const CryptoPP::RSA::PrivateKey& myPrivateKey, const std::string& myLogin, const QJsonObject& jsonObject, const Database& db);
 
 private:
-	std::vector<Message*>	 m_vec_messages;
-	std::string				 m_friend_last_seen;
-	std::string				 m_friend_login;
-	std::string				 m_friend_name;
-	std::string				 m_last_received_or_sent_message;
-	bool					 m_is_friend_has_photo;
-	Photo*					 m_friend_photo;
-	int						 m_index_at_layout;
+	CryptoPP::SecByteBlock	  m_AESE_chat_configKey;
+	CryptoPP::RSA::PublicKey  m_public_key;
+	std::vector<Message*>	  m_vec_messages;
+	std::string				  m_friend_last_seen;
+	std::string				  m_friend_login;
+	std::string				  m_friend_name;
+	std::string				  m_last_received_or_sent_message;
+	bool					  m_is_friend_has_photo;
+	Photo*					  m_friend_photo;
+	int						  m_index_at_layout;
 };

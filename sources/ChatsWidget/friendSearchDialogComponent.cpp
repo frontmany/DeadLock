@@ -440,10 +440,9 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     auto chatsWidget = m_chats_list_component->getChatsWidget();
     auto client = chatsWidget->getClient();
 
+    auto& chatsMap = client->getMyHashChatsMap();
 
-    auto& chatsMap = client->getMyChatsMap();
-
-    auto it = chatsMap.find(login.toStdString());
+    auto it = chatsMap.find(utility::calculateHash(login.toStdString()));
     if (it != chatsMap.end()) {
         auto& chatCompsVec = m_chats_list_component->getChatComponentsVec();
         auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [login](ChatComponent* comp) {
@@ -472,9 +471,9 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     
 
     chat->setLayoutIndex(0);
-    utility::incrementAllChatLayoutIndexes(client->getMyChatsMap());
+    utility::incrementAllChatLayoutIndexes(client->getMyHashChatsMap());
 
-    client->getMyChatsMap().emplace(login.toStdString(), chat);
+    client->getMyHashChatsMap().emplace(utility::calculateHash(login.toStdString()), chat);
 
     chatsWidget->removeRightComponent();
     chatsWidget->createAndSetMessagingAreaComponent(chat);

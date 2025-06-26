@@ -5,6 +5,9 @@
 #include "net_message.h"
 #include "net_file.h"
 #include "queryType.h"
+#include "utility.h"
+
+#include "secblock.h"
 
 #include <fstream>              
 #include <filesystem>          
@@ -17,7 +20,11 @@ namespace net {
 	template<typename T>
 	class files_connection : public std::enable_shared_from_this<files_connection<T>> {
 
-		static const uint32_t c_chunkSize = 8192;
+		static const uint32_t c_chunkSizeToRead = 8192;
+		static const uint32_t c_chunkSizeToTransfer = 8604;
+		static const uint32_t c_encryptedChunkSize = 8220;
+		static const uint32_t c_overhead = 412;
+		static const uint32_t c_encryptedSessionKeySize = 384;
 		static const uint32_t c_hundredPercent = 100;
 
 	public:
@@ -26,6 +33,7 @@ namespace net {
 			asio::io_context& asioContext,
 			asio::ip::tcp::socket socket,
 			safe_deque<owned_file<T>>& safeDequeIncomingFiles,
+			CryptoPP::RSA::PrivateKey* privateKey,
 			std::function<void(std::error_code, net::file<T>)> errorReceiveCallback,
 			std::function<void(std::error_code, net::file<T>)> errorSendCallback,
 			std::function<void(net::file<T>)> onFileSent,
@@ -34,6 +42,7 @@ namespace net {
 			: m_asio_context(asioContext),
 			m_socket(std::move(socket)),
 			m_safe_deque_incoming_files(safeDequeIncomingFiles),
+			m_my_private_key(privateKey),
 			m_on_file_sent(std::move(onFileSent)),
 			m_on_send_error(std::move(errorSendCallback)),
 			m_on_receive_error(std::move(errorReceiveCallback)),
@@ -112,7 +121,7 @@ namespace net {
 
 		void readFileChunk() {
 			asio::async_read(m_socket,
-				asio::buffer(m_receive_file_buffer.data(), c_chunkSize),
+				asio::buffer(m_receive_file_buffer.data(), c_chunkSizeToTransfer),
 				[this](std::error_code ec, std::size_t bytes_transferred) {
 					if (ec) {
 						disconnect();
@@ -123,29 +132,41 @@ namespace net {
 						return;
 					}
 					else {
-						m_received_file_size += bytes_transferred;
+						m_received_file_size += bytes_transferred - c_overhead;
 						m_curent_number_of_occurrences++;
 
-						if (m_file_tmp.fileSize >= c_chunkSize) {
+						std::array<char, c_encryptedSessionKeySize> encryptedKey;
+						std::copy_n(m_receive_file_buffer.begin(), c_encryptedSessionKeySize, encryptedKey.begin());
+						CryptoPP::SecByteBlock key = utility::RSADecrypt(
+							*m_my_private_key,
+							std::string(encryptedKey.begin(), encryptedKey.end())
+						);
+
+		
+						std::array<char, c_chunkSizeToTransfer - c_encryptedSessionKeySize> remainingDataEncrupted;
+						std::copy_n(m_receive_file_buffer.begin() + c_encryptedSessionKeySize,
+							c_chunkSizeToTransfer - c_encryptedSessionKeySize,
+							remainingDataEncrupted.begin());
+
+						std::array<char, c_chunkSizeToRead> remainingData = utility::AESDecrypt(key, remainingDataEncrupted);
+
+						if (std::stoi(m_file_tmp.fileSize) >= c_chunkSizeToRead) {
 							if (m_curent_number_of_occurrences > m_number_of_full_occurrences) {
-								m_receive_file_stream.write(m_receive_file_buffer.data(), m_last_packet_size);
+								m_receive_file_stream.write(remainingData.data(), m_last_packet_size);
 							}
 							else {
-								m_receive_file_stream.write(m_receive_file_buffer.data(), m_receive_file_buffer.size());
+								m_receive_file_stream.write(remainingData.data(), c_chunkSizeToRead);
 							}
 						}
 						else {
-							m_receive_file_stream.write(m_receive_file_buffer.data(), m_last_packet_size);
+							m_receive_file_stream.write(remainingData.data(), m_last_packet_size);
 						}
 
-						if (m_received_file_size < m_file_tmp.fileSize) {
-							if (m_file_tmp.isRequested && m_owner == owner::client) {
-								if (m_on_receive_progress_update.has_value()) {
-									double progress = (static_cast<double>(m_received_file_size) / m_file_tmp.fileSize) * c_hundredPercent;
-									progress = std::clamp(progress, 0.0, static_cast<double>(c_hundredPercent));
-									(*m_on_receive_progress_update)(m_file_tmp, progress);
-										
-								}
+						if (m_received_file_size < std::stoi(m_file_tmp.fileSize)) {
+							if (m_owner == owner::client) {
+								double progress = (static_cast<double>(m_received_file_size) / std::stoi(m_file_tmp.fileSize)) * c_hundredPercent;
+								progress = std::clamp(progress, 0.0, static_cast<double>(c_hundredPercent));
+								(*m_on_receive_progress_update)(m_file_tmp, progress);	
 							}
 							readFileChunk();
 						}
@@ -162,16 +183,34 @@ namespace net {
 				bool isOpen = openFirstFromQueueFileForSending();
 				if (!isOpen)
 					return;
-
 			}
 
-			m_send_file_stream.read(m_send_file_buffer.data(), c_chunkSize);
+			m_send_file_stream.read(m_send_file_buffer.data(), c_chunkSizeToRead);
 			std::streamsize bytesRead = m_send_file_stream.gcount();
 
 			if (bytesRead > 0) {
+				CryptoPP::SecByteBlock sessionKey;
+				utility::generateAESKey(sessionKey);
+
+				std::array<char, c_encryptedChunkSize> encryptedBuffer = utility::AESEncrypt(sessionKey, m_send_file_buffer);
+
+				std::string encryptedKey = utility::RSAEncrypt(m_safe_deque_outgoing_files.front().friendPublicKey, sessionKey);
+
+				std::array<char, c_chunkSizeToTransfer> encryptedBufferWithKey;
+
+				if (encryptedKey.size() > c_encryptedSessionKeySize) {
+					throw std::runtime_error("Encrypted key is too large for the buffer");
+				}
+
+				std::memcpy(encryptedBufferWithKey.data(), encryptedKey.data(), encryptedKey.size());
+
+				std::memcpy(encryptedBufferWithKey.data() + encryptedKey.size(),
+					encryptedBuffer.data(),
+					encryptedBuffer.size());
+
 				asio::async_write(
 					m_socket,
-					asio::buffer(m_send_file_buffer.data(), c_chunkSize),
+					asio::buffer(encryptedBufferWithKey.data(), c_chunkSizeToTransfer),
 					[this](std::error_code ec, std::size_t) {
 						if (ec) {
 							if (m_on_send_error) {
@@ -180,14 +219,14 @@ namespace net {
 							disconnect();
 						}
 						else {
-							m_total_bytes_sent += c_chunkSize;
-							if (m_total_bytes_sent < m_safe_deque_outgoing_files.front().fileSize && m_owner == owner::client) {
+							m_total_bytes_sent += c_chunkSizeToRead;
+							if (m_total_bytes_sent < std::stoi(m_safe_deque_outgoing_files.front().fileSize) && m_owner == owner::client) {
 								if (m_on_send_progress_update.has_value()) {
 									const auto& front_file = m_safe_deque_outgoing_files.front();
 
 									uint32_t progress_percent = 0;
-									if (front_file.fileSize > 0) {
-										double progress = (static_cast<double>(m_total_bytes_sent) / front_file.fileSize) * c_hundredPercent;
+									if (std::stoi(front_file.fileSize) > 0) {
+										double progress = (static_cast<double>(m_total_bytes_sent) / static_cast<double>(std::stoi(front_file.fileSize))) * c_hundredPercent;
 										progress = std::clamp(progress, 0.0, static_cast<double>(c_hundredPercent));
 										progress_percent = static_cast<uint32_t>(progress);
 									}
@@ -225,19 +264,23 @@ namespace net {
 			const auto& file = m_safe_deque_outgoing_files.front();
 
 			std::ostringstream oss;
+			CryptoPP::SecByteBlock key;
+			utility::generateAESKey(key);
 
-			oss << file.senderLogin << '\n'
-				<< file.receiverLogin << '\n'
-				<< file.fileName << '\n'
+			std::string encryptedKey = utility::RSAEncrypt(file.friendPublicKey, key);
+
+			oss << encryptedKey << '\n'
 				<< file.id << '\n'
-				<< file.fileSize << '\n'
-				<< file.timestamp << '\n'
-				<< "MESSAGE_BEGIN" << '\n'
-				<< file.caption << '\n'
-				<< "MESSAGE_END" << '\n'
-				<< std::to_string(file.filesInBlobCount) << "\n"
 				<< file.blobUID << "\n"
-				<< (file.isRequested ? "true" : "false");
+				<< file.receiverLoginHash << '\n'
+				<< file.senderLoginHash << '\n'
+				<< file.fileSize << '\n'
+				<< utility::AESEncrypt(key, file.fileName) << '\n'
+				<< utility::AESEncrypt(key, file.timestamp) << '\n'
+				<< utility::AESEncrypt(key, "MESSAGE_BEGIN") << '\n'
+				<< utility::AESEncrypt(key, file.caption) << '\n'
+				<< utility::AESEncrypt(key, "MESSAGE_END") << '\n'
+				<< utility::AESEncrypt(key, file.filesInBlobCount);
 
 			m_msg_tmp_for_send_metadata.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
 			m_msg_tmp_for_send_metadata << oss.str();
@@ -324,71 +367,73 @@ namespace net {
 
 			std::istringstream iss(filePreviewString);
 
-			std::string senderLogin;
-			std::getline(iss, senderLogin);
-
-			std::string receiverLogin;
-			std::getline(iss, receiverLogin);
-
-			std::string fileName;
-			std::getline(iss, fileName);
+			std::string encryptedKey;
+			std::getline(iss, encryptedKey);
+			CryptoPP::SecByteBlock key = utility::RSADecrypt(*m_my_private_key, encryptedKey);
 
 			std::string fileId;
 			std::getline(iss, fileId);
 
-			std::string fileSize;
-			std::getline(iss, fileSize);
-
-			std::string fileTimestamp;
-			std::getline(iss, fileTimestamp);
-
-			std::string messageBegin;
-			std::getline(iss, messageBegin);
-
-			std::string caption;
-			std::string line;
-			while (std::getline(iss, line)) {
-				if (line == "MESSAGE_END") {
-					break;
-				}
-				else {
-					caption += line;
-					caption += '\n';
-				}
-			}
-			caption.pop_back();
-
-			std::string filesCountInBlobStr;
-			std::getline(iss, filesCountInBlobStr);
-			size_t filesInBlobCount = std::stoi(filesCountInBlobStr);
-
 			std::string blobUID;
 			std::getline(iss, blobUID);
 
-			std::string isRequestedStr;
-			std::getline(iss, isRequestedStr);
-			bool isRequested = isRequestedStr == "true";
+			std::string receiverLoginHash;
+			std::getline(iss, receiverLoginHash);
+			receiverLoginHash = utility::AESDecrypt(key, receiverLoginHash);
+
+			std::string senderLoginHash;
+			std::getline(iss, senderLoginHash);
+			senderLoginHash = utility::AESDecrypt(key, senderLoginHash);
+
+			std::string fileSize;
+			std::getline(iss, fileSize);
+
+			std::string fileName;
+			std::getline(iss, fileName);
+			fileName = utility::AESDecrypt(key, fileName);
+
+			std::string fileTimestamp;
+			std::getline(iss, fileTimestamp);
+			fileTimestamp = utility::AESDecrypt(key, fileTimestamp);
+
+			std::string messageBegin;
+			std::getline(iss, messageBegin);
+			messageBegin = utility::AESDecrypt(key, messageBegin);
+
+			std::string caption;
+			std::getline(iss, caption);
+			messageBegin = utility::AESEncrypt(key, caption);
+
+			std::string messageEnd;
+			std::getline(iss, messageEnd);
+			messageEnd = utility::AESDecrypt(key, messageEnd);
+
+			std::string filesCountInBlobStr;
+			std::getline(iss, filesCountInBlobStr);
+			filesCountInBlobStr = utility::AESDecrypt(key, filesCountInBlobStr);
+			size_t filesInBlobCount = std::stoi(filesCountInBlobStr);
 
 			m_file_tmp.filePath = createFilePath(fileName, fileId);
 			m_file_tmp.fileName = fileName;
-			m_file_tmp.senderLogin = senderLogin;
-			m_file_tmp.receiverLogin = receiverLogin;
-			m_file_tmp.fileSize = std::stoi(fileSize);
+			m_file_tmp.senderLoginHash = senderLoginHash;
+			m_file_tmp.receiverLoginHash = receiverLoginHash;
+			m_file_tmp.fileSize = fileSize;
 			m_file_tmp.id = fileId;
 			m_file_tmp.timestamp = fileTimestamp;
 			m_file_tmp.caption = caption;
 			m_file_tmp.blobUID = blobUID;
 			m_file_tmp.filesInBlobCount = filesInBlobCount;
-			m_file_tmp.isRequested = isRequested;
 
-			m_number_of_full_occurrences = m_file_tmp.fileSize / m_receive_file_buffer.size();
-			int lastPacketSize = m_file_tmp.fileSize - (m_number_of_full_occurrences * m_receive_file_buffer.size());
+			m_number_of_full_occurrences = std::stoi(m_file_tmp.fileSize) / c_chunkSizeToRead;
+			int lastPacketSize = std::stoi(m_file_tmp.fileSize) - (m_number_of_full_occurrences * c_chunkSizeToRead);
 			if (lastPacketSize == 0) {
-				m_last_packet_size = m_receive_file_buffer.size();
+				m_last_packet_size = c_chunkSizeToRead;
 			}
 			else {
 				m_last_packet_size = lastPacketSize;
 			}
+
+			m_last_packet_size += c_overhead;
 		}
 
 		void finalizeFileReceiving() {
@@ -492,10 +537,10 @@ namespace net {
 		uint32_t					  m_number_of_full_occurrences;
 		uint32_t					  m_curent_number_of_occurrences;
 
-		std::array<char, c_chunkSize> m_send_file_buffer{};
+		std::array<char, c_chunkSizeToRead> m_send_file_buffer{};
 		std::ifstream				  m_send_file_stream;
 
-		std::array<char, c_chunkSize> m_receive_file_buffer{};
+		std::array<char, c_chunkSizeToTransfer> m_receive_file_buffer{};
 		std::ofstream				  m_receive_file_stream;
 
 		owner						  m_owner;
@@ -508,6 +553,8 @@ namespace net {
 		safe_deque<file<T>>			  m_safe_deque_outgoing_files;
 		safe_deque<owned_file<T>>&	  m_safe_deque_incoming_files;
 		file<T>						  m_file_tmp;
+
+		CryptoPP::RSA::PrivateKey*	  m_my_private_key;
 
 		// callbacks
 		std::function<void(net::file<T>)> m_on_file_sent;

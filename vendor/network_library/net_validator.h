@@ -70,9 +70,9 @@ namespace net {
 
 		virtual ~validator() {}
 
-		void connectFilesSocketToServer(std::string login, const asio::ip::tcp::resolver::results_type& endpoint) {
+		void connectFilesSocketToServer(std::string loginHash, const asio::ip::tcp::resolver::results_type& endpoint) {
 			asio::async_connect(m_files_socket, endpoint,
-				[login, this](std::error_code ec, const asio::ip::tcp::endpoint& endpoint) {
+				[loginHash, this](std::error_code ec, const asio::ip::tcp::endpoint& endpoint) {
 					if (ec) {
 						disconnect();
 						if (m_on_connect_error) {
@@ -82,7 +82,7 @@ namespace net {
 					}
 					else {
 						std::cout << "Connected to: " << endpoint << std::endl;
-						readFilesSocketValidation(std::move(login));
+						readFilesSocketValidation(std::move(loginHash));
 					}
 				});
 		}
@@ -104,20 +104,20 @@ namespace net {
 				});
 		}
 
-		void writeFilesSocketValidation(std::string login) {
+		void writeFilesSocketValidation(std::string loginHash) {
 			asio::async_write(m_files_socket,
 				asio::buffer(&m_files_socket_hand_shake_out, sizeof(uint64_t)),
-				[login, this](std::error_code ec, std::size_t length) {
+				[loginHash, this](std::error_code ec, std::size_t length) {
 					if (ec) {
 						disconnect();
 						m_on_connect_error(ec);
 						return;
 					}
 
-					uint32_t login_length = static_cast<uint32_t>(login.size());
+					uint32_t login_length = static_cast<uint32_t>(loginHash.size());
 					asio::async_write(m_files_socket,
 						asio::buffer(&login_length, sizeof(uint32_t)),
-						[login, this](std::error_code ec, std::size_t length) {
+						[loginHash, this](std::error_code ec, std::size_t length) {
 							if (ec) {
 								disconnect();
 								m_on_connect_error(ec);
@@ -125,8 +125,8 @@ namespace net {
 							}
 
 							asio::async_write(m_files_socket,
-								asio::buffer(login.data(), login.size()),
-								[login, this](std::error_code ec, std::size_t length) {
+								asio::buffer(loginHash.data(), loginHash.size()),
+								[loginHash, this](std::error_code ec, std::size_t length) {
 									if (ec) {
 										disconnect();
 										m_on_connect_error(ec);
@@ -152,9 +152,9 @@ namespace net {
 				});
 		}
 
-		void readFilesSocketValidation(std::string login) {
+		void readFilesSocketValidation(std::string loginHash) {
 			asio::async_read(m_files_socket, asio::buffer(&m_files_socket_hand_shake_in, sizeof(uint64_t)),
-				[login, this](std::error_code ec, std::size_t length) {
+				[loginHash, this](std::error_code ec, std::size_t length) {
 					if (ec) {
 						disconnect();
 						m_on_connect_error(ec);
@@ -162,7 +162,7 @@ namespace net {
 					else {
 						m_files_socket_hand_shake_out = scramble(m_files_socket_hand_shake_in);
 						m_files_socket_hand_shake_out++;
-						writeFilesSocketValidation(std::move(login));
+						writeFilesSocketValidation(std::move(loginHash));
 					}
 				});
 		}

@@ -41,8 +41,8 @@ void WorkerQt::onMessageSendingError(const std::string& friendLogin, Message* me
 
 }
 
-void WorkerQt::onRequestedFileError(const std::string& friendLogin, fileWrapper fileWrapper) {
-	updateFileLoadingState(friendLogin, fileWrapper, true);
+void WorkerQt::onRequestedFileError(const std::string& friendLoginHash, fileWrapper fileWrapper) {
+	updateFileLoadingState(friendLoginHash, fileWrapper, true);
 }
 
 void WorkerQt::onConnectError() {
@@ -67,11 +67,11 @@ void WorkerQt::onServerDown() {
 		Qt::QueuedConnection);
 }
 
-void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrapper& file, bool isError) {
+void WorkerQt::updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& file, bool isError) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
-	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
-		return comp->getChat()->getFriendLogin() == friendLogin;
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
+		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
 	});
 	MessagingAreaComponent* areaComp = *comp;
 	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
@@ -97,11 +97,11 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLogin, fileWrappe
 	}
 }
 
-void WorkerQt::updateFileLoadingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) {
+void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
-	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
-		return comp->getChat()->getFriendLogin() == friendLogin;
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
+		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
 	});
 	if (comp != compsVec.end()) {
 		MessagingAreaComponent* areaComp = *comp;
@@ -124,8 +124,8 @@ void WorkerQt::updateFileLoadingProgress(const std::string& friendLogin, const n
 	
 }
 
-void WorkerQt::updateFileSendingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) {
-	updateFileLoadingProgress(friendLogin, file, progressPercent);
+void WorkerQt::updateFileSendingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) {
+	updateFileLoadingProgress(friendLoginHash, file, progressPercent);
 }
 
 WorkerQt::WorkerQt(MainWindow* mainWindow)
@@ -237,13 +237,13 @@ void WorkerQt::updateFriendsStatuses(const std::vector<std::pair<std::string, st
 		}, Qt::QueuedConnection);
 }
 
-void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message) {
+void WorkerQt::onMessageReceive(const std::string& friendLoginHash, Message* message) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	ChatsListComponent* chatsList = chatsWidget->getChatsList();
 	auto& vec = chatsList->getChatComponentsVec();
-	auto it = std::find_if(vec.begin(), vec.end(), [friendLogin](ChatComponent* chatComp) {
-		return chatComp->getChat()->getFriendLogin() == friendLogin;
-		});
+	auto it = std::find_if(vec.begin(), vec.end(), [friendLoginHash](ChatComponent* chatComp) {
+		return utility::calculateHash(chatComp->getChat()->getFriendLogin()) == friendLoginHash;
+	});
 
 	if (it == vec.end()) {
 		return;
@@ -276,7 +276,7 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 			Qt::QueuedConnection,
 			Q_ARG(bool, true));
 	}
-	else if (chatsWidget->getCurrentMessagingAreaComponent()->getChat()->getFriendLogin() != friendLogin) {
+	else if (utility::calculateHash(chatsWidget->getCurrentMessagingAreaComponent()->getChat()->getFriendLogin()) != friendLoginHash) {
 		QMetaObject::invokeMethod(chatComp,
 			"setUnreadMessageDot",
 			Qt::QueuedConnection,
@@ -285,9 +285,9 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 
 
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
-	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
-		return comp->getChat()->getFriendLogin() == friendLogin;
-		});
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
+		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
+	});
 	MessagingAreaComponent* areaComp = *comp;
 
 	QMetaObject::invokeMethod(areaComp,
@@ -297,7 +297,7 @@ void WorkerQt::onMessageReceive(const std::string& friendLogin, Message* message
 		Q_ARG(bool, false));
 
 	if (chatsWidget->getCurrentMessagingAreaComponent() == nullptr) {}
-	else if (chatsWidget->getCurrentMessagingAreaComponent()->getChat()->getFriendLogin() == friendLogin) {
+	else if (utility::calculateHash(chatsWidget->getCurrentMessagingAreaComponent()->getChat()->getFriendLogin()) == friendLoginHash) {
 		MessagingAreaComponent* areaComp = *comp;
 
 		if (!message->getIsSend() &&
@@ -395,12 +395,12 @@ void WorkerQt::onMessageReadConfirmationReceive(const std::string& friendLogin, 
 	}
 }
 
-void WorkerQt::onStatusReceive(const std::string& friendLogin, const std::string& status) {
+void WorkerQt::onStatusReceive(const std::string& friendLoginHash, const std::string& status) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& messagingAreaCompsVec = chatsWidget->getMessagingAreasVec();
 
-	auto messagingAreaIt = std::find_if(messagingAreaCompsVec.begin(), messagingAreaCompsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
-		return comp->getChat()->getFriendLogin() == friendLogin;
+	auto messagingAreaIt = std::find_if(messagingAreaCompsVec.begin(), messagingAreaCompsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
+		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
 		});
 
 	if (messagingAreaIt != messagingAreaCompsVec.end()) {

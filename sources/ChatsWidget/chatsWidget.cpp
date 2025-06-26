@@ -5,6 +5,7 @@
 #include "addChatDialogComponent.h"
 #include "helloAreaComponent.h"
 #include "chatHeaderComponent.h"
+#include "configManager.h"
 #include "client.h"
 #include "message.h"
 #include "photo.h"
@@ -17,8 +18,8 @@
 
 
 
-ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, Theme theme) 
-    : QWidget(parent), m_client(client), m_theme(theme), m_main_window(mainWindow) {
+ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme)
+    : QWidget(parent), m_client(client), m_theme(theme), m_main_window(mainWindow), m_config_manager(configManager) {
 
     m_mainHLayout = new QHBoxLayout;
     m_mainHLayout->setAlignment(Qt::AlignLeft);
@@ -28,8 +29,8 @@ ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client
     m_current_messagingAreaComponent = nullptr;
 	m_chatsListComponent = new ChatsListComponent(this, this, m_theme, m_client->getIsHidden());
 
-    if (m_client->getPhoto() != nullptr) {
-        m_chatsListComponent->SetAvatar(*m_client->getPhoto());
+    if (m_config_manager->getPhoto() != nullptr) {
+        m_chatsListComponent->SetAvatar(*m_config_manager->getPhoto());
     }
 
     m_leftVLayout = new QVBoxLayout;
@@ -164,7 +165,7 @@ void ChatsWidget::onChatDelete(const QString& loginOfRemovedChat) {
         area->deleteLater();
     }
 
-    m_client->deleteFriendChatInConfig(loginOfRemovedChat.toStdString());
+    m_config_manager->deleteFriendChatInConfig(loginOfRemovedChat.toStdString());
     m_client->deleteFriendMessagesInDatabase(loginOfRemovedChat.toStdString());
     m_client->deleteFriendFromChatsMap(loginOfRemovedChat.toStdString());
 
@@ -213,7 +214,7 @@ void ChatsWidget::setClient(Client* client) {
 void ChatsWidget::restoreMessagingAreaComponents() {
     std::lock_guard<std::mutex> guard(m_mtx);
 
-    for (auto& chatPair : m_client->getMyChatsMap()) {
+    for (auto& chatPair : m_client->getMyHashChatsMap()) {
         MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
         area->hide();
         m_vec_messaging_components.push_back(area);
@@ -223,8 +224,8 @@ void ChatsWidget::restoreMessagingAreaComponents() {
 void ChatsWidget::restoreChatComponents() {
     std::lock_guard<std::mutex> guard(m_mtx);
 
-    auto& map = m_client->getMyChatsMap();
-    for (int i = 0; i < m_client->getMyChatsMap().size(); i++) {
+    auto& map = m_client->getMyHashChatsMap();
+    for (int i = 0; i < m_client->getMyHashChatsMap().size(); i++) {
         auto it = std::find_if(map.begin(), map.end(), [i](std::pair<std::string, Chat*> chatPair) {
             return chatPair.second->getLayoutIndex() == i;
             });
@@ -245,12 +246,12 @@ void ChatsWidget::restoreChatComponents() {
 }
 
 bool ChatsWidget::isValidChatCreation(const std::string& loginToCheck) {
-    auto& chatsMap = m_client->getMyChatsMap();
+    auto& chatsMap = m_client->getMyHashChatsMap();
     auto it = std::find_if(chatsMap.begin(), chatsMap.end(), [&loginToCheck](std::pair<std::string, Chat*> pair) {
         return pair.first == loginToCheck;
-        });
+    });
 
-    if (it != m_client->getMyChatsMap().end() || loginToCheck == m_client->getMyLogin()) {
+    if (it != m_client->getMyHashChatsMap().end() || loginToCheck == m_config_manager->getMyLogin()) {
         m_chatsListComponent->getAddChatDialogComponent()->getEditComponent()->setRedBorderToChatAddDialog();
         return false;
     }

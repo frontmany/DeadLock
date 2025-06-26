@@ -6,6 +6,7 @@
 #include "photo.h"
 #include "chatsWidget.h"
 #include "packetsBuilder.h"
+#include "configManager.h"
 #include "chatsListComponent.h"
 
 StyleGreetWidget::StyleGreetWidget() {
@@ -213,9 +214,9 @@ void GreetWidget::setWelcomeLabelText(const std::string& text) {
     m_welcomeLabel->setText(s);
 }
 
-GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme theme, std::string login, ChatsWidget* cv)
+GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme, std::string login, ChatsWidget* cv)
     : QWidget(parent), m_client(client), m_style(new StyleGreetWidget()),
-    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv), m_theme(theme) {
+    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv), m_config_manager(configManager), m_theme(theme) {
 
     setBackGround(m_theme);
 
@@ -364,18 +365,9 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, Theme 
         }
         else {
             Photo* photo = new Photo(m_filePath.toStdString());
-            m_client->setPhoto(photo);
+            m_config_manager->setPhoto(photo);
             m_mainWindow->setupChatsWidget();
-
-            auto& map = m_client->getMyChatsMap();
-
-            std::vector<std::string> logins;
-            logins.reserve(map.size());
-            for (auto [login, Chat] : map) {
-                logins.emplace_back(login);
-            }
-
-            m_client->setIsHasPhoto(true);
+            m_config_manager->setIsHasPhoto(true);
             m_client->updateMyPhoto(*photo);
         }
        

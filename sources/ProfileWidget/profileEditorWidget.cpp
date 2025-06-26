@@ -8,14 +8,15 @@
 #include "photo.h"
 #include "utility.h"
 #include "chatsWidget.h"
+#include "configManager.h"
 
 
-ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, Theme theme)
-    : QWidget(parent), m_client(client), m_theme(theme), m_chats_list_component(chatsListComponent) {
-    m_fields_edit_component = new FieldsEditComponent(parent, this, client, m_theme);
+ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme)
+    : QWidget(parent), m_client(client), m_theme(theme), m_chats_list_component(chatsListComponent), m_config_manager(configManager) {
+    m_fields_edit_component = new FieldsEditComponent(parent, this, client, m_config_manager, m_theme);
     m_fields_edit_component->setMaximumSize(400, 500);
 
-    m_photo_edit_component = new PhotoEditComponent(parent, this, client, m_theme);
+    m_photo_edit_component = new PhotoEditComponent(parent, this, client, m_config_manager, m_theme);
     m_photo_edit_component->hide();
 
     m_password_edit_component = new PasswordEditComponent(this, this, m_client, m_theme);

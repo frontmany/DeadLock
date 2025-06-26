@@ -10,6 +10,7 @@ class FieldsEditComponent;
 class ChatsListComponent;
 class PhotoEditComponent;
 class PasswordEditComponent;
+class ConfigManager;
 class Client;
 class Photo;
 enum  Theme;
@@ -18,7 +19,7 @@ class ProfileEditorWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, Theme theme);
+    explicit ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
     void updateAvatar(const Photo& photo);
     void setTheme(Theme theme);
 
@@ -37,6 +38,7 @@ protected:
 private:
     Theme               m_theme;
     Client*             m_client;
+    std::shared_ptr<ConfigManager> m_config_manager;
 
     QVBoxLayout* m_mainVLayout;
     QHBoxLayout* m_mainHLayout;

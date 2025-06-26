@@ -5,6 +5,7 @@
 #include"utility.h"
 #include"photo.h"
 #include"buttons.h"
+#include"configManager.h"
 
 StyleFieldsEditComponent::StyleFieldsEditComponent() {
     DarkLabelStyle = R"(
@@ -175,18 +176,15 @@ StyleFieldsEditComponent::StyleFieldsEditComponent() {
 }
 
 
-FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
-    : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme)
+FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme)
+    : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_config_manager(configManager), m_theme(theme)
 {
     m_style = new StyleFieldsEditComponent();
-
     m_error_label = new QLabel;
 
-
-
     QPixmap currentAvatar;
-    if (m_client->getIsHasPhoto()) {
-        currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto()->getPhotoPath())); 
+    if (m_config_manager->getIsHasPhoto()) {
+        currentAvatar = QPixmap(QString::fromStdString(m_config_manager->getPhoto()->getPhotoPath()));
     }
     else {
         currentAvatar = QPixmap(":/resources/ChatsWidget/userFriend.png");
@@ -206,7 +204,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     );
 
     m_login_label = new QLabel("Login:");
-    m_login_edit = new QLineEdit(QString::fromStdString(m_client->getMyLogin()));
+    m_login_edit = new QLineEdit(QString::fromStdString(m_config_manager->getMyLogin()));
     m_login_edit->setFixedHeight(30);
     m_login_edit->setValidator(validator);
     connect(m_login_edit, &QLineEdit::textChanged, [this]() {
@@ -214,7 +212,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     });
 
     m_name_label = new QLabel("Name:");
-    m_name_edit = new QLineEdit(QString::fromStdString(m_client->getMyName()));
+    m_name_edit = new QLineEdit(QString::fromStdString(m_config_manager->getMyName()));
     m_name_edit->setFixedHeight(30);
     connect(m_name_edit, &QLineEdit::textChanged, [this]() {
         m_error_label->setText("");
@@ -331,8 +329,8 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
         connect(confirmButton, &QPushButton::clicked, [&]() {
             logoutDialog.accept();
-            m_client->undoAutoLogin();
-            m_client->setNeedToUndoAutoLogin(true);
+            m_config_manager->undoAutoLogin();
+            m_config_manager->setNeedToUndoAutoLogin(true);
             QApplication::quit();
         });
 
@@ -360,7 +358,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
         std::string name = m_name_edit->text().toStdString();
         std::string login = m_login_edit->text().toStdString();
 
-        if (name == m_client->getMyName() && login == m_client->getMyLogin()) {
+        if (name == m_config_manager->getMyName() && login == m_config_manager->getMyLogin()) {
             m_profile_editor_widget->close();
             return;
         }
@@ -370,15 +368,15 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
             return;
         }
 
-        if (login != m_client->getMyLogin()) {
+        if (login != m_config_manager->getMyLogin()) {
             m_client->checkIsNewLoginAvailable(login);
         }
 
-        if (name != m_client->getMyName() && login != m_client->getMyLogin()) {
+        if (name != m_config_manager->getMyName() && login != m_config_manager->getMyLogin()) {
             m_client->updateMyName(name);
         }
 
-        if (name != m_client->getMyName() && login == m_client->getMyLogin()) {
+        if (name != m_config_manager->getMyName() && login == m_config_manager->getMyLogin()) {
             m_client->updateMyName(name);
             m_profile_editor_widget->close();
         }

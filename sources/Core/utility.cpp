@@ -1,10 +1,21 @@
 #include "utility.h"
+#include "Windows.h"
 #include "chat.h"
-#include "Windows.h" 
-#include <cstdlib>
-#include <QSharedMemory>
+#include "base64_my.h"
 
-
+#include "secblock.h"
+#include <rsa.h>                 
+#include <hex.h>                    
+#include <osrng.h>       
+#include <sha.h>                  
+#include <filters.h>               
+#include <base64.h>                 
+#include <gcm.h>                 
+#include <aes.h>                    
+#include <modes.h>                  
+#include <queue.h>                                
+#include <cryptlib.h> 
+#include <oaep.h> 
 
 
 std::string utility::getFileSavePath(const std::string& fileName) {
@@ -42,8 +53,6 @@ std::string utility::getFileSavePath(const std::string& fileName) {
 
     return filePath;
 }
-
-
 
 std::string utility::getCurrentDateTime() {
     std::time_t now = std::time(0);
@@ -108,7 +117,7 @@ std::string utility::parseDate(const std::string& fullDate) {
     if (fullDate == "recently") {
         return fullDate;
     }
-    if (fullDate == "requested status of unknown user") { 
+    if (fullDate == "requested status of unknown user") {
         return "online";
     }
     if (fullDate.find("last seen:") != 0) {
@@ -169,9 +178,24 @@ std::string utility::parseDate(const std::string& fullDate) {
     }
 }
 
-std::string utility::hashPassword(std::string password) {
-    std::hash<std::string> hashFunction;
-    return std::to_string(hashFunction(password));
+std::string utility::calculateHash(const std::string& text) {
+    using namespace CryptoPP;
+
+    SHA256 hash;
+
+    std::string digest;
+    StringSource ss(
+        text,
+        true,
+        new HashFilter(
+            hash,
+            new HexEncoder(
+                new StringSink(digest)
+            )
+        )
+    );
+
+    return digest;
 }
 
 void utility::incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap) {
@@ -242,7 +266,7 @@ qreal utility::getDeviceScaleFactor() {
 bool utility::isApplicationAlreadyRunning() {
     static QSharedMemory sharedMemory("YourAppUniqueKey_12345");
     if (sharedMemory.attach()) {
-        return true; 
+        return true;
     }
 
     if (sharedMemory.create(1)) {
@@ -250,7 +274,7 @@ bool utility::isApplicationAlreadyRunning() {
     }
 
     qWarning() << "Shared memory error:" << sharedMemory.errorString();
-    return false; 
+    return false;
 }
 
 int utility::getScaledSize(int baseSize) {
@@ -268,3 +292,361 @@ bool utility::isHasInternetConnection() {
     int result = std::system(ping_cmd);
     return (result == 0);
 }
+
+
+
+
+using namespace CryptoPP;
+
+
+void utility::generateRSAKeyPair(CryptoPP::RSA::PrivateKey& privateKey, CryptoPP::RSA::PublicKey& publicKey) {
+    CryptoPP::AutoSeededRandomPool rng;
+
+    privateKey.Initialize(rng, 3072); 
+
+    publicKey = CryptoPP::RSA::PublicKey(privateKey);
+}
+
+void utility::generateAESKey(SecByteBlock& key) {
+    AutoSeededRandomPool rng;
+    key = SecByteBlock(32);
+    rng.GenerateBlock(key, key.size());
+}
+
+std::string utility::RSAEncrypt(const CryptoPP::RSA::PublicKey& publicKey, const CryptoPP::SecByteBlock& data) {
+    CryptoPP::AutoSeededRandomPool rng;
+    CryptoPP::RSAES<CryptoPP::OAEP<CryptoPP::SHA256>>::Encryptor encryptor(publicKey);
+
+    std::string cipher;
+    CryptoPP::StringSource(
+        data.data(),
+        data.size(),
+        true,
+        new CryptoPP::PK_EncryptorFilter(
+            rng,
+            encryptor,
+            new CryptoPP::StringSink(cipher)
+        )
+    );
+    return cipher;
+}
+
+SecByteBlock utility::RSADecrypt(const RSA::PrivateKey& privateKey, const std::string& cipher) {
+    AutoSeededRandomPool rng;
+    RSAES<OAEP<SHA256>>::Decryptor decryptor(privateKey);
+
+    SecByteBlock decrypted(decryptor.MaxPlaintextLength(cipher.size()));
+
+    DecodingResult result = decryptor.Decrypt(rng,
+        reinterpret_cast<const byte*>(cipher.data()),
+        cipher.size(), decrypted.data());
+
+    if (!result.isValidCoding) {
+        throw std::runtime_error("Failed to decrypt RSA data");
+    }
+
+    decrypted.resize(result.messageLength);
+    return decrypted;
+}
+
+std::string utility::AESEncrypt(const SecByteBlock& key, const std::string& plain) {
+    AutoSeededRandomPool rng;
+
+    const size_t ivSize = 12;
+    byte iv[ivSize];
+    rng.GenerateBlock(iv, ivSize);
+
+    GCM<AES>::Encryption enc;
+    enc.SetKeyWithIV(key, key.size(), iv, ivSize);
+
+    std::string cipher;
+    AuthenticatedEncryptionFilter ef(enc, new StringSink(cipher));
+
+    StringSource ss(plain, true, new Redirector(ef));
+
+    std::string result;
+    result.assign(reinterpret_cast<const char*>(iv), ivSize);
+    result += cipher;
+    return result;
+}
+
+std::string utility::AESDecrypt(const SecByteBlock& key, const std::string& cipher) {
+    if (cipher.size() < 12 + 16 + 1)
+        throw std::runtime_error("Invalid ciphertext");
+
+    const size_t ivSize = 12;
+    byte iv[ivSize];
+    std::memcpy(iv, cipher.data(), ivSize);
+
+    std::string encrypted = cipher.substr(ivSize);
+    GCM<AES>::Decryption dec;
+    dec.SetKeyWithIV(key, key.size(), iv, ivSize);
+
+    std::string plain;
+    AuthenticatedDecryptionFilter df(dec, new StringSink(plain));
+
+    try {
+        StringSource ss(encrypted, true, new Redirector(df));
+    }
+    catch (const Exception& e) {
+        throw std::runtime_error("Decryption failed: " + std::string(e.what()));
+    }
+
+    return plain;
+}
+
+std::array<char, 8220> utility::AESEncrypt(const CryptoPP::SecByteBlock& key,
+    const std::array<char, 8192>& plain) {
+    CryptoPP::AutoSeededRandomPool rng;
+    const size_t ivSize = 12;
+    std::array<CryptoPP::byte, ivSize> iv;
+    rng.GenerateBlock(iv.data(), ivSize);
+
+    CryptoPP::GCM<CryptoPP::AES>::Encryption enc;
+    enc.SetKeyWithIV(key, key.size(), iv.data(), ivSize);
+
+    std::string cipher;
+    CryptoPP::AuthenticatedEncryptionFilter ef(enc, new CryptoPP::StringSink(cipher));
+
+    CryptoPP::StringSource ss(
+        reinterpret_cast<const CryptoPP::byte*>(plain.data()),
+        plain.size(),
+        true,
+        new CryptoPP::Redirector(ef)
+    );
+
+    std::array<char, 8220> result;
+    if (ivSize + cipher.size() > 8220) {
+        throw std::runtime_error("Encrypted data too large for output array");
+    }
+
+    std::memcpy(result.data(), iv.data(), ivSize);
+    std::memcpy(result.data() + ivSize, cipher.data(), cipher.size());
+
+    return result;
+}
+
+std::string utility::encryptWithServerKey(const std::string& plaintext, const std::string& keyStr) {
+    try {
+        if (keyStr.empty()) {
+            throw std::runtime_error("Key must not be empty");
+        }
+        if (plaintext.empty()) {
+            throw std::runtime_error("Plaintext must not be empty");
+        }
+
+        CryptoPP::SecByteBlock key(16);
+        size_t keyLength = std::min<size_t>(keyStr.size(), key.size());
+        std::memcpy(key, keyStr.data(), keyLength);
+
+        if (keyStr.size() < key.size()) {
+            std::memset(key + keyLength, 0, key.size() - keyLength);
+        }
+
+        CryptoPP::byte iv[CryptoPP::AES::BLOCKSIZE] = { 0 };
+
+        std::string ciphertext;
+        CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption encryptor;
+        encryptor.SetKeyWithIV(key, key.size(), iv);
+
+        CryptoPP::StringSource(plaintext, true,
+            new CryptoPP::StreamTransformationFilter(encryptor,
+                new CryptoPP::StringSink(ciphertext)
+            ));
+
+        return ciphertext;
+    }
+    catch (const CryptoPP::Exception& e) {
+        throw std::runtime_error("Crypto++ error: " + std::string(e.what()));
+    }
+    catch (const std::exception& e) {
+        throw std::runtime_error("Error: " + std::string(e.what()));
+    }
+}
+
+std::string utility::decryptWithServerKey(const std::string& ciphertext, const std::string& keyStr) {
+    try {
+        if (keyStr.empty()) {
+            throw std::runtime_error("Key must not be empty");
+        }
+        if (ciphertext.empty()) {
+            throw std::runtime_error("Ciphertext must not be empty");
+        }
+
+        CryptoPP::SecByteBlock key(16);
+        size_t keyLength = std::min<size_t>(keyStr.size(), key.size());
+        std::memcpy(key, keyStr.data(), keyLength);
+
+        if (keyStr.size() < key.size()) {
+            std::memset(key + keyLength, 0, key.size() - keyLength);
+        }
+
+        CryptoPP::byte iv[CryptoPP::AES::BLOCKSIZE] = { 0 };
+
+        std::string decrypted;
+        CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryptor;
+        decryptor.SetKeyWithIV(key, key.size(), iv);
+
+        CryptoPP::StringSource(ciphertext, true,
+            new CryptoPP::StreamTransformationFilter(decryptor,
+                new CryptoPP::StringSink(decrypted)
+            ));
+
+        return decrypted;
+    }
+    catch (const CryptoPP::Exception& e) {
+        throw std::runtime_error("Crypto++ decryption error: " + std::string(e.what()));
+    }
+    catch (const std::exception& e) {
+        throw std::runtime_error("Decryption error: " + std::string(e.what()));
+    }
+}
+
+std::array<char, 8192> utility::AESDecrypt(const CryptoPP::SecByteBlock& key,
+    const std::array<char, 8220>& cipher) {
+    const size_t ivSize = 12;
+    if (cipher.size() < ivSize + 16 + 1) {
+        throw std::runtime_error("Invalid ciphertext");
+    }
+
+    std::array<CryptoPP::byte, ivSize> iv;
+    std::memcpy(iv.data(), cipher.data(), ivSize);
+
+    std::string encrypted;
+    encrypted.assign(cipher.data() + ivSize, cipher.size() - ivSize);
+
+    CryptoPP::GCM<CryptoPP::AES>::Decryption dec;
+    dec.SetKeyWithIV(key, key.size(), iv.data(), ivSize);
+
+    std::string plain;
+    CryptoPP::AuthenticatedDecryptionFilter df(dec, new CryptoPP::StringSink(plain));
+
+    try {
+        CryptoPP::StringSource ss(encrypted, true, new CryptoPP::Redirector(df));
+    }
+    catch (const CryptoPP::Exception& e) {
+        throw std::runtime_error("Decryption failed: " + std::string(e.what()));
+    }
+
+    std::array<char, 8192> result;
+    if (plain.size() > 8192) {
+        throw std::runtime_error("Decrypted data too large for output array");
+    }
+    std::memcpy(result.data(), plain.data(), plain.size());
+
+    return result;
+}
+
+std::string utility::serializeKey(const RSA::PublicKey& key) {
+    std::string encoded;
+    ByteQueue queue;
+    key.Save(queue);
+
+    StringSink sink(encoded);
+    Base64Encoder encoder(new Redirector(sink), false);
+    queue.CopyTo(encoder);
+    encoder.MessageEnd();
+
+    return encoded;
+}
+
+std::string utility::serializeKey(const RSA::PrivateKey& key) {
+    std::string encoded;
+    ByteQueue queue;
+    key.Save(queue);
+
+    StringSink sink(encoded);
+    Base64Encoder encoder(new Redirector(sink), false);
+    queue.CopyTo(encoder);
+    encoder.MessageEnd();
+
+    return encoded;
+}
+
+RSA::PublicKey utility::deserializePublicKey(const std::string& keyStr) {
+    try {
+        ByteQueue queue;
+        StringSource ss(keyStr, true,
+            new Base64Decoder(
+                new Redirector(queue)
+            ));
+
+        RSA::PublicKey key;
+        key.Load(queue);
+
+        return key;
+    }
+    catch (const Exception& e) {
+        throw std::runtime_error("Failed to deserialize public key: " + std::string(e.what()));
+    }
+}
+
+RSA::PrivateKey utility::deserializePrivateKey(const std::string& keyStr) {
+    try {
+        ByteQueue queue;
+        StringSource ss(keyStr, true,
+            new Base64Decoder(
+                new Redirector(queue)
+            ));
+
+        RSA::PrivateKey key;
+        key.Load(queue);
+        return key;
+    }
+    catch (const Exception& e) {
+        throw std::runtime_error("Failed to deserialize private key: " + std::string(e.what()));
+    }
+}
+
+bool utility::validateKeys(const RSA::PublicKey& publicKey, const RSA::PrivateKey& privateKey)  {
+    try {
+        AutoSeededRandomPool rng;
+        std::string testMsg = "test message";
+        std::string encrypted, decrypted;
+
+        RSAES<OAEP<SHA256>>::Encryptor e(publicKey);
+        StringSource ss1(testMsg, true,
+            new PK_EncryptorFilter(rng, e,
+                new StringSink(encrypted)
+            )
+        );
+
+        RSAES<OAEP<SHA256>>::Decryptor d(privateKey);
+        StringSource ss2(encrypted, true,
+            new PK_DecryptorFilter(rng, d,
+                new StringSink(decrypted)
+            )
+        );
+
+        return testMsg == decrypted;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
+bool utility::validatePrivateKey(const RSA::PrivateKey& key) {
+    AutoSeededRandomPool rng;
+    return key.GetModulus().BitCount() >= 2048 &&
+        !key.GetPrivateExponent().IsZero() &&
+        key.Validate(rng, 3);
+}
+
+bool utility::validatePublicKey(const RSA::PublicKey& key) {
+    try {
+        CryptoPP::AutoSeededRandomPool rng;
+
+        const bool validSize = key.GetModulus().BitCount() >= 2048;
+
+        const bool validExponent = !key.GetPublicExponent().IsZero();
+
+        const bool validStructure = key.Validate(rng, 3);
+
+        return validSize && validExponent && validStructure;
+
+    }
+    catch (...) {
+        return false;
+    }
+}
+

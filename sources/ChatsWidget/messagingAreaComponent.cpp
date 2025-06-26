@@ -5,6 +5,7 @@
 #include "delimiterComponent.h"
 #include "messageComponent.h"
 #include "chatComponent.h"
+#include "configManager.h"
 #include "chatsWidget.h"
 #include "utility.h"
 #include "buttons.h"
@@ -1202,7 +1203,7 @@ void MessagingAreaComponent::onSendFiles() {
         msg += '\n';
     }
 
-    auto& map = m_chatsWidget->getClient()->getMyChatsMap();
+    auto& map = m_chatsWidget->getClient()->getMyHashChatsMap();
 
 
     auto chatsList = m_chatsWidget->getChatsList();
@@ -1254,10 +1255,9 @@ void MessagingAreaComponent::onSendFiles() {
         tmpFile.blobUID = blobUID;
         tmpFile.filesInBlobCount = m_vec_selected_files.size();
         tmpFile.id = utility::generateId();
-        tmpFile.receiverLogin = m_chat->getFriendLogin();
-        tmpFile.senderLogin = m_chatsWidget->getClient()->getMyLogin();
+        tmpFile.receiverLoginHash = utility::calculateHash(m_chat->getFriendLogin());
+        tmpFile.senderLoginHash = utility::calculateHash(m_chatsWidget->getConfigManager()->getMyLogin());
         tmpFile.timestamp = utility::getTimeStamp();
-        tmpFile.isRequested = false;
 
         try {
 #ifdef _WIN32
@@ -1579,7 +1579,7 @@ void MessagingAreaComponent::onSendMessageClicked() {
         msg += '\n';  
     }
 
-    auto& map = m_chatsWidget->getClient()->getMyChatsMap();
+    auto& map = m_chatsWidget->getClient()->getMyHashChatsMap();
 
 
     auto chatsList = m_chatsWidget->getChatsList();

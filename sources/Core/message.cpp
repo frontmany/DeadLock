@@ -36,8 +36,8 @@ std::string Message::serialize() const {
 
         oss << (file_entry.isPresent ? "true" : "false") << "|"
             << escape(file.blobUID) << "|"
-            << escape(file.senderLogin) << "|"
-            << escape(file.receiverLogin) << "|"
+            << escape(file.senderLoginHash) << "|"
+            << escape(file.receiverLoginHash) << "|"
             << escape(file.filePath) << "|"
             << escape(file.id) << "|"
             << escape(file.timestamp) << "|"
@@ -121,8 +121,8 @@ Message* Message::deserialize(const std::string& data) {
             file_entry.isPresent = (tokens[index++] == "true");
 
             file_entry.file.blobUID = unescape(tokens[index++]);
-            file_entry.file.senderLogin = unescape(tokens[index++]);
-            file_entry.file.receiverLogin = unescape(tokens[index++]);
+            file_entry.file.senderLoginHash = unescape(tokens[index++]);
+            file_entry.file.receiverLoginHash = unescape(tokens[index++]);
             file_entry.file.filePath = unescape(tokens[index++]);
             file_entry.file.id = unescape(tokens[index++]);
             file_entry.file.timestamp = unescape(tokens[index++]);
