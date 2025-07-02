@@ -42,6 +42,8 @@ int main(int argc, char* argv[])
     }
 
     if (configManager->checkIsAutoLogin()) {
+        configManager->loadLoginHash();
+        configManager->loadPasswordHash();
         client->authorizeClient(configManager->getMyLoginHash(), configManager->getMyPasswordHash());
     }
     else {

@@ -216,21 +216,6 @@ QLabel {
 
 }
 
-
-void ChatsListComponent::loadAvatarFromPC(const std::string & login) {
-    QString dir = QString::fromStdString(utility::getSaveDir());
-    QString fileNameFinal = QString::fromStdString(login) + "myMainPhoto.png";
-    QDir saveDir(dir);
-    QString fullPath = saveDir.filePath(fileNameFinal);
-
-    QFile file(fullPath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open the file:" << fileNameFinal.toStdString();
-        return;
-    }
-    SetAvatar(Photo(fullPath.toStdString()));
-}
-
 ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme, bool isHidden)
     : QWidget(parent), m_backgroundColor(Qt::transparent),
     m_chatsWidget(chatsWidget), m_chatAddDialog(nullptr), m_chats_widget(chatsWidget),
@@ -244,7 +229,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
     this->setMinimumSize(250, 300);
-
 
     if (utility::getDeviceScaleFactor() <= 1.25) {
         this->setMaximumSize(640, 3000);
@@ -314,7 +298,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
             }
             m_profileButton->setDisabled(true);
 
-            client->broadcastMyStatus(utility::getCurrentDateTime());
+            client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
         }
         else {
             auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
@@ -402,6 +386,10 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_scrollArea->setWidget(m_containerWidget);
 
     m_mainVLayout->addWidget(m_scrollArea);
+
+    m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClient(), m_chatsWidget->getConfigManager(), m_theme);
+    m_containerVLayout->insertWidget(0, m_profile_editor_widget);
+    m_profile_editor_widget->hide();
 
     connect(m_profileButton, &AvatarIcon::clicked, this, &ChatsListComponent::openEditUserDialogWidnow);
     connect(m_newChatButton, &ButtonIcon::clicked, this, &ChatsListComponent::openAddChatDialog);
@@ -501,17 +489,14 @@ void ChatsListComponent::openEditUserDialogWidnow() {
         return;
     }
     else {
+        m_profile_editor_widget->show();
         m_isEditDialog = true;
-        m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClient(), m_chatsWidget->getConfigManager(), m_theme);
-        m_containerVLayout->insertWidget(0, m_profile_editor_widget);
     }
-     
 }
 
 void ChatsListComponent::closeEditUserDialogWidnow() {
-    m_containerVLayout->removeWidget(m_profile_editor_widget);
-    delete m_profile_editor_widget;
-    m_profile_editor_widget = nullptr;
+    m_profile_editor_widget->hide();
+    m_isEditDialog = false;
 }
 
 void ChatsListComponent::toSendChangeTheme(bool fl) {
@@ -637,9 +622,58 @@ void ChatsListComponent::popUpComponent(ChatComponent* comp) {
     m_containerVLayout->insertWidget(0, comp);
 }
 
-void ChatsListComponent::SetAvatar(const Photo& photo) {
-    QIcon avatarIcon(QString::fromStdString(photo.getPhotoPath()));
-    m_profileButton->setIcon(avatarIcon);
+void ChatsListComponent::setNameFieldInProfileEditorWidget(const std::string& name) {
+    m_profile_editor_widget->setName(name);
+}
+
+void ChatsListComponent::setAvatar(const Photo& photo) {
+    try {
+        std::string path = photo.getPhotoPath();
+        if (path.empty()) {
+            throw std::runtime_error("Empty photo path");
+        }
+
+        std::ifstream file(path, std::ios::binary);
+        if (!file) {
+            throw std::runtime_error("Failed to open photo file");
+        }
+
+        file.seekg(0, std::ios::end);
+        size_t fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::string fileData(fileSize, '\0');
+        file.read(&fileData[0], fileSize);
+        file.close();
+
+        size_t delimiterPos = fileData.find('\n');
+        if (delimiterPos == std::string::npos) {
+            throw std::runtime_error("Invalid photo file format");
+        }
+
+        std::string encryptedKey = fileData.substr(0, delimiterPos);
+        std::string encryptedData = fileData.substr(delimiterPos + 1);
+
+        auto aesKey = utility::RSADecryptKey(m_chats_widget->getClient()->getPrivateKey(), encryptedKey);
+
+        std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
+
+        QByteArray imageData(decryptedData.data(), decryptedData.size());
+        QPixmap avatarPixmap;
+        if (!avatarPixmap.loadFromData(imageData)) {
+            throw std::runtime_error("Failed to load decrypted avatar");
+        }
+
+        QIcon avatarIcon(avatarPixmap);
+        m_profileButton->setIcon(avatarIcon);
+    }
+    catch (const std::exception& e) {
+        qWarning() << "Avatar load error:" << e.what();
+    }
+}
+
+void ChatsListComponent::setAvatarInProfileEditorWidget(const Photo& photo) {
+    m_profile_editor_widget->updateAvatar(photo);
 }
 
 void ChatsListComponent::showNoConnectionLabel() {

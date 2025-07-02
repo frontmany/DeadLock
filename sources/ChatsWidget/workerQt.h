@@ -14,6 +14,7 @@
 class MainWindow;
 class ChatsWidget;
 class Chat;
+class Photo;
 
 class WorkerQt : public WorkerUI {
 public:
@@ -52,8 +53,10 @@ public:
 	void onConnectError() override;
 	void onNetworkError() override;
 	void onServerDown() override;
-
 	void onStatusReceive(const std::string& friendLogin, const std::string& status);
+	
+	void setRecoveredAvatar(Photo* myRecoveredAvatar) override;
+	void setNameFieldInProfileEditorWidget(const std::string& name) override;
 
 private:
 	bool updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat);

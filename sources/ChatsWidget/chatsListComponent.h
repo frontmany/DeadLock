@@ -53,7 +53,6 @@ public:
 
     void setTheme(Theme theme);
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
-    void SetAvatar(const Photo& photo);
     void removeComponent(const QString& loginOfRemovedComponent);
 
     std::vector<ChatComponent*>& getChatComponentsVec() { return m_vec_chatComponents; }
@@ -86,8 +85,10 @@ public slots:
 
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
-    void loadAvatarFromPC(const std::string& login);
 
+    void setAvatar(const Photo& photo);
+    void setNameFieldInProfileEditorWidget(const std::string& name);
+    void setAvatarInProfileEditorWidget(const Photo& photo);
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 

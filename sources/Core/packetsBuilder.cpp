@@ -34,13 +34,15 @@ const std::string PacketsBuilder::getAfterRegistrationSendMyInfoPacket(const Cry
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
+    
 
     oss << get << '\n'
         << encryptedKey << '\n'
         << utility::AESEncrypt(key, login) << '\n'
         << utility::AESEncrypt(key, name) << '\n';
 
+    
     return oss.str();
 }
 
@@ -65,7 +67,7 @@ const std::string PacketsBuilder::getUpdateMyNamePacket(const CryptoPP::RSA::Pub
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
     oss << get << '\n'
         << encryptedKey << '\n'
@@ -83,19 +85,13 @@ const std::string PacketsBuilder::getUpdateMyNamePacket(const CryptoPP::RSA::Pub
 
 const std::string PacketsBuilder::getUpdateMyPasswordPacket(
     const std::string& loginHash,
-    const std::string& newPasswordHash,
-    const std::vector<std::string>& friendsLoginsVec)
+    const std::string& newPasswordHash)
 {
     std::ostringstream oss;
     oss << get << '\n'
         << loginHash << '\n'
-        << newPasswordHash << '\n';
+        << newPasswordHash;
 
-    oss << vecBegin << '\n';
-    for (const auto& loginHash : friendsLoginsVec) {
-        oss << loginHash << '\n';
-    }
-    oss << vecEnd;
 
     return oss.str();
 }
@@ -110,7 +106,7 @@ const std::string PacketsBuilder::getUpdateMyPhotoPacket(const CryptoPP::RSA::Pu
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
 
     oss << get << '\n'
@@ -126,8 +122,8 @@ const std::string PacketsBuilder::getUpdateMyPhotoPacket(const CryptoPP::RSA::Pu
     oss << utility::AESEncrypt(key, "true") << '\n';
     oss << utility::AESEncrypt(key, std::to_string(photo.getSize())) << '\n';
 
-    std::string photoString = photo.serialize();
-    oss << utility::AESEncrypt(key, photoString) << '\n';
+    std::string serializedPhoto = photo.encryptForServerBase64(serverPublicKey);
+    oss << serializedPhoto << '\n';
 
     return oss.str();
 }
@@ -138,7 +134,7 @@ const std::string  PacketsBuilder::getUpdateMyLoginPacket(const CryptoPP::RSA::P
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
     oss << get << '\n'
         << encryptedKey << '\n'
@@ -163,6 +159,16 @@ const std::string PacketsBuilder::getLoadUserInfoPacket(const std::string& login
     return oss.str();
 }
 
+const std::string PacketsBuilder::getLoadMyInfoPacket(const std::string& loginHash, const CryptoPP::RSA::PublicKey& myNewPublicKey) {
+    std::ostringstream oss;
+    oss << get << '\n'
+        << loginHash << '\n'
+        << utility::serializePublicKey(myNewPublicKey);
+
+    return oss.str();
+}
+
+
 const std::string PacketsBuilder::getVerifyPasswordPacket(const std::string& loginHash, const std::string& passwordHash) {
     std::ostringstream oss;
 
@@ -173,25 +179,34 @@ const std::string PacketsBuilder::getVerifyPasswordPacket(const std::string& log
     return oss.str();
 }
 
-const std::string PacketsBuilder::getLoadAllFriendsStatusesPacket(const std::vector<std::string>& friendsLoginHashesVec) {
+const std::string PacketsBuilder::getLoadAllFriendsStatusesPacket(const std::string& loginHash, const std::vector<std::string>& friendsLoginHashesVec) {
     std::ostringstream oss;
 
     oss << get << '\n'
+        << loginHash << '\n'
         << vecBegin << '\n';
 
-    for (const auto& loginHash : friendsLoginHashesVec) {
-        oss << loginHash << '\n';
+    for (const auto& friendLoginHash : friendsLoginHashesVec) {
+        oss << friendLoginHash << '\n';
     }
 
-    oss << vecEnd << '\n';
+    oss << vecEnd;
 
     return oss.str();
 }
 
-const std::string PacketsBuilder::getCheckIsNewLoginAvailablePacket(const std::string& newLoginHash) {
+const std::string PacketsBuilder::getCheckIsNewLoginAvailablePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLogin) {
     std::ostringstream oss;
+
+    CryptoPP::SecByteBlock key;
+    utility::generateAESKey(key);
+
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
+
     oss << get << '\n'
-        << newLoginHash;
+        << encryptedKey << '\n'
+        << oldLoginHash << '\n'
+        << utility::AESEncrypt(key, newLogin);
 
     return oss.str();
 }
@@ -202,7 +217,7 @@ const std::string PacketsBuilder::getFindUserPacket(const CryptoPP::RSA::PublicK
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
     oss << get << '\n'
         << encryptedKey << '\n'
@@ -218,7 +233,7 @@ const std::string PacketsBuilder::getSendMeFilePacket(const CryptoPP::RSA::Publi
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
     oss << get << '\n'
         << encryptedKey << '\n'
@@ -237,18 +252,12 @@ const std::string PacketsBuilder::getSendMeFilePacket(const CryptoPP::RSA::Publi
     return oss.str();
 }
 
-const std::string PacketsBuilder::getPublicKeyPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myLoginHash, const CryptoPP::RSA::PublicKey& myPublicKey) {
+const std::string PacketsBuilder::getPublicKeyPacket(const std::string& myLoginHash, const CryptoPP::RSA::PublicKey& myPublicKey) {
     std::ostringstream oss;
 
-    CryptoPP::SecByteBlock key;
-    utility::generateAESKey(key);
-
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
-
     oss << get << '\n'
-        << encryptedKey << '\n'
         << myLoginHash << '\n'
-        << utility::AESEncrypt(key, utility::serializeKey(myPublicKey));
+        << utility::serializePublicKey(myPublicKey);
 
     return oss.str();
 }
@@ -262,7 +271,7 @@ const std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKe
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(friendPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(friendPublicKey, key);
 
     std::ostringstream oss;
     oss << rpl << '\n'
@@ -286,7 +295,7 @@ const std::string PacketsBuilder::getMessageReadConfirmationPacket(const CryptoP
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(friendPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(friendPublicKey, key);
 
     std::ostringstream oss;
     oss << rpl << '\n'
@@ -307,7 +316,7 @@ const std::string PacketsBuilder::getTypingPacket(const CryptoPP::RSA::PublicKey
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(friendPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(friendPublicKey, key);
 
     std::ostringstream oss;
     oss << rpl << '\n'
@@ -329,7 +338,7 @@ const std::string PacketsBuilder::getStatusPacket(const CryptoPP::RSA::PublicKey
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
 
-    std::string encryptedKey = utility::RSAEncrypt(serverPublicKey, key);
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
     oss << broadcast << '\n'
         << encryptedKey << '\n'

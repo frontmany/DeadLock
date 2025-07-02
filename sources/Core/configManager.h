@@ -23,6 +23,7 @@ class Client;
 class ConfigManager {
 public:
     ConfigManager();
+    ~ConfigManager() { std::cout << "config manager destroed\n"; }
     void updateInConfigFriendLogin(const std::string& oldLogin, const std::string& newLogin);
     void updateConfigFileName(const std::string& oldLogin, const std::string& newLoginHash);
     void deleteFriendChatInConfig(const std::string& friendLogin);
@@ -33,7 +34,9 @@ public:
     void save(const CryptoPP::RSA::PublicKey& myPublicKey, const CryptoPP::RSA::PrivateKey& myPrivateKey, const std::string& serverKey, std::unordered_map<std::string, Chat*> mapFriendLoginHashToChat, bool isHidden, Database* database);
     bool load(const std::string& fileName, const std::string& specialServerKey, Database* database);
 
-
+    void loadLoginHash();
+    void loadPasswordHash();
+    
     //GET && SET
     bool getIsAutoLogin() { return m_is_auto_login; };
     void setIsNeedToAutoLogin(bool  isNeedToAutoLogin) { m_is_auto_login = isNeedToAutoLogin; }
@@ -63,8 +66,6 @@ public:
     Client* getClient() const { return m_client; }
 
 private:
-    void loadLoginHash();
-    void loadPasswordHash();
     bool checkIsPasswordHashPresentInMyConfig() const;
     CryptoPP::SecByteBlock getChatConfigKey(const std::string& login);
 

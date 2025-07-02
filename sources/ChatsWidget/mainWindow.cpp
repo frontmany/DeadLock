@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget* parent, Client* client, std::shared_ptr<ConfigMa
 
 MainWindow::~MainWindow() {
     qDebug() << "window closing";
-    m_client->broadcastMyStatus(utility::getCurrentDateTime());
+    m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
     std::cout << "saving\n";
 
     if (m_config_manager->getIsAutoLogin()) {
@@ -44,9 +44,8 @@ MainWindow::~MainWindow() {
 
 
 void MainWindow::setupGreetWidget() {
-    m_greetWidget = new GreetWidget(this, this, m_client, m_config_manager, m_theme, "", m_chatsWidget);
+    m_greetWidget = new GreetWidget(this, this, m_client, m_config_manager, m_theme, m_config_manager->getMyLogin(), m_client->getPublicKey(), m_client->getPrivateKey(), m_chatsWidget);
     m_greetWidget->setWelcomeLabelText(m_config_manager->getMyName());
-    m_greetWidget->setLogin(m_config_manager->getMyLogin());
     m_greetWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
     m_greetWidget->startWelcomeAnimation();
     setCentralWidget(m_greetWidget);
@@ -64,9 +63,9 @@ void MainWindow::setupChatsWidget() {
     m_chatsWidget->restoreMessagingAreaComponents();
     m_chatsWidget->restoreChatComponents();
 
-    m_client->setIsUIReadyToUpdate(true);
-
     setCentralWidget(m_chatsWidget);
+
+    m_client->setIsUIReadyToUpdate(true);
 }
 
 LoginWidget* MainWindow::getLoginWidget() {

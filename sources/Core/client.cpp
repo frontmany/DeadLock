@@ -74,6 +74,8 @@ void Client::authorizeClient(const std::string& loginHash, const std::string& pa
         }
     }
     if (!m_is_error) {
+        m_config_manager->setMyLoginHash(loginHash);
+        m_config_manager->setMyPasswordHash(passwordHash);
         sendPacket(m_packets_builder->getAuthorizationPacket(loginHash, passwordHash), QueryType::AUTHORIZATION);
     }
 }
@@ -92,7 +94,7 @@ void Client::registerClient(const std::string& login, const std::string& passwor
 }
 
 void Client::generateMyKeyPair() {
-    if (!utility::validatePublicKey(m_my_public_key)) {
+    if (m_my_public_key.GetModulus().IsZero() || m_my_private_key.GetModulus().IsZero()) {
         CryptoPP::RSA::PublicKey publicKey;
         CryptoPP::RSA::PrivateKey privateKey;
         utility::generateRSAKeyPair(privateKey, publicKey);
@@ -112,7 +114,9 @@ void Client::createChatWith(const std::string& friendLogin) {
 
 void Client::broadcastMyStatus(const std::string& status) {
     const std::vector<std::string>& tmpFriendsLoginHashesVec = getFriendsLoginHashesVecFromMap();
-    sendPacket(m_packets_builder->getStatusPacket(m_server_public_key, status, m_config_manager->getMyLoginHash(), tmpFriendsLoginHashesVec), QueryType::STATUS);
+    if (utility::validatePublicKey(m_server_public_key)) {
+        sendPacket(m_packets_builder->getStatusPacket(m_server_public_key, status, m_config_manager->getMyLoginHash(), tmpFriendsLoginHashesVec), QueryType::STATUS);
+    }
 }
 
 void Client::sendMessage(const std::string& friendLogin, const Message* message) {
@@ -124,7 +128,7 @@ void Client::sendMessageReadConfirmation(const std::string& friendLogin, const M
 }
 
 void Client::getAllFriendsStatuses() {
-    sendPacket(m_packets_builder->getLoadAllFriendsStatusesPacket(getFriendsLoginHashesVecFromMap()), QueryType::LOAD_ALL_FRIENDS_STATUSES);
+    sendPacket(m_packets_builder->getLoadAllFriendsStatusesPacket(m_config_manager->getMyLoginHash(), getFriendsLoginHashesVecFromMap()), QueryType::LOAD_ALL_FRIENDS_STATUSES);
 }
 
 void Client::findUser(const std::string& searchText) {
@@ -133,6 +137,17 @@ void Client::findUser(const std::string& searchText) {
 
 void Client::requestUserInfoFromServer(const std::string& loginHash) {
     sendPacket(m_packets_builder->getLoadUserInfoPacket(loginHash), QueryType::LOAD_USER_INFO);
+}
+
+void Client::requestMyInfoFromServerAndResetKeys(const std::string& loginHash) {
+    CryptoPP::RSA::PrivateKey newPrivateKey;
+    CryptoPP::RSA::PublicKey newPublicKey;
+    utility::generateRSAKeyPair(newPrivateKey, newPublicKey);
+
+    setPublicKey(newPublicKey);
+    setPrivateKey(newPrivateKey);
+
+    sendPacket(m_packets_builder->getLoadMyInfoPacket(loginHash, newPublicKey), QueryType::LOAD_MY_INFO);
 }
 
 void Client::verifyPassword(const std::string& passwordHash) {
@@ -145,7 +160,7 @@ void Client::checkIsNewLoginAvailable(const std::string& newLogin) {
         WorkerUI* workerUI = m_response_handler->getWorkerUI();
         workerUI->onCheckNewLoginFail();
     }
-    sendPacket(m_packets_builder->getCheckIsNewLoginAvailablePacket(utility::calculateHash(newLogin)), QueryType::CHECK_NEW_LOGIN);
+    sendPacket(m_packets_builder->getCheckIsNewLoginAvailablePacket(m_server_public_key, m_config_manager->getMyLoginHash(), newLogin), QueryType::CHECK_NEW_LOGIN);
 }
 
 void Client::updateMyLogin(const std::string& newLogin) {
@@ -173,8 +188,8 @@ void Client::updateMyName(const std::string& newName) {
 }
 
 void Client::updateMyPassword(const std::string& newPasswordHash) {
-    const std::vector<std::string>& tmpFriendsLoginHashesVec = getFriendsLoginHashesVecFromMap();
-    sendPacket(m_packets_builder->getUpdateMyPasswordPacket(m_config_manager->getMyLoginHash(), newPasswordHash, tmpFriendsLoginHashesVec), QueryType::UPDATE_MY_PASSWORD);
+    m_config_manager->setMyPasswordHash(newPasswordHash);
+    sendPacket(m_packets_builder->getUpdateMyPasswordPacket(m_config_manager->getMyLoginHash(), newPasswordHash), QueryType::UPDATE_MY_PASSWORD);
 }
 
 void Client::updateMyPhoto(const Photo& newPhoto) {
@@ -246,7 +261,13 @@ void Client::deleteFriendFromChatsMap(const std::string& friendLoginHash) {
     }
 }
 
-void Client::buildSpecialServerKey(const std::string& encryptionPart) { m_special_server_key = (m_config_manager->getMyPasswordHash() + encryptionPart); }
+void Client::setServerEncryptionPart(const std::string& encryptionPart) {
+    m_server_encryption_part = encryptionPart;
+}
+
+std::string Client::getSpecialServerKey() const {
+    return m_config_manager->getMyPasswordHash() + m_server_encryption_part;
+}
 
 void Client::onMessage(net::message<QueryType> message) {
     m_response_handler->handleResponse(message);
@@ -442,7 +463,7 @@ void Client::onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint3
 
 
 void Client::sendPublicKeyToServer() {
-    std::string keyStr = m_packets_builder->getPublicKeyPacket(m_server_public_key, m_config_manager->getMyLoginHash(), m_my_public_key);
+    std::string keyStr = m_packets_builder->getPublicKeyPacket(m_config_manager->getMyLoginHash(), m_my_public_key);
     sendPacket(keyStr, QueryType::PUBLIC_KEY);
 }
 

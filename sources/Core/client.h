@@ -49,7 +49,10 @@ public:
     void createChatWith(const std::string& friendLogin);
     void verifyPassword(const std::string& passwordHash);
     void checkIsNewLoginAvailable(const std::string& newLogin);
+
     void requestUserInfoFromServer(const std::string& loginHash);
+    void requestMyInfoFromServerAndResetKeys(const std::string& loginHash);
+
     void findUser(const std::string& searchText);
     void typingNotify(const std::string& friendLogin, bool isTyping);
 
@@ -104,8 +107,12 @@ public:
     void setPrivateKey(const CryptoPP::RSA::PrivateKey& key);
     const CryptoPP::RSA::PrivateKey& getPrivateKey() const;
 
-    void buildSpecialServerKey(const std::string& encryptionPart);
-    const std::string& getSpecialServerKey() const { return m_special_server_key; }
+
+
+    void setServerEncryptionPart(const std::string& encryptionPart);
+    const std::string& getServerEncryptionPart() const { return m_server_encryption_part; }
+    std::string getSpecialServerKey() const;
+
 
     std::optional<Chat*> findChat(const std::string& loginHash) const ;
 
@@ -129,8 +136,7 @@ private:
 
     std::shared_ptr<ConfigManager> m_config_manager;
 
-    std::string m_special_server_key;
-
+    std::string m_server_encryption_part = "";
     std::string m_server_ipAddress = "";
     int m_server_port = 0;
 

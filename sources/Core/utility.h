@@ -25,11 +25,13 @@ class Chat;
 namespace utility {
     // Utility functions
     std::string calculateHash(const std::string& text);
-    std::string getCurrentDateTime();
     std::string generateId();
-    std::string getSaveDir();
+    std::string getConfigsAndPhotosDirectory();
     std::string parseDate(const std::string& fulldate);
-    std::string getTimeStamp();
+
+    // time
+    std::string getCurrentFullDateAndTime();
+    std::string getCurrentTime();
 
     // System functions
     qreal getDeviceScaleFactor();
@@ -49,19 +51,19 @@ namespace utility {
     void generateAESKey(CryptoPP::SecByteBlock& key);
 
     // RSA operations
-    std::string RSAEncrypt(const CryptoPP::RSA::PublicKey& publicKey, const CryptoPP::SecByteBlock& data);
-    CryptoPP::SecByteBlock RSADecrypt(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& cipher);
+    std::string RSAEncryptKey(const CryptoPP::RSA::PublicKey& publicKey, const CryptoPP::SecByteBlock& data);
+    CryptoPP::SecByteBlock RSADecryptKey(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& cipher);
 
     // AES operations
-    std::string AESEncrypt(const CryptoPP::SecByteBlock& key, const std::string& plain);
-    std::string AESDecrypt(const CryptoPP::SecByteBlock& key, const std::string& cipher);
-    std::array<char, 8220> AESEncrypt(const CryptoPP::SecByteBlock& key, const std::array<char, 8192>& plain);
-    std::array<char, 8192> AESDecrypt(const CryptoPP::SecByteBlock& key, const std::array<char, 8220>& cipher);
+    std::string AESEncrypt(const CryptoPP::SecByteBlock& key, const std::string& plain); // return base64 string
+    std::string AESDecrypt(const CryptoPP::SecByteBlock& key, const std::string& cipher64);
+    std::array<char, 8220> AESEncrypt(const CryptoPP::SecByteBlock& key, const std::array<char, 8192>& bytesArray);
+    std::array<char, 8192> AESDecrypt(const CryptoPP::SecByteBlock& key, const std::array<char, 8220>& cipherBytesArray);
 
     // Key serialization
-    std::string serializeKey(const CryptoPP::RSA::PublicKey& key);
-    std::string serializeKey(const CryptoPP::RSA::PrivateKey& key);
+    std::string serializePublicKey(const CryptoPP::RSA::PublicKey& key);
     CryptoPP::RSA::PublicKey deserializePublicKey(const std::string& keyStr);
+    std::string serializePrivateKey(const CryptoPP::RSA::PrivateKey& key);
     CryptoPP::RSA::PrivateKey deserializePrivateKey(const std::string& keyStr);
 
     // Key validation
@@ -70,6 +72,6 @@ namespace utility {
     bool validatePrivateKey(const CryptoPP::RSA::PrivateKey& key);
 
     // Server crypto operations
-    std::string encryptWithServerKey(const std::string& plaintext, const std::string& keyStr);
+    std::string encryptWithServerKey(const std::string& plaintext, const std::string& keyStr); // return base64 string
     std::string decryptWithServerKey(const std::string& ciphertext, const std::string& keyStr);
 }

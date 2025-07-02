@@ -20,6 +20,8 @@
 #include <QApplication>
 #include <QStyle>
 
+#include "rsa.h"
+
 class Client;
 class MainWindow;
 class ChatsWidget;
@@ -42,7 +44,7 @@ class GreetWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme, std::string login, ChatsWidget* cv);
+    explicit GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme, std::string login, CryptoPP::RSA::PublicKey publicKey, CryptoPP::RSA::PrivateKey privateKey, ChatsWidget* cv);
     void startWelcomeAnimation();
     void setBackGround(Theme theme);
     void setWelcomeLabelText(const std::string& text);
@@ -80,7 +82,9 @@ private:
 
     QPixmap         m_background;
     std::string     m_login;
-    QString         m_filePath;
+    CryptoPP::RSA::PublicKey m_public_key;
+    CryptoPP::RSA::PrivateKey m_private_key;
+    std::string     m_filePath;
     QPixmap         m_selectedImage;
 
     QLabel*         m_welcomeLabel;

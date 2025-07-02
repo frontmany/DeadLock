@@ -49,6 +49,7 @@ class FieldsEditComponent : public QWidget {
 public:
     FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget,  Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
     void setTheme(Theme theme);
+    void setName(const std::string& name);
     void updateAvatar(const Photo& photo);
 
 signals:

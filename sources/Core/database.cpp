@@ -172,7 +172,7 @@ void Database::saveMessages(const CryptoPP::RSA::PublicKey& publicKey,
 
     CryptoPP::SecByteBlock aesKey;
     utility::generateAESKey(aesKey);
-    std::string encryptedAesKey = utility::RSAEncrypt(publicKey, aesKey);
+    std::string encryptedAesKey = utility::RSAEncryptKey(publicKey, aesKey);
 
     std::string encryptedMessages = utility::AESEncrypt(aesKey, oss.str());
     std::string friendLoginHash = utility::calculateHash(friendLogin);
@@ -259,7 +259,7 @@ std::vector<Message*> Database::loadMessages(const CryptoPP::RSA::PrivateKey& pr
 
            CryptoPP::SecByteBlock aesKey;
             try {
-                aesKey = utility::RSADecrypt(privateKey, encryptedKeyStr);
+                aesKey = utility::RSADecryptKey(privateKey, encryptedKeyStr);
                
 
                 std::string decryptedText = utility::AESDecrypt(

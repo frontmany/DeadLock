@@ -19,8 +19,6 @@ ConfigManager::ConfigManager()
     m_is_has_photo(false),
     m_my_photo(nullptr)
 {
-    loadLoginHash();
-    loadPasswordHash();
 }
 
 void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const CryptoPP::RSA::PrivateKey& myPrivateKey, const std::string& serverKey, std::unordered_map<std::string, Chat*> mapFriendLoginHashToChat, bool isHidden, Database* database) {
@@ -41,11 +39,11 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
     }
 
     if (!myPublicKey.GetModulus().IsZero() && !myPrivateKey.GetModulus().IsZero()) {
-        jsonObject["public_key"] = QString::fromStdString(utility::encryptWithServerKey(utility::serializeKey(myPublicKey), serverKey));
-        jsonObject["private_key"] = QString::fromStdString(utility::encryptWithServerKey(utility::serializeKey(myPrivateKey), serverKey));
+        jsonObject["public_key"] = QString::fromStdString(utility::encryptWithServerKey(utility::serializePublicKey(myPublicKey), serverKey));
+        jsonObject["private_key"] = QString::fromStdString(utility::encryptWithServerKey(utility::serializePrivateKey(myPrivateKey), serverKey));
     }
 
-    std::string encryptedAESEConfigKey = utility::RSAEncrypt(myPublicKey, AESEConfigKey);
+    std::string encryptedAESEConfigKey = utility::RSAEncryptKey(myPublicKey, AESEConfigKey);
     jsonObject["encrypted_config_key"] = QString::fromStdString(encryptedAESEConfigKey);
 
 
@@ -57,7 +55,7 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
     jsonObject["chatsArray"] = chatsArray;
     
     QString fileName = QString::fromStdString(m_my_login_hash) + ".json";
-    QString dir = QString::fromStdString(utility::getSaveDir());
+    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
     QDir saveDir(dir);
     QString fullPath = saveDir.filePath(fileName);
 
@@ -74,7 +72,7 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
 }
 
 bool ConfigManager::load(const std::string& fileName, const std::string& specialServerKey, Database* database) {
-    QString dir = QString::fromStdString(utility::getSaveDir());
+    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
     QString fileNameFinal = QString::fromStdString(fileName);
     QDir saveDir(dir);
     QString fullPath = saveDir.filePath(fileNameFinal);
@@ -97,26 +95,26 @@ bool ConfigManager::load(const std::string& fileName, const std::string& special
 
     if (jsonObject.contains("public_key") && jsonObject.contains("private_key")) {
         std::string encryptedPublicKeyStr = jsonObject["public_key"].toString().toStdString();
-        m_client->setPublicKey(utility::deserializePublicKey(utility::decryptWithServerKey(specialServerKey, encryptedPublicKeyStr)));
+        m_client->setPublicKey(utility::deserializePublicKey(utility::decryptWithServerKey(encryptedPublicKeyStr, specialServerKey)));
 
         std::string encryptedPrivateKeyStr = jsonObject["private_key"].toString().toStdString();
-        m_client->setPrivateKey(utility::deserializePrivateKey(utility::decryptWithServerKey(specialServerKey, encryptedPrivateKeyStr)));
+        m_client->setPrivateKey(utility::deserializePrivateKey(utility::decryptWithServerKey(encryptedPrivateKeyStr, specialServerKey)));
 
         if (!utility::validateKeys(m_client->getPublicKey(), m_client->getPrivateKey()))
             std::cerr << "error: your keys do not match!\n";
     }
 
-    CryptoPP::SecByteBlock AESEConfigKey = utility::RSADecrypt(m_client->getPrivateKey(), jsonObject["encrypted_config_key"].toString().toStdString());
+    CryptoPP::SecByteBlock AESEConfigKey = utility::RSADecryptKey(m_client->getPrivateKey(), jsonObject["encrypted_config_key"].toString().toStdString());
 
     m_my_login = utility::AESDecrypt(AESEConfigKey, jsonObject["my_login"].toString().toStdString());
     m_my_name = utility::AESDecrypt(AESEConfigKey, jsonObject["my_name"].toString().toStdString());
     m_is_has_photo = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_photo"].toString().toStdString()) == "1";
     m_client->setIsHidden(utility::AESDecrypt(AESEConfigKey, jsonObject["is_hidden"].toString().toStdString()) == "1");
 
-    if (m_is_has_photo && jsonObject.contains("my_photo")) {
+    if (m_is_has_photo && jsonObject.contains("my_photo_path")) {
         QString photoPath = QString::fromStdString(utility::AESDecrypt(AESEConfigKey, jsonObject["my_photo_path"].toString().toStdString()));
         if (!photoPath.isEmpty()) {
-            m_my_photo = new Photo(photoPath.toStdString());
+            m_my_photo = new Photo(m_client->getPrivateKey(), photoPath.toStdString());
         }
     }
 
@@ -137,12 +135,12 @@ bool ConfigManager::load(const std::string& fileName, const std::string& special
 }
 
 void ConfigManager::updateConfigFileName(const std::string& oldLoginHash, const std::string& newLoginHash) {
-    QString oldFileName = QString::fromStdString(utility::getSaveDir()) +
+    QString oldFileName = QString::fromStdString(utility::getConfigsAndPhotosDirectory()) +
         QString::fromStdString("/" + oldLoginHash) + ".json";
     QFile oldFile(oldFileName);
 
     if (oldFile.exists()) {
-        QString newFileName = QString::fromStdString(utility::getSaveDir()) +
+        QString newFileName = QString::fromStdString(utility::getConfigsAndPhotosDirectory()) +
             QString::fromStdString("/" + newLoginHash) + ".json";
 
         if (!oldFile.rename(newFileName)) {
@@ -153,7 +151,7 @@ void ConfigManager::updateConfigFileName(const std::string& oldLoginHash, const 
 }
 
 void ConfigManager::updateInConfigFriendLogin(const std::string& oldLogin, const std::string& newLogin) {
-    QString dir = QString::fromStdString(utility::getSaveDir());
+    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
     QString fileName = QString::fromStdString("/" + m_my_login_hash) + ".json";
     QString fullPath = dir + fileName;
     std::string STRDEBUG = fullPath.toStdString();
@@ -213,7 +211,7 @@ void ConfigManager::updateInConfigFriendLogin(const std::string& oldLogin, const
 }
 
 bool ConfigManager::checkIsAutoLogin() {
-    QString dir = QString::fromStdString(utility::getSaveDir());
+    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
     QDir saveDir(dir);
 
     QStringList jsonFiles = saveDir.entryList(QStringList() << "*.json", QDir::Files);
@@ -253,7 +251,7 @@ bool ConfigManager::checkIsAutoLogin() {
 }
 
 void ConfigManager::deleteFriendChatInConfig(const std::string& friendLogin) {
-    QString configPath = QString::fromStdString(utility::getSaveDir() + "/" + m_my_login_hash + ".json");
+    QString configPath = QString::fromStdString(utility::getConfigsAndPhotosDirectory() + "/" + m_my_login_hash + ".json");
     QFile file(configPath);
 
     if (!file.open(QIODevice::ReadWrite)) {
@@ -300,7 +298,7 @@ void ConfigManager::deleteFriendChatInConfig(const std::string& friendLogin) {
 }
 
 bool ConfigManager::undoAutoLogin() {
-    QString oldFileName = QString::fromStdString(utility::getSaveDir()) +
+    QString oldFileName = QString::fromStdString(utility::getConfigsAndPhotosDirectory()) +
         QString::fromStdString("/" + m_my_login_hash) + ".json";
 
     QFile file(oldFileName);
@@ -369,8 +367,8 @@ void ConfigManager::loadLoginHash() {
 
     QJsonObject jsonObject = loadDoc.object();
 
-    if (jsonObject.contains("login_hash")) {
-        std::string loginHash = jsonObject["login_hash"].toString().toStdString();
+    if (jsonObject.contains("my_login_hash")) {
+        std::string loginHash = jsonObject["my_login_hash"].toString().toStdString();
         m_my_login_hash = loginHash;
     }
 }
@@ -392,14 +390,14 @@ void ConfigManager::loadPasswordHash() {
 
     QJsonObject jsonObject = loadDoc.object();
 
-    if (jsonObject.contains("password_hash")) {
-        std::string passwordHash = jsonObject["password_hash"].toString().toStdString();
+    if (jsonObject.contains("my_password_hash")) {
+        std::string passwordHash = jsonObject["my_password_hash"].toString().toStdString();
         m_my_password_hash = passwordHash;
     }
 }
 
 bool ConfigManager::checkIsPasswordHashPresentInMyConfig() const {
-    QString dir = QString::fromStdString(utility::getSaveDir());
+    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
     QDir saveDir(dir);
 
     if (!saveDir.exists()) {

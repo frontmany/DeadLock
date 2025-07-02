@@ -137,7 +137,7 @@ namespace net {
 
 						std::array<char, c_encryptedSessionKeySize> encryptedKey;
 						std::copy_n(m_receive_file_buffer.begin(), c_encryptedSessionKeySize, encryptedKey.begin());
-						CryptoPP::SecByteBlock key = utility::RSADecrypt(
+						CryptoPP::SecByteBlock key = utility::RSADecryptKey(
 							*m_my_private_key,
 							std::string(encryptedKey.begin(), encryptedKey.end())
 						);
@@ -194,7 +194,7 @@ namespace net {
 
 				std::array<char, c_encryptedChunkSize> encryptedBuffer = utility::AESEncrypt(sessionKey, m_send_file_buffer);
 
-				std::string encryptedKey = utility::RSAEncrypt(m_safe_deque_outgoing_files.front().friendPublicKey, sessionKey);
+				std::string encryptedKey = utility::RSAEncryptKey(m_safe_deque_outgoing_files.front().friendPublicKey, sessionKey);
 
 				std::array<char, c_chunkSizeToTransfer> encryptedBufferWithKey;
 
@@ -267,7 +267,7 @@ namespace net {
 			CryptoPP::SecByteBlock key;
 			utility::generateAESKey(key);
 
-			std::string encryptedKey = utility::RSAEncrypt(file.friendPublicKey, key);
+			std::string encryptedKey = utility::RSAEncryptKey(file.friendPublicKey, key);
 
 			oss << encryptedKey << '\n'
 				<< file.id << '\n'
@@ -369,7 +369,7 @@ namespace net {
 
 			std::string encryptedKey;
 			std::getline(iss, encryptedKey);
-			CryptoPP::SecByteBlock key = utility::RSADecrypt(*m_my_private_key, encryptedKey);
+			CryptoPP::SecByteBlock key = utility::RSADecryptKey(*m_my_private_key, encryptedKey);
 
 			std::string fileId;
 			std::getline(iss, fileId);

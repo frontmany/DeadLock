@@ -214,9 +214,9 @@ void GreetWidget::setWelcomeLabelText(const std::string& text) {
     m_welcomeLabel->setText(s);
 }
 
-GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme, std::string login, ChatsWidget* cv)
+GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme, std::string login, CryptoPP::RSA::PublicKey publicKey, CryptoPP::RSA::PrivateKey privateKey, ChatsWidget* cv)
     : QWidget(parent), m_client(client), m_style(new StyleGreetWidget()),
-    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv), m_config_manager(configManager), m_theme(theme) {
+    m_cropX(0), m_cropY(0), m_cropWidth(100), m_cropHeight(100), m_mainWindow(mw), m_chatsWidget(cv), m_config_manager(configManager), m_theme(theme), m_login(login), m_public_key(publicKey), m_private_key(privateKey) {
 
     setBackGround(m_theme);
 
@@ -300,8 +300,10 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     m_continueButton->setEnabled(false);
     m_continueButton->setMinimumSize(getScaledSize(200), getScaledSize(60));
     m_continueButton->setMaximumSize(getScaledSize(350), getScaledSize(60));
+
     connect(m_continueButton, &QPushButton::clicked, this, [this]() {
         int res = saveCroppedImage();
+
         if (res == 1) {
             QDialog* errorDialog = new QDialog(this);
             errorDialog->setWindowFlags(Qt::Dialog);
@@ -364,7 +366,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
             errorDialog->exec();
         }
         else {
-            Photo* photo = new Photo(m_filePath.toStdString());
+            Photo* photo = new Photo(m_private_key, m_filePath);
             m_config_manager->setPhoto(photo);
             m_mainWindow->setupChatsWidget();
             m_config_manager->setIsHasPhoto(true);
@@ -660,15 +662,6 @@ int GreetWidget::saveCroppedImage() {
     QPixmap croppedImage = m_selectedImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
     croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
 
-    QString saveDir = QString::fromStdString(utility::getSaveDir());
-    if (saveDir.isEmpty()) {
-        qWarning() << "Не удалось получить директорию для сохранения.";
-        return 1;
-    }
-
-    QString fileName = QString::fromStdString(m_login) + "myMainPhoto.png";
-    m_filePath = QDir(saveDir).filePath(fileName);
-
     QImage image = croppedImage.toImage();
 
     while (image.sizeInBytes() > 58 * 1024 && image.width() > 10 && image.height() > 10) {
@@ -680,30 +673,41 @@ int GreetWidget::saveCroppedImage() {
     QBuffer buffer(&imageData);
     buffer.open(QIODevice::WriteOnly);
 
-
-    int quality = 60;
-    if (!image.save(&buffer, "PNG", quality)) {
-        qWarning() << "Ошибка при сохранении изображения в буфер";
+    if (!image.save(&buffer, "PNG")) {
         return 1;
     }
 
     if (imageData.size() > 58 * 1024) {
-        qWarning() << "Не удалось сжать изображение до 64 КБ. Фактический размер:"
-            << imageData.size() / 1024 << "КБ";
         return 1;
     }
 
-    QFile file(m_filePath);
-    if (file.open(QIODevice::WriteOnly)) {
-        file.write(imageData);
-        qDebug() << "Изображение успешно сохранено:" << m_filePath
-            << "Размер:" << imageData.size() / 1024 << "КБ"
-            << "Качество:" << quality + 5;
-        file.close();
-        return 0;
+
+    std::string fileName = utility::calculateHash(m_login) + "myMainPhoto.dph";
+    m_filePath = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
+
+    try {
+        CryptoPP::SecByteBlock aesKey;
+        utility::generateAESKey(aesKey);
+
+        std::string encryptedImage = utility::AESEncrypt(aesKey,
+            std::string(imageData.constData(), imageData.size()));
+
+        std::string encryptedKey = utility::RSAEncryptKey(m_public_key, aesKey);
+
+        std::string finalData = encryptedKey + "\n" + encryptedImage;
+
+        std::ofstream outFile(m_filePath, std::ios::binary);
+        if (!outFile) {
+            return 1;
+        }
+
+        outFile.write(finalData.data(), finalData.size());
+        return outFile ? 0 : 1;
     }
-    else {
-        qWarning() << "Ошибка при открытии файла для записи:" << file.errorString();
+    catch (const std::exception& e) {
+        return 1;
+    }
+    catch (...) {
         return 1;
     }
 }

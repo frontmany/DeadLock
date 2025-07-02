@@ -66,7 +66,7 @@ private:
     QVBoxLayout* m_bothSlidersVLayout;
     QWidget*     m_photoAndSlidersWidgetContainer;
 
-    QString         m_filePath;
+    std::string     m_filePath;
     QPixmap         m_selectedImage;
 
     std::shared_ptr<ConfigManager> m_config_manager;

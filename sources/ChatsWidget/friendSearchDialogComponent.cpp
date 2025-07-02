@@ -466,7 +466,10 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     chat->setLastReceivedOrSentMessage("no messages yet");
     chat->setIsFriendHasPhoto(friendInfo->getIsFriendHasPhoto());
 
-    Photo* photo = Photo::deserializeAndSaveOnDisc(friendInfo->getFriendPhoto()->getBinaryData(), login.toStdString());
+    Photo* photo = Photo::deserializeAndSaveOnDisc(m_chats_list_component->getChatsWidget()->getClient()->getPrivateKey(),
+        m_chats_list_component->getChatsWidget()->getClient()->getServerPublicKey(),
+        friendInfo->getFriendPhoto()->getBinaryData(),
+        login.toStdString());
     chat->setFriendPhoto(photo);
     
 

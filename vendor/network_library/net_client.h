@@ -144,6 +144,10 @@ namespace net {
 			m_server_public_key = serverPublicKey;
 		}
 
+		const CryptoPP::RSA::PublicKey& getServerPublicKey() {
+			return m_server_public_key;
+		}
+
 	protected:
 		virtual void onMessage(net::message<T> message) = 0;
 		virtual void onFile(net::file<T> file) = 0;

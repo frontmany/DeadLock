@@ -30,7 +30,7 @@ ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client
 	m_chatsListComponent = new ChatsListComponent(this, this, m_theme, m_client->getIsHidden());
 
     if (m_config_manager->getPhoto() != nullptr) {
-        m_chatsListComponent->SetAvatar(*m_config_manager->getPhoto());
+        m_chatsListComponent->setAvatar(*m_config_manager->getPhoto());
     }
 
     m_leftVLayout = new QVBoxLayout;

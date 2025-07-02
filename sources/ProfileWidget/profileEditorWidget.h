@@ -22,6 +22,7 @@ public:
     explicit ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
     void updateAvatar(const Photo& photo);
     void setTheme(Theme theme);
+    void setName(const std::string& name);
 
     PasswordEditComponent* getPasswordEditComponent() { return m_password_edit_component; }
     FieldsEditComponent* getFieldsEditComponent() { return m_fields_edit_component; }

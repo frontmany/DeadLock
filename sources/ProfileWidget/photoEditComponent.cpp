@@ -215,7 +215,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_continueButton->setMaximumSize(utility::getScaledSize(250), utility::getScaledSize(60));
     connect(m_continueButton, &QPushButton::clicked, [this]() {
         saveCroppedImage();
-        Photo* photo = new Photo(m_filePath.toStdString());
+        Photo* photo = new Photo(m_config_manager->getClient()->getPrivateKey(), m_filePath);
         m_config_manager->setIsHasPhoto(true);
         m_config_manager->setPhoto(photo);
         m_client->updateMyPhoto(*photo);
@@ -437,13 +437,12 @@ void PhotoEditComponent::wheelEvent(QWheelEvent* event) {
 
 void PhotoEditComponent::saveCroppedImage() {
     if (m_selectedImage.isNull()) {
-        qWarning() << "No image to save";
+        qWarning() << "Нет изображения для сохранения";
         return;
     }
 
     QPixmap circularMask(m_cropSize, m_cropSize);
     circularMask.fill(Qt::transparent);
-
     QPainter maskPainter(&circularMask);
     maskPainter.setRenderHint(QPainter::Antialiasing);
     maskPainter.setBrush(Qt::white);
@@ -453,15 +452,6 @@ void PhotoEditComponent::saveCroppedImage() {
 
     QPixmap croppedImage = m_selectedImage.copy(m_cropX, m_cropY, m_cropSize, m_cropSize);
     croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
-
-    QString saveDir = QString::fromStdString(utility::getSaveDir());
-    if (saveDir.isEmpty()) {
-        qWarning() << "Couldn't get the directory to save.";
-        return;
-    }
-
-    QString fileName = QString::fromStdString(m_config_manager->getMyLoginHash()) + "myMainPhoto.png";
-    m_filePath = QDir(saveDir).filePath(fileName);
 
     QImage image = croppedImage.toImage();
 
@@ -474,30 +464,43 @@ void PhotoEditComponent::saveCroppedImage() {
     QBuffer buffer(&imageData);
     buffer.open(QIODevice::WriteOnly);
 
-
-    int quality = 60;
-    if (!image.save(&buffer, "PNG", quality)) {
-        qWarning() << "Error saving the image to the buffer";
+    if (!image.save(&buffer, "PNG")) {
         return;
     }
 
     if (imageData.size() > 58 * 1024) {
-        qWarning() << "Не удалось сжать изображение до 64 КБ. Фактический размер:"
-            << imageData.size() / 1024 << "КБ";
         return;
     }
 
-    QFile file(m_filePath);
-    if (file.open(QIODevice::WriteOnly)) {
-        file.write(imageData);
-        qDebug() << "The image was saved successfully:" << m_filePath
-            << "Size" << imageData.size() / 1024 << "КБ"
-            << "Quality:" << quality + 5;
-        file.close();
+
+    std::string fileName = m_config_manager->getMyLoginHash() + "myMainPhoto.dph";
+
+
+    try {
+        CryptoPP::SecByteBlock aesKey;
+        utility::generateAESKey(aesKey);
+
+        std::string encryptedImage = utility::AESEncrypt(aesKey,
+            std::string(imageData.constData(), imageData.size()));
+
+        std::string encryptedKey = utility::RSAEncryptKey(m_client->getPublicKey(), aesKey);
+
+        std::string finalData = encryptedKey + "\n" + encryptedImage;
+
+
+        std::string path = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
+        std::ofstream outFile(path, std::ios::binary);
+        if (!outFile) {
+            return;
+        }
+
+        outFile.write(finalData.data(), finalData.size());
+        m_filePath = path;
+    }
+    catch (const std::exception& e) {
         return;
     }
-    else {
-        qWarning() << "Error when opening a file for writing:" << file.errorString();
+    catch (...) {
         return;
     }
 }

@@ -1227,7 +1227,7 @@ void MessagingAreaComponent::onSendFiles() {
     
     
     std::string blobUID = utility::generateId();
-    Message* message = new Message(msg, utility::getTimeStamp(), blobUID, true, false);
+    Message* message = new Message(msg, utility::getCurrentTime(), blobUID, true, false);
     std::vector<fileWrapper> resultWrappersVec;
     resultWrappersVec.reserve(m_vec_selected_files.size());
 
@@ -1257,7 +1257,7 @@ void MessagingAreaComponent::onSendFiles() {
         tmpFile.id = utility::generateId();
         tmpFile.receiverLoginHash = utility::calculateHash(m_chat->getFriendLogin());
         tmpFile.senderLoginHash = utility::calculateHash(m_chatsWidget->getConfigManager()->getMyLogin());
-        tmpFile.timestamp = utility::getTimeStamp();
+        tmpFile.timestamp = utility::getCurrentTime();
 
         try {
 #ifdef _WIN32
@@ -1602,7 +1602,7 @@ void MessagingAreaComponent::onSendMessageClicked() {
 
     updateRelatedChatComponentLastMessage();
 
-    Message* message = new Message(msg, utility::getTimeStamp(), utility::generateId(), true, false);
+    Message* message = new Message(msg, utility::getCurrentTime(), utility::generateId(), true, false);
     addMessage(message, false);
     m_containerWidget->adjustSize();
     onTypeMessage();

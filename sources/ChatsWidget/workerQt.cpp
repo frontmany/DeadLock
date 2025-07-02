@@ -67,6 +67,29 @@ void WorkerQt::onServerDown() {
 		Qt::QueuedConnection);
 }
 
+void WorkerQt::setRecoveredAvatar(Photo* myRecoveredAvatar) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	QMetaObject::invokeMethod(chatsList,
+		"setAvatar",
+		Qt::QueuedConnection,
+		Q_ARG(const Photo&, *myRecoveredAvatar));
+
+	QMetaObject::invokeMethod(chatsList,
+		"setAvatarInProfileEditorWidget",
+		Qt::QueuedConnection,
+		Q_ARG(const Photo&, *myRecoveredAvatar));
+}
+
+void WorkerQt::setNameFieldInProfileEditorWidget(const std::string& name) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	QMetaObject::invokeMethod(chatsList,
+		"setNameFieldInProfileEditorWidget",
+		Qt::QueuedConnection,
+		Q_ARG(const std::string&, name));
+}
+
 void WorkerQt::updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& file, bool isError) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& compsVec = chatsWidget->getMessagingAreasVec();

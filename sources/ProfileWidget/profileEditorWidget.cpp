@@ -104,7 +104,11 @@ void ProfileEditorWidget::close() {
 
 void ProfileEditorWidget::updateAvatar(const Photo& photo) {
     m_fields_edit_component->updateAvatar(photo);
-    m_chats_list_component->SetAvatar(photo);
+    m_chats_list_component->setAvatar(photo);
+}
+
+void ProfileEditorWidget::setName(const std::string& name) {
+    m_fields_edit_component->setName(name);
 }
 
 void ProfileEditorWidget::paintEvent(QPaintEvent* event) {

@@ -59,6 +59,9 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     else if (msg.header.type == QueryType::USER_INFO) {
         onUserInfo(packet);
     }
+    else if (msg.header.type == QueryType::MY_INFO) {
+        onMyInfo(packet);
+    }
     else if (msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
         onMessageReadConfirmationReceive(packet);
     }
@@ -102,14 +105,15 @@ void ResponseHandler::onRegistrationSuccess(const std::string& packet) {
     std::string serverPublicKey;
     std::getline(iss, serverPublicKey);
 
-    m_client->buildSpecialServerKey(encryptionPart);
+    m_client->setServerEncryptionPart(encryptionPart);
     m_client->setServerPublicKey(utility::deserializePublicKey(serverPublicKey));
     m_client->initDatabase(m_configManager->getMyLoginHash());
-    m_client->connectFilesSocket(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
 
     m_client->afterRegistrationSendMyInfo();
     m_client->generateMyKeyPair();
     m_client->sendPublicKeyToServer();
+
+    m_client->connectFilesSocket(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
 
     m_configManager->setIsNeedToAutoLogin(true);
     m_worker_UI->onRegistrationSuccess();
@@ -120,6 +124,8 @@ void ResponseHandler::onRegistrationFail() {
 }
 
 void ResponseHandler::onAuthorizationFail() {
+    m_configManager->setMyLoginHash("");
+    m_configManager->setMyPasswordHash("");
     m_worker_UI->onAuthorizationFail();
 }
 
@@ -227,7 +233,7 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string fileId;
     std::getline(iss, fileId);
@@ -344,7 +350,7 @@ void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
     std::string serverPublicKey;
     std::getline(iss, serverPublicKey);
 
-    m_client->buildSpecialServerKey(encryptionPart);
+    m_client->setServerEncryptionPart(encryptionPart);
     m_client->setServerPublicKey(utility::deserializePublicKey(serverPublicKey));
 
     const std::string& myLoginHash = m_configManager->getMyLoginHash();
@@ -353,10 +359,12 @@ void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
     if (!m_configManager->getIsAutoLogin()) {
         bool res = m_configManager->load((myLoginHash + ".json"), m_client->getSpecialServerKey(), m_client->getDatabase());
         if (!res) {
-            m_client->requestUserInfoFromServer(myLoginHash);
+            m_client->requestMyInfoFromServerAndResetKeys(m_configManager->getMyLoginHash());
             m_worker_UI->showConfigLoadErrorDialog();
         }
-        m_configManager->setIsNeedToAutoLogin(true);
+        else {
+            m_configManager->setIsNeedToAutoLogin(true);
+        }
     }
 
     m_client->connectFilesSocket(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
@@ -368,7 +376,7 @@ void ResponseHandler::onFoundUsers(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string countStr;
     std::getline(iss, countStr);
@@ -406,10 +414,13 @@ void ResponseHandler::onFoundUsers(const std::string& packet) {
         std::getline(iss, sizeStr);
         sizeStr = utility::AESDecrypt(key, sizeStr);
 
-        std::string photoStr;
-        std::getline(iss, photoStr);
-        photoStr = utility::AESDecrypt(key, photoStr);
-        Photo* photo = Photo::deserializeWithoutSaveOnDisc(base64_decode(photoStr));
+        std::string dataFirstPartStr;
+        std::getline(iss, dataFirstPartStr);
+        std::string dataSecondPartStr;
+        std::getline(iss, dataSecondPartStr);
+
+
+        Photo* photo = Photo::deserializeWithoutSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr);
         user->setFriendPhoto(photo);
 
         vec.emplace_back(user);
@@ -423,7 +434,7 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string login;
     std::getline(iss, login);
@@ -446,9 +457,10 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     std::getline(iss, lastSeen);
     lastSeen = utility::AESDecrypt(key, lastSeen);
 
-    std::string photoStr;
-    std::getline(iss, photoStr);
-    photoStr = utility::AESDecrypt(key, photoStr);
+    std::string dataFirstPartStr;
+    std::getline(iss, dataFirstPartStr);
+    std::string dataSecondPartStr;
+    std::getline(iss, dataSecondPartStr);
 
 
     Chat* chat = new Chat;
@@ -459,7 +471,7 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
 
     utility::incrementAllChatLayoutIndexes(m_client->getMyHashChatsMap());
 
-    Photo* photo = Photo::deserializeAndSaveOnDisc(base64_decode(photoStr), login);
+    Photo* photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
     chat->setFriendPhoto(photo);
     chat->setFriendLastSeen(lastSeen);
     chat->setLastReceivedOrSentMessage("no messages yet");
@@ -474,7 +486,7 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string vecBegin;
     std::getline(iss, vecBegin);
@@ -484,8 +496,8 @@ void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {
     std::vector<std::pair<std::string, std::string>> loginToStatusPairsVec;
     std::string line;
     while (std::getline(iss, line)) {
-        line = utility::AESDecrypt(key, line);
         if (line != "VEC_END") {
+            line = utility::AESDecrypt(key, line);
             int index = line.find(',');
             std::string login = line.substr(0, index);
             std::string status = line.substr(++index);
@@ -513,7 +525,7 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string myLogin;
     std::getline(iss, myLogin);
@@ -586,7 +598,7 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string login;
     std::getline(iss, login);
@@ -609,9 +621,10 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
     std::getline(iss, sizeStr);
     sizeStr = utility::AESDecrypt(key, sizeStr);
 
-    std::string photoStr;
-    std::getline(iss, photoStr);
-    photoStr = utility::AESDecrypt(key, photoStr);
+    std::string dataFirstPartStr;
+    std::getline(iss, dataFirstPartStr);
+    std::string dataSecondPartStr;
+    std::getline(iss, dataSecondPartStr);
 
     std::string newLogin;
     std::getline(iss, newLogin);
@@ -633,7 +646,7 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
         m_configManager->updateInConfigFriendLogin(login, newLogin);
     }
 
-    Photo* photo = Photo::deserializeAndSaveOnDisc(base64_decode(photoStr), login);
+    Photo* photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
 
     auto& chatsMap = m_client->getMyHashChatsMap();
     const auto it = chatsMap.find(utility::calculateHash(login));
@@ -658,12 +671,63 @@ void ResponseHandler::onUserInfo(const std::string& packet) {
     }
 }
 
+void ResponseHandler::onMyInfo(const std::string& packet) {
+    std::istringstream iss(packet);
+
+    std::string encryptedKey;
+    std::getline(iss, encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
+
+    std::string login;
+    std::getline(iss, login);
+    login = utility::AESDecrypt(key, login);
+
+    std::string name;
+    std::getline(iss, name);
+    name = utility::AESDecrypt(key, name);
+
+    std::string lastSeen;
+    std::getline(iss, lastSeen);
+    lastSeen = utility::AESDecrypt(key, lastSeen);
+
+    std::string isHasPhotoStr;
+    std::getline(iss, isHasPhotoStr);
+    isHasPhotoStr = utility::AESDecrypt(key, isHasPhotoStr);
+    bool isHasPhoto = isHasPhotoStr == "true";
+
+    std::string sizeStr;
+    std::getline(iss, sizeStr);
+    sizeStr = utility::AESDecrypt(key, sizeStr);
+
+    std::string dataFirstPartStr;
+    std::getline(iss, dataFirstPartStr);
+    std::string dataSecondPartStr;
+    std::getline(iss, dataSecondPartStr);
+
+    if (std::stoi(sizeStr) != 0) {
+        Photo* photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
+        m_configManager->setIsHasPhoto(true);
+        m_configManager->setPhoto(photo);
+        m_worker_UI->setRecoveredAvatar(photo);
+    }
+    else {
+        m_configManager->setIsHasPhoto(false);
+        m_configManager->setPhoto(nullptr);
+    }
+
+    m_configManager->setIsNeedToAutoLogin(true);
+    m_configManager->setMyLogin(login);
+    m_configManager->setMyName(name);
+
+    m_worker_UI->setNameFieldInProfileEditorWidget(name);
+}
+
 void ResponseHandler::onTyping(const std::string& packet) {
     std::istringstream iss(packet);
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string myLogin;
     std::getline(iss, myLogin);
@@ -693,7 +757,7 @@ void ResponseHandler::onMessageReadConfirmationReceive(const std::string& packet
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string myLogin;
     std::getline(iss, myLogin);
@@ -733,7 +797,7 @@ void ResponseHandler::onStatusReceive(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string friendLoginHash;
     std::getline(iss, friendLoginHash);
@@ -757,7 +821,7 @@ void ResponseHandler::onCheckNewLoginSuccess(const std::string& packet) {
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecrypt(m_client->getPrivateKey(), encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
     std::string allowedLogin;
     std::getline(iss, allowedLogin);

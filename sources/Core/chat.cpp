@@ -13,19 +13,19 @@ QJsonObject Chat::serialize(const CryptoPP::RSA::PublicKey& myPublicKey,
         utility::generateAESKey(m_AESE_chat_configKey);
 
         QJsonObject jsonObject;
-        jsonObject["friend_last_seen"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_last_seen));
-        jsonObject["friend_login"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_login));
-        jsonObject["friend_name"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_name));
-        jsonObject["last_message"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_last_received_or_sent_message));
-        jsonObject["has_photo"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, (m_is_friend_has_photo == true ? "1" : "0")));
-        jsonObject["layout_index"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, std::to_string(m_index_at_layout)));
+        jsonObject["friend_last_seen"] = QString::fromStdString(base64_encode(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_last_seen)));
+        jsonObject["friend_login"] = QString::fromStdString(base64_encode(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_login)));
+        jsonObject["friend_name"] = QString::fromStdString(base64_encode(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_name)));
+        jsonObject["last_message"] = QString::fromStdString(base64_encode(utility::AESEncrypt(m_AESE_chat_configKey, m_last_received_or_sent_message)));
+        jsonObject["has_photo"] = QString::fromStdString(base64_encode(utility::AESEncrypt(m_AESE_chat_configKey, (m_is_friend_has_photo == true ? "1" : "0"))));
+        jsonObject["layout_index"] = QString::fromStdString(base64_encode(utility::AESEncrypt(m_AESE_chat_configKey, std::to_string(m_index_at_layout))));
         
         if (m_friend_photo) {
-            jsonObject["photo_path"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_photo->getPhotoPath()));
+            jsonObject["photo_path"] = QString::fromStdString(base64_encode(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_photo->getPhotoPath())));
         }
 
-        std::string encryptedm_AESE_chat_configKey = utility::RSAEncrypt(myPublicKey, m_AESE_chat_configKey);
-        jsonObject["chat_config_key"] = QString::fromStdString(encryptedm_AESE_chat_configKey);
+        std::string encryptedm_AESE_chat_configKey = utility::RSAEncryptKey(myPublicKey, m_AESE_chat_configKey);
+        jsonObject["chat_config_key"] = QString::fromStdString(base64_encode(encryptedm_AESE_chat_configKey));
 
         return jsonObject;
     } 
@@ -41,18 +41,18 @@ Chat* Chat::deserialize(const CryptoPP::RSA::PrivateKey& myPrivateKey,
 {
     try {
         Chat* chat = new Chat();
-        chat->m_AESE_chat_configKey = utility::RSADecrypt(myPrivateKey, jsonObject["chat_config_key"].toString().toStdString());
-        chat->m_friend_login = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["friend_login"].toString().toStdString());
-        chat->m_friend_name = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["friend_name"].toString().toStdString());
-        chat->m_friend_last_seen = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["friend_last_seen"].toString().toStdString());
-        chat->m_last_received_or_sent_message = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["last_message"].toString().toStdString());
-        chat->m_is_friend_has_photo = (utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["has_photo"].toString().toStdString()) == "1");
-        chat->m_index_at_layout = std::stoi(utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["layout_index"].toString().toStdString()));
+        chat->m_AESE_chat_configKey = utility::RSADecryptKey(myPrivateKey, base64_decode(jsonObject["chat_config_key"].toString().toStdString()));
+        chat->m_friend_login = utility::AESDecrypt(chat->m_AESE_chat_configKey, base64_decode(jsonObject["friend_login"].toString().toStdString()));
+        chat->m_friend_name = utility::AESDecrypt(chat->m_AESE_chat_configKey, base64_decode(jsonObject["friend_name"].toString().toStdString()));
+        chat->m_friend_last_seen = utility::AESDecrypt(chat->m_AESE_chat_configKey, base64_decode(jsonObject["friend_last_seen"].toString().toStdString()));
+        chat->m_last_received_or_sent_message = utility::AESDecrypt(chat->m_AESE_chat_configKey, base64_decode(jsonObject["last_message"].toString().toStdString()));
+        chat->m_is_friend_has_photo = (utility::AESDecrypt(chat->m_AESE_chat_configKey, base64_decode(jsonObject["has_photo"].toString().toStdString())) == "1");
+        chat->m_index_at_layout = std::stoi(utility::AESDecrypt(chat->m_AESE_chat_configKey, base64_decode(jsonObject["layout_index"].toString().toStdString())));
 
         if (jsonObject.contains("photo_path")) {
-            std::string encryptedPath = jsonObject["photo_path"].toString().toStdString();
+            std::string encryptedPath = base64_decode(jsonObject["photo_path"].toString().toStdString());
             std::string path = (utility::AESDecrypt(chat->m_AESE_chat_configKey, encryptedPath));
-            chat->m_friend_photo = new Photo(path);
+            chat->m_friend_photo = new Photo(myPrivateKey, path);
         }
 
         db.loadMessages(myPrivateKey, myLogin, chat->m_friend_login, chat->m_vec_messages);
