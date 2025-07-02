@@ -4,8 +4,10 @@
 #include "registrationComponent.h"
 #include "configManager.h"
 #include "client.h"
+
 #include <QGraphicsBlurEffect>
 #include <QPainterPath>
+#include <QMovie> 
 
 StyleLoginWidget::StyleLoginWidget() {
     buttonStyleBlue = R"(
@@ -42,6 +44,27 @@ StyleLoginWidget::StyleLoginWidget() {
             color: rgb(153, 150, 150);      
         }
     )";
+
+    darkGifLabelStyle = R"(
+    QLabel {
+        color: rgb(220, 220, 220); 
+        font-size: 12px;
+        background-color: transparent;
+        border: none;
+        padding: 5px;
+    }
+)";
+
+
+    lightGifLabelStyle = R"(
+    QLabel {
+        color: rgb(80, 80, 80);  
+        font-size: 12px;
+        background-color: transparent;
+        border: none;
+        padding: 5px;
+    }
+)";
 }
 
 
@@ -54,11 +77,21 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     m_switchToRegisterButton = new QPushButton("register", this);
     m_switchToAuthorizeButton = new QPushButton("login", this);
 
+    
+    m_processLabel = new QLabel(this);
+    m_processLabel->hide();
+
+    QFont segoeFont("Segoe UI", 10); 
+    segoeFont.setWeight(QFont::Bold);  
+    m_processLabel->setFont(segoeFont);
+
     m_switchersHLayout = new QHBoxLayout;
     m_switchersHLayout->addSpacing(-300);
     m_switchersHLayout->setAlignment(Qt::AlignCenter);
     m_switchersHLayout->addWidget(m_switchToAuthorizeButton);
     m_switchersHLayout->addWidget(m_switchToRegisterButton);
+    m_switchersHLayout->addSpacing(10);
+    m_switchersHLayout->addWidget(m_processLabel);
 
 
 
@@ -83,12 +116,50 @@ LoginWidget::LoginWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     connect(m_switchToAuthorizeButton, &QPushButton::clicked, this, &LoginWidget::switchToAuthorize);
 }
 
+void LoginWidget::showProgressLabel(bool isRegistration) {
+    if (m_switchersHLayout->count() > 0) {
+        QLayoutItem* item = m_switchersHLayout->itemAt(0);
+        if (item && item->spacerItem()) { 
+            m_switchersHLayout->removeItem(item);
+            delete item; 
+        }
+    }
+
+    m_switchersHLayout->insertSpacing(0, -105);
+
+    if (isRegistration) {
+        m_processLabel->setText("Encrypting and generating keys...");
+    }
+    else {
+        m_processLabel->setText("Encrypting and check keys...");
+    }
+    m_processLabel->show();
+}
+
+void LoginWidget::hideProgressLabel() {
+    if (m_switchersHLayout->count() > 0) {
+        QLayoutItem* item = m_switchersHLayout->itemAt(0);
+        if (item && item->spacerItem()) {
+            m_switchersHLayout->removeItem(item);
+            delete item;
+        }
+    }
+
+    m_switchersHLayout->insertSpacing(0, -300);
+
+    m_processLabel->hide();
+}
+
 void LoginWidget::onAuthorizeButtonClicked(QString& login, QString& password) {
+    setButtonsDisabled(true);
+    showProgressLabel(false);
     m_client->authorizeClient(utility::calculateHash(login.toStdString()), utility::calculateHash(password.toStdString()));
     m_config_manager->setMyLogin(login.toStdString());
 }
 
 void LoginWidget::onRegisterButtonClicked(QString& login, QString& password, QString& name) {
+    setButtonsDisabled(true);
+    showProgressLabel(true);
     m_client->registerClient(login.toStdString(), password.toStdString(), name.toStdString());
 }
 
@@ -137,6 +208,18 @@ void LoginWidget::setTheme(Theme& theme) {
     m_registrationWidget->setTheme(theme);
     setBackGround(theme);
     update();
+
+    if (theme == DARK) {
+        m_processLabel->setStyleSheet(style->darkGifLabelStyle);
+    }
+    else {
+        m_processLabel->setStyleSheet(style->lightGifLabelStyle);
+    }
+}
+
+void LoginWidget::setButtonsDisabled(bool isDisabled) {
+    m_switchToAuthorizeButton->setDisabled(isDisabled);
+    m_switchToRegisterButton->setDisabled(isDisabled);
 }
 
 void LoginWidget::setBackGround(Theme theme) {

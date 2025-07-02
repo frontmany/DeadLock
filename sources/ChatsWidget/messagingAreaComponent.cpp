@@ -989,7 +989,6 @@ void MessagingAreaComponent::onAttachFileClicked()
         return;
     }
 
-    // Преобразование путей для корректной обработки в Windows
     QStringList correctedPaths;
     for (const QString& path : filePaths) {
         correctedPaths.append(QDir::toNativeSeparators(path));

@@ -22,6 +22,10 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
     QPushButton:pressed {
         background-color: rgb(26, 133, 255);      
     }
+    QPushButton:disabled {
+        background-color: rgb(100, 100, 100);
+        color: rgb(180, 180, 180);
+    }
 )";
 
     DarkLineEditStyle = R"(
@@ -50,6 +54,10 @@ StyleAuthorizationComponent::StyleAuthorizationComponent() {
     }
     QPushButton:pressed {
         background-color: rgb(21, 119, 232);      
+    }
+    QPushButton:disabled {
+        background-color: rgb(200, 200, 200);
+        color: rgb(100, 100, 100);
     }
 )";
 
@@ -166,6 +174,7 @@ AuthorizationComponent::AuthorizationComponent(QWidget* parent, LoginWidget* log
 }
 
 void AuthorizationComponent::setErrorMessageToLabel(const QString& errorText) {
+    m_loginButton->setDisabled(false);
     m_error_label->setText(errorText);
     m_error_label->show();
 }
@@ -226,6 +235,7 @@ void AuthorizationComponent::SlotToSendLoginData() {
         return;
     }
 
+    m_loginButton->setDisabled(true);
     emit sendLoginData(login, password);
 }
 

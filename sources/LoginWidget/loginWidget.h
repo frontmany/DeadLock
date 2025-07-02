@@ -19,6 +19,8 @@ struct StyleLoginWidget {
     StyleLoginWidget();
     QString buttonStyleBlue;
     QString buttonStyleGray;
+    QString darkGifLabelStyle;
+    QString lightGifLabelStyle;
 };
 
 class LoginWidget : public QWidget {
@@ -27,6 +29,9 @@ class LoginWidget : public QWidget {
 public:
     explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager);
     void setTheme(Theme& theme);
+    void setButtonsDisabled(bool isDisabled);
+    void showProgressLabel(bool isRegistration);
+    void hideProgressLabel();
 
     AuthorizationComponent* getAuthorizationComponent();
     RegistrationComponent* getRegistrationComponent();
@@ -62,4 +67,5 @@ private:
 
     QPushButton*            m_switchToAuthorizeButton;
     QPushButton*            m_switchToRegisterButton;
+    QLabel*                 m_processLabel;
 };

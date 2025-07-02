@@ -74,6 +74,8 @@ LoginWidget* MainWindow::getLoginWidget() {
 
 void MainWindow::updateRegistrationUIRedBorder() {
     if (m_loginWidget) {
+        m_loginWidget->setButtonsDisabled(false);
+        m_loginWidget->hideProgressLabel();
         RegistrationComponent* registrationComponent = m_loginWidget->getRegistrationComponent();
         registrationComponent->setErrorMessageToLabel("Registration Failed");
     }
@@ -81,6 +83,8 @@ void MainWindow::updateRegistrationUIRedBorder() {
 
 void MainWindow::updateAuthorizationUIRedBorder() {
     if (m_loginWidget) {
+        m_loginWidget->setButtonsDisabled(false);
+        m_loginWidget->hideProgressLabel();
         auto authorizationComponent = m_loginWidget->getAuthorizationComponent();
         authorizationComponent->setErrorMessageToLabel("Authorization Failed");
     }
