@@ -1,2 +1,2 @@
 build/*
-vendor/cryptopp
+vendor/cryptopp/*
