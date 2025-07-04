@@ -51,7 +51,6 @@ public slots:
 	void setupLoginWidget();
 	void setupGreetWidget();
 
-	//logic
 	void stopClient();
 
 private:

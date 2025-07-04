@@ -126,7 +126,7 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
 
 void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
     chat->getMessagesVec().push_back(message);
-    m_client->sendMessage(chat->getFriendLogin(), message);
+    m_client->sendMessage(chat->getPublicKey(), chat->getFriendLogin(), message);
 }
 
 void ChatsWidget::onFilesData(Message* message, Chat* chat, size_t filesCount) {
@@ -246,9 +246,10 @@ void ChatsWidget::restoreChatComponents() {
 }
 
 bool ChatsWidget::isValidChatCreation(const std::string& loginToCheck) {
+    std::string loginToCheckHash = utility::calculateHash(loginToCheckHash);
     auto& chatsMap = m_client->getMyHashChatsMap();
-    auto it = std::find_if(chatsMap.begin(), chatsMap.end(), [&loginToCheck](std::pair<std::string, Chat*> pair) {
-        return pair.first == loginToCheck;
+    auto it = std::find_if(chatsMap.begin(), chatsMap.end(), [&loginToCheckHash](std::pair<std::string, Chat*> pair) {
+        return pair.first == loginToCheckHash;
     });
 
     if (it != m_client->getMyHashChatsMap().end() || loginToCheck == m_config_manager->getMyLogin()) {

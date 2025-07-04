@@ -31,11 +31,13 @@ MainWindow::MainWindow(QWidget* parent, Client* client, std::shared_ptr<ConfigMa
 
 MainWindow::~MainWindow() {
     qDebug() << "window closing";
-    m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
-    std::cout << "saving\n";
+    if (m_client->getIsLoggedIn()) {
+        m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+        std::cout << "saving\n";
 
-    if (m_config_manager->getIsAutoLogin()) {
-        m_config_manager->save(m_client->getPublicKey(), m_client->getPrivateKey(), m_client->getSpecialServerKey(), m_client->getMyHashChatsMap(), m_client->getIsHidden(), m_client->getDatabase());
+        if (m_config_manager->getIsAutoLogin()) {
+            m_config_manager->save(m_client->getPublicKey(), m_client->getPrivateKey(), m_client->getSpecialServerKey(), m_client->getMyHashChatsMap(), m_client->getIsHidden(), m_client->getDatabase());
+        }
     }
 
     delete m_chatsWidget;

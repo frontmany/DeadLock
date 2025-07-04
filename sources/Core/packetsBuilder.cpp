@@ -151,10 +151,11 @@ const std::string  PacketsBuilder::getUpdateMyLoginPacket(const CryptoPP::RSA::P
     return oss.str();
 }
 
-const std::string PacketsBuilder::getLoadUserInfoPacket(const std::string& loginHash) {
+const std::string PacketsBuilder::getLoadUserInfoPacket(const std::string& loginHashToSearch, const std::string& loginHash) {
     std::ostringstream oss;
     oss << get << '\n'
-        << loginHash << '\n';
+        << loginHash << '\n'
+        << loginHashToSearch << '\n';
 
     return oss.str();
 }

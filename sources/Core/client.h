@@ -50,14 +50,14 @@ public:
     void verifyPassword(const std::string& passwordHash);
     void checkIsNewLoginAvailable(const std::string& newLogin);
 
-    void requestUserInfoFromServer(const std::string& loginHash);
+    void requestUserInfoFromServer(const std::string& loginHashToSearch, const std::string& loginHash);
     void requestMyInfoFromServerAndResetKeys(const std::string& loginHash);
 
     void findUser(const std::string& searchText);
     void typingNotify(const std::string& friendLogin, bool isTyping);
 
     void sendFilesMessage(Message& filesMessage);
-    void sendMessage(const std::string& friendLogin, const Message* message);
+    void sendMessage(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& friendLogin, const Message* message);
     void sendMessageReadConfirmation(const std::string& friendLogin, const Message* message);
 
     void broadcastMyStatus(const std::string& status);
@@ -101,6 +101,9 @@ public:
     void setIsHidden(bool isHidden) { m_is_hidden = isHidden; }
     bool getIsHidden() { return m_is_hidden; }
 
+    void setIsLoggedIn(bool isLoggedIn) { m_is_logged_in = isLoggedIn; }
+    bool getIsLoggedIn() { return m_is_logged_in; }
+
     void setPublicKey(const CryptoPP::RSA::PublicKey& key);
     const CryptoPP::RSA::PublicKey& getPublicKey() const;
 
@@ -128,6 +131,7 @@ private:
 
     bool                    m_is_hidden;
     bool                    m_is_error;
+    bool                    m_is_logged_in;
     std::atomic<bool>       m_is_ui_ready_to_update;
 
     ResponseHandler*        m_response_handler;

@@ -345,7 +345,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, [this]() {
         m_search_timer->start();
-        });
+    });
 
     connect(m_search_timer, &QTimer::timeout, [this]() {
         if (m_friend_search_dialog) {

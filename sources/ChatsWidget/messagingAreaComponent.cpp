@@ -730,9 +730,6 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     setMinimumSize(300, 400);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    if (chat->getFriendPhoto()->getPhotoPath() != "")
-        chat->setIsFriendHasPhoto(true);
-
     if (chat->getIsFriendHasPhoto() == true) 
         m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
     else 
@@ -1695,7 +1692,7 @@ void  MessagingAreaComponent::hideSendMessageButton() {
 
 void MessagingAreaComponent::onRetryClicked(Message* messageToRetry) {
     if (messageToRetry->getRelatedFiles().size() == 0) {
-        m_chatsWidget->getClient()->sendMessage(m_chat->getFriendLogin(), messageToRetry);
+        m_chatsWidget->getClient()->sendMessage(m_chat->getPublicKey(), m_chat->getFriendLogin(), messageToRetry);
     }
     else {
         m_chatsWidget->getClient()->sendFilesMessage(*messageToRetry);

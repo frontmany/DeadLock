@@ -465,13 +465,15 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     chat->setFriendLastSeen(friendInfo->getFriendLastSeen());
     chat->setLastReceivedOrSentMessage("no messages yet");
     chat->setIsFriendHasPhoto(friendInfo->getIsFriendHasPhoto());
+    chat->setPublicKey(friendInfo->getPublicKey());
 
-    Photo* photo = Photo::deserializeAndSaveOnDisc(m_chats_list_component->getChatsWidget()->getClient()->getPrivateKey(),
-        m_chats_list_component->getChatsWidget()->getClient()->getServerPublicKey(),
-        friendInfo->getFriendPhoto()->getBinaryData(),
-        login.toStdString());
-    chat->setFriendPhoto(photo);
-    
+    if (friendInfo->getIsFriendHasPhoto()) {
+        Photo* photo = Photo::deserializeAndSaveOnDisc(m_chats_list_component->getChatsWidget()->getClient()->getPrivateKey(),
+            m_chats_list_component->getChatsWidget()->getClient()->getServerPublicKey(),
+            friendInfo->getFriendPhoto()->getBinaryData(),
+            login.toStdString());
+        chat->setFriendPhoto(photo);
+    }
 
     chat->setLayoutIndex(0);
     utility::incrementAllChatLayoutIndexes(client->getMyHashChatsMap());

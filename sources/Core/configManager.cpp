@@ -17,7 +17,8 @@ ConfigManager::ConfigManager()
     m_my_name(""),
     m_is_auto_login(false),
     m_is_has_photo(false),
-    m_my_photo(nullptr)
+    m_my_photo(nullptr),
+    m_client(nullptr)
 {
 }
 
@@ -125,7 +126,7 @@ bool ConfigManager::load(const std::string& fileName, const std::string& special
             if (value.isObject()) {
                 Chat* chat = Chat::deserialize(m_client->getPrivateKey(), m_my_login, value.toObject(), *database);
                 if (chat) {
-                    mapFriendLoginToChat[chat->getFriendLogin()] = chat;
+                    mapFriendLoginToChat[utility::calculateHash(chat->getFriendLogin())] = chat;
                 }
             }
         }

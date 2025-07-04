@@ -1,5 +1,8 @@
+#pragma once
 #include <string>
 #include <vector>
+
+#include"rsa.h"
 
 class Message;
 class Photo;
@@ -27,6 +30,9 @@ public:
 	void setLayoutIndex(int index);
 	const int getLayoutIndex() const;
 
+	void setPublicKey(const CryptoPP::RSA::PublicKey& key);
+	const CryptoPP::RSA::PublicKey& getPublicKey();
+
 private:
 	std::vector<Message*>	 m_vec_messages;
 	std::string				 m_friend_last_seen;
@@ -36,4 +42,5 @@ private:
 	bool					 m_is_friend_has_photo;
 	Photo*					 m_friend_photo;
 	int						 m_index_at_layout;
+	CryptoPP::RSA::PublicKey m_public_key;
 };

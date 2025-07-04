@@ -34,7 +34,7 @@ void Photo::updateSize() {
 std::string Photo::encryptForServerBase64(const CryptoPP::RSA::PublicKey& serverPublicKey) const {
     if (m_photoPath.empty()) {
         std::cerr << "Error: file path is empty\n";
-        return "";
+        return "\n";
     }
 
     std::ifstream file(m_photoPath, std::ios::binary);

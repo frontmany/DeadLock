@@ -23,6 +23,7 @@
 
 Client::Client(std::shared_ptr<ConfigManager> configManager) :
     m_is_error(false),
+    m_is_logged_in(false),
     m_config_manager(configManager)
 {
     m_db = new Database;
@@ -119,8 +120,8 @@ void Client::broadcastMyStatus(const std::string& status) {
     }
 }
 
-void Client::sendMessage(const std::string& friendLogin, const Message* message) {
-    sendPacket(m_packets_builder->getMessagePacket(m_my_public_key, m_config_manager->getMyLogin(), utility::calculateHash(friendLogin), message), QueryType::MESSAGE);
+void Client::sendMessage(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& friendLogin, const Message* message) {
+    sendPacket(m_packets_builder->getMessagePacket(friendPublicKey, m_config_manager->getMyLogin(), utility::calculateHash(friendLogin), message), QueryType::MESSAGE);
 }
 
 void Client::sendMessageReadConfirmation(const std::string& friendLogin, const Message* message) {
@@ -135,8 +136,8 @@ void Client::findUser(const std::string& searchText) {
     sendPacket(m_packets_builder->getFindUserPacket(m_server_public_key, m_config_manager->getMyLoginHash(), searchText), QueryType::FIND_USER);
 }
 
-void Client::requestUserInfoFromServer(const std::string& loginHash) {
-    sendPacket(m_packets_builder->getLoadUserInfoPacket(loginHash), QueryType::LOAD_USER_INFO);
+void Client::requestUserInfoFromServer(const std::string& loginHashToSearch, const std::string& loginHash) {
+    sendPacket(m_packets_builder->getLoadUserInfoPacket(loginHash, loginHash), QueryType::LOAD_USER_INFO);
 }
 
 void Client::requestMyInfoFromServerAndResetKeys(const std::string& loginHash) {
