@@ -418,13 +418,13 @@ void WorkerQt::onMessageReadConfirmationReceive(const std::string& friendLogin, 
 	}
 }
 
-void WorkerQt::onStatusReceive(const std::string& friendLoginHash, const std::string& status) {
+void WorkerQt::onStatusReceive(const std::string& friendLogin, const std::string& status) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& messagingAreaCompsVec = chatsWidget->getMessagingAreasVec();
 
-	auto messagingAreaIt = std::find_if(messagingAreaCompsVec.begin(), messagingAreaCompsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
-		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
-		});
+	auto messagingAreaIt = std::find_if(messagingAreaCompsVec.begin(), messagingAreaCompsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+	});
 
 	if (messagingAreaIt != messagingAreaCompsVec.end()) {
 		MessagingAreaComponent* areaComp = *messagingAreaIt;
@@ -455,7 +455,11 @@ bool  WorkerQt::updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat) {
 			Qt::QueuedConnection,
 			Q_ARG(const QString&, QString::fromStdString(chat->getFriendName())));
 
-		const std::string& photoPath = chat->getFriendPhoto()->getPhotoPath();
+		std::string photoPath = "";
+		if (chat->getIsFriendHasPhoto()) {
+			photoPath = chat->getFriendPhoto()->getPhotoPath();
+		}
+
 		if (photoPath != "") {
 			QPixmap pixMap(QString::fromStdString(photoPath));
 			QMetaObject::invokeMethod(chatComp,
@@ -463,7 +467,6 @@ bool  WorkerQt::updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat) {
 				Qt::QueuedConnection,
 				Q_ARG(QPixmap, pixMap));
 		}
-		
 
 		return true;
 	}
@@ -499,7 +502,10 @@ bool WorkerQt::updateExistingMessagingAreaComp(ChatsWidget* chatsWidget, Chat* c
 			Qt::QueuedConnection,
 			Q_ARG(const QString&, QString::fromStdString(chat->getFriendName())));
 
-		const std::string& photoPath = chat->getFriendPhoto()->getPhotoPath();
+		std::string photoPath = "";
+		if (chat->getIsFriendHasPhoto()) {
+			photoPath = chat->getFriendPhoto()->getPhotoPath();
+		}
 		if (photoPath != "") {
 			QPixmap pixMap(QString::fromStdString(photoPath));
 			QMetaObject::invokeMethod(messagingArea,

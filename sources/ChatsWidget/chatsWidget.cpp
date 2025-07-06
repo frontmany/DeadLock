@@ -163,11 +163,12 @@ void ChatsWidget::onChatDelete(const QString& loginOfRemovedChat) {
         area->setParent(nullptr);
         m_vec_messaging_components.erase(it);
         area->deleteLater();
+        m_current_messagingAreaComponent = nullptr;
     }
 
     m_config_manager->deleteFriendChatInConfig(loginOfRemovedChat.toStdString());
     m_client->deleteFriendMessagesInDatabase(loginOfRemovedChat.toStdString());
-    m_client->deleteFriendFromChatsMap(loginOfRemovedChat.toStdString());
+    m_client->deleteFriendFromChatsMap(utility::calculateHash(loginOfRemovedChat.toStdString()));
 
 }
 

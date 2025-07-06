@@ -1249,7 +1249,7 @@ void MessagingAreaComponent::onSendFiles() {
         tmpFile.filePath = newFilePath.toUtf8().constData();
         tmpFile.fileName = fileInfo.fileName().toUtf8().constData();
         tmpFile.blobUID = blobUID;
-        tmpFile.filesInBlobCount = m_vec_selected_files.size();
+        tmpFile.filesInBlobCount = std::to_string(m_vec_selected_files.size());
         tmpFile.id = utility::generateId();
         tmpFile.receiverLoginHash = utility::calculateHash(m_chat->getFriendLogin());
         tmpFile.senderLoginHash = utility::calculateHash(m_chatsWidget->getConfigManager()->getMyLogin());
@@ -1263,7 +1263,7 @@ void MessagingAreaComponent::onSendFiles() {
 #endif
 
             uintmax_t fileSize = std::filesystem::file_size(fsPath);
-            tmpFile.fileSize = fileSize;
+            tmpFile.fileSize = std::to_string(fileSize);
         }
         catch (const std::filesystem::filesystem_error& e) {
             std::cerr << "Error accessing file: " << nativePath.toStdString()
@@ -1286,7 +1286,6 @@ void MessagingAreaComponent::onSendFiles() {
     emit sendFilesData(message, m_chat, m_vec_selected_files.size());
 
     moveSliderDown();
-    
 }
 
 void MessagingAreaComponent::addFileToDisplayList(QDialog* filesDialog, QVBoxLayout* filesLayout, const QStringList& newFiles) {

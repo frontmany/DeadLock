@@ -72,7 +72,6 @@ public:
 
     void onMessage(net::message<QueryType> message) override;
     void onFile(net::file<QueryType> file) override;
-    void onFileSent(net::file<QueryType> sentFile) override {}
 
     void onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) override;
     void onSendFileError(std::error_code ec, net::file<QueryType> unsentFile) override;

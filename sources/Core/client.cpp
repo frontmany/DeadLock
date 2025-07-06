@@ -24,6 +24,7 @@
 Client::Client(std::shared_ptr<ConfigManager> configManager) :
     m_is_error(false),
     m_is_logged_in(false),
+    m_is_hidden(false),
     m_config_manager(configManager)
 {
     m_db = new Database;
@@ -125,7 +126,10 @@ void Client::sendMessage(const CryptoPP::RSA::PublicKey& friendPublicKey, const 
 }
 
 void Client::sendMessageReadConfirmation(const std::string& friendLogin, const Message* message) {
-    sendPacket(m_packets_builder->getMessageReadConfirmationPacket(m_my_public_key, m_config_manager->getMyLogin(), utility::calculateHash(friendLogin), message), QueryType::MESSAGES_READ_CONFIRMATION);
+    auto it = m_map_friend_loginHash_to_chat.find(utility::calculateHash(friendLogin));
+    if (it != m_map_friend_loginHash_to_chat.end()) {
+        sendPacket(m_packets_builder->getMessageReadConfirmationPacket(it->second->getPublicKey(), m_config_manager->getMyLogin(), utility::calculateHash(friendLogin), message), QueryType::MESSAGES_READ_CONFIRMATION);
+    }
 }
 
 void Client::getAllFriendsStatuses() {
@@ -137,7 +141,7 @@ void Client::findUser(const std::string& searchText) {
 }
 
 void Client::requestUserInfoFromServer(const std::string& loginHashToSearch, const std::string& loginHash) {
-    sendPacket(m_packets_builder->getLoadUserInfoPacket(loginHash, loginHash), QueryType::LOAD_USER_INFO);
+    sendPacket(m_packets_builder->getLoadUserInfoPacket(loginHashToSearch, loginHash), QueryType::LOAD_USER_INFO);
 }
 
 void Client::requestMyInfoFromServerAndResetKeys(const std::string& loginHash) {

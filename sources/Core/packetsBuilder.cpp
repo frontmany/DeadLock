@@ -303,7 +303,7 @@ const std::string PacketsBuilder::getMessageReadConfirmationPacket(const CryptoP
         << friendLoginHash << '\n'
         << encryptedKey << '\n'
         << utility::AESEncrypt(key, myLogin) << '\n'
-        << message->getId();
+        << utility::AESEncrypt(key, message->getId());
 
     return oss.str();
 }

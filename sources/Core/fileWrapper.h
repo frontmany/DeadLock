@@ -14,6 +14,7 @@ struct fileWrapper {
         this->isPresent = isPresent;
         this->file = file;
     }
+
 	bool isPresent;
     net::file<QueryType> file;
 

@@ -108,7 +108,7 @@ namespace net {
 			}
 		}
 		
-		void sendFile(net::file<T> file)
+		void sendFile(const net::file<T>& file)
 		{
 			if (isConnected())
 				m_files_connection->sendFile(file);
@@ -151,7 +151,6 @@ namespace net {
 	protected:
 		virtual void onMessage(net::message<T> message) = 0;
 		virtual void onFile(net::file<T> file) = 0;
-		virtual void onFileSent(net::file<T> sentFile) = 0;
 		virtual void onSendFileProgressUpdate(const net::file<T>& file, uint32_t progressPercent) = 0;
 		virtual void onReceiveFileProgressUpdate(const net::file<T>& file, uint32_t progressPercent) = 0;
 
@@ -169,7 +168,6 @@ namespace net {
 	private:
 		void createMessagesConnection(asio::ip::tcp::socket messagesSocket) {
 			m_messages_connection = std::make_unique<connection<T>>(
-				owner::client,
 				m_context,
 				std::move(messagesSocket),
 				m_safe_deque_of_incoming_messages,
@@ -182,14 +180,12 @@ namespace net {
 
 		void createFilesConnection(asio::ip::tcp::socket filesSocket) {
 			m_files_connection = std::make_unique<files_connection<T>>(
-				owner::client,
 				m_context,
 				std::move(filesSocket),
 				m_safe_deque_of_incoming_files,
 				&m_my_private_key,
 				[this](std::error_code ec, net::file<T> unreadFile) {onReceiveFileError(ec, unreadFile); },
 				[this](std::error_code ec, net::file<T> unsentFile) {onSendFileError(ec, unsentFile); },
-				[this](net::file<T> file) {onFileSent(file); },
 				[this](net::file<T> file, uint32_t progressPercent) {onSendFileProgressUpdate(file, progressPercent); },
 				[this](net::file<T> file, uint32_t progressPercent) {onReceiveFileProgressUpdate(file, progressPercent); }
 			);
