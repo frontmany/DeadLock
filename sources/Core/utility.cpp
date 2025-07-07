@@ -473,13 +473,13 @@ std::array<char, 8220> utility::AESEncrypt(const CryptoPP::SecByteBlock& key,
     );
 
     std::array<char, 8220> result;
-    if (ivSize + cipher.size() > 8220) {
+    if (ivSize + cipher.size() > 8220 || ivSize + cipher.size() < 8220) {
         throw std::runtime_error("Encrypted data too large for output array");
     }
-
-    std::memcpy(result.data(), iv.data(), ivSize);
-    std::memcpy(result.data() + ivSize, cipher.data(), cipher.size());
-
+    else if (ivSize + cipher.size() == 8220){
+        std::memcpy(result.data(), iv.data(), ivSize);
+        std::memcpy(result.data() + ivSize, cipher.data(), cipher.size());
+    }
     return result;
 }
 

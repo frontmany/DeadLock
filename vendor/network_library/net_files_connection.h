@@ -4,10 +4,11 @@
 #include "net_safe_deque.h"
 #include "net_message.h"
 #include "net_file.h"
+#include "net_filesSender.h"
+#include "net_filesReceiver.h"
+
 #include "queryType.h"
 #include "utility.h"
-#include "filesSender.h"
-#include "filesReceiver.h"
 
 #include <fstream>              
 #include <filesystem>          
@@ -47,7 +48,6 @@ namespace net {
 		void disconnect() {
 			if (m_socket.is_open()) {
 				m_socket.close();
-				m_asioContext.stop();
 			}
 		}
 

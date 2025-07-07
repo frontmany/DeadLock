@@ -116,7 +116,6 @@ namespace net
 
 			std::string fileSize;
 			std::getline(iss, fileSize);
-			fileSize = utility::AESDecrypt(m_sessionKey, fileSize);
 
 			std::string fileName;
 			std::getline(iss, fileName);
@@ -126,17 +125,9 @@ namespace net
 			std::getline(iss, timestamp);
 			timestamp = utility::AESDecrypt(m_sessionKey, timestamp);
 
-			std::string messageBegin;
-			std::getline(iss, messageBegin);
-			messageBegin = utility::AESDecrypt(m_sessionKey, messageBegin);
-
 			std::string caption;
 			std::getline(iss, caption);
-			messageBegin = utility::AESEncrypt(m_sessionKey, caption);
-
-			std::string messageEnd;
-			std::getline(iss, messageEnd);
-			messageEnd = utility::AESDecrypt(m_sessionKey, messageEnd);
+			caption = utility::AESEncrypt(m_sessionKey, caption);
 
 			std::string filesCountInBlob;
 			std::getline(iss, filesCountInBlob);

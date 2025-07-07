@@ -39,12 +39,10 @@ namespace net
 				<< m_file.blobUID << "\n"
 				<< m_file.receiverLoginHash << '\n'
 				<< m_file.senderLoginHash << '\n'
-				<< utility::AESEncrypt(m_sessionKey, m_file.fileSize) << '\n'
+				<< m_file.fileSize << '\n'
 				<< utility::AESEncrypt(m_sessionKey, m_file.fileName) << '\n'
 				<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n'
-				<< utility::AESEncrypt(m_sessionKey, "MESSAGE_BEGIN") << '\n'
 				<< utility::AESEncrypt(m_sessionKey, m_file.caption) << '\n'
-				<< utility::AESEncrypt(m_sessionKey, "MESSAGE_END") << '\n'
 				<< utility::AESEncrypt(m_sessionKey, m_file.filesInBlobCount);
 
 			m_metadataMessage.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
@@ -81,7 +79,7 @@ namespace net
 		}
 
 		void sendFileChunk() {
-			if (!m_fileStream) {
+			if (!m_fileStream.is_open()) {
 				bool isOpen = openFile();
 				if (!isOpen)
 					return;
@@ -91,11 +89,11 @@ namespace net
 			std::streamsize bytesRead = m_fileStream.gcount();
 
 			if (bytesRead > 0) {
-				std::array<char, c_encryptedOutputChunkSize> encryptedBuffer = utility::AESEncrypt(m_sessionKey, m_readBuffer);
+				m_encryptedBuffer = utility::AESEncrypt(m_sessionKey, m_readBuffer);
 
 				asio::async_write(
 					m_socket,
-					asio::buffer(encryptedBuffer.data(), c_encryptedOutputChunkSize),
+					asio::buffer(m_encryptedBuffer.data(), c_encryptedOutputChunkSize),
 					[this](std::error_code ec, std::size_t) {
 						if (ec) {
 							m_onSendError(ec, m_outgoingFilesQueue.front());
@@ -160,6 +158,7 @@ namespace net
 		safe_deque<file<T>>	m_outgoingFilesQueue;
 
 		std::array<char, c_readChunkSize> m_readBuffer{};
+		std::array<char, c_encryptedOutputChunkSize> m_encryptedBuffer{};
 		std::ifstream m_fileStream;
 		uint64_t m_totalBytesSent;
 		CryptoPP::SecByteBlock m_sessionKey;
