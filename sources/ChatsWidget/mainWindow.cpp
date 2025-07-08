@@ -2,6 +2,7 @@
 #include "chatsListComponent.h"
 #include "registrationComponent.h"
 #include "authorizationComponent.h"
+#include "configManager.h"
 #include "loginWidget.h"
 #include "chatsWidget.h"
 #include "greetWidget.h"
@@ -15,9 +16,9 @@ void MainWindow::stopClient() {
     m_client->stop();
 }
 
-MainWindow::MainWindow(QWidget* parent, Client* client)
+MainWindow::MainWindow(QWidget* parent, Client* client, std::shared_ptr<ConfigManager> configManager)
     : QMainWindow(parent), m_worker_Qt(nullptr), m_client(client),
-    m_greetWidget(nullptr), m_loginWidget(nullptr), m_chatsWidget(nullptr) 
+    m_greetWidget(nullptr), m_loginWidget(nullptr), m_chatsWidget(nullptr) , m_config_manager(configManager)
 {
     m_theme = utility::isDarkMode() ? DARK : LIGHT;
 
@@ -30,11 +31,13 @@ MainWindow::MainWindow(QWidget* parent, Client* client)
 
 MainWindow::~MainWindow() {
     qDebug() << "window closing";
-    m_client->broadcastMyStatus(utility::getCurrentDateTime());
-    std::cout << "saving\n";
+    if (m_client->getIsLoggedIn()) {
+        m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+        std::cout << "saving\n";
 
-    if (m_client->isAutoLogin()) {
-        m_client->save();
+        if (m_config_manager->getIsAutoLogin()) {
+            m_config_manager->save(m_client->getPublicKey(), m_client->getPrivateKey(), m_client->getSpecialServerKey(), m_client->getMyHashChatsMap(), m_client->getIsHidden(), m_client->getDatabase());
+        }
     }
 
     delete m_chatsWidget;
@@ -43,29 +46,28 @@ MainWindow::~MainWindow() {
 
 
 void MainWindow::setupGreetWidget() {
-    m_greetWidget = new GreetWidget(this, this, m_client, m_theme, "", m_chatsWidget);
-    m_greetWidget->setWelcomeLabelText(m_client->getMyName());
-    m_greetWidget->setLogin(m_client->getMyLogin());
+    m_greetWidget = new GreetWidget(this, this, m_client, m_config_manager, m_theme, m_config_manager->getMyLogin(), m_client->getPublicKey(), m_client->getPrivateKey(), m_chatsWidget);
+    m_greetWidget->setWelcomeLabelText(m_config_manager->getMyName());
     m_greetWidget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
     m_greetWidget->startWelcomeAnimation();
     setCentralWidget(m_greetWidget);
 }
 
 void MainWindow::setupLoginWidget() {
-    m_loginWidget = new LoginWidget(this, this, m_client);
+    m_loginWidget = new LoginWidget(this, this, m_client, m_config_manager);
     m_loginWidget->setTheme(m_theme);
     setCentralWidget(m_loginWidget);
 }
 
 void MainWindow::setupChatsWidget() {
-    m_chatsWidget = new ChatsWidget(this, this, m_client, m_theme);
+    m_chatsWidget = new ChatsWidget(this, this, m_client, m_config_manager, m_theme);
     m_chatsWidget->setTheme(m_theme);
     m_chatsWidget->restoreMessagingAreaComponents();
     m_chatsWidget->restoreChatComponents();
 
-    m_client->setIsUIReadyToUpdate(true);
-
     setCentralWidget(m_chatsWidget);
+
+    m_client->setIsUIReadyToUpdate(true);
 }
 
 LoginWidget* MainWindow::getLoginWidget() {
@@ -74,6 +76,8 @@ LoginWidget* MainWindow::getLoginWidget() {
 
 void MainWindow::updateRegistrationUIRedBorder() {
     if (m_loginWidget) {
+        m_loginWidget->setButtonsDisabled(false);
+        m_loginWidget->hideProgressLabel();
         RegistrationComponent* registrationComponent = m_loginWidget->getRegistrationComponent();
         registrationComponent->setErrorMessageToLabel("Registration Failed");
     }
@@ -81,6 +85,8 @@ void MainWindow::updateRegistrationUIRedBorder() {
 
 void MainWindow::updateAuthorizationUIRedBorder() {
     if (m_loginWidget) {
+        m_loginWidget->setButtonsDisabled(false);
+        m_loginWidget->hideProgressLabel();
         auto authorizationComponent = m_loginWidget->getAuthorizationComponent();
         authorizationComponent->setErrorMessageToLabel("Authorization Failed");
     }

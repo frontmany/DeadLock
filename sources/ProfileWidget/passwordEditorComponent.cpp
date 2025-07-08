@@ -320,7 +320,7 @@ void PasswordEditComponent::onContinueClicked() {
         m_errorLabel->setText("");
     }
 
-    m_client->verifyPassword(utility::hashPassword(currentPassword.toStdString()));
+    m_client->verifyPassword(utility::calculateHash(currentPassword.toStdString()));
 }
 
 void PasswordEditComponent::onChangePasswordClicked() {
@@ -351,7 +351,7 @@ void PasswordEditComponent::onChangePasswordClicked() {
     }
     
 
-    m_client->updateMyPassword(utility::hashPassword(newPassword.toStdString()));
+    m_client->updateMyPassword(utility::calculateHash(newPassword.toStdString()));
     m_profile_editor_widget->setFieldsEditor();
 }
 

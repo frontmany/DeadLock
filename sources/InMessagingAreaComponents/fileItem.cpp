@@ -104,7 +104,7 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
     m_progressLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     m_progressLabel->setVisible(false);
 
-    m_sizeLabel = new QLabel(QString("%1 KB").arg(m_file_wrapper.file.fileSize / 1024), this);
+    m_sizeLabel = new QLabel(QString("%1 KB").arg(std::stoi(m_file_wrapper.file.fileSize) / 1024), this);
     m_sizeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     m_sizeLabel->installEventFilter(this);
 

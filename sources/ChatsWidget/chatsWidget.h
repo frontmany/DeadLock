@@ -17,6 +17,7 @@ class ChatsListComponent;
 class MessagingAreaComponent;
 class HelloAreaComponent;
 class ChatComponent;
+class ConfigManager;
 class MainWindow;
 class Client;
 class Chat;
@@ -26,7 +27,7 @@ enum  Theme;
 class ChatsWidget : public QWidget {
 	Q_OBJECT
 public:
-	ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, Theme theme);
+	ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
 	~ChatsWidget();
 
 	//have to be called after loading m_client
@@ -36,6 +37,7 @@ public:
 
 	void setClient(Client* client);
 	Client* getClient() { return m_client; }
+	std::shared_ptr<ConfigManager> getConfigManager() { return m_config_manager; }
 
 	void setTheme(Theme theme);
 	const Theme getTheme() const { return m_theme; }
@@ -78,17 +80,17 @@ private:
 	void setBackGround(Theme theme);
 
 private:
-	Theme					m_theme;
-	QPixmap					m_background;
-	Client*					m_client;
-	ChatsListComponent*		m_chatsListComponent;
-	MessagingAreaComponent* m_current_messagingAreaComponent = nullptr;
-	HelloAreaComponent*		m_helloAreaComponent;
-	MainWindow*				m_main_window;
-	std::mutex				m_mtx;
-
-	QVBoxLayout*			m_leftVLayout;
-	QHBoxLayout*			m_mainHLayout;
+	Theme						   m_theme;
+	QPixmap					       m_background;
+	Client*						   m_client;
+	std::shared_ptr<ConfigManager> m_config_manager;
+	ChatsListComponent*			   m_chatsListComponent;
+	MessagingAreaComponent*		   m_current_messagingAreaComponent = nullptr;
+	HelloAreaComponent*			   m_helloAreaComponent;
+	MainWindow*					   m_main_window;
+	std::mutex					   m_mtx;
+	QVBoxLayout*				   m_leftVLayout;
+	QHBoxLayout*				   m_mainHLayout;
 
 
 

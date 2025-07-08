@@ -15,6 +15,7 @@ class Client;
 class GreetWidget;
 class LoginWidget;
 class ChatsWidget;
+class ConfigManager;
 class WorkerQt;
 
 class OverlayWidget : public QWidget {
@@ -32,7 +33,7 @@ class MainWindow : public QMainWindow {
 	Q_OBJECT
 
 public:
-	MainWindow(QWidget* parent, Client* client);
+	MainWindow(QWidget* parent, Client* client, std::shared_ptr<ConfigManager> configManager);
 	~MainWindow();
 
 	LoginWidget* getLoginWidget();
@@ -50,12 +51,14 @@ public slots:
 	void setupLoginWidget();
 	void setupGreetWidget();
 
-	//logic
 	void stopClient();
 
 private:
+
+	Client* m_client;
+	std::shared_ptr<ConfigManager> m_config_manager;
+
 	WorkerQt*		m_worker_Qt;
-	Client*			m_client;
 	GreetWidget*	m_greetWidget;
 	LoginWidget*	m_loginWidget;
 	ChatsWidget*	m_chatsWidget;

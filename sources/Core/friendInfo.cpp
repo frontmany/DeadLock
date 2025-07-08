@@ -1,4 +1,5 @@
 #include"friendInfo.h"
+#include"utility.h"
 
 void FriendInfo::setFriendLogin(const std::string& friendLogin) { m_friend_login = friendLogin; }
 const std::string& FriendInfo::getFriendLogin() const { return m_friend_login; }
@@ -20,3 +21,19 @@ const Photo* FriendInfo::getFriendPhoto() const { return m_friend_photo; }
 
 void FriendInfo::setLayoutIndex(int index) { m_index_at_layout = index; }
 const int FriendInfo::getLayoutIndex() const { return m_index_at_layout; }
+
+void FriendInfo::setPublicKey(const CryptoPP::RSA::PublicKey& key) {
+    if (!utility::validatePublicKey(key)) {
+        assert("Invalid public key provided");
+    }
+
+    m_public_key = key;
+}
+
+const CryptoPP::RSA::PublicKey& FriendInfo::getPublicKey() {
+    if (!utility::validatePublicKey(m_public_key)) {
+        assert("Public key is not initialized or invalid");
+    }
+
+    return m_public_key;
+}

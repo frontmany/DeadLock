@@ -5,6 +5,7 @@
 #include"utility.h"
 #include"photo.h"
 #include"buttons.h"
+#include"configManager.h"
 
 StyleFieldsEditComponent::StyleFieldsEditComponent() {
     DarkLabelStyle = R"(
@@ -175,26 +176,21 @@ StyleFieldsEditComponent::StyleFieldsEditComponent() {
 }
 
 
-FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme)
-    : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_theme(theme)
+FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme)
+    : QWidget(parent), m_profile_editor_widget(profileEditorWidget), m_client(client), m_config_manager(configManager), m_theme(theme)
 {
     m_style = new StyleFieldsEditComponent();
-
     m_error_label = new QLabel;
-
-
+    m_avatar_label = new QLabel();
 
     QPixmap currentAvatar;
-    if (m_client->getIsHasPhoto()) {
-        currentAvatar = QPixmap(QString::fromStdString(m_client->getPhoto()->getPhotoPath())); 
+    if (m_config_manager->getIsHasPhoto()) {
+        updateAvatar(*m_config_manager->getPhoto());
     }
     else {
         currentAvatar = QPixmap(":/resources/ChatsWidget/userFriend.png");
+        m_avatar_label->setPixmap(currentAvatar.scaled(utility::getScaledSize(95), utility::getScaledSize(95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
-    
-    m_avatar_label = new QLabel();
-    m_avatar_label->setFixedSize(utility::getScaledSize(95), utility::getScaledSize(95));
-    m_avatar_label->setPixmap(currentAvatar.scaled(utility::getScaledSize(95), utility::getScaledSize(95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     m_change_photo_button = new QPushButton("Change Photo");
     connect(m_change_photo_button, &QPushButton::clicked, [this]() {m_profile_editor_widget->setPhotoEditor(); });
@@ -206,7 +202,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     );
 
     m_login_label = new QLabel("Login:");
-    m_login_edit = new QLineEdit(QString::fromStdString(m_client->getMyLogin()));
+    m_login_edit = new QLineEdit(QString::fromStdString(m_config_manager->getMyLogin()));
     m_login_edit->setFixedHeight(30);
     m_login_edit->setValidator(validator);
     connect(m_login_edit, &QLineEdit::textChanged, [this]() {
@@ -214,7 +210,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     });
 
     m_name_label = new QLabel("Name:");
-    m_name_edit = new QLineEdit(QString::fromStdString(m_client->getMyName()));
+    m_name_edit = new QLineEdit(QString::fromStdString(m_config_manager->getMyName()));
     m_name_edit->setFixedHeight(30);
     connect(m_name_edit, &QLineEdit::textChanged, [this]() {
         m_error_label->setText("");
@@ -331,8 +327,8 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
         connect(confirmButton, &QPushButton::clicked, [&]() {
             logoutDialog.accept();
-            m_client->undoAutoLogin();
-            m_client->setNeedToUndoAutoLogin(true);
+            m_config_manager->undoAutoLogin();
+            m_config_manager->setNeedToUndoAutoLogin(true);
             QApplication::quit();
         });
 
@@ -360,7 +356,7 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
         std::string name = m_name_edit->text().toStdString();
         std::string login = m_login_edit->text().toStdString();
 
-        if (name == m_client->getMyName() && login == m_client->getMyLogin()) {
+        if (name == m_config_manager->getMyName() && login == m_config_manager->getMyLogin()) {
             m_profile_editor_widget->close();
             return;
         }
@@ -370,15 +366,15 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
             return;
         }
 
-        if (login != m_client->getMyLogin()) {
+        if (login != m_config_manager->getMyLogin()) {
             m_client->checkIsNewLoginAvailable(login);
         }
 
-        if (name != m_client->getMyName() && login != m_client->getMyLogin()) {
+        if (name != m_config_manager->getMyName() && login != m_config_manager->getMyLogin()) {
             m_client->updateMyName(name);
         }
 
-        if (name != m_client->getMyName() && login == m_client->getMyLogin()) {
+        if (name != m_config_manager->getMyName() && login == m_config_manager->getMyLogin()) {
             m_client->updateMyName(name);
             m_profile_editor_widget->close();
         }
@@ -418,6 +414,9 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
+void FieldsEditComponent::setName(const std::string& name) {
+    m_name_edit->setText(QString::fromStdString(name));
+}
 
 void FieldsEditComponent::setTheme(Theme theme) {
     m_logoutButton->setTheme(theme);
@@ -451,9 +450,58 @@ void FieldsEditComponent::setTheme(Theme theme) {
 }
 
 void FieldsEditComponent::updateAvatar(const Photo& photo) {
-    QPixmap currentAvatar = QPixmap(QString::fromStdString(photo.getPhotoPath()));
-    m_avatar_label->setPixmap(currentAvatar.scaled(utility::getScaledSize(95), utility::getScaledSize(95), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    update();
+    try {
+        std::string path = photo.getPhotoPath();
+        if (path.empty()) {
+            throw std::runtime_error("Empty photo path");
+        }
+
+        std::ifstream file(path, std::ios::binary);
+        if (!file) {
+            throw std::runtime_error("Failed to open photo file");
+        }
+
+        file.seekg(0, std::ios::end);
+        size_t fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::string fileData(fileSize, '\0');
+        file.read(&fileData[0], fileSize);
+        file.close();
+
+        size_t delimiterPos = fileData.find('\n');
+        if (delimiterPos == std::string::npos) {
+            throw std::runtime_error("Invalid photo file format");
+        }
+
+        std::string encryptedKey = fileData.substr(0, delimiterPos);
+        std::string encryptedData = fileData.substr(delimiterPos + 1);
+
+        auto aesKey = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
+
+        std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
+
+        QPixmap avatar;
+        if (!avatar.loadFromData(reinterpret_cast<const uchar*>(decryptedData.data()),
+            decryptedData.size())) {
+            throw std::runtime_error("Failed to create pixmap from decrypted data");
+        }
+
+        m_avatar_label->setPixmap(avatar.scaled(utility::getScaledSize(95),
+            utility::getScaledSize(95),
+            Qt::KeepAspectRatio,
+            Qt::SmoothTransformation));
+        update();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error updating avatar: " << e.what() << std::endl;
+        QPixmap defaultAvatar(":/resources/default_avatar.png");
+        m_avatar_label->setPixmap(defaultAvatar.scaled(utility::getScaledSize(95),
+            utility::getScaledSize(95),
+            Qt::KeepAspectRatio,
+            Qt::SmoothTransformation));
+        update();
+    }
 }
 
 void FieldsEditComponent::setErrorText(const QString& text) {

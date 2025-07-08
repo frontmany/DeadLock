@@ -12,20 +12,26 @@ class AuthorizationComponent;
 class RegistrationComponent;
 class Client;
 class MainWindow;
+class ConfigManager;
 enum Theme;
 
 struct StyleLoginWidget {
     StyleLoginWidget();
     QString buttonStyleBlue;
     QString buttonStyleGray;
+    QString darkGifLabelStyle;
+    QString lightGifLabelStyle;
 };
 
 class LoginWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client);
+    explicit LoginWidget(QWidget* parent, MainWindow* mw, Client* client, std::shared_ptr<ConfigManager> configManager);
     void setTheme(Theme& theme);
+    void setButtonsDisabled(bool isDisabled);
+    void showProgressLabel(bool isRegistration);
+    void hideProgressLabel();
 
     AuthorizationComponent* getAuthorizationComponent();
     RegistrationComponent* getRegistrationComponent();
@@ -50,6 +56,7 @@ private:
     QPixmap                 m_background;
     SwithcState             m_switchState;
     Client*                 m_client;
+    std::shared_ptr<ConfigManager> m_config_manager;
 
     QVBoxLayout*            m_mainVLayout;
     QHBoxLayout*            m_switchersHLayout;
@@ -60,4 +67,5 @@ private:
 
     QPushButton*            m_switchToAuthorizeButton;
     QPushButton*            m_switchToRegisterButton;
+    QLabel*                 m_processLabel;
 };

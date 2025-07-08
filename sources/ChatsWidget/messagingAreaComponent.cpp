@@ -5,6 +5,7 @@
 #include "delimiterComponent.h"
 #include "messageComponent.h"
 #include "chatComponent.h"
+#include "configManager.h"
 #include "chatsWidget.h"
 #include "utility.h"
 #include "buttons.h"
@@ -729,9 +730,6 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     setMinimumSize(300, 400);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    if (chat->getFriendPhoto()->getPhotoPath() != "")
-        chat->setIsFriendHasPhoto(true);
-
     if (chat->getIsFriendHasPhoto() == true) 
         m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
     else 
@@ -988,7 +986,6 @@ void MessagingAreaComponent::onAttachFileClicked()
         return;
     }
 
-    // Преобразование путей для корректной обработки в Windows
     QStringList correctedPaths;
     for (const QString& path : filePaths) {
         correctedPaths.append(QDir::toNativeSeparators(path));
@@ -1202,7 +1199,7 @@ void MessagingAreaComponent::onSendFiles() {
         msg += '\n';
     }
 
-    auto& map = m_chatsWidget->getClient()->getMyChatsMap();
+    auto& map = m_chatsWidget->getClient()->getMyHashChatsMap();
 
 
     auto chatsList = m_chatsWidget->getChatsList();
@@ -1226,7 +1223,7 @@ void MessagingAreaComponent::onSendFiles() {
     
     
     std::string blobUID = utility::generateId();
-    Message* message = new Message(msg, utility::getTimeStamp(), blobUID, true, false);
+    Message* message = new Message(msg, utility::getCurrentTime(), blobUID, true, false);
     std::vector<fileWrapper> resultWrappersVec;
     resultWrappersVec.reserve(m_vec_selected_files.size());
 
@@ -1252,12 +1249,11 @@ void MessagingAreaComponent::onSendFiles() {
         tmpFile.filePath = newFilePath.toUtf8().constData();
         tmpFile.fileName = fileInfo.fileName().toUtf8().constData();
         tmpFile.blobUID = blobUID;
-        tmpFile.filesInBlobCount = m_vec_selected_files.size();
+        tmpFile.filesInBlobCount = std::to_string(m_vec_selected_files.size());
         tmpFile.id = utility::generateId();
-        tmpFile.receiverLogin = m_chat->getFriendLogin();
-        tmpFile.senderLogin = m_chatsWidget->getClient()->getMyLogin();
-        tmpFile.timestamp = utility::getTimeStamp();
-        tmpFile.isRequested = false;
+        tmpFile.receiverLoginHash = utility::calculateHash(m_chat->getFriendLogin());
+        tmpFile.senderLoginHash = utility::calculateHash(m_chatsWidget->getConfigManager()->getMyLogin());
+        tmpFile.timestamp = utility::getCurrentTime();
 
         try {
 #ifdef _WIN32
@@ -1267,7 +1263,7 @@ void MessagingAreaComponent::onSendFiles() {
 #endif
 
             uintmax_t fileSize = std::filesystem::file_size(fsPath);
-            tmpFile.fileSize = fileSize;
+            tmpFile.fileSize = std::to_string(fileSize);
         }
         catch (const std::filesystem::filesystem_error& e) {
             std::cerr << "Error accessing file: " << nativePath.toStdString()
@@ -1290,7 +1286,6 @@ void MessagingAreaComponent::onSendFiles() {
     emit sendFilesData(message, m_chat, m_vec_selected_files.size());
 
     moveSliderDown();
-    
 }
 
 void MessagingAreaComponent::addFileToDisplayList(QDialog* filesDialog, QVBoxLayout* filesLayout, const QStringList& newFiles) {
@@ -1579,7 +1574,7 @@ void MessagingAreaComponent::onSendMessageClicked() {
         msg += '\n';  
     }
 
-    auto& map = m_chatsWidget->getClient()->getMyChatsMap();
+    auto& map = m_chatsWidget->getClient()->getMyHashChatsMap();
 
 
     auto chatsList = m_chatsWidget->getChatsList();
@@ -1602,7 +1597,7 @@ void MessagingAreaComponent::onSendMessageClicked() {
 
     updateRelatedChatComponentLastMessage();
 
-    Message* message = new Message(msg, utility::getTimeStamp(), utility::generateId(), true, false);
+    Message* message = new Message(msg, utility::getCurrentTime(), utility::generateId(), true, false);
     addMessage(message, false);
     m_containerWidget->adjustSize();
     onTypeMessage();
@@ -1696,7 +1691,7 @@ void  MessagingAreaComponent::hideSendMessageButton() {
 
 void MessagingAreaComponent::onRetryClicked(Message* messageToRetry) {
     if (messageToRetry->getRelatedFiles().size() == 0) {
-        m_chatsWidget->getClient()->sendMessage(m_chat->getFriendLogin(), messageToRetry);
+        m_chatsWidget->getClient()->sendMessage(m_chat->getPublicKey(), m_chat->getFriendLogin(), messageToRetry);
     }
     else {
         m_chatsWidget->getClient()->sendFilesMessage(*messageToRetry);

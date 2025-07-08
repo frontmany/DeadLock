@@ -1,8 +1,11 @@
 #include<iostream>
 #include<vector>
 
+#include "rsa.h"
+
 class Photo;
 class Message;
+
 
 class PacketsBuilder {
 public:
@@ -12,31 +15,32 @@ public:
 	PacketsBuilder& operator=(const PacketsBuilder& other) { return *this; }
 
 	//GET
-	const std::string getAuthorizationPacket(const std::string& login, const std::string& passwordHash);
-	const std::string getRegistrationPacket(const std::string& login, const std::string& name, const std::string& passwordHash);
-	const std::string getCreateChatPacket(const std::string& myLogin, const std::string& friendLogin);
-	const std::string getFindUserPacket(const std::string& myLogin, const std::string& text);
+	const std::string getAuthorizationPacket(const std::string& loginHash, const std::string& passwordHash);
+	const std::string getRegistrationPacket(const std::string& loginHash, const std::string& passwordHash);
+	const std::string getAfterRegistrationSendMyInfoPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name);
+	const std::string getCreateChatPacket(const std::string& myLoginHash, const std::string& friendLoginHash);
+	const std::string getFindUserPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myLoginHash, const std::string& searchText);
 
-	const std::string getUpdateMyNamePacket(const std::string& login, const std::string& newName, const std::vector<std::string>& friendsLoginsVec);
-	const std::string getUpdateMyPasswordPacket(const std::string& login, const std::string& newPasswordHash, const std::vector<std::string>& friendsLoginsVec);
-	const std::string getUpdateMyLoginPacket(const std::string& login, const std::string& newLogin, const std::vector<std::string>& friendsLoginsVec);
-	const std::string getUpdateMyPhotoPacket(const std::string& login, const Photo& photo, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const std::string& newName, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getUpdateMyPasswordPacket(const std::string& loginHash, const std::string& newPasswordHash);
+	const std::string getUpdateMyLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLoginHash, const std::string& newLogin, const std::vector<std::string>& friendsLoginHashesVec);
+	const std::string getUpdateMyPhotoPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const Photo& photo, const std::vector<std::string>& friendsLoginsVec);
 
-	const std::string getLoadUserInfoPacket(const std::string& login);
-	const std::string getLoadAllFriendsStatusesPacket(const std::vector<std::string>& friendsLoginsVec);
+	const std::string getLoadUserInfoPacket(const std::string& loginHashToSearch, const std::string& loginHash);
+	const std::string getLoadMyInfoPacket(const std::string& loginHash, const CryptoPP::RSA::PublicKey& myNewPublicKey);
+	const std::string getLoadAllFriendsStatusesPacket(const std::string& loginHash, const std::vector<std::string>& friendsLoginHashesVec);
 	const std::string getVerifyPasswordPacket(const std::string& login, const std::string& passwordHash);
-	const std::string getCheckIsNewLoginAvailablePacket(const std::string& newLogin);
-
-	//new 
-	const std::string getSendMeFilePacket(const std::string& myLogin, const std::string& friendLogin, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, uint32_t filesInBlobCount);
+	const std::string getCheckIsNewLoginAvailablePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLogin);
+	const std::string getSendMeFilePacket(const CryptoPP::RSA::PrivateKey& myPrivatKey, const std::string& encryptedKey, const std::string& myLoginHash, const std::string& friendLoginHash, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, const std::string& filesInBlobCount);
+	const std::string getPublicKeyPacket(const std::string& myLoginHash, const CryptoPP::RSA::PublicKey& myPublicKey);
 
 	//RPL
-	const std::string getMessagePacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);
-	const std::string getMessageReadConfirmationPacket(const std::string& myLogin, const std::string& friendLogin, const Message* message);
-	const std::string getTypingPacket(const std::string& myLogin, const std::string& friendLogin, bool isTyping);
+	const std::string getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLogin, const std::string& friendLoginHash, const Message* message);
+	const std::string getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLogin, const std::string& friendLoginHash, const Message* message);
+	const std::string getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLogin, const std::string& friendLoginHash, bool isTyping);
 
 	//BROADCAST
-	const std::string getStatusPacket(const std::string& status, const std::string& myLogin, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status, const std::string& myLoginHash, const std::vector<std::string>& friendsLoginHashesVec);
 
 private:
 	static constexpr const char* get = "GET";

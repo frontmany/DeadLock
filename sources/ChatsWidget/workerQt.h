@@ -14,6 +14,7 @@
 class MainWindow;
 class ChatsWidget;
 class Chat;
+class Photo;
 
 class WorkerQt : public WorkerUI {
 public:
@@ -43,17 +44,19 @@ public:
 	void showNewChatOrUpdateExisting(Chat* chat) override;
 	void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) override;
 
-	void updateFileLoadingState(const std::string& friendLogin, fileWrapper& fileWrapper, bool isError) override;
+	void updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& fileWrapper, bool isError) override;
 	void updateFileLoadingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) override;
-	void updateFileSendingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) override;
+	void updateFileSendingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) override;
 
 	void onMessageSendingError(const std::string& friendLogin, Message* message) override;
-	void onRequestedFileError(const std::string& friendLogin, fileWrapper fileWrapper) override;
+	void onRequestedFileError(const std::string& friendLoginHash, fileWrapper fileWrapper) override;
 	void onConnectError() override;
 	void onNetworkError() override;
 	void onServerDown() override;
-
 	void onStatusReceive(const std::string& friendLogin, const std::string& status);
+	
+	void setRecoveredAvatar(Photo* myRecoveredAvatar) override;
+	void setNameFieldInProfileEditorWidget(const std::string& name) override;
 
 private:
 	bool updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat);

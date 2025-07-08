@@ -16,6 +16,7 @@
 
 class EditDialogComponent;
 class ProfileEditorWidget;
+class ConfigManager;
 class ButtonIcon;
 class Client;
 class Photo;
@@ -46,8 +47,9 @@ class FieldsEditComponent : public QWidget {
     Q_OBJECT
 
 public:
-    FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget,  Client* client, Theme theme);
+    FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget,  Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
     void setTheme(Theme theme);
+    void setName(const std::string& name);
     void updateAvatar(const Photo& photo);
 
 signals:
@@ -81,5 +83,6 @@ private:
     ButtonIcon*     m_logoutButton;
 
     ProfileEditorWidget* m_profile_editor_widget;
+    std::shared_ptr<ConfigManager> m_config_manager;
     Client* m_client;
 };

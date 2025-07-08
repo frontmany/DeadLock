@@ -75,5 +75,6 @@
 		<file>networkError.png</file>
 		<file>warning.png</file>
 		<file>loading.gif</file>
+		<file>process.gif</file>
     </qresource>
 </RCC>

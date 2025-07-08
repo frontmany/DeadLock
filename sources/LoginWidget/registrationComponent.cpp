@@ -17,12 +17,16 @@ StyleRegistrationComponent::StyleRegistrationComponent() {
     QPushButton:pressed {
         background-color: rgb(26, 133, 255);      
     }
+    QPushButton:disabled {
+        background-color: rgb(100, 100, 100);
+        color: rgb(180, 180, 180);
+    }
 )";
 
 
     LightButtonStyle = R"(
     QPushButton {
-        background-color: rgb(26, 133, 255);    
+        background-color: rgb(26, 133, 255);
         color: white;                
         border: none;      
         border-radius: 5px;          
@@ -33,6 +37,10 @@ StyleRegistrationComponent::StyleRegistrationComponent() {
     }
     QPushButton:pressed {
         background-color: rgb(21, 119, 232);      
+    }
+    QPushButton:disabled {
+        background-color: rgb(200, 200, 200);
+        color: rgb(100, 100, 100);
     }
 )";
 
@@ -275,6 +283,7 @@ void RegistrationComponent::slotToSendRegistrationData() {
         return;
     }
 
+    m_registerButton->setDisabled(true);
     emit sendRegistrationData(login, password, name);
 }
 
@@ -311,6 +320,7 @@ void RegistrationComponent::setRedBorderToPasswordEdits() {
 }
 
 void  RegistrationComponent::setErrorMessageToLabel(const QString& errorText) {
+    m_registerButton->setDisabled(false);
     m_error_label->setText(errorText);
     m_error_label->show();
 }

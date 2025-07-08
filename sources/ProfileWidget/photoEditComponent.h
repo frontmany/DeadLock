@@ -20,6 +20,7 @@
 
 class ProfileEditorWidget;
 class Client;
+class ConfigManager;
 enum Theme;
 
 struct StylePhotoEditComponent {
@@ -28,6 +29,7 @@ struct StylePhotoEditComponent {
     QString DarkButtonStyleBlue;
     QString LightSliderStyle;
     QString LightButtonStyleBlue;
+    QString ConfigManager;
     QString DarkSliderStyle;
 };
 
@@ -35,7 +37,7 @@ class PhotoEditComponent : public QWidget {
     Q_OBJECT
 
 public:
-    explicit PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, Theme theme);
+    explicit PhotoEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
     void setTheme(Theme theme);
 
     QSlider* m_cropXSlider;
@@ -64,9 +66,10 @@ private:
     QVBoxLayout* m_bothSlidersVLayout;
     QWidget*     m_photoAndSlidersWidgetContainer;
 
-    QString         m_filePath;
+    std::string     m_filePath;
     QPixmap         m_selectedImage;
 
+    std::shared_ptr<ConfigManager> m_config_manager;
     QLabel* m_imageLabel;
     QPushButton* m_selectImageButton;
     QPushButton* m_cancelButton;

@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "client.h"
+#include "configManager.h"
 #include "mainWindow.h"
 #include "utility.h"
 
@@ -25,22 +26,25 @@ int main(int argc, char* argv[])
     CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
     app.setStyle(customStyle);
     
-    Client* client = new Client;
-    bool isAutoLogin = client->autoLoginAndLoad();
-    client->connectTo("192.168.1.46", 8080);
+    std::shared_ptr<ConfigManager> configManager = std::make_shared<ConfigManager>();
+    Client* client = new Client(configManager);
+
+    configManager->setClient(client);
+
+    client->connectTo("192.168.56.1", 8080);
     client->run();
 
-    MainWindow* mainWindow = new MainWindow(nullptr, client);
+    MainWindow* mainWindow = new MainWindow(nullptr, client, configManager);
     if (utility::isApplicationAlreadyRunning()) {
         QTimer::singleShot(0, [&mainWindow]() {
             mainWindow->showAlreadyRunningDialog();
         });
     }
 
-
-    if (isAutoLogin == true) {
-        client->initDatabase(client->getMyLogin());
-        client->authorizeClient(client->getMyLogin(), client->getMyPasswordHash());
+    if (configManager->checkIsAutoLogin()) {
+        configManager->loadLoginHash();
+        configManager->loadPasswordHash();
+        client->authorizeClient(configManager->getMyLoginHash(), configManager->getMyPasswordHash());
     }
     else {
         mainWindow->setupLoginWidget();

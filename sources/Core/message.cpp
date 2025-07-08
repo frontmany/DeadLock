@@ -36,20 +36,20 @@ std::string Message::serialize() const {
 
         oss << (file_entry.isPresent ? "true" : "false") << "|"
             << escape(file.blobUID) << "|"
-            << escape(file.senderLogin) << "|"
-            << escape(file.receiverLogin) << "|"
+            << escape(file.senderLoginHash) << "|"
+            << escape(file.receiverLoginHash) << "|"
             << escape(file.filePath) << "|"
             << escape(file.id) << "|"
             << escape(file.timestamp) << "|"
             << file.fileSize << "|"
             << escape(file.caption) << "|"
             << escape(file.fileName) << "|"
-            << file.filesInBlobCount << "|";
+            << file.filesInBlobCount << "|"
+            << escape(file.encryptedKey) << "|"; 
     }
 
     return oss.str();
 }
-
 
 void Message::setRelatedFilePaths(std::vector<fileWrapper> relatedFilesVec) {
     m_vec_related_files = std::move(relatedFilesVec);
@@ -112,7 +112,7 @@ Message* Message::deserialize(const std::string& data) {
 
         size_t file_count = std::stoul(tokens[index++]);
 
-        const size_t FIELDS_PER_FILE = 11;
+        const size_t FIELDS_PER_FILE = 12;  
         for (size_t i = 0; i < file_count; ++i) {
             if (index + FIELDS_PER_FILE - 1 >= tokens.size()) {
                 throw std::runtime_error("Not enough tokens for file data");
@@ -121,15 +121,16 @@ Message* Message::deserialize(const std::string& data) {
             file_entry.isPresent = (tokens[index++] == "true");
 
             file_entry.file.blobUID = unescape(tokens[index++]);
-            file_entry.file.senderLogin = unescape(tokens[index++]);
-            file_entry.file.receiverLogin = unescape(tokens[index++]);
+            file_entry.file.senderLoginHash = unescape(tokens[index++]);
+            file_entry.file.receiverLoginHash = unescape(tokens[index++]);
             file_entry.file.filePath = unescape(tokens[index++]);
             file_entry.file.id = unescape(tokens[index++]);
             file_entry.file.timestamp = unescape(tokens[index++]);
-            file_entry.file.fileSize = std::stoul(tokens[index++]);
+            file_entry.file.fileSize = tokens[index++];
             file_entry.file.caption = unescape(tokens[index++]);
-            file_entry.file.fileName = unescape(tokens[index++]); 
-            file_entry.file.filesInBlobCount = std::stoul(tokens[index++]);
+            file_entry.file.fileName = unescape(tokens[index++]);
+            file_entry.file.filesInBlobCount = tokens[index++];
+            file_entry.file.encryptedKey = unescape(tokens[index++]); 
 
             msg->m_vec_related_files.push_back(file_entry);
         }
