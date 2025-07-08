@@ -22,6 +22,7 @@ namespace net
         std::string caption;
         std::string fileSize;
         std::string filesInBlobCount;
+        std::string encryptedKey;
 
         file() = default;
 
@@ -38,6 +39,7 @@ namespace net
                 caption = other.caption;
                 fileSize = other.fileSize;
                 filesInBlobCount = other.filesInBlobCount;
+                encryptedKey = other.encryptedKey;
             }
 
             return *this; 
@@ -56,6 +58,7 @@ namespace net
                 caption = std::move(other.caption);
                 fileSize = std::move(other.fileSize);
                 filesInBlobCount = std::move(other.filesInBlobCount);
+                encryptedKey = std::move(other.encryptedKey);
             }
 
             return *this;
@@ -72,7 +75,8 @@ namespace net
             timestamp(std::move(other.timestamp)),
             caption(std::move(other.caption)),
             fileSize(std::move(other.fileSize)),
-            filesInBlobCount(std::move(other.filesInBlobCount)){
+            filesInBlobCount(std::move(other.filesInBlobCount)),
+            encryptedKey(std::move(other.encryptedKey)){
         }
 
         file(const file& other) noexcept
@@ -86,7 +90,8 @@ namespace net
             timestamp(other.timestamp),
             caption(other.caption),
             fileSize(other.fileSize),
-            filesInBlobCount(other.filesInBlobCount) {
+            filesInBlobCount(other.filesInBlobCount),
+            encryptedKey(other.encryptedKey) {
         }
     };
 

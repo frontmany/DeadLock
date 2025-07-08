@@ -41,9 +41,16 @@ namespace net
 				<< m_file.senderLoginHash << '\n'
 				<< m_file.fileSize << '\n'
 				<< utility::AESEncrypt(m_sessionKey, m_file.fileName) << '\n'
-				<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n'
-				<< utility::AESEncrypt(m_sessionKey, m_file.caption) << '\n'
-				<< utility::AESEncrypt(m_sessionKey, m_file.filesInBlobCount);
+				<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n';
+			
+			if (m_file.caption != "") {
+			oss << utility::AESEncrypt(m_sessionKey, m_file.caption) << '\n';
+			}
+			else {
+				oss << "" << '\n';
+			}
+
+			oss << utility::AESEncrypt(m_sessionKey, m_file.filesInBlobCount);
 
 			m_metadataMessage.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
 			m_metadataMessage << oss.str();

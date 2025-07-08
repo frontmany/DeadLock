@@ -292,7 +292,7 @@ void Client::sendFilesMessage(Message& filesMessage) {
 }
 
 void Client::requestFile(const fileWrapper& fileWrapper) {
-    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_server_public_key, m_config_manager->getMyLoginHash(), fileWrapper.file.receiverLoginHash, fileWrapper.file.fileName, fileWrapper.file.id, fileWrapper.file.fileSize, fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
+    std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_private_key, fileWrapper.file.encryptedKey, m_config_manager->getMyLoginHash(), fileWrapper.file.senderLoginHash, fileWrapper.file.fileName, fileWrapper.file.id, fileWrapper.file.fileSize, fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
     m_vec_requested_file_ids.push_back(fileWrapper.file.id);
     sendPacket(packetStr, QueryType::SEND_ME_FILE);
 }

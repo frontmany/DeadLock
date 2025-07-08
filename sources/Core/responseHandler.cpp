@@ -154,7 +154,7 @@ void ResponseHandler::handleFile(net::file<QueryType>& file) {
 
     if (auto& vec = m_client->getRequestedFileIdsVec(); std::find(vec.begin(), vec.end(), file.id) != vec.end()) {
         auto& chatsMap = m_client->getMyHashChatsMap();
-        auto it = chatsMap.find(file.senderLoginHash);
+        auto it = chatsMap.find(file.senderLoginHash); //here
         if (it != chatsMap.end()) {
             Chat* chat = it->second;
             auto& chatsVec = chat->getMessagesVec();
@@ -181,6 +181,7 @@ void ResponseHandler::handleFile(net::file<QueryType>& file) {
         }
         else {
             std::filesystem::remove(file.filePath);
+            return;
         }
     }
 
@@ -227,7 +228,7 @@ void ResponseHandler::handleFile(net::file<QueryType>& file) {
 
             chatsMap[friendLoginHash] = chat;
 
-            m_client->requestUserInfoFromServer(friendLoginHash, file.receiverLoginHash);
+            m_client->requestUserInfoFromServer(friendLoginHash, fileWrapper.file.receiverLoginHash);
         }
     }
 }
@@ -247,11 +248,9 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 
     std::string myLoginHash;
     std::getline(iss, myLoginHash);
-    myLoginHash = utility::AESDecrypt(key, myLoginHash);
 
     std::string friendLoginHash;
     std::getline(iss, friendLoginHash);
-    friendLoginHash = utility::AESDecrypt(key, friendLoginHash);
 
     std::string fileName;
     std::getline(iss, fileName);
@@ -259,28 +258,20 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 
     std::string fileSize;
     std::getline(iss, fileSize);
-    fileSize = utility::AESDecrypt(key, fileSize);
 
     std::string fileTimestamp;
     std::getline(iss, fileTimestamp);
     fileTimestamp = utility::AESDecrypt(key, fileTimestamp);
 
-    std::string messageBegin;
-    std::getline(iss, messageBegin);
-    messageBegin = utility::AESDecrypt(key, messageBegin);
-
     std::string caption;
     std::getline(iss, caption);
-    caption = utility::AESDecrypt(key, caption);
+    if (caption != "") {
+        caption = utility::AESDecrypt(key, caption);
+    }
 
-    std::string messageEnd;
-    std::getline(iss, messageEnd);
-    messageEnd = utility::AESDecrypt(key, messageEnd);
-
-    std::string filesInBlobCountStr;
-    std::getline(iss, filesInBlobCountStr);
-    filesInBlobCountStr = utility::AESDecrypt(key, filesInBlobCountStr);
-    uint32_t filesInBlobCount = static_cast<uint32_t>(std::stoul(filesInBlobCountStr));
+    std::string filesInBlobCount;
+    std::getline(iss, filesInBlobCount);
+    filesInBlobCount = utility::AESDecrypt(key, filesInBlobCount);
 
     auto& messageBlobsMap = m_client->getMapMessageBlobs();
 
@@ -306,13 +297,12 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     file.filePath = "";
     file.fileName = fileName;
     file.filesInBlobCount = filesInBlobCount;
-    file.fileSize = std::stoi(fileSize);
+    file.fileSize = fileSize;
     file.id = fileId;
     file.receiverLoginHash = myLoginHash;
     file.senderLoginHash = friendLoginHash;
     file.timestamp = fileTimestamp;
-
-    
+    file.encryptedKey = encryptedKey;
 
     fileWrapper fileWrapper;
     fileWrapper.isPresent = false;
@@ -321,9 +311,9 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     msgFile->addRelatedFile(fileWrapper);
 
 
-    if (msgFile->getRelatedFilesCount() == filesInBlobCount) {
+    if (msgFile->getRelatedFilesCount() == std::stoi(filesInBlobCount)) {
         auto& chatsMap = m_client->getMyHashChatsMap();
-        auto it = chatsMap.find(utility::calculateHash(friendLoginHash));
+        auto it = chatsMap.find(friendLoginHash);
         if (it != chatsMap.end()) {
             Chat* chat = it->second;
             chat->getMessagesVec().push_back(msgFile);

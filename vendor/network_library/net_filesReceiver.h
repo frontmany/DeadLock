@@ -12,7 +12,12 @@ namespace net
 	class filesReceiver {
 	public:
 		filesReceiver(CryptoPP::RSA::PrivateKey* myPrivateKey, safe_deque<owned_file<T>>& incomingFilesQueue, asio::ip::tcp::socket& socket, std::function<void(const net::file<T>&, uint32_t)> onProgressUpdate, std::function<void(std::error_code, net::file<T>)> onReceiveError, std::function<void()> disconnect)
-		: m_myPrivateKey(myPrivateKey), m_incomingFilesQueue(incomingFilesQueue), m_socket(socket), m_onProgressUpdate(onProgressUpdate), m_onReceiveError(onReceiveError), m_disconnect(disconnect) {
+		: m_myPrivateKey(myPrivateKey), m_incomingFilesQueue(incomingFilesQueue), m_socket(socket), m_onProgressUpdate(onProgressUpdate), m_onReceiveError(onReceiveError), m_disconnect(disconnect) 
+		{
+			m_lastChunkSize = 0;
+			m_currentChunksCount = 0;
+			m_expectedChunksCount = 0;
+			m_totalReceivedBytes = 0;
 		}
 
 		void startReceiving() {
@@ -61,35 +66,28 @@ namespace net
 						return;
 					}
 					else {
-						m_totalReceivedBytes += bytesTransferred - c_overhead;
 						m_currentChunksCount++;
+						if (m_currentChunksCount <= m_expectedChunksCount) {
+							std::array<char, c_decryptedChunkSize> decryptedChunk = utility::AESDecrypt(m_sessionKey, m_receiveBuffer);
+							if (m_currentChunksCount < m_expectedChunksCount) {
+								m_fileStream.write(decryptedChunk.data(), c_decryptedChunkSize);
+								readChunk();
 
-						std::array<char, c_decryptedChunkSize> decryptedChunk = utility::AESDecrypt(m_sessionKey, m_receiveBuffer);
-
-						if (std::stoi(m_file.fileSize) >= c_decryptedChunkSize) {
-							if (m_currentChunksCount > m_expectedChunksCount) {
-								m_fileStream.write(decryptedChunk.data(), (m_lastChunkSize - c_overhead));
+								m_totalReceivedBytes += bytesTransferred - c_overhead;
+								if (m_totalReceivedBytes < std::stoull(m_file.fileSize)) {
+									const uint64_t fileSize = std::stoull(m_file.fileSize);
+									const uint64_t progress = std::min<uint64_t>((m_totalReceivedBytes * 100) / fileSize, 100);
+									m_onProgressUpdate(m_file, progress);
+								}
 							}
 							else {
-								m_fileStream.write(decryptedChunk.data(), c_decryptedChunkSize);
+								m_fileStream.write(decryptedChunk.data(), m_lastChunkSize);
+								finalizeReceiving();
 							}
 						}
-						else {
-							m_fileStream.write(decryptedChunk.data(), (m_lastChunkSize - c_overhead));
-						}
 
-						if (m_totalReceivedBytes < std::stoull(m_file.fileSize)) {
-							const uint64_t fileSize = std::stoull(m_file.fileSize);
-							const uint64_t progress = std::min<uint64_t>((m_totalReceivedBytes * 100) / fileSize, 100);
-							m_onProgressUpdate(m_file, progress);
-
-							readChunk();
-						}
-						else {
-							finalizeReceiving();
-						}
+						
 					}
-
 				});
 		}
 
@@ -127,7 +125,9 @@ namespace net
 
 			std::string caption;
 			std::getline(iss, caption);
-			caption = utility::AESEncrypt(m_sessionKey, caption);
+			if (caption != "") {
+				caption = utility::AESEncrypt(m_sessionKey, caption);
+			}
 
 			std::string filesCountInBlob;
 			std::getline(iss, filesCountInBlob);
@@ -144,18 +144,19 @@ namespace net
 			m_file.blobUID = blobUID;
 			m_file.filesInBlobCount = filesCountInBlob;
 
-			m_expectedChunksCount = std::stoi(m_file.fileSize) / c_decryptedChunkSize;
+			m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(m_file.fileSize)) / c_decryptedChunkSize));
 			int lastChunksSize = std::stoi(m_file.fileSize) - (m_expectedChunksCount * c_decryptedChunkSize);
 			if (lastChunksSize == 0) {
 				m_lastChunkSize = c_receivedChunkSize;
 			}
 			else {
-				m_lastChunkSize = lastChunksSize;
+				m_lastChunkSize = lastChunksSize + c_decryptedChunkSize;
 				m_lastChunkSize += c_overhead;
 			}
 		}
 
 		void finalizeReceiving() {
+			//here
 			m_fileStream.close();
 
 			m_onProgressUpdate(m_file, 100);

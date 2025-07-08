@@ -228,13 +228,10 @@ const std::string PacketsBuilder::getFindUserPacket(const CryptoPP::RSA::PublicK
     return oss.str();
 }
 
-const std::string PacketsBuilder::getSendMeFilePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, const std::string& filesInBlobCount) {
+const std::string PacketsBuilder::getSendMeFilePacket(const CryptoPP::RSA::PrivateKey& myPrivatKey, const std::string& encryptedKey, const std::string& myLoginHash, const std::string& friendLoginHash, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, const std::string& filesInBlobCount) {
     std::ostringstream oss;
 
-    CryptoPP::SecByteBlock key;
-    utility::generateAESKey(key);
-
-    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(myPrivatKey, encryptedKey);
 
     oss << get << '\n'
         << encryptedKey << '\n'
@@ -242,13 +239,18 @@ const std::string PacketsBuilder::getSendMeFilePacket(const CryptoPP::RSA::Publi
         << fileId << '\n'
         << blobUID << "\n"
         << friendLoginHash << '\n'
-        << utility::AESEncrypt(key, fileName) << '\n'
-        << utility::AESEncrypt(key, fileSize) << '\n'
-        << utility::AESEncrypt(key, timestamp) << '\n'
-        << utility::AESEncrypt(key, messageBegin) << '\n'
-        << utility::AESEncrypt(key, caption) << '\n'
-        << utility::AESEncrypt(key, messageEnd) << '\n'
-        << utility::AESEncrypt(key, filesInBlobCount);
+        << utility::AESEncrypt(key, fileName) << '\n' //here
+        << fileSize << '\n'
+        << utility::AESEncrypt(key, timestamp) << '\n';
+
+        if (caption != "") {
+            oss << utility::AESEncrypt(key, caption) << '\n';
+        }
+        else {
+            oss << '\n';
+        }
+        
+        oss << utility::AESEncrypt(key, filesInBlobCount);
 
     return oss.str();
 }

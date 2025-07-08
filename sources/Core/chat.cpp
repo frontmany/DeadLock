@@ -16,7 +16,9 @@ QJsonObject Chat::serialize(const CryptoPP::RSA::PublicKey& myPublicKey,
         jsonObject["friend_last_seen"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_last_seen));
         jsonObject["friend_login"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_login));
         jsonObject["friend_name"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_name));
-        jsonObject["last_message"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_last_received_or_sent_message));
+        if (m_last_received_or_sent_message != "") {
+            jsonObject["last_message"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_last_received_or_sent_message));
+        }
         jsonObject["has_photo"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, (m_is_friend_has_photo == true ? "1" : "0")));
         jsonObject["layout_index"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, std::to_string(m_index_at_layout)));
         jsonObject["public_key"] = QString::fromStdString(utility::serializePublicKey(m_public_key));
@@ -45,7 +47,10 @@ Chat* Chat::deserialize(const CryptoPP::RSA::PrivateKey& myPrivateKey,
         chat->m_friend_login = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["friend_login"].toString().toStdString());
         chat->m_friend_name = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["friend_name"].toString().toStdString());
         chat->m_friend_last_seen = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["friend_last_seen"].toString().toStdString());
-        chat->m_last_received_or_sent_message = utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["last_message"].toString().toStdString());
+        if (jsonObject.contains("last_message")) {
+            std::string lastMessage = jsonObject["last_message"].toString().toStdString();
+            chat->m_last_received_or_sent_message = utility::AESDecrypt(chat->m_AESE_chat_configKey, lastMessage);
+        }
         chat->m_is_friend_has_photo = (utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["has_photo"].toString().toStdString())) == "1";
         chat->m_index_at_layout = std::stoi(utility::AESDecrypt(chat->m_AESE_chat_configKey, jsonObject["layout_index"].toString().toStdString()));
         chat->m_public_key = utility::deserializePublicKey(jsonObject["public_key"].toString().toStdString());

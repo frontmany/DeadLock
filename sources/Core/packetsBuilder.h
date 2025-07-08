@@ -31,7 +31,7 @@ public:
 	const std::string getLoadAllFriendsStatusesPacket(const std::string& loginHash, const std::vector<std::string>& friendsLoginHashesVec);
 	const std::string getVerifyPasswordPacket(const std::string& login, const std::string& passwordHash);
 	const std::string getCheckIsNewLoginAvailablePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLogin);
-	const std::string getSendMeFilePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, const std::string& filesInBlobCount);
+	const std::string getSendMeFilePacket(const CryptoPP::RSA::PrivateKey& myPrivatKey, const std::string& encryptedKey, const std::string& myLoginHash, const std::string& friendLoginHash, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, const std::string& filesInBlobCount);
 	const std::string getPublicKeyPacket(const std::string& myLoginHash, const CryptoPP::RSA::PublicKey& myPublicKey);
 
 	//RPL
