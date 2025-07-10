@@ -279,7 +279,7 @@ void Client::onMessage(net::message<QueryType> message) {
 }
 
 void Client::onFile(net::file<QueryType> file) {
-    m_response_handler->handleFile(file);
+    m_response_handler->onFile(file);
 }
 
 void Client::sendFilesMessage(Message& filesMessage) {
@@ -290,10 +290,20 @@ void Client::sendFilesMessage(Message& filesMessage) {
         sendFile(wrapper.file);
     }
 }
+void Client::retrySendFilesMessage(Message& filesMessage) {
+    auto& relatedFiles = filesMessage.getRelatedFiles();
+    for (auto& wrapper : relatedFiles) {
+        if (wrapper.isNeedToRetry) {
+            auto chat = m_map_friend_loginHash_to_chat[wrapper.file.receiverLoginHash];
+            wrapper.file.friendPublicKey = chat->getPublicKey();
+            sendFile(wrapper.file);
+        }
+    }
+}
 
 void Client::requestFile(const fileWrapper& fileWrapper) {
     std::string packetStr = m_packets_builder->getSendMeFilePacket(m_my_private_key, fileWrapper.file.encryptedKey, m_config_manager->getMyLoginHash(), fileWrapper.file.senderLoginHash, fileWrapper.file.fileName, fileWrapper.file.id, fileWrapper.file.fileSize, fileWrapper.file.timestamp, fileWrapper.file.caption, fileWrapper.file.blobUID, fileWrapper.file.filesInBlobCount);
-    m_vec_requested_file_ids.push_back(fileWrapper.file.id);
+    m_db->addRequestedFile(m_config_manager->getMyLoginHash(), fileWrapper.file.id);
     sendPacket(packetStr, QueryType::SEND_ME_FILE);
 }
 
@@ -416,27 +426,8 @@ void Client::onReceiveFileError(std::error_code ec, net::file<QueryType> unreadF
         return;
     }
 
-    if (std::find(m_vec_requested_file_ids.begin(), m_vec_requested_file_ids.end(), unreadFile.id) != m_vec_requested_file_ids.end()) {
+    if (auto vec = m_db->getRequestedFiles(m_config_manager->getMyLoginHash()); std::find(vec.begin(), vec.end(), unreadFile.id) != vec.end()) {
         m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.receiverLoginHash, { false, unreadFile });
-    }
-    else {
-        auto it = m_map_message_blobs.find(unreadFile.blobUID);
-        auto [blobUID, message] = *it;
-        for (auto& file : message->getRelatedFiles()) {
-            std::string path = file.file.filePath;
-            if (path.empty()) {
-            }
-
-            std::error_code ec;
-            bool removed = std::filesystem::remove(path, ec);
-
-            if (ec) {
-                std::cerr << "Failed to delete (onReadFileError)" << path << ": " << ec.message() << "\n";
-            }
-        }
-
-        delete message;
-        m_map_message_blobs.erase(unreadFile.blobUID);
     }
 }
 

@@ -6,6 +6,7 @@
 #include "client.h"
 #include "utility.h"
 #include "queryType.h"
+#include "database.h"
 #include "message.h"
 #include "photo.h"
 #include "chat.h"
@@ -149,87 +150,40 @@ void ResponseHandler::onChatCreateFail() {
     m_worker_UI->onChatCreateFail();
 }
 
-void ResponseHandler::handleFile(net::file<QueryType>& file) {
-    auto& messageBlobsMap = m_client->getMapMessageBlobs();
+void ResponseHandler::onFile(net::file<QueryType>& file) {
+    Database* database = m_client->getDatabase();
 
-    if (auto& vec = m_client->getRequestedFileIdsVec(); std::find(vec.begin(), vec.end(), file.id) != vec.end()) {
-        auto& chatsMap = m_client->getMyHashChatsMap();
-        auto it = chatsMap.find(file.senderLoginHash); //here
-        if (it != chatsMap.end()) {
-            Chat* chat = it->second;
-            auto& chatsVec = chat->getMessagesVec();
-            auto it = std::find_if(chatsVec.begin(), chatsVec.end(), [&file](Message* msg) {
-                return msg->getId() == file.blobUID;
-            });
-
-            if (it != chatsVec.end()) {
-                Message* message = *it;
-                auto& relatedFilesVec = message->getRelatedFiles();
-                auto itFileWrapper = std::find_if(relatedFilesVec.begin(), relatedFilesVec.end(), [&file](fileWrapper fileWrapper) {
-                    return fileWrapper.file.id == file.id;
-                });
-
-                fileWrapper& wrap = *itFileWrapper;
-                wrap.isPresent = true;
-                wrap.file = file;
-
-                m_worker_UI->updateFileLoadingState(file.senderLoginHash, wrap, false);
-                return;
-            }
-
-            vec.erase(std::find(vec.begin(), vec.end(), file.id));
-        }
-        else {
-            std::filesystem::remove(file.filePath);
-            return;
-        }
+    if (auto vec = database->getRequestedFiles(file.receiverLoginHash); std::find(vec.begin(), vec.end(), file.id) != vec.end()) {
+        processRequestedFile(file);
     }
 
+    std::string myLoginHash = file.receiverLoginHash;
+    std::string friendLoginHash = file.senderLoginHash;
+    std::string blobUID = file.blobUID;
+    int filesInBlobCount = std::stoi(file.filesInBlobCount);
+    
+
     Message* message = nullptr;
-    if (messageBlobsMap.contains(file.blobUID)) {
-        message = messageBlobsMap[file.blobUID];
+    if (database->isBlobExists(myLoginHash, blobUID)) {
+        std::string serializedMessage = database->getSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID);
+        message = Message::deserialize(serializedMessage);
+
+        addDataToMessage(message, file);
+
+        database->updateSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID, message->serialize());
+        database->incrementFilesReceivedCounter(myLoginHash, blobUID);
     }
     else {
         message = new Message();
-        message->setId(file.blobUID);
-        messageBlobsMap.emplace(file.blobUID, message);
+
+        addDataToMessage(message, file);
+
+        database->addBlob(m_client->getPublicKey(), myLoginHash, blobUID, filesInBlobCount, 0, message->serialize());
+        database->incrementFilesReceivedCounter(myLoginHash, blobUID);
     }
 
-    if (file.caption != "") {
-        message->setMessage(file.caption);
-    }
-
-    std::string filesCountInBlob = file.filesInBlobCount;
-    std::string friendLoginHash = file.senderLoginHash;
-
-    fileWrapper fileWrapper;
-    fileWrapper.isPresent = true;
-    fileWrapper.file = std::move(file);
-
-    message->addRelatedFile(fileWrapper);
-
-    if (message->getRelatedFilesCount() == std::stoi(filesCountInBlob)) {
-        auto& chatsMap = m_client->getMyHashChatsMap();
-        auto it = chatsMap.find(friendLoginHash);
-        if (it != chatsMap.end()) {
-            Chat* chat = it->second;
-            chat->getMessagesVec().push_back(message);
-
-            m_worker_UI->onMessageReceive(friendLoginHash, message);
-        }
-        else {
-            Chat* chat = new Chat;
-            chat->setFriendLastSeen("online");
-            auto& msgsVec = chat->getMessagesVec();
-            msgsVec.push_back(message);
-
-            utility::incrementAllChatLayoutIndexes(chatsMap);
-            chat->setLayoutIndex(0);
-
-            chatsMap[friendLoginHash] = chat;
-
-            m_client->requestUserInfoFromServer(friendLoginHash, fileWrapper.file.receiverLoginHash);
-        }
+    if (database->getReceivedFilesCount(myLoginHash, blobUID) == filesInBlobCount) {
+        showFilesMessage(message, friendLoginHash, myLoginHash);
     }
 }
 
@@ -272,25 +226,7 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     std::string filesInBlobCount;
     std::getline(iss, filesInBlobCount);
     filesInBlobCount = utility::AESDecrypt(key, filesInBlobCount);
-
-    auto& messageBlobsMap = m_client->getMapMessageBlobs();
-
-    Message* msgFile = nullptr;
-    if (messageBlobsMap.contains(blobUID)) {
-        msgFile = messageBlobsMap[blobUID];
-    }
-    else {
-        msgFile = new Message();
-        msgFile->setId(blobUID);
-        messageBlobsMap.emplace(blobUID, msgFile);
-    }
-
-    msgFile->setIsRead(false);
-    msgFile->setIsSend(false);
-    msgFile->setMessage(caption);
-    msgFile->setId(blobUID);
-    msgFile->setTimestamp(fileTimestamp);
-
+    
     net::file<QueryType> file;
     file.blobUID = blobUID;
     file.caption = caption;
@@ -304,34 +240,30 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     file.timestamp = fileTimestamp;
     file.encryptedKey = encryptedKey;
 
-    fileWrapper fileWrapper;
-    fileWrapper.isPresent = false;
-    fileWrapper.file = std::move(file);
+    Database* database = m_client->getDatabase();
 
-    msgFile->addRelatedFile(fileWrapper);
+    Message* message = nullptr;
+    if (database->isBlobExists(myLoginHash, blobUID)) {
+        std::string serializedMessage = database->getSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID);
+        message = Message::deserialize(serializedMessage);
 
+        addDataToMessage(message, file);
 
-    if (msgFile->getRelatedFilesCount() == std::stoi(filesInBlobCount)) {
-        auto& chatsMap = m_client->getMyHashChatsMap();
-        auto it = chatsMap.find(friendLoginHash);
-        if (it != chatsMap.end()) {
-            Chat* chat = it->second;
-            chat->getMessagesVec().push_back(msgFile);
-            m_worker_UI->onMessageReceive(friendLoginHash, msgFile);
-        }
-        else {
-            Chat* chat = new Chat;
-            chat->setFriendLastSeen("online");
-            auto& msgsVec = chat->getMessagesVec();
-            msgsVec.push_back(msgFile);
+        database->updateSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID, message->serialize());
+        database->incrementFilesReceivedCounter(myLoginHash, blobUID);
+    }
+    else {
+        message = new Message();
+        message->setId(blobUID);
 
-            utility::incrementAllChatLayoutIndexes(chatsMap);
-            chat->setLayoutIndex(0);
+        addDataToMessage(message, file);
 
-            chatsMap[friendLoginHash] = chat;
+        database->addBlob(m_client->getPublicKey(), myLoginHash, blobUID, std::stoi(filesInBlobCount), 0, message->serialize());
+        database->incrementFilesReceivedCounter(myLoginHash, blobUID);
+    }
 
-            m_client->requestUserInfoFromServer(friendLoginHash, myLoginHash);
-        }
+    if (database->getReceivedFilesCount(myLoginHash, blobUID) == std::stoi(filesInBlobCount)) {
+        showFilesMessage(message, friendLoginHash, myLoginHash);
     }
 }
 
@@ -852,3 +784,78 @@ void ResponseHandler::onCheckNewLoginSuccess(const std::string& packet) {
     m_worker_UI->onCheckNewLoginSuccess();
 }
 
+
+void ResponseHandler::showFilesMessage(Message* message, const std::string& friendLoginHash, const std::string& myLoginHash) {
+    auto& chatsMap = m_client->getMyHashChatsMap();
+    auto it = chatsMap.find(friendLoginHash);
+    if (it != chatsMap.end()) {
+        Chat* chat = it->second;
+        chat->getMessagesVec().push_back(message);
+        m_worker_UI->onMessageReceive(friendLoginHash, message);
+    }
+    else {
+        Chat* chat = new Chat;
+        chat->setFriendLastSeen("online");
+        auto& msgsVec = chat->getMessagesVec();
+        msgsVec.push_back(message);
+
+        utility::incrementAllChatLayoutIndexes(chatsMap);
+        chat->setLayoutIndex(0);
+
+        chatsMap[friendLoginHash] = chat;
+
+        m_client->requestUserInfoFromServer(friendLoginHash, myLoginHash);
+    }
+}
+
+void ResponseHandler::processRequestedFile(net::file<QueryType>& file) {
+    auto& chatsMap = m_client->getMyHashChatsMap();
+
+    auto it = chatsMap.find(file.senderLoginHash);
+
+    if (it != chatsMap.end()) {
+        Chat* chat = it->second;
+        auto& messagesVec = chat->getMessagesVec();
+        auto it = std::find_if(messagesVec.begin(), messagesVec.end(), [&file](Message* msg) {
+            return msg->getId() == file.blobUID;
+            });
+
+        if (it != messagesVec.end()) {
+            Message* message = *it;
+            auto& relatedFilesVec = message->getRelatedFiles();
+            auto itFileWrapper = std::find_if(relatedFilesVec.begin(), relatedFilesVec.end(), [&file](fileWrapper fileWrapper) {
+                return fileWrapper.file.id == file.id;
+                });
+
+            fileWrapper& wrap = *itFileWrapper;
+            wrap.isPresent = true;
+            wrap.file = file;
+
+            m_worker_UI->updateFileLoadingState(file.senderLoginHash, wrap, false);
+            return;
+        }
+
+        m_client->getDatabase()->removeRequestedFile(file.receiverLoginHash, file.id);
+    }
+    else {
+        std::filesystem::remove(file.filePath);
+        return;
+    }
+}
+
+void ResponseHandler::addDataToMessage(Message* message, net::file<QueryType>& file) {
+    Database* database = m_client->getDatabase();
+
+    fileWrapper fileWrapper;
+    fileWrapper.isPresent = true;
+    fileWrapper.file = std::move(file);
+
+    message->addRelatedFile(fileWrapper);
+
+    message->setIsRead(false);
+    message->setIsSend(false);
+    message->setMessage(file.caption);
+    message->setId(file.blobUID);
+    message->setTimestamp(file.timestamp);
+    message->addRelatedFile(fileWrapper);
+}

@@ -58,9 +58,9 @@ private:
     void setDownloadState(bool inProgress);
     void updateProgressLabel();
 
-    Theme               m_theme;
-    bool                m_isHovered;
-    bool                m_isNeedToRetry = false;
+    Theme m_theme;
+    bool m_isHovered;
+    bool m_isNeedToRetry = false;
     fileWrapper& m_file_wrapper;
     FilesComponent* m_files_component;
     StyleFileItem* m_style;
@@ -70,7 +70,7 @@ private:
     QLabel* m_progressLabel;
     QLabel* m_loadingAnimationLabel;
     QMovie* m_loadingMovie;
-    int                 m_progress = 0;
-    bool                m_isLoading = false;
-    bool                m_isAnimationStarted = false;
+    int m_progress = 0;
+    bool m_isLoading = false;
+    bool m_isAnimationStarted = false;
 };

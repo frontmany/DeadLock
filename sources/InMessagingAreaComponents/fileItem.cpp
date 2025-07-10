@@ -191,6 +191,7 @@ void FileItem::startProgressAnimation() {
 }
 
 void FileItem::stopProgressAnimation() {
+    m_file_wrapper.isSending = false;
     m_isAnimationStarted = false;
     setDownloadState(false);
     setAttribute(Qt::WA_TransparentForMouseEvents, false);

@@ -11,26 +11,448 @@ void Database::init(const std::string& loginHash) {
     int rc = sqlite3_open("your_database.db", &m_db);
     if (rc != SQLITE_OK) {
         std::cerr << "Can't open database: " << sqlite3_errmsg(m_db) << std::endl;
+        if (m_db) {
+            sqlite3_close(m_db);
+            m_db = nullptr;
+        }
         return;
     }
 
-    std::string sql = "CREATE TABLE IF NOT EXISTS MESSAGES_" + loginHash + " ("
+    std::string sqlMessages = "CREATE TABLE IF NOT EXISTS MESSAGES_" + loginHash + " ("
         "LOGIN TEXT NOT NULL, "
         "MSGS TEXT NOT NULL, "
         "AES_KEY BLOB NOT NULL);";
 
-    char* zErrMsg = nullptr;
-    rc = sqlite3_exec(m_db, sql.c_str(), nullptr, nullptr, &zErrMsg);
+    std::string sqlBlobs = "CREATE TABLE IF NOT EXISTS BLOBS_" + loginHash + " ("
+        "BLOB_UID             TEXT    NOT NULL PRIMARY KEY,"
+        "FILES_COUNT_IN_BLOB  INTEGER NOT NULL CHECK(FILES_COUNT_IN_BLOB > 0),"
+        "FILES_RECEIVED       INTEGER NOT NULL DEFAULT 0,"
+        "SERIALIZED_MESSAGE   TEXT    NOT NULL,"
+        "AES_KEY              BLOB    NOT NULL,"
+        "CHECK (FILES_RECEIVED <= FILES_COUNT_IN_BLOB));";
+
+    std::string sqlRequestedFiles = "CREATE TABLE IF NOT EXISTS REQUESTED_FILES_" + loginHash + " ("
+        "FILE_ID TEXT NOT NULL PRIMARY KEY);";
+
+    char* errMsg = nullptr;
+
+    rc = sqlite3_exec(m_db, sqlBlobs.c_str(), nullptr, nullptr, &errMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << zErrMsg << std::endl;
-        sqlite3_free(zErrMsg);
+        std::cerr << "SQL error in BLOBS table creation: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
         sqlite3_close(m_db);
         m_db = nullptr;
         return;
     }
+    else {
+        std::cout << "Table BLOBS_" << loginHash << " created/updated successfully" << std::endl;
+    }
 
-    std::cout << "Table MESSAGES_" << loginHash << " created successfully" << std::endl;
+    rc = sqlite3_exec(m_db, sqlMessages.c_str(), nullptr, nullptr, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error in MESSAGES table creation: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+        sqlite3_close(m_db);
+        m_db = nullptr;
+        return;
+    }
+    else {
+        std::cout << "Table MESSAGES_" << loginHash << " created/updated successfully" << std::endl;
+    }
+
+    rc = sqlite3_exec(m_db, sqlRequestedFiles.c_str(), nullptr, nullptr, &errMsg);
+    if (rc != SQLITE_OK) {
+        std::cerr << "SQL error in REQUESTED_FILES table creation: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+        sqlite3_close(m_db);
+        m_db = nullptr;
+        return;
+    }
+    else {
+        std::cout << "Table REQUESTED_FILES_" << loginHash << " created/updated successfully" << std::endl;
+    }
 }
+
+
+
+bool Database::addRequestedFile(const std::string& loginHash, const std::string& fileId) {
+    if (!m_db) return false;
+
+    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string sql = "INSERT INTO " + tableName + " (FILE_ID) VALUES (?);";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to prepare insert statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_bind_text(stmt, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to bind param: " << sqlite3_errmsg(m_db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        std::cerr << "Failed to execute insert: " << sqlite3_errmsg(m_db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+}
+
+
+bool Database::removeRequestedFile(const std::string& loginHash, const std::string& fileId) {
+    if (!m_db) return false;
+
+    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string sql = "DELETE FROM " + tableName + " WHERE FILE_ID = ?;";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to prepare delete statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_bind_text(stmt, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to bind param: " << sqlite3_errmsg(m_db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        std::cerr << "Failed to execute delete: " << sqlite3_errmsg(m_db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
+    return true;
+}
+
+bool Database::checkRequestedFile(const std::string& loginHash, const std::string& fileId) {
+    if (!m_db) return false;
+
+    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string sql = "SELECT 1 FROM " + tableName + " WHERE FILE_ID = ? LIMIT 1;";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to prepare select statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_bind_text(stmt, 1, fileId.c_str(), -1, SQLITE_TRANSIENT);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to bind param: " << sqlite3_errmsg(m_db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    rc = sqlite3_step(stmt);
+    bool exists = (rc == SQLITE_ROW);
+
+    sqlite3_finalize(stmt);
+    return exists;
+}
+
+std::vector<std::string> Database::getRequestedFiles(const std::string& loginHash) {
+    std::vector<std::string> files;
+    if (!m_db) return files;
+
+    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string sql = "SELECT FILE_ID FROM " + tableName + ";";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        std::cerr << "Failed to prepare select statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return files;
+    }
+
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        const unsigned char* text = sqlite3_column_text(stmt, 0);
+        if (text) {
+            files.emplace_back(reinterpret_cast<const char*>(text));
+        }
+    }
+
+    if (rc != SQLITE_DONE) {
+        std::cerr << "Error while iterating over rows: " << sqlite3_errmsg(m_db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+    return files;
+}
+
+
+
+
+
+bool Database::addBlob(const CryptoPP::RSA::PublicKey& publicKey,
+    const std::string& loginHash,
+    const std::string& blobUid,
+    int filesCountInBlob,
+    int filesReceived,
+    const std::string& serializedMessage)
+{
+    CryptoPP::SecByteBlock aesKey;
+    utility::generateAESKey(aesKey);
+    std::string encryptedAesKey = utility::RSAEncryptKey(publicKey, aesKey);
+
+
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "INSERT INTO " + tableName +
+        " (BLOB_UID, FILES_COUNT_IN_BLOB, FILES_RECEIVED, SERIALIZED_MESSAGE, AES_KEY) "
+        "VALUES (?, ?, ?, ?, ?)";
+
+    sqlite3_stmt* stmt = nullptr;
+
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, filesCountInBlob);
+    sqlite3_bind_int(stmt, 3, filesReceived);
+    sqlite3_bind_text(stmt, 4, utility::AESEncrypt(aesKey, serializedMessage).c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_blob(stmt, 5, encryptedAesKey.data(), encryptedAesKey.size(), SQLITE_STATIC);
+
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+
+    if (rc == SQLITE_CONSTRAINT) {
+        std::cerr << "Blob with UID '" << blobUid << "' already exists in table " << tableName << std::endl;
+        return false;
+    }
+    else if (rc != SQLITE_DONE) {
+        std::cerr << "Failed to add blob: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool Database::removeBlob(const std::string& loginHash, const std::string& blobUid) {
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "DELETE FROM " + tableName + " WHERE BLOB_UID = ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
+    bool result = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+bool Database::isBlobExists(const std::string& loginHash, const std::string& blobUid) {
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "SELECT 1 FROM " + tableName + " WHERE BLOB_UID = ? LIMIT 1";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
+    bool exists = (sqlite3_step(stmt) == SQLITE_ROW);
+    sqlite3_finalize(stmt);
+    return exists;
+}
+
+std::string Database::getSerializedMessage(const CryptoPP::RSA::PrivateKey& privateKey,
+    const std::string& loginHash,
+    const std::string& blobUid)
+{
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "SELECT AES_KEY, SERIALIZED_MESSAGE FROM " + tableName + " WHERE BLOB_UID = ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    std::string encryptedMessage;
+    std::string encryptedAesKey;
+
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return "";
+    }
+
+    sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const void* aesKeyBlob = sqlite3_column_blob(stmt, 0);
+        int aesKeySize = sqlite3_column_bytes(stmt, 0);
+        if (aesKeyBlob && aesKeySize > 0) {
+            encryptedAesKey.assign(static_cast<const char*>(aesKeyBlob), aesKeySize);
+        }
+
+        const unsigned char* msgText = sqlite3_column_text(stmt, 1);
+        if (msgText) {
+            encryptedMessage = reinterpret_cast<const char*>(msgText);
+        }
+    }
+    sqlite3_finalize(stmt);
+
+    if (encryptedAesKey.empty() || encryptedMessage.empty()) {
+        std::cerr << "Blob data not found or incomplete for UID: " << blobUid << std::endl;
+        return "";
+    }
+
+    CryptoPP::SecByteBlock aesKey;
+    try {
+        aesKey = utility::RSADecryptKey(privateKey, encryptedAesKey);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to decrypt AES key: " << e.what() << std::endl;
+        return "";
+    }
+
+    std::string decryptedMessage;
+    try {
+        decryptedMessage = utility::AESDecrypt(aesKey, encryptedMessage);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to decrypt message: " << e.what() << std::endl;
+        return "";
+    }
+
+    return decryptedMessage;
+}
+
+bool Database::updateSerializedMessage(const CryptoPP::RSA::PrivateKey& privateKey,
+    const std::string& loginHash,
+    const std::string& blobUid,
+    const std::string& message)
+{
+    std::string encryptedAesKey = getEncryptedAesKey(loginHash, blobUid);
+    if (encryptedAesKey.empty()) {
+        std::cerr << "Failed to get AES key for blob: " << blobUid << std::endl;
+        return false;
+    }
+
+    CryptoPP::SecByteBlock aesKey;
+    try {
+        aesKey = utility::RSADecryptKey(privateKey, encryptedAesKey);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to decrypt AES key: " << e.what() << std::endl;
+        return false;
+    }
+
+    std::string encryptedMessage;
+    try {
+        encryptedMessage = utility::AESEncrypt(aesKey, message);
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Failed to encrypt message: " << e.what() << std::endl;
+        return false;
+    }
+
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "UPDATE " + tableName + " SET SERIALIZED_MESSAGE = ? WHERE BLOB_UID = ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, encryptedMessage.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, blobUid.c_str(), -1, SQLITE_STATIC);
+
+    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+
+    CryptoPP::SecureWipeBuffer(aesKey.data(), aesKey.size());
+
+    return success;
+}
+
+std::string Database::getEncryptedAesKey(const std::string& loginHash,
+    const std::string& blobUid)
+{
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "SELECT AES_KEY FROM " + tableName + " WHERE BLOB_UID = ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    std::string encryptedAesKey;
+
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return "";
+    }
+
+    sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const void* blob = sqlite3_column_blob(stmt, 0);
+        int size = sqlite3_column_bytes(stmt, 0);
+        if (blob && size > 0) {
+            encryptedAesKey.assign(static_cast<const char*>(blob), size);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return encryptedAesKey;
+}
+
+bool Database::incrementFilesReceivedCounter(const std::string& loginHash, const std::string& blobUid) {
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "UPDATE " + tableName + " SET FILES_RECEIVED = FILES_RECEIVED + 1 WHERE BLOB_UID = ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
+    bool success = (sqlite3_step(stmt) == SQLITE_DONE);
+    sqlite3_finalize(stmt);
+    return success;
+}
+
+int Database::getReceivedFilesCount(const std::string& loginHash,
+    const std::string& blobUid)
+{
+    std::string tableName = "BLOBS_" + loginHash;
+    std::string sql = "SELECT FILES_RECEIVED FROM " + tableName + " WHERE BLOB_UID = ?";
+
+    sqlite3_stmt* stmt = nullptr;
+    int count = -1; 
+
+    if (sqlite3_prepare_v2(m_db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(m_db) << std::endl;
+        return -1;
+    }
+
+    sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        count = sqlite3_column_int(stmt, 0); 
+    }
+    else {
+        std::cerr << "Blob " << blobUid << " not found in table " << tableName << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+    return count;
+}
+
+
+
+
+
+
 
 void Database::updateTableName(const std::string& myOldLoginHash, const std::string& myNewLoginHash) {
     if (!m_db) {

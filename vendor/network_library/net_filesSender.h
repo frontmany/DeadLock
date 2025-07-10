@@ -50,7 +50,7 @@ namespace net
 				oss << "" << '\n';
 			}
 
-			oss << utility::AESEncrypt(m_sessionKey, m_file.filesInBlobCount);
+			oss << m_file.filesInBlobCount;
 
 			m_metadataMessage.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
 			m_metadataMessage << oss.str();

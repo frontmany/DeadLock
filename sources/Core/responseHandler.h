@@ -10,6 +10,7 @@ class WorkerUI;
 class Client;
 class ConfigManager;
 class Chat;
+class Message;
 enum class QueryType : uint32_t;
 
 namespace net {
@@ -27,7 +28,7 @@ public:
 	WorkerUI* getWorkerUI() { return m_worker_UI; }
 
 	void handleResponse(net::message<QueryType>& msg);
-	void handleFile(net::file<QueryType>& file);
+	void onFile(net::file<QueryType>& file);
 
 	void onRegistrationSuccess(const std::string& packet);
 	void onRegistrationFail();
@@ -55,6 +56,11 @@ public:
 	void processFriendsStatusesSuccess(const std::string& packet);
 	void onFoundUsers(const std::string& packet);
 	void onStatusReceive(const std::string& packet);
+
+private:
+	void processRequestedFile(net::file<QueryType>& file);
+	void addDataToMessage(Message* message, net::file<QueryType>& file);
+	void showFilesMessage(Message* message, const std::string& friendLogin, const std::string& myLogin);
 
 private:
 	WorkerUI* m_worker_UI;

@@ -27,7 +27,8 @@ std::string Message::serialize() const {
         << escape(m_timestamp) << "|"
         << escape(m_id) << "|"
         << (m_is_from_me ? "true" : "false") << "|"
-        << (m_is_read ? "true" : "false") << "|";
+        << (m_is_read ? "true" : "false") << "|"
+        << (m_is_sending ? "true" : "false") << "|";
 
     oss << std::to_string(m_vec_related_files.size()) << "|";
 
@@ -35,6 +36,7 @@ std::string Message::serialize() const {
         const auto& file = file_entry.file;
 
         oss << (file_entry.isPresent ? "true" : "false") << "|"
+            << (file_entry.isSending ? "true" : "false") << "|"
             << escape(file.blobUID) << "|"
             << escape(file.senderLoginHash) << "|"
             << escape(file.receiverLoginHash) << "|"
@@ -45,7 +47,7 @@ std::string Message::serialize() const {
             << escape(file.caption) << "|"
             << escape(file.fileName) << "|"
             << file.filesInBlobCount << "|"
-            << escape(file.encryptedKey) << "|"; 
+            << escape(file.encryptedKey) << "|";
     }
 
     return oss.str();
@@ -95,7 +97,7 @@ Message* Message::deserialize(const std::string& data) {
         tokens.push_back(current);
     }
 
-    const size_t MIN_TOKENS = 6;
+    const size_t MIN_TOKENS = 7;
     if (tokens.size() < MIN_TOKENS) {
         return nullptr;
     }
@@ -109,16 +111,17 @@ Message* Message::deserialize(const std::string& data) {
         msg->m_id = unescape(tokens[index++]);
         msg->m_is_from_me = (tokens[index++] == "true");
         msg->m_is_read = (tokens[index++] == "true");
-
+        msg->m_is_need_to_retry = (tokens[index++] == "true");
         size_t file_count = std::stoul(tokens[index++]);
 
-        const size_t FIELDS_PER_FILE = 12;  
+        const size_t FIELDS_PER_FILE = 13;
         for (size_t i = 0; i < file_count; ++i) {
             if (index + FIELDS_PER_FILE - 1 >= tokens.size()) {
                 throw std::runtime_error("Not enough tokens for file data");
             }
             fileWrapper file_entry;
             file_entry.isPresent = (tokens[index++] == "true");
+            file_entry.isNeedToRetry = (tokens[index++] == "true");
 
             file_entry.file.blobUID = unescape(tokens[index++]);
             file_entry.file.senderLoginHash = unescape(tokens[index++]);
@@ -130,7 +133,7 @@ Message* Message::deserialize(const std::string& data) {
             file_entry.file.caption = unescape(tokens[index++]);
             file_entry.file.fileName = unescape(tokens[index++]);
             file_entry.file.filesInBlobCount = tokens[index++];
-            file_entry.file.encryptedKey = unescape(tokens[index++]); 
+            file_entry.file.encryptedKey = unescape(tokens[index++]);
 
             msg->m_vec_related_files.push_back(file_entry);
         }

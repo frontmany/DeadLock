@@ -131,7 +131,6 @@ namespace net
 
 			std::string filesCountInBlob;
 			std::getline(iss, filesCountInBlob);
-			filesCountInBlob = utility::AESDecrypt(m_sessionKey, filesCountInBlob);
 
 			m_file.filePath = utility::getFileSavePath(fileName);
 			m_file.fileName = fileName;

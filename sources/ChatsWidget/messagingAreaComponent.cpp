@@ -1273,9 +1273,11 @@ void MessagingAreaComponent::onSendFiles() {
 
         tmpFile.caption = (i == m_vec_selected_files.size() - 1) ? msg : "";
         resultWrappersVec.emplace_back(true, tmpFile);
+        resultWrappersVec.back().isSending = true;
     }
 
     message->setRelatedFilePaths(std::move(resultWrappersVec));
+    message->setIsSending(true);
 
     addMessage(message, false);
 
@@ -1694,7 +1696,7 @@ void MessagingAreaComponent::onRetryClicked(Message* messageToRetry) {
         m_chatsWidget->getClient()->sendMessage(m_chat->getPublicKey(), m_chat->getFriendLogin(), messageToRetry);
     }
     else {
-        m_chatsWidget->getClient()->sendFilesMessage(*messageToRetry);
+        m_chatsWidget->getClient()->retrySendFilesMessage(*messageToRetry);
     }
 }
 
@@ -1728,6 +1730,9 @@ void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessa
                 client->sendMessageReadConfirmation(m_chat->getFriendLogin(), message);
             }
         }
+    }
+    else if (message->getIsNeedToRetry()) {
+        messageComp->setRetry();
     }
     
     m_containerVLayout->addWidget(messageComp);

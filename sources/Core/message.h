@@ -32,6 +32,9 @@ public:
 	void setIsNeedToRetry(bool isNeedToRetry) { m_is_need_to_retry = isNeedToRetry; }
 	bool getIsNeedToRetry() const { return m_is_need_to_retry; }
 
+	void setIsSending(bool isSending) { m_is_sending = isSending; }
+	bool getIsSending() const { return m_is_sending; }
+
 	size_t getRelatedFilesCount() { return m_vec_related_files.size(); }
 	void addRelatedFile(const fileWrapper& fileWrapper) { m_vec_related_files.emplace_back(fileWrapper); }
 	std::vector<fileWrapper>& getRelatedFiles() { return m_vec_related_files; }
@@ -50,4 +53,5 @@ private:
 	bool		m_is_from_me;
 	bool		m_is_read;
 	bool		m_is_need_to_retry = false;
+	bool		m_is_sending = false;
 };

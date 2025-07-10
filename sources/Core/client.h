@@ -59,6 +59,7 @@ public:
     void sendFilesMessage(Message& filesMessage);
     void sendMessage(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& friendLogin, const Message* message);
     void sendMessageReadConfirmation(const std::string& friendLogin, const Message* message);
+    void retrySendFilesMessage(Message& filesMessage);
 
     void broadcastMyStatus(const std::string& status);
     void getAllFriendsStatuses();
@@ -73,16 +74,17 @@ public:
     void onMessage(net::message<QueryType> message) override;
     void onFile(net::file<QueryType> file) override;
 
+
+    // errors
     void onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) override;
     void onSendFileError(std::error_code ec, net::file<QueryType> unsentFile) override;
-
     void onReceiveMessageError(std::error_code ec) override;
     void onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) override;
-
     void onConnectError(std::error_code ec) override;
 
     void onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
     void onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
+
 
     // GET && SET
     void setIsUIReadyToUpdate(bool isUIReadyToUpdate) { m_is_ui_ready_to_update.store(isUIReadyToUpdate); }
@@ -93,9 +95,7 @@ public:
     int geServerPort() const {return m_server_port; }
     void setServerPort(int port) {m_server_port = port; }
 
-    std::unordered_map<std::string, Message*>& getMapMessageBlobs() { return m_map_message_blobs; }
     std::unordered_map<std::string, Chat*>& getMyHashChatsMap() { return m_map_friend_loginHash_to_chat; }
-    std::vector<std::string>& getRequestedFileIdsVec() { return m_vec_requested_file_ids; }
 
     void setIsHidden(bool isHidden) { m_is_hidden = isHidden; }
     bool getIsHidden() { return m_is_hidden; }
@@ -143,7 +143,5 @@ private:
     std::string m_server_ipAddress = "";
     int m_server_port = 0;
 
-    std::vector<std::string> m_vec_requested_file_ids;
     std::unordered_map<std::string, Chat*> m_map_friend_loginHash_to_chat;    
-    std::unordered_map<std::string, Message*> m_map_message_blobs;
 };

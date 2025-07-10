@@ -117,11 +117,16 @@ void MessageComponent::setRetry() {
 
     connect(m_retryButton, &QPushButton::clicked, [this]() {
         qDebug() << "Retry button clicked for message:" << m_id;
-        /*
         if (m_messaging_area_component) {
+            m_message->setIsSending(true);
+            auto& wrappersVec = m_message->getRelatedFiles();
+            for (auto& wrap : wrappersVec) {
+                if (wrap.isNeedToRetry) {
+                    wrap.isSending = true;
+                }
+            }
             m_messaging_area_component->onRetryClicked(m_message);
         }
-        */
         removeRetry();
         });
 }
@@ -144,6 +149,10 @@ void MessageComponent::removeRetry() {
 }
 
 void MessageComponent::setProgress(const net::file<QueryType>& file, int percent) {
+    if (percent >= 100) {
+        m_message->setIsSending(false);
+    }
+
     m_files_component->setProgress(file, percent);
 }
 

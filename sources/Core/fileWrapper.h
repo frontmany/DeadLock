@@ -13,8 +13,12 @@ struct fileWrapper {
     fileWrapper(bool isPresent, net::file<QueryType> file) {
         this->isPresent = isPresent;
         this->file = file;
+        isNeedToRetry = false;
+        isSending = false;
     }
 
+    bool isNeedToRetry;
+    bool isSending;
 	bool isPresent;
     net::file<QueryType> file;
 
