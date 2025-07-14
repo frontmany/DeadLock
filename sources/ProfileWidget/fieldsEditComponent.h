@@ -17,7 +17,6 @@
 class EditDialogComponent;
 class ProfileEditorWidget;
 class ConfigManager;
-class ButtonIcon;
 class Client;
 class Photo;
 enum  Theme;
@@ -80,7 +79,7 @@ private:
     QPushButton*    m_password_button;
     QPushButton*    m_save_button;
     QPushButton*    m_cancel_button;
-    ButtonIcon*     m_logoutButton;
+    QPushButton*    m_logoutButton;
 
     ProfileEditorWidget* m_profile_editor_widget;
     std::shared_ptr<ConfigManager> m_config_manager;

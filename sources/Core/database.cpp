@@ -45,7 +45,7 @@ void Database::init(const std::string& loginHash) {
         return;
     }
     else {
-        std::cout << "Table BLOBS_" << loginHash << " created/updated successfully" << std::endl;
+        std::cout << "Table BLOBS_" << loginHash << " created successfully" << std::endl;
     }
 
     rc = sqlite3_exec(m_db, sqlMessages.c_str(), nullptr, nullptr, &errMsg);
@@ -57,7 +57,7 @@ void Database::init(const std::string& loginHash) {
         return;
     }
     else {
-        std::cout << "Table MESSAGES_" << loginHash << " created/updated successfully" << std::endl;
+        std::cout << "Table MESSAGES_" << loginHash << " created successfully" << std::endl;
     }
 
     rc = sqlite3_exec(m_db, sqlRequestedFiles.c_str(), nullptr, nullptr, &errMsg);
@@ -69,7 +69,7 @@ void Database::init(const std::string& loginHash) {
         return;
     }
     else {
-        std::cout << "Table REQUESTED_FILES_" << loginHash << " created/updated successfully" << std::endl;
+        std::cout << "Table REQUESTED_FILES_" << loginHash << " created successfully" << std::endl;
     }
 }
 
@@ -222,7 +222,8 @@ bool Database::addBlob(const CryptoPP::RSA::PublicKey& publicKey,
     sqlite3_bind_text(stmt, 1, blobUid.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 2, filesCountInBlob);
     sqlite3_bind_int(stmt, 3, filesReceived);
-    sqlite3_bind_text(stmt, 4, utility::AESEncrypt(aesKey, serializedMessage).c_str(), -1, SQLITE_STATIC);
+    std::string encryptedMessage = utility::AESEncrypt(aesKey, serializedMessage);
+    sqlite3_bind_text(stmt, 4, encryptedMessage.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 5, encryptedAesKey.data(), encryptedAesKey.size(), SQLITE_STATIC);
 
     int rc = sqlite3_step(stmt);
@@ -294,8 +295,9 @@ std::string Database::getSerializedMessage(const CryptoPP::RSA::PrivateKey& priv
         const void* aesKeyBlob = sqlite3_column_blob(stmt, 0);
         int aesKeySize = sqlite3_column_bytes(stmt, 0);
         if (aesKeyBlob && aesKeySize > 0) {
-            encryptedAesKey.assign(static_cast<const char*>(aesKeyBlob), aesKeySize);
+            encryptedAesKey = std::string(reinterpret_cast<const char*>(aesKeyBlob), aesKeySize);
         }
+
 
         const unsigned char* msgText = sqlite3_column_text(stmt, 1);
         if (msgText) {
@@ -323,6 +325,7 @@ std::string Database::getSerializedMessage(const CryptoPP::RSA::PrivateKey& priv
         decryptedMessage = utility::AESDecrypt(aesKey, encryptedMessage);
     }
     catch (const std::exception& e) {
+        //here
         std::cerr << "Failed to decrypt message: " << e.what() << std::endl;
         return "";
     }

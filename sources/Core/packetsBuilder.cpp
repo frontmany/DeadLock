@@ -250,7 +250,7 @@ const std::string PacketsBuilder::getSendMeFilePacket(const CryptoPP::RSA::Priva
             oss << '\n';
         }
         
-        oss << utility::AESEncrypt(key, filesInBlobCount);
+        oss << filesInBlobCount;
 
     return oss.str();
 }

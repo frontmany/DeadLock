@@ -59,7 +59,7 @@ public:
 
 private:
 	void processRequestedFile(net::file<QueryType>& file);
-	void addDataToMessage(Message* message, net::file<QueryType>& file);
+	void addDataToMessage(Message* message, net::file<QueryType>& file, bool isPresent);
 	void showFilesMessage(Message* message, const std::string& friendLogin, const std::string& myLogin);
 
 private:

@@ -51,6 +51,7 @@ public slots:
     void setAvatar(const QPixmap& avatar);
     void setUnreadMessageDot(bool isUnreadMessages);
     void setLastMessage(const QString& message);
+    void setLastMessageAsIncomingFilesIndicator();
 
 signals:
     void clicked();

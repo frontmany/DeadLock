@@ -220,7 +220,7 @@ public:
 
     void removeDelimiterComponentUnread();
     void moveDelimiterComponentUnreadDown();
-    bool isDelimiterComponentUnread() { return isDelimiterUnread; }
+    bool isDelimiterComponentUnread() const { return isDelimiterUnread; }
 
     void markVisibleMessagesAsChecked();
     void hideSendMessageButton();
@@ -230,6 +230,8 @@ signals:
     void sendFilesData(Message*, Chat* chat, size_t filesCount);
 
 public slots:
+    void addDelimiterComponentIncomingFilesLoading();
+
     void onRetryClicked(Message* messageToRetry);
     void openFriendProfile();
     void closeFriendProfile();
@@ -256,6 +258,7 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
 
 private:
+    void removeDelimiterComponentIncomingFilesLoading();
     void updateRelatedChatComponentLastMessage();
     void handleScroll(int value);
     void updateSliderButtonPosition();
@@ -279,6 +282,10 @@ private:
 
     DelimiterComponent* m_delimiter_component_unread = nullptr;
     bool isDelimiterUnread = false;
+
+
+    DelimiterComponent* m_delimiter_component_is_incoming_files = nullptr;
+    bool isDelimiterIncoming = false;
 
     FriendProfileComponent* m_friend_profile_component;
     ChatPropertiesComponent* m_chat_properties_component;

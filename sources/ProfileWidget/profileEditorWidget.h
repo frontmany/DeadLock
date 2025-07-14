@@ -23,6 +23,7 @@ public:
     void updateAvatar(const Photo& photo);
     void setTheme(Theme theme);
     void setName(const std::string& name);
+    void setDialog(QDialog* dialog) { m_dialog = dialog; }
 
     PasswordEditComponent* getPasswordEditComponent() { return m_password_edit_component; }
     FieldsEditComponent* getFieldsEditComponent() { return m_fields_edit_component; }
@@ -43,6 +44,7 @@ private:
 
     QVBoxLayout* m_mainVLayout;
     QHBoxLayout* m_mainHLayout;
+    QDialog* m_dialog = nullptr;
 
     ChatsListComponent* m_chats_list_component = nullptr;
     FieldsEditComponent* m_fields_edit_component = nullptr;

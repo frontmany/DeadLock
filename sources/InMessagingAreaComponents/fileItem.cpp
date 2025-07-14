@@ -70,12 +70,13 @@ StyleFileItem::StyleFileItem() {
     )";
 }
 
-FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, Theme theme)
+FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, Theme theme, bool isSent)
     : QWidget(parent),
     m_files_component(filesComponent),
     m_file_wrapper(fileWrapper),
     m_theme(theme),
-    m_isHovered(false)
+    m_isHovered(false),
+    m_isSent(isSent)
 {
     m_style = new StyleFileItem;
 
@@ -249,7 +250,7 @@ void FileItem::paintEvent(QPaintEvent* event) {
                 bgColor = QColor(207, 186, 186);
             }
             else {
-                bgColor = QColor(133, 133, 133);
+                bgColor = QColor(143, 142, 140);
             }
         }
         else {
@@ -257,7 +258,12 @@ void FileItem::paintEvent(QPaintEvent* event) {
                 bgColor = QColor(189, 170, 170);
             }
             else {
-                bgColor = QColor(112, 112, 112);
+                if (m_isSent) {
+                    bgColor = QColor(132, 132, 130);
+                }
+                else {
+                    bgColor = QColor(85, 85, 85);
+                }
             }
         }
     }
@@ -267,7 +273,12 @@ void FileItem::paintEvent(QPaintEvent* event) {
                 bgColor = QColor(255, 201, 201);
             }
             else {
-                bgColor = QColor(230, 230, 230);
+                if (m_isSent) {
+                    bgColor = QColor(250, 253, 255);
+                }
+                else {
+                    bgColor = QColor(250, 250, 250);
+                }
             }
         }
         else {
@@ -275,7 +286,12 @@ void FileItem::paintEvent(QPaintEvent* event) {
                 bgColor = QColor(255, 212, 212);
             }
             else {
-                bgColor = QColor(225, 225, 225);
+                if (m_isSent) {
+                    bgColor = QColor(240, 248, 255);
+                }
+                else {
+                    bgColor = QColor(245, 245, 245);
+                }
             }
         }
     }

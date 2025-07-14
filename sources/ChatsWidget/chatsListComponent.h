@@ -49,7 +49,7 @@ class ChatsListComponent : public QWidget {
 
 public:
     ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme, bool isHidden);
-    ~ChatsListComponent();
+    ~ChatsListComponent() = default;
 
     void setTheme(Theme theme);
     void setAbleToCreateChatFlag(bool fl) { m_ableToCreateChat = fl; }
@@ -61,7 +61,6 @@ public:
     ProfileEditorWidget* getProfileEditorWidget() { return m_profile_editor_widget; }
 
     QLineEdit* getSearchLineEdit() { return m_searchLineEdit; }
-    void setIsEditDialogFlag(bool isEditDialog) { m_isEditDialog = isEditDialog; }
 
     ChatsWidget* getChatsWidget() const;
     
@@ -97,10 +96,10 @@ private slots:
 
 
 private:
+    void showProfileDialog();
     void updateHideButton();
 
 private:
-    QColor                      m_backgroundColor;
     StyleChatsListComponent*    style;
     Theme                       m_theme;
 
@@ -133,7 +132,6 @@ private:
     std::vector<ChatComponent*> m_vec_chatComponents;
 
     bool m_isChatAddDialog = false;
-    bool m_isEditDialog = false;
     bool m_ableToCreateChat = true;
 
     QIcon m_hiddenIconDark = QIcon(":/resources/ChatsWidget/hiddenStateButtonDark.png");

@@ -127,8 +127,9 @@ void MessageComponent::setRetry() {
             }
             m_messaging_area_component->onRetryClicked(m_message);
         }
+
         removeRetry();
-        });
+    });
 }
 
 void MessageComponent::removeRetry() {
@@ -151,6 +152,9 @@ void MessageComponent::removeRetry() {
 void MessageComponent::setProgress(const net::file<QueryType>& file, int percent) {
     if (percent >= 100) {
         m_message->setIsSending(false);
+    }
+    else {
+        m_message->setIsSending(true);
     }
 
     m_files_component->setProgress(file, percent);

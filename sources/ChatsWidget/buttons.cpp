@@ -60,16 +60,6 @@ ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
     setFixedSize(52, 30); 
     m_theme = theme;
 
-    if (m_theme == DARK) {
-        m_circleColor = QColor(102, 102, 102);
-        m_backgroundColor = QColor(25, 25, 25);
-
-    }
-    else {
-        m_circleColor = QColor(204, 234, 255);
-        m_backgroundColor = QColor(212, 212, 212);
-    }
-
     m_animation = new QPropertyAnimation(this, "indicatorX");
     m_animation->setDuration(200);
     m_animation->setEasingCurve(QEasingCurve::InOutQuad);

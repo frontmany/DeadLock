@@ -13,7 +13,6 @@ ImageGridItem::ImageGridItem(QWidget* parent, FilesComponent* filesComponent, Im
     setAttribute(Qt::WA_Hover);
     setMouseTracking(true);
 
-    // ”станавливаем фиксированный размер согласно переданным параметрам
     setFixedSize(m_image.width, m_image.height);
 
     if (!m_image.image.isNull()) {
@@ -41,14 +40,12 @@ ImageGridItem::ImageGridItem(QWidget* parent, FilesComponent* filesComponent, Im
 void ImageGridItem::updateRoundedPixmap() {
     if (m_originalPixmap.isNull()) return;
 
-    // —оздаем pixmap с нужными размерами
     QPixmap rounded(size());
     rounded.fill(Qt::transparent);
 
     QPainter painter(&rounded);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // –ассчитываем область дл€ отрисовки с сохранением aspect ratio
     QRect targetRect(0, 0, width(), height());
     QPixmap scaledPixmap = m_originalPixmap.scaled(
         targetRect.size(),
@@ -56,7 +53,6 @@ void ImageGridItem::updateRoundedPixmap() {
         Qt::SmoothTransformation
     );
 
-    // ÷ентрируем изображение
     QRect centeredRect = scaledPixmap.rect();
     centeredRect.moveCenter(targetRect.center());
 
@@ -90,12 +86,10 @@ void ImageGridItem::paintEvent(QPaintEvent* event) {
 }
 
 void ImageGridItem::resizeEvent(QResizeEvent* event) {
-    // Ќе измен€ем размеры, так как они фиксированы
     updateRoundedPixmap();
     QWidget::resizeEvent(event);
 }
 
-// ќстальные методы остаютс€ без изменений
 void ImageGridItem::hoverEnter(QHoverEvent* event) {
     m_hovered = true;
     setCursor(Qt::PointingHandCursor);

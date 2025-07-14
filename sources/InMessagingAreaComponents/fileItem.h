@@ -33,7 +33,7 @@ class FileItem : public QWidget {
     Q_OBJECT
 
 public:
-    FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, Theme theme);
+    FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper& fileWrapper, Theme theme, bool isSent);
     ~FileItem();
 
     void setTheme(Theme theme);
@@ -73,4 +73,5 @@ private:
     int m_progress = 0;
     bool m_isLoading = false;
     bool m_isAnimationStarted = false;
+    bool m_isSent = false;
 };

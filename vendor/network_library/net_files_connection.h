@@ -32,8 +32,8 @@ namespace net {
 			std::function<void(const net::file<T>&, uint32_t)> onReceiveProgressUpdate)
 			: m_asioContext(asioContext),
 			m_socket(std::move(socket)),
-			m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError, [this]() { disconnect(); }),
-			m_filesReceiver(myPrivateKey, incomingFilesQueue, m_socket, onReceiveProgressUpdate, onReceiveFileError, [this]() { disconnect(); })
+			m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError),
+			m_filesReceiver(myPrivateKey, incomingFilesQueue, m_socket, onReceiveProgressUpdate, onReceiveFileError)
 		{
 			m_filesReceiver.startReceiving();
 		}

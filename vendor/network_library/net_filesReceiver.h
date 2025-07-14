@@ -11,8 +11,8 @@ namespace net
 	template <typename T>
 	class filesReceiver {
 	public:
-		filesReceiver(CryptoPP::RSA::PrivateKey* myPrivateKey, safe_deque<owned_file<T>>& incomingFilesQueue, asio::ip::tcp::socket& socket, std::function<void(const net::file<T>&, uint32_t)> onProgressUpdate, std::function<void(std::error_code, net::file<T>)> onReceiveError, std::function<void()> disconnect)
-		: m_myPrivateKey(myPrivateKey), m_incomingFilesQueue(incomingFilesQueue), m_socket(socket), m_onProgressUpdate(onProgressUpdate), m_onReceiveError(onReceiveError), m_disconnect(disconnect) 
+		filesReceiver(CryptoPP::RSA::PrivateKey* myPrivateKey, safe_deque<owned_file<T>>& incomingFilesQueue, asio::ip::tcp::socket& socket, std::function<void(const net::file<T>&, uint32_t)> onProgressUpdate, std::function<void(std::error_code, net::file<T>)> onReceiveError)
+		: m_myPrivateKey(myPrivateKey), m_incomingFilesQueue(incomingFilesQueue), m_socket(socket), m_onProgressUpdate(onProgressUpdate), m_onReceiveError(onReceiveError) 
 		{
 			m_lastChunkSize = 0;
 			m_currentChunksCount = 0;
@@ -30,7 +30,6 @@ namespace net
 				[this](std::error_code ec, std::size_t length) {
 					if (ec) {
 						m_onReceiveError(ec, net::file<T>{});
-						m_disconnect();
 					}
 					else {
 						m_metadataMessage.body.resize(m_metadataMessage.header.size - sizeof(message_header<T>));
@@ -45,7 +44,6 @@ namespace net
 				[this](std::error_code ec, std::size_t length) {
 					if (ec) {
 						m_onReceiveError(ec, net::file<T>{});
-						m_disconnect();
 					}
 					else {
 						parseMetadata();
@@ -62,7 +60,6 @@ namespace net
 					if (ec) {
 						removePartiallyDownloadedFile();
 						m_onReceiveError(ec, m_file);
-						m_disconnect();
 						return;
 					}
 					else {
@@ -220,7 +217,6 @@ namespace net
 		std::ofstream m_fileStream;
 		file<T>	m_file;
 
-		std::function<void()> m_disconnect;
 		std::function<void(std::error_code, net::file<T>)> m_onReceiveError;
 		std::function<void(const net::file<T>&, uint32_t)> m_onProgressUpdate;
 	};

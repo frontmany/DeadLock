@@ -18,17 +18,6 @@ class ChatsWidget;
 class ConfigManager;
 class WorkerQt;
 
-class OverlayWidget : public QWidget {
-public:
-	using QWidget::QWidget;
-protected:
-	void paintEvent(QPaintEvent*) override {
-		setGeometry(QApplication::primaryScreen()->geometry());
-		QPainter painter(this);
-		painter.fillRect(rect(), QColor(25, 25, 25, 160));
-	}
-};
-
 class MainWindow : public QMainWindow {
 	Q_OBJECT
 
@@ -36,7 +25,7 @@ public:
 	MainWindow(QWidget* parent, Client* client, std::shared_ptr<ConfigManager> configManager);
 	~MainWindow();
 
-	LoginWidget* getLoginWidget();
+	LoginWidget* getLoginWidget() {return m_loginWidget; }
 	ChatsWidget* getChatsWidget();
 
 

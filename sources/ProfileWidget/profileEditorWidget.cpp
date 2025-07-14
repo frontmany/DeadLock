@@ -8,6 +8,7 @@
 #include "photo.h"
 #include "utility.h"
 #include "chatsWidget.h"
+#include "mainwindow.h"
 #include "configManager.h"
 
 
@@ -71,6 +72,7 @@ void ProfileEditorWidget::setFieldsEditor() {
 
 void ProfileEditorWidget::setPasswordEditor() {
     setFixedHeight(utility::getScaledSize(500));
+
     m_password_edit_component->setMaximumSize(400, utility::getScaledSize(500));
     m_mainVLayout->removeWidget(m_fields_edit_component);
     m_fields_edit_component->hide();
@@ -98,8 +100,8 @@ void ProfileEditorWidget::setTheme(Theme theme) {
 }
 
 void ProfileEditorWidget::close() {
-    m_chats_list_component->setIsEditDialogFlag(false);
     m_chats_list_component->closeEditUserDialogWidnow();
+    m_dialog->accept();
 }
 
 void ProfileEditorWidget::updateAvatar(const Photo& photo) {
@@ -116,10 +118,10 @@ void ProfileEditorWidget::paintEvent(QPaintEvent* event) {
     painter.setRenderHint(QPainter::Antialiasing);
 
     if (m_theme == DARK) {
-        painter.setBrush(QColor(26, 26, 26, 200));
+        painter.setBrush(QColor(17, 17, 17));
     }
     if (m_theme == LIGHT) {
-        painter.setBrush(QColor(212, 212, 212, 200));
+        painter.setBrush(QColor(229, 228, 226));
     }
 
     painter.setPen(Qt::NoPen);

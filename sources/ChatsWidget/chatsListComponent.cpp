@@ -6,6 +6,7 @@
 #include "messagingAreaComponent.h"
 #include "friendSearchDialogComponent.h"
 #include "messageComponent.h"
+#include "overlayWidget.h"
 #include "mainwindow.h"
 #include "chatHeaderComponent.h"
 #include "buttons.h"
@@ -128,19 +129,19 @@ QPushButton:hover {
     background-color: #383838;
     border-color: #555;
 }
-
+ 
 QPushButton:pressed {
     background-color: #383838;
 }
 
 QPushButton:checked {
-    background-color: #4670db;
+    background-color: #00356B;
     border-color: #4A7DBF;
     color: #FFFFFF;
 }
 
 QPushButton:checked:hover {
-    background-color: #5885f5;
+    background-color: #183F77;
 }
 
 QPushButton:disabled {
@@ -152,17 +153,17 @@ QPushButton:disabled {
 
     LightHideButton = R"(
 QPushButton {
-    background-color: rgb(224, 224, 224);
+    background-color: rgb(229, 228, 226);
     border-radius: 15px;
     padding: 8px 16px;
-    color: #404040;
+    color: #100C08;
     font-family: 'Segoe UI', sans-serif;
     font-size: 14px;
     font-weight: 800;
 }
 
 QPushButton:hover {
-    background-color: #E8E8E8;
+    background-color: rgb(245, 245, 245);
     border-color: #B8B8B8;
 }
 
@@ -217,12 +218,11 @@ QLabel {
 }
 
 ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme, bool isHidden)
-    : QWidget(parent), m_backgroundColor(Qt::transparent),
+    : QWidget(parent),
     m_chatsWidget(chatsWidget), m_chatAddDialog(nullptr), m_chats_widget(chatsWidget),
     m_profile_editor_widget(nullptr), m_is_hidden(isHidden)
 {
     style = new StyleChatsListComponent;
-    m_backgroundColor = QColor(20, 20, 20, 200);
     m_theme = theme;
 
     m_mainVLayout = new QVBoxLayout(this);
@@ -293,9 +293,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
                 comp->getChatPropertiesComponent()->disable(true);
                 comp->hideSendMessageButton();
             }
-            if (m_isEditDialog) {
-                closeEditUserDialogWidnow();
-            }
+            
             m_profileButton->setDisabled(true);
 
             client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
@@ -388,7 +386,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout->addWidget(m_scrollArea);
 
     m_profile_editor_widget = new ProfileEditorWidget(this, this, m_chatsWidget->getClient(), m_chatsWidget->getConfigManager(), m_theme);
-    m_containerVLayout->insertWidget(0, m_profile_editor_widget);
     m_profile_editor_widget->hide();
 
     connect(m_profileButton, &AvatarIcon::clicked, this, &ChatsListComponent::openEditUserDialogWidnow);
@@ -484,27 +481,18 @@ void ChatsListComponent::removeComponent(const QString& loginOfRemovedComponent)
 }
 
 void ChatsListComponent::openEditUserDialogWidnow() {
-    if (m_isEditDialog) {
-        return;
-    }
-    else {
-        m_profile_editor_widget->show();
-        m_isEditDialog = true;
-    }
+    m_profile_editor_widget->show();
+    showProfileDialog();
 }
 
 void ChatsListComponent::closeEditUserDialogWidnow() {
     m_profile_editor_widget->hide();
-    m_isEditDialog = false;
 }
 
 void ChatsListComponent::toSendChangeTheme(bool fl) {
     emit sendChangeTheme();
 }
 
-ChatsListComponent::~ChatsListComponent() {
-    
-}
 
 void ChatsListComponent::receiveCreateChatData(QString login) {
     QString login2 = login;
@@ -687,4 +675,51 @@ void ChatsListComponent::showServerOfflineLabel() {
     m_hideButton->setChecked(true);
     m_noConnectionLabel->setText("Galactic Silence (Server Down)");
     m_noConnectionLabel->show();
+}
+
+
+
+void ChatsListComponent::showProfileDialog()
+{
+    OverlayWidget* overlay = new OverlayWidget(m_chatsWidget->getMainWindow());
+    overlay->show();
+
+    QDialog* dialog = new QDialog(m_chatsWidget->getMainWindow()); 
+    dialog->setWindowTitle(tr("Profile Editor"));
+    dialog->setFixedSize(760, 2000); 
+    dialog->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
+    dialog->setAttribute(Qt::WA_TranslucentBackground);
+
+    m_profile_editor_widget->setDialog(dialog);
+
+    QGraphicsDropShadowEffect* shadowEffect = new QGraphicsDropShadowEffect();
+    shadowEffect->setBlurRadius(10);
+    shadowEffect->setColor(QColor(0, 0, 0, 60)); 
+    shadowEffect->setXOffset(0);
+    shadowEffect->setYOffset(0);
+
+    QWidget* mainWidget = new QWidget(dialog);
+    mainWidget->setGraphicsEffect(shadowEffect);
+    mainWidget->setObjectName("mainWidget");
+
+    QString mainWidgetStyle ="QWidget#mainWidget { background-color: transparent; }";
+    mainWidget->setStyleSheet(mainWidgetStyle);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(dialog);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->addWidget(mainWidget);
+
+    QVBoxLayout* contentLayout = new QVBoxLayout(mainWidget);
+    contentLayout->setContentsMargins(16, 16, 16, 16);
+    contentLayout->setSpacing(20);
+    contentLayout->addWidget(m_profile_editor_widget);
+
+    QRect parentGeometry = m_chatsWidget->getMainWindow()->geometry();
+    dialog->move(
+        parentGeometry.center() - dialog->rect().center()
+    );
+
+    QObject::connect(dialog, &QDialog::finished, overlay, &QWidget::deleteLater);
+
+    dialog->exec();
 }

@@ -3,6 +3,7 @@
 #include "registrationComponent.h"
 #include "authorizationComponent.h"
 #include "configManager.h"
+#include "overlayWidget.h"
 #include "loginWidget.h"
 #include "chatsWidget.h"
 #include "greetWidget.h"
@@ -70,10 +71,6 @@ void MainWindow::setupChatsWidget() {
     m_client->setIsUIReadyToUpdate(true);
 }
 
-LoginWidget* MainWindow::getLoginWidget() {
-    return m_loginWidget;
-}
-
 void MainWindow::updateRegistrationUIRedBorder() {
     if (m_loginWidget) {
         m_loginWidget->setButtonsDisabled(false);
@@ -102,7 +99,7 @@ ChatsWidget* MainWindow::getChatsWidget() {
 
 void MainWindow::showAlreadyRunningDialog()
 {
-    OverlayWidget* overlay = new OverlayWidget(nullptr);
+    OverlayWidget* overlay = new OverlayWidget(this);
     overlay->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     overlay->setAttribute(Qt::WA_TranslucentBackground);
     overlay->showMaximized();
@@ -135,9 +132,8 @@ void MainWindow::showAlreadyRunningDialog()
     else {
         mainWidgetStyle =
             "QWidget#mainWidget {"
-            "   background-color: rgb(240, 240, 240);"
+            "   background-color: rgb(229, 228, 226);"
             "   border-radius: 12px;"
-            "   border: 1px solid rgb(230, 230, 230);"
             "}";
     }
     mainWidget->setStyleSheet(mainWidgetStyle);
@@ -206,16 +202,19 @@ void MainWindow::showAlreadyRunningDialog()
 }
 
 void MainWindow::showConnectionErrorDialog() {
-    OverlayWidget* overlay = new OverlayWidget(nullptr);
-    overlay->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
-    overlay->setAttribute(Qt::WA_TranslucentBackground);
-    overlay->showMaximized();
+    OverlayWidget* overlay = new OverlayWidget(this);
+    overlay->show();
 
     QDialog* errorDialog = new QDialog(overlay);
     errorDialog->setWindowTitle(tr("Connection Error"));
-    errorDialog->setMinimumWidth(400);
+    errorDialog->setFixedSize(500, 350);
     errorDialog->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     errorDialog->setAttribute(Qt::WA_TranslucentBackground);
+
+    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
+    errorDialog->move(
+        screenGeometry.center() - errorDialog->rect().center()
+    );
 
     QGraphicsDropShadowEffect* shadowEffect = new QGraphicsDropShadowEffect();
     shadowEffect->setBlurRadius(20);
@@ -239,14 +238,14 @@ void MainWindow::showConnectionErrorDialog() {
     else {
         mainWidgetStyle =
             "QWidget#mainWidget {"
-            "   background-color: rgb(240, 240, 240);"
+            "   background-color: rgb(229, 228, 226);"
             "   border-radius: 12px;"
-            "   border: 1px solid rgb(230, 230, 230);"
             "}";
     }
     mainWidget->setStyleSheet(mainWidgetStyle);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(errorDialog);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
     mainLayout->addWidget(mainWidget);
 
     QVBoxLayout* contentLayout = new QVBoxLayout(mainWidget);
@@ -310,52 +309,53 @@ void MainWindow::showConnectionErrorDialog() {
 }
 
 void MainWindow::showDoubleConnectionErrorDialog() {
-    OverlayWidget* overlay = new OverlayWidget(nullptr);
+    OverlayWidget* overlay = new OverlayWidget(this);
     overlay->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
     overlay->setAttribute(Qt::WA_TranslucentBackground);
     overlay->showMaximized();
 
     QDialog* errorDialog = new QDialog(overlay);
     errorDialog->setWindowTitle(tr("Double Connection Error"));
-    errorDialog->setMinimumWidth(400);
+    errorDialog->setFixedSize(500, 350); 
     errorDialog->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
     errorDialog->setAttribute(Qt::WA_TranslucentBackground);
 
+    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
+    errorDialog->move(
+        screenGeometry.center() - errorDialog->rect().center()
+    );
+
     QGraphicsDropShadowEffect* shadowEffect = new QGraphicsDropShadowEffect();
-    shadowEffect->setBlurRadius(20);
+    shadowEffect->setBlurRadius(15);
     shadowEffect->setXOffset(0);
     shadowEffect->setYOffset(0);
-    shadowEffect->setColor(QColor(0, 0, 0, 120));
+    shadowEffect->setColor(QColor(0, 0, 0, 80));
 
     QWidget* mainWidget = new QWidget(errorDialog);
     mainWidget->setGraphicsEffect(shadowEffect);
     mainWidget->setObjectName("mainWidget");
 
-    QString mainWidgetStyle;
-    if (m_theme == Theme::DARK) {
-        mainWidgetStyle =
-            "QWidget#mainWidget {"
-            "   background-color: rgb(21, 21, 21);"
-            "   border-radius: 12px;"
-            "   border: 1px solid rgb(20, 20, 20);"
-            "}";
-    }
-    else {
-        mainWidgetStyle =
-            "QWidget#mainWidget {"
-            "   background-color: rgb(240, 240, 240);"
-            "   border-radius: 12px;"
-            "   border: 1px solid rgb(230, 230, 230);"
-            "}";
-    }
+    QString mainWidgetStyle = m_theme == Theme::DARK ?
+        "QWidget#mainWidget {"
+        "   background-color: rgb(21, 21, 21);"
+        "   border-radius: 12px;"
+        "   border: 1px solid rgb(40, 40, 40);"
+        "}" :
+        "QWidget#mainWidget {"
+        "   background-color: rgb(229, 228, 226);"
+        "   border-radius: 12px;"
+        "   border: 1px solid rgb(200, 200, 200);"
+        "}";
     mainWidget->setStyleSheet(mainWidgetStyle);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(errorDialog);
+    mainLayout->setContentsMargins(20, 20, 20, 20); 
     mainLayout->addWidget(mainWidget);
 
     QVBoxLayout* contentLayout = new QVBoxLayout(mainWidget);
     contentLayout->setContentsMargins(16, 16, 16, 16);
     contentLayout->setSpacing(20);
+    contentLayout->setAlignment(Qt::AlignCenter);
 
     QLabel* iconLabel = new QLabel();
     iconLabel->setPixmap(QIcon(":/resources/ChatsWidget/warning.png").pixmap(64, 64));
@@ -364,54 +364,43 @@ void MainWindow::showDoubleConnectionErrorDialog() {
     QLabel* errorLabel = new QLabel(tr("Double connection detected!\nOnly one active connection is allowed."));
     errorLabel->setAlignment(Qt::AlignCenter);
     errorLabel->setWordWrap(true);
-
-    QString textStyle = (m_theme == Theme::DARK)
-        ? "color: white; font-size: 14px;"
-        : "color: black; font-size: 14px;";
-    errorLabel->setStyleSheet(textStyle);
+    errorLabel->setStyleSheet(
+        m_theme == Theme::DARK ?
+        "color: white; font-size: 14px;" :
+        "color: black; font-size: 14px;"
+    );
 
     QPushButton* closeButton = new QPushButton(tr("Close Application"));
-    closeButton->setMinimumHeight(40);
-
-    if (m_theme == Theme::DARK) {
-        QString buttonStyle =
-            "QPushButton {"
-            "   background-color: rgb(45, 45, 45);"
-            "   color: white;"
-            "   border-radius: 6px;"
-            "   padding: 8px;"
-            "   margin: 5px;"
-            "}"
-            "QPushButton:hover {"
-            "   background-color: rgb(55, 55, 55);"
-            "}";
-        closeButton->setStyleSheet(buttonStyle);
-    }
-    else {
-        QString buttonStyle =
-            "QPushButton {"
-            "   background-color: rgb(220, 220, 220);"
-            "   color: black;"
-            "   border-radius: 6px;"
-            "   padding: 8px;"
-            "   margin: 5px;"
-            "}"
-            "QPushButton:hover {"
-            "   background-color: rgb(200, 200, 200);"
-            "}";
-        closeButton->setStyleSheet(buttonStyle);
-    }
-
-    QHBoxLayout* buttonLayout = new QHBoxLayout();
-    buttonLayout->addWidget(closeButton);
+    closeButton->setFixedHeight(40);
+    closeButton->setStyleSheet(
+        m_theme == Theme::DARK ?
+        "QPushButton {"
+        "   background-color: rgb(45, 45, 45);"
+        "   color: white;"
+        "   border-radius: 6px;"
+        "   padding: 8px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgb(55, 55, 55);"
+        "}" :
+    "QPushButton {"
+        "   background-color: rgb(220, 220, 220);"
+        "   color: black;"
+        "   border-radius: 6px;"
+        "   padding: 8px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgb(200, 200, 200);"
+        "}"
+        );
 
     contentLayout->addWidget(iconLabel);
     contentLayout->addWidget(errorLabel);
-    contentLayout->addLayout(buttonLayout);
+    contentLayout->addWidget(closeButton);
 
     connect(closeButton, &QPushButton::clicked, this, []() {
         QApplication::quit();
-    });
+        });
 
     QObject::connect(errorDialog, &QDialog::finished, overlay, &QWidget::deleteLater);
 

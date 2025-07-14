@@ -81,8 +81,6 @@ private:
     bool     m_is_need_to_retry = false;
 
     MessageComponent* m_message_component;
-    QWidget* m_retryButtonContainer = nullptr;
-    QPushButton* m_retryButton = nullptr;
     QWidget* m_filesContainer;
     CaptionItem* m_captionItem;
 

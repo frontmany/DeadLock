@@ -88,7 +88,6 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
     typingLayout->addWidget(typingGif, 0, Qt::AlignVCenter);
     typingLayout->addStretch();
     m_typingContainer->hide();
-    //m_typingContainer->hide();
 
     m_leftIcon = new AvatarIcon(this, 32, 50, true, m_theme);
     if (avatar.isNull()) {
@@ -197,7 +196,7 @@ void ChatHeaderComponent::setTheme(Theme theme) {
         update();
     }
     else {
-        m_backColor = QColor(224, 224, 224);
+        m_backColor = QColor(229, 228, 226);
         m_rightButton->setTheme(m_theme);
         m_nameLabel->setStyleSheet(style->darkLabelStyle);
         if (m_lastSeenLabel->text() == "online") {

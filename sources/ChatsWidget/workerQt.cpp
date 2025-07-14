@@ -130,21 +130,57 @@ void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, con
 		MessagingAreaComponent* areaComp = *comp;
 		auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
 		std::string blobUID = file.blobUID;
-		auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
-			return comp->getId() == QString::fromStdString(blobUID);
-		});
+		try {
+			auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
+				return comp->getId() == QString::fromStdString(blobUID);
+			});
 
-		if (messageCompIt != messagesCompsVec.end()) {
-			MessageComponent* messageComp = *messageCompIt;
+			if (messageCompIt != messagesCompsVec.end()) {
+				MessageComponent* messageComp = *messageCompIt;
 
-			QMetaObject::invokeMethod(messageComp,
-				"setProgress",
-				Qt::QueuedConnection,
-				Q_ARG(const net::file<QueryType>&, file),
-				Q_ARG(int, progressPercent));
+				QMetaObject::invokeMethod(messageComp,
+					"setProgress",
+					Qt::QueuedConnection,
+					Q_ARG(const net::file<QueryType>&, file),
+					Q_ARG(int, progressPercent));
+			}
+		}
+		catch (...) {
+			std::cout << "update progress error";
 		}
 	}
 	
+}
+
+void WorkerQt::showNowReceiving(const std::string& friendLoginHash) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
+		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
+	});
+
+	if (comp != compsVec.end()) {
+		MessagingAreaComponent* areaComp = *comp;
+		QMetaObject::invokeMethod(areaComp,
+			"addDelimiterComponentIncomingFilesLoading",
+			Qt::QueuedConnection);
+
+
+		auto& vec = chatsWidget->getChatsList()->getChatComponentsVec();
+		auto it = std::find_if(vec.begin(), vec.end(), [friendLoginHash](ChatComponent* chatComp) {
+			return utility::calculateHash(chatComp->getChat()->getFriendLogin()) == friendLoginHash;
+			});
+
+		if (it == vec.end()) {
+			return;
+		}
+
+		ChatComponent* chatComp = *it;
+		QMetaObject::invokeMethod(chatComp,
+			"setLastMessageAsIncomingFilesIndicator",
+			Qt::QueuedConnection);
+	}
+
 }
 
 void WorkerQt::updateFileSendingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) {

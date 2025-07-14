@@ -290,6 +290,7 @@ void Client::sendFilesMessage(Message& filesMessage) {
         sendFile(wrapper.file);
     }
 }
+
 void Client::retrySendFilesMessage(Message& filesMessage) {
     auto& relatedFiles = filesMessage.getRelatedFiles();
     for (auto& wrapper : relatedFiles) {
@@ -438,11 +439,13 @@ void Client::onConnectError(std::error_code ec) {
 
 void Client::onNetworkError() {
     if (!isStopped()) {
+        stop();
     }
     m_response_handler->getWorkerUI()->onNetworkError();
 }
 
 void Client::onServerDown() {
+    stop();
     m_response_handler->getWorkerUI()->onServerDown();
 }
 

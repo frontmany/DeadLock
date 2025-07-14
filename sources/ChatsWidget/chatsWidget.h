@@ -77,11 +77,9 @@ public slots:
 private:
 	bool isValidChatCreation(const std::string& loginToCheck);
 	void paintEvent(QPaintEvent* event) override;
-	void setBackGround(Theme theme);
 
 private:
 	Theme						   m_theme;
-	QPixmap					       m_background;
 	Client*						   m_client;
 	std::shared_ptr<ConfigManager> m_config_manager;
 	ChatsListComponent*			   m_chatsListComponent;

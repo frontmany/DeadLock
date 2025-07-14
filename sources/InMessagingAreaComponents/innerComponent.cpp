@@ -171,7 +171,7 @@ void InnerComponent::setRetryStyle(bool isNeedToRetry) {
             m_backColor = QColor(255, 212, 212);
         }
         else {
-            m_backColor = QColor(212, 229, 255);
+            m_backColor = QColor(176, 208, 255);
         }
     }
     update();
@@ -181,12 +181,12 @@ void InnerComponent::setTheme(Theme theme) {
     m_theme = theme;
     if (theme == DARK) {
         if (m_isSent) {
-            m_backColor = QColor(102, 102, 102);
+            m_backColor = QColor(132, 132, 130);
             m_textLabel->setStyleSheet(style->labelStyleDarkMessage);
             m_timestampLabel->setStyleSheet(style->labelStyleDarkTime);
         }
         else {
-            m_backColor = QColor(71, 71, 71);
+            m_backColor = QColor(85, 85, 85);
             m_textLabel->setStyleSheet(style->labelStyleDarkMessage);
             m_timestampLabel->setStyleSheet(style->labelStyleDarkTime);
         }
@@ -194,12 +194,12 @@ void InnerComponent::setTheme(Theme theme) {
     }
     else {
         if (m_isSent) {
-            m_backColor = QColor(212, 229, 255);
+            m_backColor = QColor(240, 248, 255);
             m_textLabel->setStyleSheet(style->labelStyleLightMessage);
             m_timestampLabel->setStyleSheet(style->labelStyleLightTime);
         }
         else {
-            m_backColor = QColor(224, 224, 224);
+            m_backColor = QColor(229, 228, 226);
             m_textLabel->setStyleSheet(style->labelStyleLightMessage);
             m_timestampLabel->setStyleSheet(style->labelStyleLightTime);
         }

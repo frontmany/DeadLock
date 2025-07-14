@@ -85,7 +85,7 @@ FilesComponent::FilesComponent(QWidget* parent, MessageComponent* messageCompone
 
     if (!otherFiles.empty()) {
         for (fileWrapper* file : otherFiles) {
-            FileItem* fileWidget = new FileItem(this, this, *file, m_theme);
+            FileItem* fileWidget = new FileItem(this, this, *file, m_theme, m_parent_message->getIsSend());
             m_vec_file_items.push_back(fileWidget);
             m_filesVLayout->addWidget(fileWidget);
         }
@@ -96,6 +96,9 @@ FilesComponent::FilesComponent(QWidget* parent, MessageComponent* messageCompone
         m_mainVLayout->addSpacing(6);
     }
     m_mainVLayout->addLayout(m_filesVLayout);
+    if (m_parent_message->getMessage() == "") {
+        m_mainVLayout->addSpacing(-36);
+    }
     m_mainVLayout->addWidget(m_captionItem);
 
     connect(this, &FilesComponent::fileClicked, m_message_component, &MessageComponent::onSendMeFile);
@@ -363,7 +366,12 @@ void FilesComponent::paintEvent(QPaintEvent* event)
         bgColor = (m_theme == Theme::DARK) ? QColor(189, 170, 170) : QColor(255, 212, 212);
     }
     else {
-        bgColor = (m_theme == Theme::DARK) ? QColor(112, 112, 112) : QColor(225, 225, 225);
+        if (!m_parent_message->getIsSend()) {
+            bgColor = (m_theme == Theme::DARK) ? QColor(85, 85, 85) : QColor(245, 245, 245);
+        }
+        else {
+            bgColor = (m_theme == Theme::DARK) ? QColor(132, 132, 130) : QColor(240, 248, 255);
+        }
     }
 
     // Draw rounded rectangle background
@@ -387,7 +395,7 @@ void FilesComponent::setRetryStyle(bool isNeedToRetry) {
 
         }
         else {
-            style = "background-color: rgb(255, 212, 212); border-radius: 8px;";
+            style = "background-color: rgb(240, 248, 255); border-radius: 8px;";
         }
         setStyleSheet(style);
     }

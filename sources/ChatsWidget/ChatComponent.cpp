@@ -97,7 +97,7 @@ void ChatComponent::setSelected(bool isSelected) {
             m_currentColor = m_backColor;
         }
         else {
-            m_backColor = QColor(153, 194, 255);
+            m_backColor = QColor(0, 53, 107);
             m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(240, 240, 240); font-family: 'Segoe UI'; ");
             m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(250, 250, 250);");
             m_currentColor = m_backColor;
@@ -112,7 +112,7 @@ void ChatComponent::setSelected(bool isSelected) {
             m_currentColor = m_backColor;
         }
         else {
-            m_backColor = QColor(224, 224, 224);
+            m_backColor = QColor(229, 228, 226);
             m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(122, 122, 122); font-family: 'Segoe UI'; ");
             m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(20, 20, 20);");
             m_currentColor = m_backColor;
@@ -182,6 +182,10 @@ void ChatComponent::setLastMessage(const QString& message) {
     m_lastMessageLabel->setText(cleanedMessage);
 }
 
+void ChatComponent::setLastMessageAsIncomingFilesIndicator() {
+    m_lastMessageLabel->setText("Files arriving securely... ");
+}
+
 void ChatComponent::setAvatar(const QPixmap& avatar) {
     m_avatar = avatar.scaled(m_avatarSize, m_avatarSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QIcon avatarIcon(m_avatar);
@@ -218,7 +222,7 @@ void ChatComponent::hoverEnter(QHoverEvent* event)
 {
     if (m_theme == LIGHT) {
         if (m_isSelected == true) {
-            m_currentColor = QColor(153, 194, 255);
+            m_currentColor = QColor(0, 53, 107);
         }
         else {
             m_currentColor = m_hoverColorLight;

@@ -24,8 +24,6 @@ ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client
     m_mainHLayout = new QHBoxLayout;
     m_mainHLayout->setAlignment(Qt::AlignLeft);
 
-
-    m_background.load(":/resources/LoginWidget/lightLoginBackground.jpg");
     m_current_messagingAreaComponent = nullptr;
 	m_chatsListComponent = new ChatsListComponent(this, this, m_theme, m_client->getIsHidden());
 
@@ -180,7 +178,6 @@ void ChatsWidget::createMessagingComponent(std::string friendName, Chat* chat) {
 
 void ChatsWidget::setTheme(Theme theme) {
     m_theme = theme;
-    setBackGround(theme);
     m_chatsListComponent->setTheme(theme);
     if (m_current_messagingAreaComponent != nullptr) {
         m_current_messagingAreaComponent->setTheme(m_theme);
@@ -188,24 +185,23 @@ void ChatsWidget::setTheme(Theme theme) {
     else {
         m_helloAreaComponent->setTheme(m_theme);
     }
+
+    update();
 }
 
 void ChatsWidget::paintEvent(QPaintEvent* event) {
-    QPainter painter(this);
-    painter.drawPixmap(this->rect(), m_background);
-    QWidget::paintEvent(event);
-}
-
-void ChatsWidget::setBackGround(Theme theme) {
-    if (theme == DARK) {
-        if (m_background.load(":/resources/ChatsWidget/darkChatsBackground.jpg")) {
-        }
+    if (m_theme == DARK) {
+        QPixmap background(":/resources/ChatsWidget/darkChatsBackground.jpg");
+        QPainter painter(this);
+        painter.fillRect(this->rect(), background);
+        QWidget::paintEvent(event);
     }
     else {
-        if (m_background.load(":/resources/ChatsWidget/lightChatsBackground.jpg")) {
-        }
+        QColor backgroundColor = QColor(240, 248, 255);
+        QPainter painter(this);
+        painter.fillRect(this->rect(), backgroundColor);
+        QWidget::paintEvent(event);
     }
-    update();
 }
 
 void ChatsWidget::setClient(Client* client) {

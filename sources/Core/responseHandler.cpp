@@ -155,6 +155,7 @@ void ResponseHandler::onFile(net::file<QueryType>& file) {
 
     if (auto vec = database->getRequestedFiles(file.receiverLoginHash); std::find(vec.begin(), vec.end(), file.id) != vec.end()) {
         processRequestedFile(file);
+        return;
     }
 
     std::string myLoginHash = file.receiverLoginHash;
@@ -168,21 +169,29 @@ void ResponseHandler::onFile(net::file<QueryType>& file) {
         std::string serializedMessage = database->getSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID);
         message = Message::deserialize(serializedMessage);
 
-        addDataToMessage(message, file);
+        addDataToMessage(message, file, true);
 
-        database->updateSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID, message->serialize());
+        std::string newSerializedMessage = message->serialize();
+        database->updateSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID, newSerializedMessage);
         database->incrementFilesReceivedCounter(myLoginHash, blobUID);
     }
     else {
         message = new Message();
 
-        addDataToMessage(message, file);
+        addDataToMessage(message, file, true);
 
-        database->addBlob(m_client->getPublicKey(), myLoginHash, blobUID, filesInBlobCount, 0, message->serialize());
+        std::string newSerializedMessage = message->serialize();
+        database->addBlob(m_client->getPublicKey(), myLoginHash, blobUID, filesInBlobCount, 0, newSerializedMessage);
         database->incrementFilesReceivedCounter(myLoginHash, blobUID);
     }
 
-    if (database->getReceivedFilesCount(myLoginHash, blobUID) == filesInBlobCount) {
+    int receivedFilesCount = database->getReceivedFilesCount(myLoginHash, blobUID);
+    if (filesInBlobCount != 1 && receivedFilesCount == 1) {
+        m_worker_UI->showNowReceiving(friendLoginHash);
+    }
+
+    if (receivedFilesCount == filesInBlobCount) {
+        database->removeBlob(myLoginHash, blobUID);
         showFilesMessage(message, friendLoginHash, myLoginHash);
     }
 }
@@ -225,7 +234,6 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 
     std::string filesInBlobCount;
     std::getline(iss, filesInBlobCount);
-    filesInBlobCount = utility::AESDecrypt(key, filesInBlobCount);
     
     net::file<QueryType> file;
     file.blobUID = blobUID;
@@ -247,7 +255,15 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
         std::string serializedMessage = database->getSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID);
         message = Message::deserialize(serializedMessage);
 
-        addDataToMessage(message, file);
+        
+        auto& vec = message->getRelatedFiles();
+        auto it = std::find_if(vec.begin(), vec.end(), [&fileId](fileWrapper wrap) { return wrap.file.id == fileId; });
+        if (it == vec.end()) {
+            addDataToMessage(message, file, false);
+        }
+        else {
+            return;
+        }
 
         database->updateSerializedMessage(m_client->getPrivateKey(), myLoginHash, blobUID, message->serialize());
         database->incrementFilesReceivedCounter(myLoginHash, blobUID);
@@ -256,13 +272,19 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
         message = new Message();
         message->setId(blobUID);
 
-        addDataToMessage(message, file);
+        addDataToMessage(message, file, false);
 
         database->addBlob(m_client->getPublicKey(), myLoginHash, blobUID, std::stoi(filesInBlobCount), 0, message->serialize());
         database->incrementFilesReceivedCounter(myLoginHash, blobUID);
     }
 
-    if (database->getReceivedFilesCount(myLoginHash, blobUID) == std::stoi(filesInBlobCount)) {
+    int receivedFilesCount = database->getReceivedFilesCount(myLoginHash, blobUID);
+    if (std::stoi(filesInBlobCount) != 1 && receivedFilesCount == 1) {
+        m_worker_UI->showNowReceiving(friendLoginHash);
+    }
+
+    if (receivedFilesCount == std::stoi(filesInBlobCount)) {
+        database->removeBlob(myLoginHash, blobUID);
         showFilesMessage(message, friendLoginHash, myLoginHash);
     }
 }
@@ -342,10 +364,23 @@ void ResponseHandler::onFoundUsers(const std::string& packet) {
         sizeStr = utility::AESDecrypt(key, sizeStr);
         
         if (isHasPhoto) {
+            std::string photoEncrypted;
+            std::getline(iss, photoEncrypted);
+            std::string photoDecrypted = utility::AESDecrypt(key, photoEncrypted);
+
+            size_t pos = photoDecrypted.find('\n');
             std::string dataFirstPartStr;
-            std::getline(iss, dataFirstPartStr);
             std::string dataSecondPartStr;
-            std::getline(iss, dataSecondPartStr);
+
+            if (pos != std::string::npos) {
+                dataFirstPartStr = photoDecrypted.substr(0, pos);
+                dataSecondPartStr = photoDecrypted.substr(pos + 1);
+            }
+            else {
+                dataFirstPartStr = photoDecrypted;
+                dataSecondPartStr.clear();
+            }
+
 
             Photo* photo = Photo::deserializeWithoutSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr);
             friendInfo->setFriendPhoto(photo);
@@ -832,30 +867,28 @@ void ResponseHandler::processRequestedFile(net::file<QueryType>& file) {
             wrap.file = file;
 
             m_worker_UI->updateFileLoadingState(file.senderLoginHash, wrap, false);
+            m_client->getDatabase()->removeRequestedFile(file.receiverLoginHash, file.id);
             return;
         }
-
-        m_client->getDatabase()->removeRequestedFile(file.receiverLoginHash, file.id);
     }
     else {
+        m_client->getDatabase()->removeRequestedFile(file.receiverLoginHash, file.id);
         std::filesystem::remove(file.filePath);
         return;
     }
 }
 
-void ResponseHandler::addDataToMessage(Message* message, net::file<QueryType>& file) {
+void ResponseHandler::addDataToMessage(Message* message, net::file<QueryType>& file, bool isPresent) {
     Database* database = m_client->getDatabase();
-
-    fileWrapper fileWrapper;
-    fileWrapper.isPresent = true;
-    fileWrapper.file = std::move(file);
-
-    message->addRelatedFile(fileWrapper);
 
     message->setIsRead(false);
     message->setIsSend(false);
     message->setMessage(file.caption);
     message->setId(file.blobUID);
     message->setTimestamp(file.timestamp);
+
+    fileWrapper fileWrapper;
+    fileWrapper.isPresent = isPresent;
+    fileWrapper.file = std::move(file);
     message->addRelatedFile(fileWrapper);
 }

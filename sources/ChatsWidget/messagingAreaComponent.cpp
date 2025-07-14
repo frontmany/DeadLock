@@ -4,15 +4,18 @@
 #include "chatsListComponent.h"
 #include "delimiterComponent.h"
 #include "messageComponent.h"
+#include "overlayWidget.h"
 #include "chatComponent.h"
 #include "configManager.h"
 #include "chatsWidget.h"
+#include "mainwindow.h"
 #include "utility.h"
 #include "buttons.h"
 #include "message.h"
 #include "client.h"
 #include "photo.h"
 #include "chat.h"
+
 
 
 
@@ -79,7 +82,7 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
 
     LightTextEditStyle = R"(
     QTextEdit {
-        background-color: #ffffff;    
+        background-color: #E5E4E2;    
         color: black;                 
         border: none;       
         border-radius: 15px;           
@@ -521,9 +524,9 @@ void FriendProfileComponent::setTheme(Theme theme) {
     }
     else {
         m_close_button->setTheme(m_theme);
-        m_color = new QColor(225, 225, 225);
-        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(138, 192, 255);");
-        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(138, 192, 255);");
+        m_color = new QColor(229, 228, 226);
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(0, 53, 107);");
+        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(0, 53, 107);");
     }
 }
 
@@ -660,7 +663,7 @@ void ChatPropertiesComponent::setupUI() {
 
         if (logoutDialog.exec() == QDialog::Accepted) {
         }
-        });
+    });
 
     m_close_button = new ButtonIcon(this, 25, 25);
     QIcon icon1(":/resources/ChatsWidget/closeDark.png");
@@ -772,15 +775,6 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
         120,         
         50         
     );
-
-
-    if (m_theme == DARK) {
-        m_backColor = QColor(25, 25, 25);
-    }
-    else {
-        m_backColor = QColor(240, 240, 240);
-    }
-
     
 
     m_containerVLayout = new QVBoxLayout(m_containerWidget);
@@ -1000,23 +994,11 @@ void MessagingAreaComponent::onAttachFileClicked()
 
     m_vec_selected_files = correctedPaths;
 
-    class OverlayWidget : public QWidget {
-    public:
-        using QWidget::QWidget;
-    protected:
-        void paintEvent(QPaintEvent*) override {
-            setGeometry(QApplication::primaryScreen()->geometry());
-            QPainter painter(this);
-            painter.fillRect(rect(), QColor(25, 25, 25, 160));
-        }
-    };
+    
+    OverlayWidget* overlay = new OverlayWidget(m_chatsWidget->getMainWindow()); 
+    overlay->show();
 
-    OverlayWidget* overlay = new OverlayWidget(nullptr);
-    overlay->setWindowFlags(Qt::FramelessWindowHint |
-        Qt::WindowStaysOnTopHint |
-        Qt::Tool);
-    overlay->setAttribute(Qt::WA_TranslucentBackground);
-    overlay->showMaximized();
+
 
     QDialog* filesDialog = new QDialog(overlay);
     filesDialog->setWindowTitle(tr("Selected Files"));
@@ -1526,7 +1508,7 @@ void MessagingAreaComponent::setTheme(Theme theme) {
     
 
     if (m_theme == DARK) {
-        m_backColor = QColor(25, 25, 25);
+        m_backColor = QColor(27, 27, 27);
         m_messageInputEdit->setStyleSheet(m_style->DarkTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->darkSlider);
         m_error_label->setStyleSheet(m_style->DarkErrorLabelStyle);
@@ -1538,7 +1520,7 @@ void MessagingAreaComponent::setTheme(Theme theme) {
 
     }
     else {
-        m_backColor = QColor(240, 240, 240, 200);
+        m_backColor = QColor(255, 255, 255);
         m_messageInputEdit->setStyleSheet(m_style->LightTextEditStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(m_style->lightSlider);
         m_error_label->setStyleSheet(m_style->LightErrorLabelStyle);
@@ -1686,7 +1668,6 @@ void MessagingAreaComponent::onTypeMessage() {
     }
 }
 
-
 void  MessagingAreaComponent::hideSendMessageButton() {
     m_sendMessageButton->hide();
 }
@@ -1711,6 +1692,10 @@ void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessa
 
     if (!message->getIsSend() && !message->getIsRead()) {
         m_vec_unread_messagesComponents.push_back(messageComp);
+    }
+
+    if (message->getRelatedFiles().size() > 0) {
+        removeDelimiterComponentIncomingFilesLoading();
     }
 
     if (!isRecoveringMessages) {
@@ -1738,6 +1723,22 @@ void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessa
     m_containerVLayout->addWidget(messageComp);
     m_containerWidget->adjustSize();
 }
+
+
+
+void MessagingAreaComponent::addDelimiterComponentIncomingFilesLoading() {
+    m_delimiter_component_is_incoming_files = new DelimiterComponent("Files arriving securely... ", this, m_theme);
+    m_containerVLayout->addWidget(m_delimiter_component_is_incoming_files);
+    isDelimiterIncoming = true;
+}
+
+void MessagingAreaComponent::removeDelimiterComponentIncomingFilesLoading() {
+    m_containerVLayout->removeWidget(m_delimiter_component_is_incoming_files);
+    delete m_delimiter_component_is_incoming_files;
+    m_delimiter_component_is_incoming_files = nullptr;
+    isDelimiterIncoming = false;
+}
+
 
 
 void MessagingAreaComponent::removeDelimiterComponentUnread() {

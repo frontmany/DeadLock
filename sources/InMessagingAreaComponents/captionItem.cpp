@@ -146,12 +146,12 @@ void CaptionItem::updateStyles() {
 
         if (m_isSent) {
             m_messageText->setStyleSheet(m_style.darkSentMessage);
-            m_backgroundColor = QColor(102, 102, 102);
+            m_backgroundColor = QColor(132, 132, 130);
             setStyleSheet(m_style.darkSentWidget);
         }
         else {
             m_messageText->setStyleSheet(m_style.darkReceivedMessage);
-            m_backgroundColor = QColor(58, 58, 58); 
+            m_backgroundColor = QColor(85, 85, 85);
             setStyleSheet(m_style.darkReceivedWidget);
         }
     }
@@ -161,12 +161,12 @@ void CaptionItem::updateStyles() {
 
         if (m_isSent) {
             m_messageText->setStyleSheet(m_style.lightSentMessage);
-            m_backgroundColor = QColor(212, 230, 255);
+            m_backgroundColor = QColor(240, 248, 255);
             setStyleSheet(m_style.lightSentWidget);
         }
         else {
             m_messageText->setStyleSheet(m_style.lightReceivedMessage);
-            m_backgroundColor = QColor(215, 215, 215); 
+            m_backgroundColor = QColor(245, 245, 245);
             setStyleSheet(m_style.lightReceivedWidget);
         }
     }

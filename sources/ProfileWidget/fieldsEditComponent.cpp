@@ -4,7 +4,6 @@
 #include"client.h"
 #include"utility.h"
 #include"photo.h"
-#include"buttons.h"
 #include"configManager.h"
 
 StyleFieldsEditComponent::StyleFieldsEditComponent() {
@@ -221,15 +220,8 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     connect(m_password_button, &QPushButton::clicked, m_profile_editor_widget, &ProfileEditorWidget::setPasswordEditor);
 
    
-    m_logoutButton = new ButtonIcon(this, 40, 40);
-    QIcon icon1(":/resources/ChatsWidget/logoutDark.png");
-    QIcon iconHover1(":/resources/ChatsWidget/logoutHoverDark.png");
-    m_logoutButton->uploadIconsDark(icon1, iconHover1);
-    QIcon icon2(":/resources/ChatsWidget/logoutLight.png");
-    QIcon iconHover2(":/resources/ChatsWidget/logoutHoverLight.png");
-    m_logoutButton->uploadIconsLight(icon2, iconHover2);
-    m_logoutButton->setIconSize(QSize(25, 25));
-    connect(m_logoutButton, &ButtonIcon::clicked, [this]() {
+    m_logoutButton = new QPushButton("Logout");
+    connect(m_logoutButton, &QPushButton::clicked, [this]() {
         QDialog logoutDialog(this);
         logoutDialog.setWindowTitle(tr("Exit Confirmation"));
         logoutDialog.setMinimumSize(300, 150);
@@ -344,10 +336,11 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_photo_password_buttonsHLayout = new QHBoxLayout();
     m_photo_password_buttonsHLayout->setAlignment(Qt::AlignRight);
     m_photo_password_buttonsHLayout->addWidget(m_logoutButton);
-    m_photo_password_buttonsHLayout->addSpacing(20);
+    m_photo_password_buttonsHLayout->addSpacing(10);
     m_photo_password_buttonsHLayout->addWidget(m_change_photo_button);
+    m_photo_password_buttonsHLayout->addSpacing(5);
     m_photo_password_buttonsHLayout->addWidget(m_password_button);
-    m_photo_password_buttonsHLayout->addSpacing(16);
+    m_photo_password_buttonsHLayout->addSpacing(11);
 
     m_save_button = new QPushButton("Save");
     m_save_button->setMinimumHeight(30);
@@ -411,7 +404,6 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     setLayout(m_mainVLayout);
 
     setTheme(m_theme);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
 void FieldsEditComponent::setName(const std::string& name) {
@@ -419,7 +411,6 @@ void FieldsEditComponent::setName(const std::string& name) {
 }
 
 void FieldsEditComponent::setTheme(Theme theme) {
-    m_logoutButton->setTheme(theme);
 
     if (theme == Theme::DARK) {
         m_error_label->setStyleSheet("color: rgb(250, 132, 132);");
@@ -430,6 +421,7 @@ void FieldsEditComponent::setTheme(Theme theme) {
         m_change_photo_button->setStyleSheet(m_style->buttonToChoosePhotoStyleDark);
 
         m_password_button->setStyleSheet(m_style->buttonToChangePasswordStyleDark);
+        m_logoutButton->setStyleSheet(m_style->buttonToChangePasswordStyleDark);
 
         m_login_edit->setStyleSheet(m_style->DarkLineEditStyle);
         m_name_edit->setStyleSheet(m_style->DarkLineEditStyle);
@@ -443,6 +435,7 @@ void FieldsEditComponent::setTheme(Theme theme) {
         m_change_photo_button->setStyleSheet(m_style->buttonToChoosePhotoStyleLight);
 
         m_password_button->setStyleSheet(m_style->buttonToChangePasswordStyleLight);
+        m_logoutButton->setStyleSheet(m_style->buttonToChangePasswordStyleLight);
 
         m_login_edit->setStyleSheet(m_style->LightLineEditStyle);
         m_name_edit->setStyleSheet(m_style->LightLineEditStyle);
