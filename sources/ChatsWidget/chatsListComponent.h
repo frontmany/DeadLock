@@ -82,6 +82,8 @@ public slots:
     void closeEditUserDialogWidnow();
     void openEditUserDialogWidnow();
 
+    void activateProfileButton();
+    void disableProfileButton();
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
 

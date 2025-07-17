@@ -368,9 +368,9 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
         else {
             Photo* photo = new Photo(m_private_key, m_filePath);
             m_config_manager->setPhoto(photo);
-            m_mainWindow->setupChatsWidget();
             m_config_manager->setIsHasPhoto(true);
             m_client->updateMyPhoto(*photo);
+            m_mainWindow->setupChatsWidget();
         }
        
         });

@@ -130,7 +130,7 @@ StyleMessagingAreaComponent::StyleMessagingAreaComponent() {
     buttonTransparentDark = R"(
 QPushButton {
     background-color: transparent;
-    color: rgba(252, 73, 103, 0.9);
+    color: rgba(127, 127, 127, 0.9);
     font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
     font-weight: 400;
     font-size: 16px;
@@ -143,13 +143,13 @@ QPushButton {
 }
 
 QPushButton:hover {
-    color: rgba(255, 94, 113, 0.95);
+    color: rgba(171, 171, 171, 0.95);
     background-color: transparent;
     border: 1px solid transparent;
 }
 
 QPushButton:pressed {
-    color: rgba(255, 94, 113, 1.0);
+    color: rgba(171, 171, 171, 1.0);
     background-color: transparent;
     border: 1px solid transparent;
     padding-top: 3px;
@@ -169,7 +169,7 @@ QPushButton:focus {
     buttonTransparentLight = R"(
 QPushButton {
     background-color: transparent;
-    color: rgba(252, 73, 103, 0.9);
+    color: rgba(186, 186, 186, 0.9);
     font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
     font-weight: 400;
     font-size: 16px;
@@ -182,13 +182,13 @@ QPushButton {
 }
 
 QPushButton:hover {
-    color: rgba(255, 28, 66, 0.95);
+    color: rgba(171, 171, 171, 0.95);
     background-color: transparent;
     border: 1px solid transparent;
 }
 
 QPushButton:pressed {
-    color: rgba(255, 28, 66, 1.0);
+    color: rgba(171, 171, 171, 1.0);
     background-color: transparent;
     border: 1px solid transparent;
     padding-top: 3px;
@@ -209,7 +209,7 @@ QPushButton:focus {
 
     DarkFileDialogButton = R"(
 QPushButton {
-    background-color: rgb(21, 21, 21);
+    background-color: rgb(36, 36, 36);
     border-radius: 15px;
     padding: 8px 16px;
     color: #E0E0E0;
@@ -219,12 +219,12 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background-color: rgb(21, 21, 21);
+    background-color: rgb(36, 36, 36);
     border-color: #555;
 }
 
 QPushButton:pressed {
-    background-color: rgb(21, 21, 21);
+    background-color: rgb(36, 36, 36);
 }
 
 QPushButton:checked {
@@ -519,8 +519,8 @@ void FriendProfileComponent::setTheme(Theme theme) {
     if (m_theme == Theme::DARK) {
         m_close_button->setTheme(m_theme);
         m_color = new QColor(51, 51, 51);
-        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(203, 215, 245);");
-        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(203, 215, 245);");
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(245, 245, 245);");
+        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(245, 245, 245);");
     }
     else {
         m_close_button->setTheme(m_theme);
@@ -733,8 +733,50 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     setMinimumSize(300, 400);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    if (chat->getIsFriendHasPhoto() == true) 
-        m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap(QString::fromStdString(chat->getFriendPhoto()->getPhotoPath())));
+    if (chat->getIsFriendHasPhoto() == true) {
+        QPixmap avatarPixmap;
+        try {
+            std::string path = m_chat->getFriendPhoto()->getPhotoPath();
+            if (path.empty()) {
+                throw std::runtime_error("Empty photo path");
+            }
+
+            std::ifstream file(path, std::ios::binary);
+            if (!file) {
+                throw std::runtime_error("Failed to open photo file");
+            }
+
+            file.seekg(0, std::ios::end);
+            size_t fileSize = file.tellg();
+            file.seekg(0, std::ios::beg);
+
+            std::string fileData(fileSize, '\0');
+            file.read(&fileData[0], fileSize);
+            file.close();
+
+            size_t delimiterPos = fileData.find('\n');
+            if (delimiterPos == std::string::npos) {
+                throw std::runtime_error("Invalid photo file format");
+            }
+
+            std::string encryptedKey = fileData.substr(0, delimiterPos);
+            std::string encryptedData = fileData.substr(delimiterPos + 1);
+
+            auto aesKey = utility::RSADecryptKey(chatsWidget->getClient()->getPrivateKey(), encryptedKey);
+
+            std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
+
+            QByteArray imageData(decryptedData.data(), decryptedData.size());
+            if (!avatarPixmap.loadFromData(imageData)) {
+                throw std::runtime_error("Failed to load decrypted avatar");
+            }
+
+            m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), avatarPixmap);
+        }
+        catch (const std::exception& e) {
+            qWarning() << "Avatar load error:" << e.what();
+        }
+    }
     else 
         m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), QPixmap());
 
@@ -1021,7 +1063,7 @@ void MessagingAreaComponent::onAttachFileClicked()
     if (m_theme == Theme::DARK) {
         mainWidgetStyle =
             "QWidget#mainWidget {"
-            "   background-color: rgb(21, 21, 21);"
+            "   background-color: rgb(36, 36, 36);"
             "   border-radius: 12px;"
             "   border: 1px solid rgb(20, 20, 20);"
             "}";
@@ -1054,7 +1096,24 @@ void MessagingAreaComponent::onAttachFileClicked()
     m_files_caption_edit->setAcceptRichText(false);
     m_files_caption_edit->setFixedHeight(m_files_caption_edit->document()->size().height() + 12);
     if (m_theme == Theme::DARK) {
-        m_files_caption_edit->setStyleSheet(m_style->DarkTextEditStyle);
+        QString style = R"(
+            QTextEdit {
+                background-color: rgb(85, 85, 85);    
+                color: white;               
+                border: none;     
+                border-radius: 15px;         
+                padding: 5px;               
+            }
+            QTextEdit:focus {
+                border: 2px solid #888;     
+            }
+            QTextEdit:disabled {
+                background-color: rgb(70, 70, 70);
+                color: rgb(150, 150, 150);        
+                border: 1px solid rgb(70, 70, 70); 
+            }
+        )";
+        m_files_caption_edit->setStyleSheet(style);
     }
     else {
         m_files_caption_edit->setStyleSheet(m_style->LightTextEditStyle);
@@ -1733,10 +1792,12 @@ void MessagingAreaComponent::addDelimiterComponentIncomingFilesLoading() {
 }
 
 void MessagingAreaComponent::removeDelimiterComponentIncomingFilesLoading() {
-    m_containerVLayout->removeWidget(m_delimiter_component_is_incoming_files);
-    delete m_delimiter_component_is_incoming_files;
-    m_delimiter_component_is_incoming_files = nullptr;
-    isDelimiterIncoming = false;
+    if (m_delimiter_component_is_incoming_files) {
+        m_containerVLayout->removeWidget(m_delimiter_component_is_incoming_files);
+        delete m_delimiter_component_is_incoming_files;
+        m_delimiter_component_is_incoming_files = nullptr;
+        isDelimiterIncoming = false;
+    }
 }
 
 

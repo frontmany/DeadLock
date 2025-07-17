@@ -135,7 +135,7 @@ QPushButton:pressed {
 }
 
 QPushButton:checked {
-    background-color: #00356B;
+    background-color: #26619C;
     border-color: #4A7DBF;
     color: #FFFFFF;
 }
@@ -440,6 +440,14 @@ bool ChatsListComponent::eventFilter(QObject* watched, QEvent* event) {
     return QWidget::eventFilter(watched, event);
 }
 
+void ChatsListComponent::disableProfileButton() {
+    m_profileButton->setDisabled(true);
+}
+
+void ChatsListComponent::activateProfileButton() {
+    m_profileButton->setDisabled(false);
+}
+
 void ChatsListComponent::updateHideButton() {
     bool isDarkTheme = m_theme == DARK;
     if (m_theme == DARK) {
@@ -686,7 +694,7 @@ void ChatsListComponent::showProfileDialog()
 
     QDialog* dialog = new QDialog(m_chatsWidget->getMainWindow()); 
     dialog->setWindowTitle(tr("Profile Editor"));
-    dialog->setFixedSize(760, 2000); 
+    dialog->setFixedSize(1000, 2000); 
     dialog->setWindowFlags(Qt::Dialog | Qt::FramelessWindowHint);
     dialog->setAttribute(Qt::WA_TranslucentBackground);
 
@@ -710,6 +718,7 @@ void ChatsListComponent::showProfileDialog()
     mainLayout->addWidget(mainWidget);
 
     QVBoxLayout* contentLayout = new QVBoxLayout(mainWidget);
+    contentLayout->setAlignment(Qt::AlignCenter);
     contentLayout->setContentsMargins(16, 16, 16, 16);
     contentLayout->setSpacing(20);
     contentLayout->addWidget(m_profile_editor_widget);

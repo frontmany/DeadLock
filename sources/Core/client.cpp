@@ -25,6 +25,7 @@ Client::Client(std::shared_ptr<ConfigManager> configManager) :
     m_is_error(false),
     m_is_logged_in(false),
     m_is_hidden(false),
+    m_is_able_to_close(true),
     m_config_manager(configManager)
 {
     m_db = new Database;
@@ -66,7 +67,7 @@ void Client::stop() {
 }
 
 void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
-    sendPacket(m_packets_builder->getTypingPacket(m_my_public_key, m_config_manager->getMyLogin(), utility::calculateHash(friendLogin), isTyping), QueryType::TYPING);
+    sendPacket(m_packets_builder->getTypingPacket(m_my_public_key, m_config_manager->getMyLoginHash(), utility::calculateHash(friendLogin), isTyping), QueryType::TYPING);
 }
 
 void Client::authorizeClient(const std::string& loginHash, const std::string& passwordHash) {
@@ -122,13 +123,13 @@ void Client::broadcastMyStatus(const std::string& status) {
 }
 
 void Client::sendMessage(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& friendLogin, const Message* message) {
-    sendPacket(m_packets_builder->getMessagePacket(friendPublicKey, m_config_manager->getMyLogin(), utility::calculateHash(friendLogin), message), QueryType::MESSAGE);
+    sendPacket(m_packets_builder->getMessagePacket(friendPublicKey, m_config_manager->getMyLoginHash(), utility::calculateHash(friendLogin), message), QueryType::MESSAGE);
 }
 
 void Client::sendMessageReadConfirmation(const std::string& friendLogin, const Message* message) {
     auto it = m_map_friend_loginHash_to_chat.find(utility::calculateHash(friendLogin));
     if (it != m_map_friend_loginHash_to_chat.end()) {
-        sendPacket(m_packets_builder->getMessageReadConfirmationPacket(it->second->getPublicKey(), m_config_manager->getMyLogin(), utility::calculateHash(friendLogin), message), QueryType::MESSAGES_READ_CONFIRMATION);
+        sendPacket(m_packets_builder->getMessageReadConfirmationPacket(it->second->getPublicKey(), m_config_manager->getMyLoginHash(), utility::calculateHash(friendLogin), message), QueryType::MESSAGES_READ_CONFIRMATION);
     }
 }
 
@@ -275,14 +276,19 @@ std::string Client::getSpecialServerKey() const {
 }
 
 void Client::onMessage(net::message<QueryType> message) {
+    m_is_able_to_close = false;
     m_response_handler->handleResponse(message);
 }
 
 void Client::onFile(net::file<QueryType> file) {
+    m_is_able_to_close = false;
     m_response_handler->onFile(file);
 }
 
 void Client::sendFilesMessage(Message& filesMessage) {
+    auto workerUI = m_response_handler->getWorkerUI();
+    workerUI->blockProfileEditing();
+
     auto& relatedFiles = filesMessage.getRelatedFiles();
     for (auto& wrapper : relatedFiles) {
         auto chat = m_map_friend_loginHash_to_chat[wrapper.file.receiverLoginHash];
@@ -291,7 +297,15 @@ void Client::sendFilesMessage(Message& filesMessage) {
     }
 }
 
+void Client::onAllFilesSent() {
+    auto workerUI = m_response_handler->getWorkerUI();
+    workerUI->activateProfileEditing();
+}
+
 void Client::retrySendFilesMessage(Message& filesMessage) {
+    auto workerUI = m_response_handler->getWorkerUI();
+    workerUI->blockProfileEditing();
+
     auto& relatedFiles = filesMessage.getRelatedFiles();
     for (auto& wrapper : relatedFiles) {
         if (wrapper.isNeedToRetry) {

@@ -120,14 +120,16 @@ namespace net
 			std::getline(iss, timestamp);
 			timestamp = utility::AESDecrypt(m_sessionKey, timestamp);
 
+			std::string filesCountInBlob;
+			std::getline(iss, filesCountInBlob);
+
 			std::string caption;
 			std::getline(iss, caption);
 			if (caption != "") {
-				caption = utility::AESEncrypt(m_sessionKey, caption);
+				caption = utility::AESDecrypt(m_sessionKey, caption);
 			}
 
-			std::string filesCountInBlob;
-			std::getline(iss, filesCountInBlob);
+
 
 			m_file.filePath = utility::getFileSavePath(fileName);
 			m_file.fileName = fileName;

@@ -7,6 +7,8 @@
 #include <QScreen>
 #include <QEvent>
 #include <QDir>
+#include <QTimer>
+#include <QWindow>
 
 #include <filesystem>
 
@@ -39,11 +41,12 @@ public slots:
 	void setupChatsWidget();
 	void setupLoginWidget();
 	void setupGreetWidget();
-
 	void stopClient();
 
-private:
+protected:
+	void closeEvent(QCloseEvent* event) override;
 
+private:
 	Client* m_client;
 	std::shared_ptr<ConfigManager> m_config_manager;
 

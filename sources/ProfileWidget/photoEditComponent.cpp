@@ -252,7 +252,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_buttonsHLayout->addSpacing(30);
     m_buttonsHLayout->addWidget(m_continueButton);
     m_buttonsHLayout->addWidget(m_cancelButton);
-    m_buttonsHLayout->addSpacing(-95);
+    m_buttonsHLayout->addSpacing(-120);
 
     m_imageAndYSliderLayout = new QHBoxLayout();
     m_imageAndYSliderLayout->setAlignment(Qt::AlignCenter);

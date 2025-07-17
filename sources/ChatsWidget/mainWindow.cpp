@@ -2,6 +2,7 @@
 #include "chatsListComponent.h"
 #include "registrationComponent.h"
 #include "authorizationComponent.h"
+#include "notificationWidget.h"
 #include "configManager.h"
 #include "overlayWidget.h"
 #include "loginWidget.h"
@@ -44,7 +45,6 @@ MainWindow::~MainWindow() {
     delete m_chatsWidget;
     delete m_worker_Qt;
 }
-
 
 void MainWindow::setupGreetWidget() {
     m_greetWidget = new GreetWidget(this, this, m_client, m_config_manager, m_theme, m_config_manager->getMyLogin(), m_client->getPublicKey(), m_client->getPrivateKey(), m_chatsWidget);
@@ -94,6 +94,45 @@ void MainWindow::updateAuthorizationUIRedBorder() {
 
 ChatsWidget* MainWindow::getChatsWidget() {
     return m_chatsWidget;
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (m_client->getIsAbleToClose()) {
+        event->accept();
+        return;
+    }
+
+    event->ignore();
+
+    if (windowHandle()) {
+        windowHandle()->setFlags(windowHandle()->flags() & ~Qt::WindowCloseButtonHint);
+    }
+
+    QTimer* closeCheckTimer = new QTimer(this);
+    closeCheckTimer->setInterval(500);
+
+    auto cleanup = [this, closeCheckTimer]() {
+        closeCheckTimer->stop();
+        closeCheckTimer->deleteLater();
+        if (windowHandle()) {
+            windowHandle()->setFlags(windowHandle()->flags() | Qt::WindowCloseButtonHint);
+        }
+        };
+
+    QTimer::singleShot(10'000, this, [cleanup]() {
+        qWarning() << "Couldn't safely close the app!";
+        cleanup();
+        QCoreApplication::quit();
+        });
+
+    connect(closeCheckTimer, &QTimer::timeout, this, [this, cleanup]() {
+        if (m_client->getIsAbleToClose()) {
+            cleanup();
+            QCoreApplication::quit();
+        }
+        });
+
+    closeCheckTimer->start();
 }
 
 

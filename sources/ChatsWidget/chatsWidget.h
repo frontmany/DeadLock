@@ -15,6 +15,7 @@
 
 class ChatsListComponent;
 class MessagingAreaComponent;
+class NotificationWidget;
 class HelloAreaComponent;
 class ChatComponent;
 class ConfigManager;
@@ -53,12 +54,13 @@ public:
 	MainWindow* getMainWindow();
 
 	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
-	std::vector<MessagingAreaComponent*>& getMessagingAreasVec() { return m_vec_messaging_components; }
 
+	std::vector<MessagingAreaComponent*>& getMessagingAreasVec() { return m_vec_messaging_components; }
 
 	QHBoxLayout* getMainHLayout() { return m_mainHLayout; }
 
 public slots:
+	void showNotification(Chat* chat);
 	void createAndAddChatComponentToList(Chat* chat);
 	void createAndSetMessagingAreaComponent(Chat* chat);
 	void removeRightComponent();
@@ -91,7 +93,8 @@ private:
 	QHBoxLayout*				   m_mainHLayout;
 
 
-
 	std::vector<MessagingAreaComponent*> m_vec_messaging_components;
-	bool m_is_hello_component;
+
+
+	bool m_is_hello_component = false;
 };

@@ -73,7 +73,7 @@ std::string Photo::encryptForServerBase64(const CryptoPP::RSA::PublicKey& server
     }
 }
 
-Photo* Photo::deserializeAndSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& data, std::string login) {
+Photo* Photo::deserializeAndSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& data, std::string login) {
     if (data.empty()) {
         return nullptr;
     }

@@ -183,7 +183,7 @@ void ConfigManager::updateInConfigFriendLogin(const std::string& oldLogin, const
 
     for (auto&& chatValue : chatsArray) {
         if (!chatValue.isObject()) continue;
-        CryptoPP::SecByteBlock chatConfigKey = getChatConfigKey(oldLogin);
+        CryptoPP::SecByteBlock chatConfigKey = getChatConfigKey(newLogin);
 
         QJsonObject chatObj = chatValue.toObject();
         std::string currentLogin = utility::AESDecrypt(chatConfigKey, chatObj["friend_login"].toString().toStdString());

@@ -35,9 +35,9 @@ public:
 	const std::string getPublicKeyPacket(const std::string& myLoginHash, const CryptoPP::RSA::PublicKey& myPublicKey);
 
 	//RPL
-	const std::string getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLogin, const std::string& friendLoginHash, const Message* message);
-	const std::string getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLogin, const std::string& friendLoginHash, const Message* message);
-	const std::string getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLogin, const std::string& friendLoginHash, bool isTyping);
+	const std::string getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message);
+	const std::string getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message);
+	const std::string getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, bool isTyping);
 
 	//BROADCAST
 	const std::string getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status, const std::string& myLoginHash, const std::vector<std::string>& friendsLoginHashesVec);

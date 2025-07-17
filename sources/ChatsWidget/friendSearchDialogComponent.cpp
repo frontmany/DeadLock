@@ -468,11 +468,32 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     chat->setPublicKey(friendInfo->getPublicKey());
 
     if (friendInfo->getIsFriendHasPhoto()) {
-        Photo* photo = Photo::deserializeAndSaveOnDisc(m_chats_list_component->getChatsWidget()->getClient()->getPrivateKey(),
-            m_chats_list_component->getChatsWidget()->getClient()->getServerPublicKey(),
-            friendInfo->getFriendPhoto()->getBinaryData(),
-            login.toStdString());
-        chat->setFriendPhoto(photo);
+        try {
+            const std::string& binaryData = friendInfo->getFriendPhoto()->getBinaryData();
+
+            CryptoPP::SecByteBlock aesKey;
+            utility::generateAESKey(aesKey);
+
+            std::string newEncryptedData = utility::AESEncrypt(aesKey, binaryData);
+            std::string newEncryptedAesKey = utility::RSAEncryptKey(
+                m_chats_list_component->getChatsWidget()->getClient()->getPublicKey(),
+                aesKey
+            );
+
+            std::string newCombined = newEncryptedAesKey + "\n" + newEncryptedData;
+
+
+            Photo* photo = Photo::deserializeAndSaveOnDisc(
+                m_chats_list_component->getChatsWidget()->getClient()->getPrivateKey(),
+                newCombined,
+                login.toStdString()
+            );
+
+            chat->setFriendPhoto(photo);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "Error processing friend photo: " << e.what() << std::endl;
+        }
     }
 
     chat->setLayoutIndex(0);

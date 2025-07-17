@@ -36,6 +36,8 @@ public:
 	void onChatCreateFail() override;
 
 	void processFoundUsers(std::vector<FriendInfo*>&& vec) override;
+	void blockProfileEditing() override;
+	void activateProfileEditing() override;
 	void updateFriendsStatuses(const std::vector<std::pair<std::string, std::string>>& loginToStatusPairsVec) override;
 	void showConfigLoadErrorDialog() override;
 	void showTypingLabel(const std::string& friendLogin) override;

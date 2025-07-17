@@ -335,12 +335,11 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
     m_photo_password_buttonsHLayout = new QHBoxLayout();
     m_photo_password_buttonsHLayout->setAlignment(Qt::AlignRight);
+    m_photo_password_buttonsHLayout->addSpacing(-20);
     m_photo_password_buttonsHLayout->addWidget(m_logoutButton);
-    m_photo_password_buttonsHLayout->addSpacing(10);
+    m_photo_password_buttonsHLayout->addSpacing(20);
     m_photo_password_buttonsHLayout->addWidget(m_change_photo_button);
-    m_photo_password_buttonsHLayout->addSpacing(5);
     m_photo_password_buttonsHLayout->addWidget(m_password_button);
-    m_photo_password_buttonsHLayout->addSpacing(11);
 
     m_save_button = new QPushButton("Save");
     m_save_button->setMinimumHeight(30);
@@ -377,16 +376,24 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
 
     m_cancel_button = new QPushButton("Cancel");
     m_cancel_button->setMinimumHeight(30);
-    connect(m_cancel_button, &QPushButton::clicked, m_profile_editor_widget, &ProfileEditorWidget::close);
+    connect(m_cancel_button, &QPushButton::clicked, [this]() {
+        m_login_edit->setText(QString::fromStdString(m_config_manager->getMyLogin()));
+        m_name_edit->setText(QString::fromStdString(m_config_manager->getMyName()));
+        m_profile_editor_widget->close();
+    });
      
     m_save_cancel_buttonsHLayout = new QHBoxLayout();
     m_save_cancel_buttonsHLayout->addWidget(m_cancel_button);
     m_save_cancel_buttonsHLayout->addWidget(m_save_button);
 
+    QHBoxLayout* hLayout = new QHBoxLayout;
+    hLayout->addSpacing(-8); 
+    hLayout->setAlignment(Qt::AlignCenter);
+    hLayout->addWidget(m_avatar_label);
 
     m_mainVLayout = new QVBoxLayout;
     m_mainVLayout->setAlignment(Qt::AlignCenter);
-    m_mainVLayout->addWidget(m_avatar_label, 0, Qt::AlignCenter);
+    m_mainVLayout->addLayout(hLayout);
     m_mainVLayout->addSpacing(20);
     m_mainVLayout->addLayout(m_photo_password_buttonsHLayout);
     m_mainVLayout->addSpacing(20);

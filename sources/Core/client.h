@@ -81,6 +81,7 @@ public:
     void onReceiveMessageError(std::error_code ec) override;
     void onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) override;
     void onConnectError(std::error_code ec) override;
+    void onAllFilesSent() override;
 
     void onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
     void onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
@@ -102,6 +103,9 @@ public:
 
     void setIsLoggedIn(bool isLoggedIn) { m_is_logged_in = isLoggedIn; }
     bool getIsLoggedIn() { return m_is_logged_in; }
+
+    void setIsAbleToClose(bool isAbleToClose) { m_is_able_to_close = isAbleToClose; }
+    bool getIsAbleToClose() { return m_is_able_to_close; }
 
     void setPublicKey(const CryptoPP::RSA::PublicKey& key);
     const CryptoPP::RSA::PublicKey& getPublicKey() const;
@@ -131,6 +135,7 @@ private:
     bool                    m_is_hidden;
     bool                    m_is_error;
     bool                    m_is_logged_in;
+    bool                    m_is_able_to_close;
     std::atomic<bool>       m_is_ui_ready_to_update;
 
     ResponseHandler*        m_response_handler;

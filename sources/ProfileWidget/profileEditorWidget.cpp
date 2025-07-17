@@ -35,12 +35,9 @@ ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* ch
 }
 
 void ProfileEditorWidget::setPhotoEditor() {
-    if (utility::getDeviceScaleFactor() >= 1.25) {
-        setFixedHeight(utility::getScaledSize(900));
-    }
-    else {
-        setFixedHeight(utility::getScaledSize(800));
-    }
+    setMaximumWidth(800);
+    setFixedHeight(utility::getScaledSize(900));
+
     m_mainVLayout->removeWidget(m_fields_edit_component);
     m_fields_edit_component->hide();
     m_mainVLayout->addWidget(m_photo_edit_component);
@@ -48,6 +45,8 @@ void ProfileEditorWidget::setPhotoEditor() {
 }
 
 void ProfileEditorWidget::setFieldsEditor() {
+    setMaximumSize(420, 600);
+
     if (utility::getDeviceScaleFactor() >= 1.5) {
         setFixedHeight(utility::getScaledSize(730));
     }
@@ -71,6 +70,8 @@ void ProfileEditorWidget::setFieldsEditor() {
 }
 
 void ProfileEditorWidget::setPasswordEditor() {
+    setMaximumSize(420, 600);
+
     setFixedHeight(utility::getScaledSize(500));
 
     m_password_edit_component->setMaximumSize(400, utility::getScaledSize(500));
@@ -118,7 +119,7 @@ void ProfileEditorWidget::paintEvent(QPaintEvent* event) {
     painter.setRenderHint(QPainter::Antialiasing);
 
     if (m_theme == DARK) {
-        painter.setBrush(QColor(17, 17, 17));
+        painter.setBrush(QColor(36, 36, 36));
     }
     if (m_theme == LIGHT) {
         painter.setBrush(QColor(229, 228, 226));

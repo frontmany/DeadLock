@@ -22,7 +22,7 @@ public:
     void setBinaryData(const std::string& data) { m_binaryData = data; }
 
     std::string encryptForServerBase64(const CryptoPP::RSA::PublicKey& serverPublicKey) const;
-    static Photo* deserializeAndSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& data, std::string login);
+    static Photo* deserializeAndSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& data, std::string login);
     static Photo* deserializeWithoutSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& data);
 
     const std::size_t getSize() const { return m_size; }

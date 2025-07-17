@@ -152,6 +152,7 @@ namespace net {
 		virtual void onMessage(net::message<T> message) = 0;
 		virtual void onFile(net::file<T> file) = 0;
 		virtual void onSendFileProgressUpdate(const net::file<T>& file, uint32_t progressPercent) = 0;
+		virtual void onAllFilesSent() = 0;
 		virtual void onReceiveFileProgressUpdate(const net::file<T>& file, uint32_t progressPercent) = 0;
 
 		//errors
@@ -187,7 +188,8 @@ namespace net {
 				[this](std::error_code ec, net::file<T> unreadFile) {onReceiveFileError(ec, unreadFile); },
 				[this](std::error_code ec, net::file<T> unsentFile) {onSendFileError(ec, unsentFile); },
 				[this](net::file<T> file, uint32_t progressPercent) {onSendFileProgressUpdate(file, progressPercent); },
-				[this](net::file<T> file, uint32_t progressPercent) {onReceiveFileProgressUpdate(file, progressPercent); }
+				[this](net::file<T> file, uint32_t progressPercent) {onReceiveFileProgressUpdate(file, progressPercent); },
+				[this]() {onAllFilesSent(); }
 			);
 		}
 

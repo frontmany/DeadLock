@@ -67,7 +67,6 @@ ChatHeaderComponent::ChatHeaderComponent(QWidget* parent, MessagingAreaComponent
 {
     style = new StyleChatHeaderComponent;
 
-    // typing component
     m_typingContainer = new QWidget(this);
     QHBoxLayout* typingLayout = new QHBoxLayout(m_typingContainer);
     typingLayout->setContentsMargins(0, 0, 0, 0);

@@ -11,8 +11,8 @@ namespace net
 	template <typename T>
 	class filesSender {
 	public:
-		filesSender(asio::io_context& asioContext, asio::ip::tcp::socket& socket, std::function<void(const net::file<T>&, uint32_t)> onSendProgress, std::function<void(std::error_code, net::file<T>)> onSendError)
-			: m_socket(socket), m_onSendProgressUpdate(onSendProgress), m_onSendError(onSendError), m_asioContext(asioContext)
+		filesSender(asio::io_context& asioContext, asio::ip::tcp::socket& socket, std::function<void(const net::file<T>&, uint32_t)> onSendProgress, std::function<void(std::error_code, net::file<T>)> onSendError, std::function<void()> onAllFilesSent)
+			: m_socket(socket), m_onSendProgressUpdate(onSendProgress), m_onSendError(onSendError), m_asioContext(asioContext), m_onAllFilesSent(onAllFilesSent)
 		{
 			m_totalBytesSent = 0;
 		}
@@ -41,16 +41,14 @@ namespace net
 				<< m_file.senderLoginHash << '\n'
 				<< m_file.fileSize << '\n'
 				<< utility::AESEncrypt(m_sessionKey, m_file.fileName) << '\n'
-				<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n';
-			
+				<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n'
+			    << m_file.filesInBlobCount << '\n';
+
 			if (m_file.caption != "") {
 			oss << utility::AESEncrypt(m_sessionKey, m_file.caption) << '\n';
 			}
-			else {
-				oss << "" << '\n';
-			}
 
-			oss << m_file.filesInBlobCount;
+			
 
 			m_metadataMessage.header.type = QueryType::PREPARE_TO_RECEIVE_FILE;
 			m_metadataMessage << oss.str();
@@ -133,6 +131,9 @@ namespace net
 					m_file = m_outgoingFilesQueue.front();
 					sendMetadata();
 				}
+				else {
+					m_onAllFilesSent();
+				}
 			}
 		}
 
@@ -172,6 +173,7 @@ namespace net
 
 		std::function<void(const net::file<T>&, uint32_t)> m_onSendProgressUpdate;
 		std::function<void(std::error_code, net::file<T>)> m_onSendError;
+		std::function<void()> m_onAllFilesSent;
 		asio::io_context& m_asioContext;
 	};
 }

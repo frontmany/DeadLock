@@ -266,10 +266,7 @@ const std::string PacketsBuilder::getPublicKeyPacket(const std::string& myLoginH
 }
 
 //RPL
-const std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey,
-    const std::string& myLogin,
-    const std::string& friendLoginHash,
-    const Message* message)
+const std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message)
 {
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
@@ -279,21 +276,16 @@ const std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKe
     std::ostringstream oss;
     oss << rpl << '\n'
         << friendLoginHash << '\n'
-        << message->getId() << '\n'
+        << myLoginHash << '\n'
         << encryptedKey << '\n'
-        << utility::AESEncrypt(key, myLogin) << '\n'
-        << utility::AESEncrypt(key, messageBegin) << '\n'
+        << message->getId() << '\n'
         << utility::AESEncrypt(key, message->getMessage()) << '\n'
-        << utility::AESEncrypt(key, messageEnd) << '\n'
         << utility::AESEncrypt(key, message->getTimestamp());
 
     return oss.str();
 }
 
-const std::string PacketsBuilder::getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey,
-    const std::string& myLogin,
-    const std::string& friendLoginHash,
-    const Message* message)
+const std::string PacketsBuilder::getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey,const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message)
 {
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
@@ -303,18 +295,14 @@ const std::string PacketsBuilder::getMessageReadConfirmationPacket(const CryptoP
     std::ostringstream oss;
     oss << rpl << '\n'
         << friendLoginHash << '\n'
+        << myLoginHash << '\n'
         << encryptedKey << '\n'
-        << utility::AESEncrypt(key, myLogin) << '\n'
         << utility::AESEncrypt(key, message->getId());
 
     return oss.str();
 }
 
-const std::string PacketsBuilder::getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, 
-    const std::string& myLogin,
-    const std::string& friendLoginHash,
-    bool isTyping) 
-
+const std::string PacketsBuilder::getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash,const std::string& friendLoginHash, bool isTyping) 
 {
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
@@ -324,8 +312,8 @@ const std::string PacketsBuilder::getTypingPacket(const CryptoPP::RSA::PublicKey
     std::ostringstream oss;
     oss << rpl << '\n'
         << friendLoginHash << '\n'
+        << myLoginHash << '\n'
         << encryptedKey << '\n'
-        << utility::AESEncrypt(key, myLogin) << '\n'
         << utility::AESEncrypt(key, (isTyping ? "1" : "0"));
 
     return oss.str();

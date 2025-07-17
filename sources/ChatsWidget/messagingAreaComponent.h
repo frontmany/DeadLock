@@ -231,6 +231,7 @@ signals:
 
 public slots:
     void addDelimiterComponentIncomingFilesLoading();
+    
 
     void onRetryClicked(Message* messageToRetry);
     void openFriendProfile();

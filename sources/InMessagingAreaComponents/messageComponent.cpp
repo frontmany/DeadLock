@@ -85,7 +85,6 @@ void MessageComponent::setRetry() {
     QVBoxLayout* containerLayout = new QVBoxLayout(m_retryButtonContainer);
     containerLayout->setContentsMargins(0, 0, 0, 8);
     containerLayout->setSpacing(0);
-    containerLayout->addStretch();
 
     m_retryButton = new QPushButton(m_retryButtonContainer);
     m_retryButton->setFixedSize(24, 24);
@@ -110,10 +109,10 @@ void MessageComponent::setRetry() {
     m_retryButton->setIconSize(QSize(16, 16));
 
     containerLayout->addWidget(m_retryButton);
-    containerLayout->setAlignment(m_retryButton, Qt::AlignLeft | Qt::AlignBottom);
+    containerLayout->setAlignment(m_retryButton, Qt::AlignRight | Qt::AlignBottom);
 
     m_main_HLayout->insertWidget(0, m_retryButtonContainer);
-    m_main_HLayout->setAlignment(m_retryButtonContainer, Qt::AlignLeft | Qt::AlignBottom);
+    m_main_HLayout->setAlignment(m_retryButtonContainer, Qt::AlignRight | Qt::AlignBottom);
 
     connect(m_retryButton, &QPushButton::clicked, [this]() {
         qDebug() << "Retry button clicked for message:" << m_id;
@@ -152,8 +151,10 @@ void MessageComponent::removeRetry() {
 void MessageComponent::setProgress(const net::file<QueryType>& file, int percent) {
     if (percent >= 100) {
         m_message->setIsSending(false);
+        m_message->setIsNeedToRetry(false);
     }
     else {
+        m_message->setIsNeedToRetry(true);
         m_message->setIsSending(true);
     }
 

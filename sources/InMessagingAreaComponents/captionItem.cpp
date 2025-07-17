@@ -229,10 +229,10 @@ void CaptionItem::updateLayout() {
 void CaptionItem::setIsRead(bool isRead) {
     m_isRead = isRead;
     if (isRead) {
-        m_readStatusIcon->setIcon(QIcon("C:/prj/test_project_qt/check.png"));
+        m_readStatusIcon->setIcon(QIcon(":/resources/ChatsWidget/check.png"));
     }
     else {
-        m_readStatusIcon->setIcon(QIcon("C:/prj/test_project_qt/notCheck.png"));
+        m_readStatusIcon->setIcon(QIcon(":/resources/ChatsWidget/notCheck.png"));
     }
     m_readStatusIcon->setIconSize(QSize(16, 16));
 }

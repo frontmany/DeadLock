@@ -27,8 +27,14 @@ std::string Message::serialize() const {
         << escape(m_timestamp) << "|"
         << escape(m_id) << "|"
         << (m_is_from_me ? "true" : "false") << "|"
-        << (m_is_read ? "true" : "false") << "|"
-        << (m_is_sending ? "true" : "false") << "|";
+        << (m_is_read ? "true" : "false") << "|";
+        if (m_is_sending || m_is_need_to_retry) {
+            oss << "true" << "|";
+        }
+        else {
+            oss << "false" << "|";
+        }
+        
 
     oss << std::to_string(m_vec_related_files.size()) << "|";
 

@@ -93,11 +93,11 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     else if (msg.header.type == QueryType::TYPING) {
         onTyping(packet);
     }
-
-    // new
     else if (msg.header.type == QueryType::FILE_PREVIEW) {
         onFilePreview(packet);
     }
+
+    m_client->setIsAbleToClose(true);
 }
 
 void ResponseHandler::onRegistrationSuccess(const std::string& packet) {
@@ -433,7 +433,7 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
         std::string dataSecondPartStr;
         std::getline(iss, dataSecondPartStr);
 
-         photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
+         photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
     }
 
     std::string friendPublicKeyStr;
@@ -503,29 +503,19 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
     std::string myLoginHash;
     std::getline(iss, myLoginHash);
 
-    std::string id;
-    std::getline(iss, id);
+    std::string friendLoginHash;
+    std::getline(iss, friendLoginHash);
 
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
     CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
 
-    std::string friendLogin;
-    std::getline(iss, friendLogin);
-    friendLogin = utility::AESDecrypt(key, friendLogin);
-    std::string friendLoginHash = utility::calculateHash(friendLogin);
-
-    std::string messageBegin;
-    std::getline(iss, messageBegin);
-    messageBegin = utility::AESDecrypt(key, messageBegin);
+    std::string id;
+    std::getline(iss, id);
 
     std::string message;
     std::getline(iss, message);
     message = utility::AESDecrypt(key, message);
-
-    std::string messageEnd;
-    std::getline(iss, messageEnd);
-    messageEnd = utility::AESDecrypt(key, messageEnd);
 
     std::string timestamp;
     std::getline(iss, timestamp);
@@ -554,8 +544,6 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
     }
     else {
         Chat* chat = new Chat;
-        chat->setFriendLastSeen("online");
-        chat->setFriendLogin(friendLogin);
         auto& msgsVec = chat->getMessagesVec();
         msgsVec.push_back(msg);
 
@@ -596,10 +584,12 @@ void ResponseHandler::onUserInfoSuccess(const std::string& packet) {
     if (isHasPhoto) {
         std::string dataFirstPartStr;
         std::getline(iss, dataFirstPartStr);
+
+
         std::string dataSecondPartStr;
         std::getline(iss, dataSecondPartStr);
 
-        photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
+        photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
     }
 
     std::string friendPublicKeyStr;
@@ -608,6 +598,33 @@ void ResponseHandler::onUserInfoSuccess(const std::string& packet) {
 
     std::string newLogin;
     std::getline(iss, newLogin);
+
+
+    auto& chatsMap = m_client->getMyHashChatsMap();
+    const auto it = chatsMap.find(utility::calculateHash(login));
+
+    Chat* chat = nullptr;
+    if (it != chatsMap.end()) {
+        chat = it->second;
+    }
+    else {
+        std::cout << "unExisting chat (onUserInfoSuccess)\n";
+        return;
+    }
+
+    chat->setFriendLogin(login);
+    chat->setFriendName(name);
+    chat->setFriendLastSeen(lastSeen);
+    chat->setIsFriendHasPhoto(isHasPhoto);
+    chat->setPublicKey(friendPublicKey);
+    chat->setFriendPhoto(isHasPhoto ? photo : nullptr);
+
+    if (chat->getMessagesVec().size() == 0) {
+        chat->setLastReceivedOrSentMessage("no messages yet");
+    }
+    else {
+        chat->setLastReceivedOrSentMessage(chat->getMessagesVec().back()->getMessage());
+    }
 
     if (newLogin != "") {
         newLogin = utility::AESDecrypt(key, newLogin);
@@ -618,40 +635,17 @@ void ResponseHandler::onUserInfoSuccess(const std::string& packet) {
         if (it != chatsMap.end()) {
             Chat* chat = it->second;
             chat->setFriendLogin(newLogin);
-            chat->setPublicKey(friendPublicKey);
 
             auto node = chatsMap.extract(it);
             node.key() = utility::calculateHash(newLogin);
             
             chatsMap.insert(std::move(node));
         }
+
         m_configManager->updateInConfigFriendLogin(login, newLogin);
     }
 
-   
-    auto& chatsMap = m_client->getMyHashChatsMap();
-    const auto it = chatsMap.find(utility::calculateHash(login));
-
-    if (it != chatsMap.end()) {
-        Chat* chat = it->second;
-        chat->setFriendLogin(login);
-        chat->setFriendName(name);
-        chat->setFriendLastSeen(lastSeen);
-        chat->setIsFriendHasPhoto(isHasPhoto);
-        chat->setPublicKey(friendPublicKey);
-        chat->setFriendPhoto(photo ? photo : nullptr);
-        
-
-        std::vector<Message*>& messagesVec = chat->getMessagesVec();
-        if (messagesVec.size() == 0) {
-            chat->setLastReceivedOrSentMessage("no messages yet");
-        }
-        else {
-            chat->setLastReceivedOrSentMessage(messagesVec.back()->getMessage());
-        }
-
-        m_worker_UI->showNewChatOrUpdateExisting(chat);
-    }
+    m_worker_UI->showNewChatOrUpdateExisting(chat);
 }
 
 void ResponseHandler::onUserInfoFail(const std::string& packet) {
@@ -692,7 +686,7 @@ void ResponseHandler::onMyInfo(const std::string& packet) {
     std::getline(iss, dataSecondPartStr);
 
     if (std::stoi(sizeStr) != 0) {
-        Photo* photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
+        Photo* photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
         m_configManager->setIsHasPhoto(true);
         m_configManager->setPhoto(photo);
         m_worker_UI->setRecoveredAvatar(photo);
@@ -712,31 +706,34 @@ void ResponseHandler::onMyInfo(const std::string& packet) {
 void ResponseHandler::onTyping(const std::string& packet) {
     std::istringstream iss(packet);
 
+    std::string myLoginHash;
+    std::getline(iss, myLoginHash);
+
+    std::string friendLoginHash;
+    std::getline(iss, friendLoginHash);
+
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
     CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
-
-    std::string myLogin;
-    std::getline(iss, myLogin);
-    myLogin = utility::AESDecrypt(key, myLogin);
-
-    std::string friendLogin;
-    std::getline(iss, friendLogin);
-    friendLogin = utility::AESDecrypt(key, friendLogin);
 
     std::string isTypingStr;
     std::getline(iss, isTypingStr);
     isTypingStr = utility::AESDecrypt(key, isTypingStr);
     bool isTyping = isTypingStr == "1";
 
-    if (isTyping) {
-        m_worker_UI->showTypingLabel(friendLogin);
-    }
-    else {
-        m_worker_UI->hideTypingLabel(friendLogin);
-    }
+    auto& chatsHashMap = m_client->getMyHashChatsMap();
+    auto chatPairIt = chatsHashMap.find(friendLoginHash);
+    if (chatPairIt != chatsHashMap.end()) {
+        auto& [friendLoginHash, chat] = *chatPairIt;
 
-
+        std::string friendLogin = chat->getFriendLogin();
+        if (isTyping) {
+            m_worker_UI->showTypingLabel(friendLogin);
+        }
+        else {
+            m_worker_UI->hideTypingLabel(friendLogin);
+        }
+    }
 }
 
 void ResponseHandler::onMessageReadConfirmationReceive(const std::string& packet) {
@@ -745,37 +742,33 @@ void ResponseHandler::onMessageReadConfirmationReceive(const std::string& packet
     std::string myLoginHash;
     std::getline(iss, myLoginHash);
 
+    std::string friendLoginHash;
+    std::getline(iss, friendLoginHash);
+
     std::string encryptedKey;
     std::getline(iss, encryptedKey);
     CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
-
-    std::string friendLogin;
-    std::getline(iss, friendLogin);
-    friendLogin = utility::AESDecrypt(key, friendLogin);
 
     std::string id;
     std::getline(iss, id);
     id = utility::AESDecrypt(key, id);
 
-    auto& chatsMap = m_client->getMyHashChatsMap();
-    auto chatPair = chatsMap.find(utility::calculateHash(friendLogin));
+    auto& chatsHashMap = m_client->getMyHashChatsMap();
+    auto chatPair = chatsHashMap.find(friendLoginHash);
 
-    if (chatPair != chatsMap.end()) {
+    if (chatPair != chatsHashMap.end()) {
         Chat* chat = chatPair->second;
 
         auto& messagesVec = chat->getMessagesVec();
         auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&id](Message* msg) {
             return msg->getId() == id;
-            });
+        });
+
         Message* msg = *msgChatIt;
         msg->setIsRead(true);
 
+        std::string friendLogin = chat->getFriendLogin();
         m_worker_UI->onMessageReadConfirmationReceive(friendLogin, id);
-
-        if (chat->getFriendLastSeen() == "last seen: N/A") {
-            chat->setFriendLastSeen("online");
-            m_worker_UI->onStatusReceive(friendLogin, "online");
-        }
     }
 }
 
@@ -830,7 +823,6 @@ void ResponseHandler::showFilesMessage(Message* message, const std::string& frie
     }
     else {
         Chat* chat = new Chat;
-        chat->setFriendLastSeen("online");
         auto& msgsVec = chat->getMessagesVec();
         msgsVec.push_back(message);
 

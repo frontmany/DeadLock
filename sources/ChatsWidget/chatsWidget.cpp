@@ -6,6 +6,7 @@
 #include "helloAreaComponent.h"
 #include "chatHeaderComponent.h"
 #include "configManager.h"
+#include "notificationWidget.h"
 #include "client.h"
 #include "message.h"
 #include "photo.h"
@@ -44,6 +45,26 @@ ChatsWidget::~ChatsWidget() {
     for (auto comp :  m_vec_messaging_components) {
         delete comp;
     }
+}
+
+
+void ChatsWidget::showNotification(Chat* chat) {
+    if (isActiveWindow() && !isMinimized()) {
+        return;
+    }
+
+    auto photo = chat->getFriendPhoto();
+    std::string message = "New message from " + chat->getFriendName();
+
+    NotificationWidget* notification = new NotificationWidget(
+        this,
+        QString::fromStdString(message),
+        photo,
+        this
+    );
+
+    notification->setTheme(m_theme);
+    notification->show();
 }
 
 MainWindow* ChatsWidget::getMainWindow() {

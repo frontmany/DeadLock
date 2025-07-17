@@ -29,10 +29,11 @@ namespace net {
 			std::function<void(std::error_code, net::file<T>)> onReceiveFileError,
 			std::function<void(std::error_code, net::file<T>)> onSendFileError,
 			std::function<void(const net::file<T>&, uint32_t)> onSendProgressUpdate,
-			std::function<void(const net::file<T>&, uint32_t)> onReceiveProgressUpdate)
+			std::function<void(const net::file<T>&, uint32_t)> onReceiveProgressUpdate,
+			std::function<void()> onAllFilesSent)
 			: m_asioContext(asioContext),
 			m_socket(std::move(socket)),
-			m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError),
+			m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError, onAllFilesSent),
 			m_filesReceiver(myPrivateKey, incomingFilesQueue, m_socket, onReceiveProgressUpdate, onReceiveFileError)
 		{
 			m_filesReceiver.startReceiving();

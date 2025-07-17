@@ -56,12 +56,12 @@ void DelimiterComponent::setTheme(Theme theme)
     m_theme = theme;
 
     if (m_theme == Theme::DARK) {
-        m_bgColor = QColor(25, 25, 25, 180);
+        m_bgColor = QColor(27, 27, 27);
         m_textColor = QColor(220, 220, 220);
         m_label->setStyleSheet(m_style->DarkLabelStyle);
     }
     else {
-        m_bgColor = QColor(240, 240, 240, 200);
+        m_bgColor = QColor(255, 255, 255);
         m_textColor = QColor(80, 80, 80);
         m_label->setStyleSheet(m_style->LightLabelStyle);
     }
