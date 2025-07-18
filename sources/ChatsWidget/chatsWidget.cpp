@@ -22,23 +22,36 @@
 ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme)
     : QWidget(parent), m_client(client), m_theme(theme), m_main_window(mainWindow), m_config_manager(configManager) {
 
-    m_mainHLayout = new QHBoxLayout;
-    m_mainHLayout->setAlignment(Qt::AlignLeft);
+    m_splitter = new QSplitter(Qt::Horizontal, this);
 
     m_current_messagingAreaComponent = nullptr;
-	m_chatsListComponent = new ChatsListComponent(this, this, m_theme, m_client->getIsHidden());
+    m_chatsListComponent = new ChatsListComponent(this, this, m_theme, m_client->getIsHidden());
 
     if (m_config_manager->getPhoto() != nullptr) {
         m_chatsListComponent->setAvatar(*m_config_manager->getPhoto());
     }
 
-    m_leftVLayout = new QVBoxLayout;
+    m_leftWidget = new QWidget(this);
+    m_leftVLayout = new QVBoxLayout(m_leftWidget);
+    m_leftVLayout->setContentsMargins(0, 0, 0, 0);
     m_leftVLayout->addWidget(m_chatsListComponent);
 
     m_helloAreaComponent = new HelloAreaComponent(m_theme);
-    m_mainHLayout->addLayout(m_leftVLayout);
-    m_mainHLayout->addWidget(m_helloAreaComponent);
-    this->setLayout(m_mainHLayout);
+
+
+    m_splitter->addWidget(m_leftWidget);
+    m_splitter->addWidget(m_helloAreaComponent);
+
+    QList<int> sizes;
+    sizes << 250 << 750;
+    m_splitter->setSizes(sizes);
+
+    QHBoxLayout* mainLayout = new QHBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(m_splitter);
+    setLayout(mainLayout);
+
+    m_is_hello_component = true;
 }
 
 ChatsWidget::~ChatsWidget() {
@@ -92,68 +105,56 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
 }
 
 void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
+    QList<int> sizes = m_splitter->sizes();
+    
     removeRightComponent();
 
-    if (m_current_messagingAreaComponent != nullptr && m_current_messagingAreaComponent->isDelimiterComponentUnread()) {
-
-        if (m_vec_messaging_components.size() == 0) {
-            m_current_messagingAreaComponent->removeDelimiterComponentUnread();
-        }
-        else {
-            m_current_messagingAreaComponent->moveDelimiterComponentUnreadDown();
-        }
-    }
-    
-
-    auto itMsgAreaComp = std::find_if( m_vec_messaging_components.begin(),  m_vec_messaging_components.end(), [chat](MessagingAreaComponent* msgComp) {
+    auto itMsgAreaComp = std::find_if(m_vec_messaging_components.begin(), m_vec_messaging_components.end(), [chat](MessagingAreaComponent* msgComp) {
         return msgComp->getChatConst()->getFriendLogin() == chat->getFriendLogin();
         });
 
-    if (itMsgAreaComp ==  m_vec_messaging_components.end()) {
+    if (itMsgAreaComp == m_vec_messaging_components.end()) {
         std::cout << "error can not find messaging Area Component";
+        return;
     }
 
-    else {
-        m_current_messagingAreaComponent = *itMsgAreaComp;
-        m_current_messagingAreaComponent->show();
-        m_current_messagingAreaComponent->setTheme(m_theme);
-        m_mainHLayout->addWidget(m_current_messagingAreaComponent);
+    m_current_messagingAreaComponent = *itMsgAreaComp;
 
-        auto scrollArea = m_current_messagingAreaComponent->getScrollArea();
-        auto& unreadMessageComponentsVec = m_current_messagingAreaComponent->getUreadMessageComponents();
-
-        bool isAtMinimum = scrollArea
-            ->verticalScrollBar()
-            ->value() == scrollArea
-            ->verticalScrollBar()
-            ->minimum();
-
-        bool isHidden = m_client->getIsHidden();
-
-        if (isAtMinimum) {
-            scrollArea->verticalScrollBar()
-                ->setValue(scrollArea
-                    ->verticalScrollBar()
-                    ->maximum());
-
-
-            if (!isHidden) {
-                for (auto msgComp : unreadMessageComponentsVec) {
-                    auto message = msgComp->getMessage();
-                    message->setIsRead(true);
-                    m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
-                }
-            }
-            
-            selectChatComponent(component);
-            return;
+    if (m_splitter->count() > 1) {
+        QWidget* oldRight = m_splitter->widget(1);
+        if (oldRight != nullptr) {
+            oldRight->hide();
+            oldRight->setParent(nullptr);
         }
+    }
+
+    m_splitter->addWidget(m_current_messagingAreaComponent);
+    m_current_messagingAreaComponent->show();
+    m_splitter->setSizes(sizes);
+    m_current_messagingAreaComponent->setTheme(m_theme);
+
+    auto scrollArea = m_current_messagingAreaComponent->getScrollArea();
+    auto& unreadMessageComponentsVec = m_current_messagingAreaComponent->getUreadMessageComponents();
+
+    bool isAtMinimum = scrollArea->verticalScrollBar()->value() == scrollArea->verticalScrollBar()->minimum();
+    bool isHidden = m_client->getIsHidden();
+
+    if (isAtMinimum) {
+        scrollArea->verticalScrollBar()->setValue(scrollArea->verticalScrollBar()->maximum());
 
         if (!isHidden) {
-            m_current_messagingAreaComponent->markVisibleMessagesAsChecked();
+            for (auto msgComp : unreadMessageComponentsVec) {
+                auto message = msgComp->getMessage();
+                message->setIsRead(true);
+                m_client->sendMessageReadConfirmation(chat->getFriendLogin(), message);
+            }
         }
-        selectChatComponent(component);
-    } 
+    }
+
+    if (!isHidden) {
+        m_current_messagingAreaComponent->markVisibleMessagesAsChecked();
+    }
+    selectChatComponent(component);
 }
 
 void ChatsWidget::onSendMessageData(Message* message, Chat* chat) {
@@ -181,8 +182,8 @@ void ChatsWidget::onChatDelete(const QString& loginOfRemovedChat) {
     removeRightComponent();
 
     m_helloAreaComponent = new HelloAreaComponent(m_theme);
+    m_splitter->addWidget(m_helloAreaComponent);
     m_is_hello_component = true;
-    m_mainHLayout->addWidget(m_helloAreaComponent);
 
     m_chatsListComponent->removeComponent(loginOfRemovedChat);
 
@@ -293,13 +294,16 @@ bool ChatsWidget::isValidChatCreation(const std::string& loginToCheck) {
 
 void ChatsWidget::removeRightComponent() {
     if (m_is_hello_component) {
-        m_mainHLayout->removeWidget(m_helloAreaComponent);
-        delete m_helloAreaComponent;
+        m_splitter->widget(1)->hide();
+        m_helloAreaComponent->deleteLater();
+        m_helloAreaComponent = nullptr;
         setIsHelloAreaComponent(false);
     }
-    else {
-        m_mainHLayout->removeWidget(m_current_messagingAreaComponent);
+    else if (m_current_messagingAreaComponent != nullptr) {
+        m_splitter->widget(1)->hide();
         m_current_messagingAreaComponent->hide();
+        m_current_messagingAreaComponent->setParent(nullptr);
+        m_current_messagingAreaComponent = nullptr;
     }
 }
 

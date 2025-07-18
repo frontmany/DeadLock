@@ -10,9 +10,7 @@
 
 ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
     : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat), m_isClicked(true), m_isSelected(false) {
-    setMinimumSize(100, 70);
-    setMaximumSize(1000, 70);
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
 
     setMouseTracking(true);
     setAttribute(Qt::WA_Hover);

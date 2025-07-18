@@ -228,19 +228,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
-    this->setMinimumSize(250, 300);
-
-    if (utility::getDeviceScaleFactor() <= 1.25) {
-        this->setMaximumSize(640, 3000);
-    }
-    if (utility::getDeviceScaleFactor() <= 1) {
-        this->setMaximumSize(740, 3000);
-    }
-    else {
-        this->setMaximumSize(580, 3000);
-    }
-
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    setMinimumSize(510, 300);
 
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
@@ -334,8 +322,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
 
     m_searchLineEdit = new QLineEdit(this);
     m_searchLineEdit->setPlaceholderText("  Search for friends...");
-    m_searchLineEdit->setMinimumSize(10, 32);
-    m_searchLineEdit->setMaximumSize(975, 32);
 
     m_search_timer = new QTimer(this);
     m_search_timer->setInterval(500);
@@ -378,8 +364,8 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_containerWidget->setLayout(m_containerVLayout);
 
     m_scrollArea = new QScrollArea(this);
+    m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setWidgetResizable(true);
-    m_scrollArea->setMaximumSize(1000, 2080);
     m_scrollArea->setStyleSheet("background: transparent;");
     m_scrollArea->setWidget(m_containerWidget);
 

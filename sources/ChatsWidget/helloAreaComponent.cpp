@@ -42,8 +42,6 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
     else {
         m_label->setText("<img src=\":/resources/ChatsWidget/lockDark.png\" width=\"16\" height=\"16\" style=\"vertical-align:middle;\"> select a chat to start");
     }
-
-    m_label->setMinimumSize(150, 40);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     m_main_HLayout = new QHBoxLayout;
@@ -52,6 +50,9 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
 
     m_main_VLayout->addLayout(m_main_HLayout);
     
+    this->setMinimumSize(600, 300);
+    this->setMaximumSize(1600, 3000);
+
     setTheme(m_theme);
     setLayout(m_main_VLayout);
 }

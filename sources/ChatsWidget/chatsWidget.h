@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include <QWidget>
+#include <QSplitter>
 #include <QLayout>
 #include <QApplication>
 #include <QJsonDocument>
@@ -82,6 +83,9 @@ private:
 	void paintEvent(QPaintEvent* event) override;
 
 private:
+	QSplitter* m_splitter;
+	QWidget* m_leftWidget;
+
 	Theme						   m_theme;
 	Client*						   m_client;
 	std::shared_ptr<ConfigManager> m_config_manager;
