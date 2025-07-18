@@ -418,7 +418,7 @@ void FieldsEditComponent::setName(const std::string& name) {
 }
 
 void FieldsEditComponent::setTheme(Theme theme) {
-
+    m_theme = theme;
     if (theme == Theme::DARK) {
         m_error_label->setStyleSheet("color: rgb(250, 132, 132);");
         m_login_label->setStyleSheet(m_style->DarkLabelStyle);

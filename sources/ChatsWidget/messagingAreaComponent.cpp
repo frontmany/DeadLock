@@ -560,6 +560,8 @@ void ChatPropertiesComponent::setupUI() {
         QDialog logoutDialog(this);
         logoutDialog.setWindowTitle(tr("Delete Chat ?"));
         logoutDialog.setMinimumSize(300, 150);
+        logoutDialog.move(m_messagingAreaComponent->getChatsWidget()->getMainWindow()->window()->frameGeometry().center() - logoutDialog.rect().center());
+        
 
         QString dialogStyle;
         QString buttonStyle;
@@ -630,6 +632,7 @@ void ChatPropertiesComponent::setupUI() {
         }
 
         logoutDialog.setStyleSheet(dialogStyle);
+        logoutDialog.raise();
 
         QVBoxLayout* layout = new QVBoxLayout(&logoutDialog);
 
