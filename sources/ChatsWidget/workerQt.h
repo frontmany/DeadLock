@@ -56,7 +56,7 @@ public:
 	void onConnectError() override;
 	void onNetworkError() override;
 	void onServerDown() override;
-	void onStatusReceive(const std::string& friendLogin, const std::string& status);
+	void onStatusReceive(const std::string& friendLoginHash, const std::string& status);
 	
 	void setRecoveredAvatar(Photo* myRecoveredAvatar) override;
 	void setNameFieldInProfileEditorWidget(const std::string& name) override;

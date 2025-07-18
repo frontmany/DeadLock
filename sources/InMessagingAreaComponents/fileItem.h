@@ -55,6 +55,7 @@ protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
+    QString formatFileSize(const QString& sizeStr);
     void setDownloadState(bool inProgress);
     void updateProgressLabel();
 

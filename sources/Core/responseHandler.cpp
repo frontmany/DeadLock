@@ -385,6 +385,11 @@ void ResponseHandler::onFoundUsers(const std::string& packet) {
             Photo* photo = Photo::deserializeWithoutSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr);
             friendInfo->setFriendPhoto(photo);
         }
+        else {
+            std::string spaceString;
+            std::getline(iss, spaceString);
+            std::getline(iss, spaceString);
+        }
 
         std::string friendPublicKeyStr;
         std::getline(iss, friendPublicKeyStr);
@@ -590,6 +595,7 @@ void ResponseHandler::onUserInfoSuccess(const std::string& packet) {
         std::getline(iss, dataSecondPartStr);
 
         photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
+        photo->loadBinaryDataFromPc();
     }
 
     std::string friendPublicKeyStr;

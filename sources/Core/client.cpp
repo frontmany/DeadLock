@@ -67,7 +67,9 @@ void Client::stop() {
 }
 
 void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
-    sendPacket(m_packets_builder->getTypingPacket(m_my_public_key, m_config_manager->getMyLoginHash(), utility::calculateHash(friendLogin), isTyping), QueryType::TYPING);
+    auto it = m_map_friend_loginHash_to_chat.find(utility::calculateHash(friendLogin));
+    auto& [hash, chat] = *it;
+    sendPacket(m_packets_builder->getTypingPacket(chat->getPublicKey(), m_config_manager->getMyLoginHash(), utility::calculateHash(friendLogin), isTyping), QueryType::TYPING);
 }
 
 void Client::authorizeClient(const std::string& loginHash, const std::string& passwordHash) {

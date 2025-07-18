@@ -105,9 +105,10 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
     m_progressLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     m_progressLabel->setVisible(false);
 
-    m_sizeLabel = new QLabel(QString("%1 KB").arg(std::stoi(m_file_wrapper.file.fileSize) / 1024), this);
+    m_sizeLabel = new QLabel(formatFileSize(QString::fromStdString(m_file_wrapper.file.fileSize)), this);
     m_sizeLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     m_sizeLabel->installEventFilter(this);
+
 
     layout->addSpacing(8);
     layout->addWidget(m_iconBtn);
@@ -136,6 +137,25 @@ FileItem::FileItem(QWidget* parent, FilesComponent* filesComponent, fileWrapper&
         }
         });
 }
+
+QString FileItem::formatFileSize(const QString& sizeStr) {
+    bool ok = false;
+    qint64 size = sizeStr.toLongLong(&ok);
+    if (!ok || size < 0)
+        return "Unknown size";
+
+    static const char* units[] = { "B", "KB", "MB", "GB", "TB" };
+    int unitIndex = 0;
+    double displaySize = static_cast<double>(size);
+
+    while (displaySize >= 1024.0 && unitIndex < 4) {
+        displaySize /= 1024.0;
+        ++unitIndex;
+    }
+
+    return QString("%1 %2").arg(QString::number(displaySize, 'f', 2)).arg(units[unitIndex]);
+}
+
 
 FileItem::~FileItem() {
     delete m_style;
@@ -247,7 +267,7 @@ void FileItem::paintEvent(QPaintEvent* event) {
     if (m_theme == Theme::DARK) {
         if (m_isHovered) {
             if (m_isNeedToRetry) {
-                bgColor = QColor(207, 186, 186);
+                bgColor = QColor(255, 138, 138);
             }
             else {
                 bgColor = QColor(143, 142, 140);
@@ -255,7 +275,7 @@ void FileItem::paintEvent(QPaintEvent* event) {
         }
         else {
             if (m_isNeedToRetry) {
-                bgColor = QColor(189, 170, 170);
+                bgColor = QColor(255, 117, 117);
             }
             else {
                 if (m_isSent) {
@@ -270,7 +290,7 @@ void FileItem::paintEvent(QPaintEvent* event) {
     else {
         if (m_isHovered) {
             if (m_isNeedToRetry) {
-                bgColor = QColor(255, 201, 201);
+                bgColor = QColor(255, 224, 224);
             }
             else {
                 if (m_isSent) {

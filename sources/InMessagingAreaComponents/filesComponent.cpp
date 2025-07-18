@@ -363,7 +363,7 @@ void FilesComponent::paintEvent(QPaintEvent* event)
     // Choose background color based on theme
     QColor bgColor;
     if (m_is_need_to_retry) {
-        bgColor = (m_theme == Theme::DARK) ? QColor(189, 170, 170) : QColor(255, 212, 212);
+        bgColor = (m_theme == Theme::DARK) ? QColor(255, 117, 117) : QColor(255, 212, 212);
     }
     else {
         if (!m_parent_message->getIsSend()) {
@@ -391,11 +391,11 @@ void FilesComponent::setRetryStyle(bool isNeedToRetry) {
     QString style;
     if (isNeedToRetry) {
         if (m_theme == Theme::DARK) {
-            style = "background-color: rgb(189, 170, 170); border-radius: 8px;";
+            style = "background-color: rgb(255, 117, 117); border-radius: 8px;";
 
         }
         else {
-            style = "background-color: rgb(240, 248, 255); border-radius: 8px;";
+            style = "background-color: rgb(255, 212, 212); border-radius: 8px;";
         }
         setStyleSheet(style);
     }

@@ -5,42 +5,56 @@
 #include <QGuiApplication>
 #include <QPainter>
 #include <QGraphicsDropShadowEffect>
+#include <QParallelAnimationGroup>
 #include <QScreen>
 #include <QString>
 #include <QPushButton>
 #include <QPainterPath>
 #include <QTimer>
+#include <QPropertyAnimation>
 
 #include "theme.h"
 
 class Photo;
 class AvatarIcon;
 class ChatsWidget;
+class ButtonIcon;
+class Chat;
 
 class NotificationWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit NotificationWidget(ChatsWidget* chatsWidget,
-        const QString& message,
-        const Photo* photo,
+    explicit NotificationWidget(ChatsWidget* chatsWidget, Chat* chat,
         QWidget* parent = nullptr);
 
     void setTheme(Theme theme);
 
+signals:
+    void clicked();
+    void redirectToChat(Chat* chat);
+
 protected:
+    void enterEvent(QEnterEvent* event) override;
+    void leaveEvent(QEvent* event) override;
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
     void showEvent(QShowEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
 
 private slots:
-    void closeNotification();
+    void closeNotification(bool isShouldWithAnimation);
 
 private:
     void loadAvatar(const Photo* photo);
 
+private:
+    QTimer* m_closeTimer = nullptr;
+    Chat* m_chat;
     Theme m_theme;
     AvatarIcon* m_avatar;
     QLabel* m_messageLabel;
     ChatsWidget* m_chats_widget;
-    QPushButton* m_closeButton;
+    ButtonIcon* m_closeButton;
+    bool m_isHovered = false;
 };

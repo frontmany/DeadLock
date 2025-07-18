@@ -464,12 +464,12 @@ void WorkerQt::onMessageReadConfirmationReceive(const std::string& friendLogin, 
 	}
 }
 
-void WorkerQt::onStatusReceive(const std::string& friendLogin, const std::string& status) {
+void WorkerQt::onStatusReceive(const std::string& friendLoginHash, const std::string& status) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& messagingAreaCompsVec = chatsWidget->getMessagingAreasVec();
 
-	auto messagingAreaIt = std::find_if(messagingAreaCompsVec.begin(), messagingAreaCompsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
-		return comp->getChat()->getFriendLogin() == friendLogin;
+	auto messagingAreaIt = std::find_if(messagingAreaCompsVec.begin(), messagingAreaCompsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
+		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
 	});
 
 	if (messagingAreaIt != messagingAreaCompsVec.end()) {

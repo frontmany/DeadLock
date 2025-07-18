@@ -8,6 +8,30 @@ Photo::Photo(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& pho
     }
 }
 
+void Photo::loadBinaryDataFromPc() {
+    if (m_photoPath.empty()) {
+        std::cerr << "Error: file path is empty\n";
+        return;
+    }
+
+    std::ifstream file(m_photoPath, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Failed to open photo file: " + m_photoPath);
+    }
+
+    std::string oldEncryptedAesKey;
+    if (!std::getline(file, oldEncryptedAesKey)) {
+        std::cerr << "Error: cannot read the encrypted AES key from file\n";
+        return;
+    }
+
+    std::string oldEncryptedData((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    CryptoPP::SecByteBlock oldAesKey = utility::RSADecryptKey(m_private_key, oldEncryptedAesKey);
+    m_binaryData = utility::AESDecrypt(oldAesKey, oldEncryptedData);
+}
+
 void Photo::updateSize() {
     std::ifstream file(m_photoPath, std::ios::binary);
     if (!file) return;

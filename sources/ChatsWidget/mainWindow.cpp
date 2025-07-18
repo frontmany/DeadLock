@@ -98,6 +98,7 @@ ChatsWidget* MainWindow::getChatsWidget() {
 
 void MainWindow::closeEvent(QCloseEvent* event) {
     if (m_client->getIsAbleToClose()) {
+        m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
         event->accept();
         return;
     }
@@ -105,7 +106,8 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     event->ignore();
 
     if (windowHandle()) {
-        windowHandle()->setFlags(windowHandle()->flags() & ~Qt::WindowCloseButtonHint);
+        windowHandle()->setFlag(Qt::WindowCloseButtonHint, false);
+        windowHandle()->show();
     }
 
     QTimer* closeCheckTimer = new QTimer(this);
@@ -115,25 +117,35 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         closeCheckTimer->stop();
         closeCheckTimer->deleteLater();
         if (windowHandle()) {
-            windowHandle()->setFlags(windowHandle()->flags() | Qt::WindowCloseButtonHint);
+            windowHandle()->setFlag(Qt::WindowCloseButtonHint, true);
+            windowHandle()->show();
         }
-        };
+    };
 
-    QTimer::singleShot(10'000, this, [cleanup]() {
+    bool* quitCalled = new bool(false);
+
+    QTimer::singleShot(10'000, this, [this, cleanup, quitCalled]() {
+        if (*quitCalled) return;
+        *quitCalled = true;
         qWarning() << "Couldn't safely close the app!";
+        m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
         cleanup();
         QCoreApplication::quit();
-        });
+    });
 
-    connect(closeCheckTimer, &QTimer::timeout, this, [this, cleanup]() {
+    connect(closeCheckTimer, &QTimer::timeout, this, [this, cleanup, quitCalled]() {
+        if (*quitCalled) return;
         if (m_client->getIsAbleToClose()) {
+            *quitCalled = true;
+            m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
             cleanup();
             QCoreApplication::quit();
         }
-        });
+    });
 
     closeCheckTimer->start();
 }
+
 
 
 void MainWindow::showAlreadyRunningDialog()
@@ -340,7 +352,7 @@ void MainWindow::showConnectionErrorDialog() {
 
     connect(closeButton, &QPushButton::clicked, this, []() {
         QApplication::quit();
-        });
+    });
 
     QObject::connect(errorDialog, &QDialog::finished, overlay, &QWidget::deleteLater);
 

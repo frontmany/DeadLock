@@ -60,6 +60,7 @@ public:
 	QHBoxLayout* getMainHLayout() { return m_mainHLayout; }
 
 public slots:
+	void onNotificationClicked(Chat* chat);
 	void showNotification(Chat* chat);
 	void createAndAddChatComponentToList(Chat* chat);
 	void createAndSetMessagingAreaComponent(Chat* chat);
@@ -96,5 +97,5 @@ private:
 	std::vector<MessagingAreaComponent*> m_vec_messaging_components;
 
 
-	bool m_is_hello_component = false;
+	bool m_is_hello_component = true;
 };

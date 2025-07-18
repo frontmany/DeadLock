@@ -525,8 +525,8 @@ void FriendProfileComponent::setTheme(Theme theme) {
     else {
         m_close_button->setTheme(m_theme);
         m_color = new QColor(229, 228, 226);
-        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(0, 53, 107);");
-        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(0, 53, 107);");
+        m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(26, 133, 255);");
+        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(26, 133, 255);");
     }
 }
 
@@ -710,19 +710,98 @@ void ChatPropertiesComponent::paintEvent(QPaintEvent* event) {
 void ChatPropertiesComponent::setTheme(Theme theme) {
     m_theme = theme;
 
-    m_close_button->setTheme(m_theme);
+    m_close_button->setTheme(m_theme); 
+
+    QString buttonTransparentRedLight = R"(
+    QPushButton {
+        background-color: transparent;
+        color: rgba(255, 60, 60, 0.9);
+        font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+        font-weight: 400;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+        padding: 2px 6px;
+        margin-top: 4px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        min-width: 60px;
+    }
+
+    QPushButton:hover {
+        color: rgba(255, 48, 48, 0.95);
+        background-color: transparent;
+        border: 1px solid transparent;
+    }
+
+    QPushButton:pressed {
+        color: rgba(255, 48, 48, 1.0);
+        background-color: transparent;
+        border: 1px solid transparent;
+        padding-top: 3px;
+    }
+
+    QPushButton:disabled {
+        color: rgba(150, 150, 150, 0.5);
+        background-color: transparent;
+    }
+
+    QPushButton:focus {
+        outline: none;
+        border: 1px solid transparent;
+    }
+    )";
+
+
+    QString buttonTransparentRedDark = R"(
+    QPushButton {
+        background-color: transparent;
+        color: rgba(255, 117, 117, 0.9);
+        font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+        font-weight: 400;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+        padding: 2px 6px;
+        margin-top: 4px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        min-width: 60px;
+    }
+
+    QPushButton:hover {
+        color: rgba(255, 130, 130, 0.95);
+        background-color: transparent;
+        border: 1px solid transparent;
+    }
+
+    QPushButton:pressed {
+        color: rgba(255, 130, 130, 1.0);
+        background-color: transparent;
+        border: 1px solid transparent;
+        padding-top: 3px;
+    }
+
+    QPushButton:disabled {
+        color: rgba(150, 150, 150, 0.5);
+        background-color: transparent;
+    }
+
+    QPushButton:focus {
+        outline: none;
+        border: 1px solid transparent;
+    }
+    )";
 
     if (m_theme == Theme::DARK) {
         m_color = new QColor(51, 51, 51);   
-        QIcon icon(":/resources/ChatsWidget/trashBin.png");
+        QIcon icon(":/resources/ChatsWidget/trashBinDark.png");
         m_delete_chat_button->setIcon(icon);
-        m_delete_chat_button->setStyleSheet(m_style->buttonTransparentDark);
+        m_delete_chat_button->setStyleSheet(buttonTransparentRedDark);
     }
     else {
         m_color = new QColor(225, 225, 225);
-        QIcon icon(":/resources/ChatsWidget/trashBin.png");
+        QIcon icon(":/resources/ChatsWidget/trashBinLight.png");
         m_delete_chat_button->setIcon(icon);
-        m_delete_chat_button->setStyleSheet(m_style->buttonTransparentLight);
+        m_delete_chat_button->setStyleSheet(buttonTransparentRedLight);
     }
 }
 
@@ -1484,20 +1563,131 @@ MessagingAreaComponent::~MessagingAreaComponent() {
 }
 
 void MessagingAreaComponent::openChatPropertiesDialog() {
+    if (m_chatPropertiesDialog) {
+        m_chatPropertiesDialog->show();
+        return;
+    }
+
+    m_chatPropertiesOverlay = new OverlayWidget(m_chatsWidget->getMainWindow());
+    m_chatPropertiesOverlay->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    m_chatPropertiesOverlay->setAttribute(Qt::WA_TranslucentBackground);
+    m_chatPropertiesOverlay->showMaximized();
+
+    m_chatPropertiesDialog = new QDialog(m_chatPropertiesOverlay);
+    m_chatPropertiesDialog->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    m_chatPropertiesDialog->setAttribute(Qt::WA_TranslucentBackground);
+
+    int dialogWidth = 170;
+    int dialogHeight = 50;
+
+    m_chatPropertiesDialog->setFixedSize(dialogWidth, dialogHeight);
+
+    QPoint pos = QPoint(
+        width() - (dialogWidth + 37),
+        70
+    );
+    QPoint globalPos = mapToGlobal(pos);
+    m_chatPropertiesDialog->move(globalPos);
+
+    m_chat_properties_component->setParent(m_chatPropertiesDialog);
+    m_chat_properties_component->setFixedSize(dialogWidth, dialogHeight);
+
+    QVBoxLayout* layout = new QVBoxLayout(m_chatPropertiesDialog);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(m_chat_properties_component);
+
     m_chat_properties_component->show();
+    m_chatPropertiesDialog->show();
+
+    connect(m_chatPropertiesDialog, &QDialog::finished, this, [this](int) {
+        if (m_chatPropertiesDialog) {
+            m_chatPropertiesDialog->hide();
+        }
+        if (m_chatPropertiesOverlay) {
+            m_chatPropertiesOverlay->hide();
+        }
+
+        m_chat_properties_component->setParent(nullptr);
+        m_chat_properties_component->hide();
+
+        m_chatPropertiesDialog->deleteLater();
+        m_chatPropertiesDialog = nullptr;
+
+        m_chatPropertiesOverlay->deleteLater();
+        m_chatPropertiesOverlay = nullptr;
+        });
+
 }
 
 void MessagingAreaComponent::closeChatPropertiesDialog() {
-    m_chat_properties_component->hide();
+    if (m_chatPropertiesDialog) {
+        m_chatPropertiesDialog->close();
+    }
 }
 
+
 void MessagingAreaComponent::openFriendProfile() {
+    if (m_friendProfileDialog) {
+        m_friendProfileDialog->show();
+        return;
+    }
+
+    m_friendProfileOverlay = new OverlayWidget(m_chatsWidget->getMainWindow());
+    m_friendProfileOverlay->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    m_friendProfileOverlay->setAttribute(Qt::WA_TranslucentBackground);
+    m_friendProfileOverlay->showMaximized();
+
+    m_friendProfileDialog = new QDialog(m_friendProfileOverlay);
+    m_friendProfileDialog->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    m_friendProfileDialog->setAttribute(Qt::WA_TranslucentBackground);
+
+    int dialogWidth = 200;
+    int dialogHeight = 80;
+
+    m_friendProfileDialog->setFixedSize(dialogWidth, dialogHeight);
+
+    QPoint pos = QPoint(
+        40,
+        80
+    );
+    QPoint globalPos = mapToGlobal(pos);
+    m_friendProfileDialog->move(globalPos);
+
+    m_friend_profile_component->setParent(m_friendProfileDialog);
+    m_friend_profile_component->setFixedSize(dialogWidth, dialogHeight);
+
+    QVBoxLayout* layout = new QVBoxLayout(m_friendProfileDialog);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(m_friend_profile_component);
+
     m_friend_profile_component->show();
+    m_friendProfileDialog->show();
+
+    connect(m_friendProfileDialog, &QDialog::finished, this, [this](int) {
+        if (m_friendProfileDialog) {
+            m_friendProfileDialog->hide();
+        }
+        if (m_friendProfileOverlay) {
+            m_friendProfileOverlay->hide();
+        }
+
+        m_friend_profile_component->setParent(nullptr);
+        m_friend_profile_component->hide();
+
+        m_friendProfileDialog->deleteLater();
+        m_friendProfileDialog = nullptr;
+
+        m_friendProfileOverlay->deleteLater();
+        m_friendProfileOverlay = nullptr;
+        });
 }
 
 void MessagingAreaComponent::closeFriendProfile() {
-    m_friend_profile_component->hide();
+    if (m_friendProfileDialog) {
+        m_friendProfileDialog->close();
+    }
 }
+
 
 void MessagingAreaComponent::onChatDelete() {
     m_chatsWidget->onChatDelete(QString::fromStdString(m_chat->getFriendLogin()));

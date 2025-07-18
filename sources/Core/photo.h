@@ -20,6 +20,7 @@ public:
 
     const std::string& getBinaryData() const { return m_binaryData; }
     void setBinaryData(const std::string& data) { m_binaryData = data; }
+    void loadBinaryDataFromPc();
 
     std::string encryptForServerBase64(const CryptoPP::RSA::PublicKey& serverPublicKey) const;
     static Photo* deserializeAndSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& data, std::string login);

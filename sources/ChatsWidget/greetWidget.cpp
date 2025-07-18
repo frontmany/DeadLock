@@ -277,7 +277,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     m_skipButton->setMaximumSize(getScaledSize(350), getScaledSize(60));
     connect(m_skipButton, &QPushButton::clicked, this, [this]() {
         m_mainWindow->setupChatsWidget();
-        });
+    });
 
     m_imageLabel = new QLabel(this);
     m_imageLabel->setFixedSize(getScaledSize(500), getScaledSize(500));

@@ -54,6 +54,7 @@ class ButtonCursor;
 class ChatHeaderComponent;
 class MessagingAreaComponent;
 class DelimiterComponent;
+class OverlayWidget;
 class MessageComponent;
 class ChatsWidget;
 class Packet;
@@ -150,6 +151,7 @@ private:
     void setupUI();
     void applyGlassEffect(QPainter& painter, const QPainterPath& path);
 
+private:
     QLabel* m_login_label;
     QLabel* m_name_label;
 
@@ -183,6 +185,7 @@ private:
     void setupUI();
     void applyGlassEffect(QPainter& painter, const QPainterPath& path);
 
+private:
     StyleMessagingAreaComponent* m_style;
     MessagingAreaComponent* m_messagingAreaComponent;
 
@@ -284,14 +287,16 @@ private:
     DelimiterComponent* m_delimiter_component_unread = nullptr;
     bool isDelimiterUnread = false;
 
-
     DelimiterComponent* m_delimiter_component_is_incoming_files = nullptr;
     bool isDelimiterIncoming = false;
 
+
+    QDialog* m_friendProfileDialog = nullptr;
+    OverlayWidget* m_friendProfileOverlay = nullptr;
+    QDialog* m_chatPropertiesDialog = nullptr;
+    OverlayWidget* m_chatPropertiesOverlay = nullptr;
     FriendProfileComponent* m_friend_profile_component;
     ChatPropertiesComponent* m_chat_properties_component;
-
-    ButtonIcon*             m_move_slider_down_button;
 
     QTimer* m_typingTimer;
     bool m_isTypingActive = false;
@@ -300,18 +305,14 @@ private:
     ChatHeaderComponent*    m_header;
     QScrollArea*            m_scrollArea;  
     QWidget*                m_containerWidget;
-
     MyTextEdit*             m_messageInputEdit;
     ButtonCursor*           m_sendMessageButton;
     ButtonIcon*             m_attachFileButton;
-
+    ButtonIcon*              m_move_slider_down_button;
     MyTextEdit*             m_files_caption_edit = nullptr;
-
     QStringList             m_vec_selected_files;
-
     QLabel*                 m_error_label;
     QHBoxLayout*            m_error_labelLayout;
-
     Chat*                   m_chat;
     ChatsWidget*            m_chatsWidget;
 };

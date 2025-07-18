@@ -53,18 +53,31 @@ void ChatsWidget::showNotification(Chat* chat) {
         return;
     }
 
-    auto photo = chat->getFriendPhoto();
-    std::string message = "New message from " + chat->getFriendName();
-
     NotificationWidget* notification = new NotificationWidget(
         this,
-        QString::fromStdString(message),
-        photo,
+        chat,
         this
     );
 
     notification->setTheme(m_theme);
     notification->show();
+}
+
+void ChatsWidget::onNotificationClicked(Chat* chat) {
+    auto& vec = m_chatsListComponent->getChatComponentsVec();
+
+    auto it = std::find_if(vec.begin(), vec.end(), [chat](ChatComponent* comp) {
+        return comp->getChat()->getFriendLogin() == chat->getFriendLogin();
+    });
+
+    if (it == vec.end())
+        return;
+
+    ChatComponent* comp = *it;
+    comp->setUnreadMessageDot(false);
+    onSetChatMessagingArea(chat, comp);
+    
+    m_main_window->showMaximized();
 }
 
 MainWindow* ChatsWidget::getMainWindow() {

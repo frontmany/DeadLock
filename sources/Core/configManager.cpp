@@ -116,6 +116,7 @@ bool ConfigManager::load(const std::string& fileName, const std::string& special
         QString photoPath = QString::fromStdString(utility::AESDecrypt(AESEConfigKey, jsonObject["my_photo_path"].toString().toStdString()));
         if (!photoPath.isEmpty()) {
             m_my_photo = new Photo(m_client->getPrivateKey(), photoPath.toStdString());
+            m_my_photo->loadBinaryDataFromPc();
         }
     }
 
@@ -188,7 +189,7 @@ void ConfigManager::updateInConfigFriendLogin(const std::string& oldLogin, const
         QJsonObject chatObj = chatValue.toObject();
         std::string currentLogin = utility::AESDecrypt(chatConfigKey, chatObj["friend_login"].toString().toStdString());
         if (currentLogin == oldLogin) {
-            chatObj["friend_login"] = QString::fromStdString(newLogin);
+            chatObj["friend_login"] = QString::fromStdString(utility::AESEncrypt(chatConfigKey, newLogin));
             chatValue = chatObj;
             found = true;
             break;

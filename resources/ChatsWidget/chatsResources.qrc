@@ -2,10 +2,6 @@
     <qresource prefix="/resources/ChatsWidget">
         <file>darkChatsBackground.jpg</file>
         <file>lightChatsBackground.jpg</file>
-        <file>userDark.png</file>
-        <file>userDarkHover.png</file>
-        <file>userLight.png</file>
-        <file>userLightHover.png</file>
         <file>startChatDark.png</file>
         <file>startChatLight.png</file>
         <file>startChatHoverDark.png</file>
@@ -19,10 +15,6 @@
         <file>sendDark.png</file>
         <file>sendLight.png</file>
         <file>userFriend.png</file> 
-        <file>userFriendDark.png</file> 
-        <file>userFriendLight.png</file>
-        <file>userFriendHoverDark.png</file>
-        <file>userFriendHoverLight.png</file>
         <file>menuHoverLight.png</file>
         <file>menuHoverDark.png</file>
         <file>menuDark.png</file>
@@ -42,7 +34,8 @@
 		<file>logoutHoverDark.png</file>
 		<file>logoutLight.png</file>
 		<file>logoutHoverLight.png</file>
-		<file>trashBin.png</file>
+		<file>trashBinDark.png</file>
+		<file>trashBinLight.png</file>
 		<file>arrowDownLight.png</file>
 		<file>arrowDownDark.png</file>
 		<file>arrowDownLightHover.png</file>

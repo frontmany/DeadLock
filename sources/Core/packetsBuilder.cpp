@@ -306,7 +306,6 @@ const std::string PacketsBuilder::getTypingPacket(const CryptoPP::RSA::PublicKey
 {
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
-
     std::string encryptedKey = utility::RSAEncryptKey(friendPublicKey, key);
 
     std::ostringstream oss;

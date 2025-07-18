@@ -140,7 +140,7 @@ void ChatComponent::setSelected(bool isSelected) {
             m_currentColor = m_backColor;
         }
         else {
-            m_backColor = QColor(0, 53, 107);
+            m_backColor = QColor(26, 133, 255);
             m_lastMessageLabel->setStyleSheet("font-size: 12px; color: rgb(240, 240, 240); font-family: 'Segoe UI'; ");
             m_nameLabel->setStyleSheet("font-weight: bold; font-size: 14px; color: rgb(250, 250, 250);");
             m_currentColor = m_backColor;
@@ -265,7 +265,7 @@ void ChatComponent::hoverEnter(QHoverEvent* event)
 {
     if (m_theme == LIGHT) {
         if (m_isSelected == true) {
-            m_currentColor = QColor(0, 53, 107);
+            m_currentColor = QColor(21, 119, 232);
         }
         else {
             m_currentColor = m_hoverColorLight;

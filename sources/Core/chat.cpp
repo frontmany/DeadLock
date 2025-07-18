@@ -59,6 +59,7 @@ Chat* Chat::deserialize(const CryptoPP::RSA::PrivateKey& myPrivateKey,
             std::string encryptedPath = jsonObject["photo_path"].toString().toStdString();
             std::string path = (utility::AESDecrypt(chat->m_AESE_chat_configKey, encryptedPath));
             chat->m_friend_photo = new Photo(myPrivateKey, path);
+            chat->m_friend_photo->loadBinaryDataFromPc();
         }
 
         db.loadMessages(myPrivateKey, myLogin, chat->m_friend_login, chat->m_vec_messages);

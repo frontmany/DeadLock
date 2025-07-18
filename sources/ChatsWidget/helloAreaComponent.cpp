@@ -35,7 +35,14 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
 	m_main_VLayout = new QVBoxLayout;
     m_main_VLayout->setAlignment(Qt::AlignCenter);
 
-    m_label = new QLabel("select a chat to start");
+    m_label = new QLabel;
+    if (m_theme == DARK) {
+        m_label->setText("<img src=\":/resources/ChatsWidget/lockLight.png\" width=\"16\" height=\"16\" style=\"vertical-align:middle;\"> select a chat to start");
+    }
+    else {
+        m_label->setText("<img src=\":/resources/ChatsWidget/lockDark.png\" width=\"16\" height=\"16\" style=\"vertical-align:middle;\"> select a chat to start");
+    }
+
     m_label->setMinimumSize(150, 40);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -51,6 +58,14 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
 
 void HelloAreaComponent::setTheme(Theme theme) {
     m_theme = theme;
+
+    if (m_theme == DARK) {
+        m_label->setText("<img src=\":/resources/ChatsWidget/lockLight.png\" width=\"16\" height=\"16\" style=\"vertical-align:middle;\"> select a chat to start");
+    }
+    else {
+        m_label->setText("<img src=\":/resources/ChatsWidget/lockDark.png\" width=\"16\" height=\"16\" style=\"vertical-align:middle;\"> select a chat to start");
+    }
+
     if (theme == DARK) {
         m_label->setStyleSheet(style->LabelStyleDark);
         setBackGround(m_theme);
