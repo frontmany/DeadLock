@@ -57,7 +57,10 @@ public:
 	void onNetworkError() override;
 	void onServerDown() override;
 	void onStatusReceive(const std::string& friendLoginHash, const std::string& status);
-	
+	void supplyTheme(bool isDarkTheme) override;
+	void showUpdateButton() override;
+	void updateAndRestart() override;
+
 	void setRecoveredAvatar(Photo* myRecoveredAvatar) override;
 	void setNameFieldInProfileEditorWidget(const std::string& name) override;
 

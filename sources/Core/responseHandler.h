@@ -45,6 +45,7 @@ public:
 	void onChatCreateSuccess(const std::string& packet);
 	void onChatCreateFail();
 
+	void onUpdateOffer(const std::string& packet);
 	void onMessageReceive(const std::string& packet);
 	void onUserInfoSuccess(const std::string& packet);
 	void onUserInfoFail(const std::string& packet);
@@ -58,6 +59,7 @@ public:
 	void onStatusReceive(const std::string& packet);
 
 private:
+	void processNewVersionLoadedFile(net::file<QueryType>& file);
 	void processRequestedFile(net::file<QueryType>& file);
 	void addDataToMessage(Message* message, net::file<QueryType>& file, bool isPresent);
 	void showFilesMessage(Message* message, const std::string& friendLogin, const std::string& myLogin);

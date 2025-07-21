@@ -265,6 +265,21 @@ const std::string PacketsBuilder::getPublicKeyPacket(const std::string& myLoginH
     return oss.str();
 }
 
+const std::string PacketsBuilder::getUpdateRequestPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const std::string& versionNumber) {
+    CryptoPP::SecByteBlock key;
+    utility::generateAESKey(key);
+
+    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
+
+    std::ostringstream oss;
+    oss << get << '\n'
+        << encryptedKey << '\n'
+        << loginHash << '\n'
+        << utility::AESEncrypt(key, versionNumber);
+
+    return oss.str();
+}  
+
 //RPL
 const std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message)
 {

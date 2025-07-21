@@ -980,7 +980,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
 
     QIcon icon4(":/resources/ChatsWidget/arrowDownLight.png");
     QIcon iconHover4(":/resources/ChatsWidget/arrowDownLightHover.png");
-    m_move_slider_down_button->uploadIconsLight(icon4, iconHover4);
+    m_move_slider_down_button->uploadIconsLight(iconHover4, icon4);
     m_move_slider_down_button->setTheme(m_theme);
     m_move_slider_down_button->setIconSize(QSize(40, 40));
     m_move_slider_down_button->hide();
@@ -1032,14 +1032,17 @@ void MessagingAreaComponent::onTypingTimeout() {
 }
 
 void MessagingAreaComponent::updateSliderButtonPosition() {
-    if (!m_move_slider_down_button) return;
+    if (!m_move_slider_down_button)
+        return;
 
+    const int rightMargin = 40;  
     const int bottomMargin = 90;
+
     QSize btnSize = m_move_slider_down_button->size();
 
     m_move_slider_down_button->move(
-        (width() - btnSize.width()) / 2,  
-        height() - btnSize.height() - bottomMargin
+        width() - btnSize.width() - rightMargin, 
+        height() - btnSize.height() - bottomMargin 
     );
 }
 

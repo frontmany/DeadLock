@@ -11,6 +11,7 @@
 #include "configManager.h"
 #include "mainWindow.h"
 #include "utility.h"
+#include "theme.h"
 
 
 class CustomStyle : public QProxyStyle {
@@ -43,7 +44,11 @@ int main(int argc, char* argv[])
 
     if (configManager->checkIsAutoLogin()) {
         configManager->loadLoginHash();
+        configManager->loadTheme();
         configManager->loadPasswordHash();
+
+        mainWindow->setTheme(configManager->getIsDarkTheme() ? DARK : LIGHT);
+
         client->authorizeClient(configManager->getMyLoginHash(), configManager->getMyPasswordHash());
     }
     else {

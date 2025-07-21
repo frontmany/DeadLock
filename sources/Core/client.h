@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "net.h"
+#include "theme.h"
 #include "queryType.h"
 
 class      fileWrapper;
@@ -52,6 +53,7 @@ public:
 
     void requestUserInfoFromServer(const std::string& loginHashToSearch, const std::string& loginHash);
     void requestMyInfoFromServerAndResetKeys(const std::string& loginHash);
+    void requestUpdate();
 
     void findUser(const std::string& searchText);
     void typingNotify(const std::string& friendLogin, bool isTyping);
@@ -112,8 +114,6 @@ public:
 
     void setPrivateKey(const CryptoPP::RSA::PrivateKey& key);
     const CryptoPP::RSA::PrivateKey& getPrivateKey() const;
-
-
 
     void setServerEncryptionPart(const std::string& encryptionPart);
     const std::string& getServerEncryptionPart() const { return m_server_encryption_part; }

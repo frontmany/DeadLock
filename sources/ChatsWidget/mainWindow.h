@@ -32,6 +32,10 @@ public:
 
 
 public slots:
+	void setTheme(bool isDarkTheme) {
+		m_theme = isDarkTheme ? DARK : LIGHT;
+	}
+
 	void showDoubleConnectionErrorDialog();
 	void showConnectionErrorDialog();
 	void showAlreadyRunningDialog();

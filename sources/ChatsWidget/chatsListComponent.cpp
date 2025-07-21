@@ -68,7 +68,7 @@ StyleChatsListComponent::StyleChatsListComponent() {
         background-color: #333;    
         color: white;               
         border: none;     
-        border-radius: 15px;         
+        border-radius: 14px;         
         padding: 5px;               
     }
     QLineEdit:focus {
@@ -81,7 +81,7 @@ StyleChatsListComponent::StyleChatsListComponent() {
         background-color: #ffffff;    
         color: black;                 
         border: none;       
-        border-radius: 15px;           
+        border-radius: 14px;           
         padding: 5px;                 
     }
     QLineEdit:focus {
@@ -214,7 +214,104 @@ QLabel {
 }
 )";
 
+    updateButtonDark = R"(
+QPushButton {
+    background-color: rgba(26, 133, 255, 0.15); 
+    color: rgb(100, 180, 255);
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 5px;
+}
 
+QPushButton:hover {
+    background-color: rgba(26, 133, 255, 0.30); 
+    color: rgb(26, 133, 255);
+}
+
+QPushButton:pressed {
+    background-color: rgba(0, 102, 204, 0.40);   
+    color: rgb(0, 102, 204);
+}
+
+QPushButton:disabled {
+    background-color: rgba(80, 80, 80, 0.3);
+    color: #555555;
+}
+)";
+
+
+    updateButtonLight = R"(
+QPushButton {
+    background-color: rgba(0, 102, 204, 0.15);  
+    color: rgb(0, 102, 204);
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 5px;
+}
+
+QPushButton:hover {
+    background-color: rgba(26, 133, 255, 0.30);
+    color: rgb(26, 133, 255);
+}
+
+QPushButton:pressed {
+    background-color: rgba(0, 76, 153, 0.40);
+    color: rgb(0, 76, 153);
+}
+
+QPushButton:disabled {
+    background-color: rgba(200, 200, 200, 0.3);
+    color: #A0A0A0;
+}
+)";
+
+    updateButtonInProgressDark = R"(
+QPushButton {
+    background-color: rgba(26, 133, 255, 0.10); 
+    color: rgba(100, 180, 255, 0.7);
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 5px;
+}
+
+QPushButton:hover {
+    background-color: rgba(26, 133, 255, 0.10);
+    color: rgba(100, 180, 255, 0.7);
+}
+
+QPushButton:pressed {
+    background-color: rgba(26, 133, 255, 0.10);
+    color: rgba(100, 180, 255, 0.7);
+}
+)";
+
+    updateButtonInProgressLight = R"(
+QPushButton {
+    background-color: rgba(0, 102, 204, 0.10);  
+    color: rgba(0, 102, 204, 0.7);
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 5px 12px;
+    border-radius: 5px;
+}
+
+QPushButton:hover {
+    background-color: rgba(0, 102, 204, 0.10);
+    color: rgba(0, 102, 204, 0.7);
+}
+
+QPushButton:pressed {
+    background-color: rgba(0, 102, 204, 0.10);
+    color: rgba(0, 102, 204, 0.7);
+}
+)";
 }
 
 ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget, Theme theme, bool isHidden)
@@ -256,6 +353,22 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_hideButton->setFixedSize(125, 32);
     m_hideButton->setIconSize(QSize(32, 32));
     m_hideButton->installEventFilter(this);
+
+    m_updateButton = new QPushButton(this);
+    m_updateButton->setFixedSize(245, 32);
+    m_updateButton->hide();
+    m_profileHLayout->addWidget(m_updateButton);
+    connect(m_updateButton, &QPushButton::clicked, [this]() {
+        m_chatsWidget->getClient()->requestUpdate();
+        m_updateButton->setText("Quantum Core Loading...");
+        m_isUpdateLoading = true;
+        if (m_theme == DARK) {
+            m_updateButton->setStyleSheet(style->updateButtonInProgressDark);
+        }
+        else {
+            m_updateButton->setStyleSheet(style->updateButtonInProgressLight);
+        }
+    });
 
     if (m_is_hidden) {
         m_hideButton->click();
@@ -560,6 +673,7 @@ void ChatsListComponent::setTheme(Theme theme) {
     m_darkModeSwitch->setTheme(m_theme);
     m_profileButton->setTheme(m_theme);
     m_friend_search_dialog->setTheme(m_theme);
+
     updateHideButton();
 
     if (m_profile_editor_widget != nullptr) {
@@ -567,6 +681,13 @@ void ChatsListComponent::setTheme(Theme theme) {
     }
 
     if (theme == DARK) {
+        if (m_isUpdateLoading) {
+            m_updateButton->setStyleSheet(style->updateButtonInProgressDark);
+        }
+        else {
+            m_updateButton->setStyleSheet(style->updateButtonDark);
+        }
+
         m_noConnectionLabel->setStyleSheet(style->DarkNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->DarkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
@@ -582,6 +703,14 @@ void ChatsListComponent::setTheme(Theme theme) {
         }
     }
     else {
+        if (m_isUpdateLoading) {
+            m_updateButton->setStyleSheet(style->updateButtonInProgressLight);
+        }
+        else {
+            m_updateButton->setStyleSheet(style->updateButtonLight);
+        }
+
+        m_updateButton->setStyleSheet(style->updateButtonLight);
         m_noConnectionLabel->setStyleSheet(style->LightNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->LightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
@@ -659,6 +788,7 @@ void ChatsListComponent::setAvatarInProfileEditorWidget(const Photo& photo) {
 
 void ChatsListComponent::showNoConnectionLabel() {
     m_hideButton->hide();
+    m_updateButton->hide();
     m_hideButton->setChecked(true);
     m_noConnectionLabel->setText("Lost in Space (No internet connection)");
     m_noConnectionLabel->show();
@@ -666,11 +796,18 @@ void ChatsListComponent::showNoConnectionLabel() {
 
 void ChatsListComponent::showServerOfflineLabel() {
     m_hideButton->hide();
+    m_updateButton->hide();
     m_hideButton->setChecked(true);
     m_noConnectionLabel->setText("Galactic Silence (Server Down)");
     m_noConnectionLabel->show();
 }
 
+void ChatsListComponent::showUpdateButton() {
+    m_hideButton->hide();
+    m_hideButton->setChecked(false);
+    m_updateButton->setText("Cosmic Pause (Update Needed)");
+    m_updateButton->show();
+}
 
 
 void ChatsListComponent::showProfileDialog()

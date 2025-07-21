@@ -1,4 +1,3 @@
-#include "theme.h"
 #include "workerQt.h"
 #include "chatsWidget.h"
 #include "messagingAreaComponent.h"
@@ -124,17 +123,19 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLoginHash, fileWr
 void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
-	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
-		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
-	});
-	if (comp != compsVec.end()) {
-		MessagingAreaComponent* areaComp = *comp;
-		auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
-		std::string blobUID = file.blobUID;
-		try {
+	try {
+		auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
+			return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
+		});
+
+
+		if (comp != compsVec.end()) {
+			MessagingAreaComponent* areaComp = *comp;
+			auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
+			std::string blobUID = file.blobUID;
 			auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
 				return comp->getId() == QString::fromStdString(blobUID);
-			});
+				});
 
 			if (messageCompIt != messagesCompsVec.end()) {
 				MessageComponent* messageComp = *messageCompIt;
@@ -146,11 +147,10 @@ void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, con
 					Q_ARG(int, progressPercent));
 			}
 		}
-		catch (...) {
-			std::cout << "update progress error";
-		}
 	}
-	
+	catch (...){
+		std::cout << "update progress error";
+	}
 }
 
 void WorkerQt::showNowReceiving(const std::string& friendLoginHash) {
@@ -219,6 +219,29 @@ void WorkerQt::onPasswordVerifySuccess() {
 			"showNewPasswordInput",
 			Qt::QueuedConnection);
 	}
+}
+
+void WorkerQt::supplyTheme(bool isDarkTheme) {
+	QMetaObject::invokeMethod(m_main_window,
+		"setTheme",
+		Qt::QueuedConnection,
+		Q_ARG(bool, isDarkTheme));
+}
+
+void WorkerQt::showUpdateButton() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();
+
+	QMetaObject::invokeMethod(chatsListComponent,
+		"showUpdateButton",
+		Qt::QueuedConnection);
+}
+
+void WorkerQt::updateAndRestart() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	QMetaObject::invokeMethod(chatsWidget,
+		"updateAndRestart",
+		Qt::QueuedConnection);
 }
 
 void WorkerQt::onPasswordVerifyFail() {

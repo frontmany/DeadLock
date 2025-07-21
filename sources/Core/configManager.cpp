@@ -27,6 +27,11 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
     utility::generateAESKey(AESEConfigKey);
 
     QJsonObject jsonObject;
+    jsonObject["theme"] = QString::fromStdString(m_isDarkTheme ? "true" : "false");
+    jsonObject["isNeedToUpdate"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_isNeedToUpdate ? "true" : "false"));
+    if (m_newVersionNumber != "") {
+        jsonObject["newVersionNumber"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_newVersionNumber));
+    }
     jsonObject["my_login"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_login));
     jsonObject["my_login_hash"] = QString::fromStdString(m_my_login_hash);
     jsonObject["is_hidden"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, (isHidden ? "1" : "0")));
@@ -107,6 +112,15 @@ bool ConfigManager::load(const std::string& fileName, const std::string& special
 
     CryptoPP::SecByteBlock AESEConfigKey = utility::RSADecryptKey(m_client->getPrivateKey(), jsonObject["encrypted_config_key"].toString().toStdString());
 
+    if (jsonObject.contains("theme")) {
+        m_isDarkTheme = jsonObject["theme"].toString().toStdString() == "true";
+    }
+    if (jsonObject.contains("isNeedToUpdate")) {
+        m_isNeedToUpdate = utility::AESDecrypt(AESEConfigKey, jsonObject["isNeedToUpdate"].toString().toStdString()) == "true";
+    }
+    if (jsonObject.contains("newVersionNumber")) {
+        m_newVersionNumber = utility::AESDecrypt(AESEConfigKey, jsonObject["newVersionNumber"].toString().toStdString());
+    }
     m_my_login = utility::AESDecrypt(AESEConfigKey, jsonObject["my_login"].toString().toStdString());
     m_my_name = utility::AESDecrypt(AESEConfigKey, jsonObject["my_name"].toString().toStdString());
     m_is_has_photo = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_photo"].toString().toStdString()) == "1";
@@ -371,6 +385,29 @@ void ConfigManager::loadLoginHash() {
     if (jsonObject.contains("my_login_hash")) {
         std::string loginHash = jsonObject["my_login_hash"].toString().toStdString();
         m_my_login_hash = loginHash;
+    }
+}
+
+void ConfigManager::loadTheme() {
+    QFile file(QString::fromStdString(m_auto_login_path));
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Couldn't open the .json config file: config.json";
+        return;
+    }
+
+    QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
+    file.close();
+
+    if (!loadDoc.isObject()) {
+        qWarning() << "Invalid JSON in the file: config.json";
+        return;
+    }
+
+    QJsonObject jsonObject = loadDoc.object();
+
+    if (jsonObject.contains("theme")) {
+        std::string themeString = jsonObject["theme"].toString().toStdString();
+        m_isDarkTheme = themeString == "true";
     }
 }
 

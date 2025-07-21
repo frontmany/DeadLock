@@ -451,7 +451,7 @@ void MainWindow::showDoubleConnectionErrorDialog() {
 
     connect(closeButton, &QPushButton::clicked, this, []() {
         QApplication::quit();
-        });
+    });
 
     QObject::connect(errorDialog, &QDialog::finished, overlay, &QWidget::deleteLater);
 

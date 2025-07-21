@@ -96,8 +96,27 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     else if (msg.header.type == QueryType::FILE_PREVIEW) {
         onFilePreview(packet);
     }
+    else if (msg.header.type == QueryType::UPDATE_OFFER) {
+        onUpdateOffer(packet);
+    }
 
     m_client->setIsAbleToClose(true);
+}
+
+void  ResponseHandler::onUpdateOffer(const std::string& packet) {
+    std::istringstream iss(packet);
+
+    std::string encryptedKey;
+    std::getline(iss, encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
+
+    std::string versionNumber;
+    std::getline(iss, versionNumber);
+    versionNumber = utility::AESDecrypt(key, versionNumber);
+    
+    m_configManager->setIsNeedToUpdate(true);
+    m_configManager->setNewVersionNumber(versionNumber);
+    m_worker_UI->showUpdateButton();
 }
 
 void ResponseHandler::onRegistrationSuccess(const std::string& packet) {
@@ -150,7 +169,43 @@ void ResponseHandler::onChatCreateFail() {
     m_worker_UI->onChatCreateFail();
 }
 
+namespace fs = std::filesystem;
+
+void ResponseHandler::processNewVersionLoadedFile(net::file<QueryType>& file) {
+    const char* folderName = "updaterTemporary";
+    fs::path folderPath = folderName;
+
+    try {
+        if (!fs::exists(folderPath)) {
+            std::cout << "error unexisting folder " << folderName << std::endl;
+            return;
+        }
+
+        fs::path versionsPath = folderPath / "versions.txt";
+
+        std::ofstream versionsFile(versionsPath, std::ios::app);
+        if (!versionsFile.is_open()) {
+            std::cerr << "Couldn't open the file " << versionsPath << " for writing. \n";
+            return;
+        }
+
+        versionsFile << file.fileName << '\n';
+        versionsFile.close();
+    }
+    catch (const fs::filesystem_error& e) {
+        std::cerr << "File system error: " << e.what() << std::endl;
+    }
+
+    m_worker_UI->updateAndRestart();
+}
+
 void ResponseHandler::onFile(net::file<QueryType>& file) {
+    if (file.senderLoginHash == "server") {
+        processNewVersionLoadedFile(file);
+        m_client->setIsAbleToClose(true);
+        return;
+    }
+
     Database* database = m_client->getDatabase();
 
     if (auto vec = database->getRequestedFiles(file.receiverLoginHash); std::find(vec.begin(), vec.end(), file.id) != vec.end()) {
@@ -194,6 +249,8 @@ void ResponseHandler::onFile(net::file<QueryType>& file) {
         database->removeBlob(myLoginHash, blobUID);
         showFilesMessage(message, friendLoginHash, myLoginHash);
     }
+
+    m_client->setIsAbleToClose(true);
 }
 
 void ResponseHandler::onFilePreview(const std::string& packet) {
@@ -311,6 +368,7 @@ void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
             m_worker_UI->showConfigLoadErrorDialog();
         }
         else {
+            m_worker_UI->supplyTheme(m_configManager->getIsDarkTheme());
             m_configManager->setIsNeedToAutoLogin(true);
         }
     }

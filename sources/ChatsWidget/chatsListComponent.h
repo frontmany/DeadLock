@@ -42,6 +42,10 @@ struct StyleChatsListComponent {
     QString LightHideButton;
     QString DarkNoConnectionLabelStyle;
     QString LightNoConnectionLabelStyle;
+    QString updateButtonDark;
+    QString updateButtonLight;
+    QString updateButtonInProgressDark;
+    QString updateButtonInProgressLight;
 };
 
 class ChatsListComponent : public QWidget {
@@ -73,6 +77,7 @@ signals:
 public slots:
     void showNoConnectionLabel();
     void showServerOfflineLabel();
+    void showUpdateButton();
 
     void addChatComponent(Theme theme, Chat* chat, bool isSelected);
 
@@ -121,6 +126,7 @@ private:
     ButtonIcon*         m_newChatButton;
 
     QPushButton*        m_hideButton;
+    QPushButton*        m_updateButton;
     QLabel*             m_noConnectionLabel;
     bool                m_is_hidden;
 
@@ -135,6 +141,7 @@ private:
 
     bool m_isChatAddDialog = false;
     bool m_ableToCreateChat = true;
+    bool m_isUpdateLoading = false;
 
     QIcon m_hiddenIconDark = QIcon(":/resources/ChatsWidget/hiddenStateButtonDark.png");
     QIcon m_hiddenIconDarkHover = QIcon(":/resources/ChatsWidget/hiddenStateButtonDarkHover.png");

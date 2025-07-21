@@ -54,6 +54,16 @@ std::string utility::getFileSavePath(const std::string& fileName) {
     return filePath;
 }
 
+std::string utility::getUpdateTemporaryPath(const std::string& fileName) {
+    const std::filesystem::path tempDir = "./updaterTemporary";
+
+    if (!std::filesystem::exists(tempDir)) {
+        std::filesystem::create_directory(tempDir);
+    }
+
+    return (tempDir / (fileName + ".exe")).string();
+}
+
 std::string utility::getCurrentFullDateAndTime() {
     std::time_t now = std::time(0);
     std::tm* ltm = std::localtime(&now);

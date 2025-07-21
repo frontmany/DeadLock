@@ -16,6 +16,7 @@
 #include "messageComponent.h"
 #include "mainWindow.h"
 #include "filewrapper.h"
+#include <windows.h>
 
 
 
@@ -26,6 +27,9 @@ ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client
 
     m_current_messagingAreaComponent = nullptr;
     m_chatsListComponent = new ChatsListComponent(this, this, m_theme, m_client->getIsHidden());
+    if (m_config_manager->getIsNeedToUpdate()) {
+        m_chatsListComponent->showUpdateButton();
+    }
 
     if (m_config_manager->getPhoto() != nullptr) {
         m_chatsListComponent->setAvatar(*m_config_manager->getPhoto());
@@ -60,6 +64,22 @@ ChatsWidget::~ChatsWidget() {
     }
 }
 
+void ChatsWidget::updateAndRestart() {
+    m_config_manager->setIsNeedToUpdate(false);
+
+    DWORD pid = GetCurrentProcessId();
+    QString updaterPath = "deadlock_updater.exe";
+    QStringList args;
+    args << QString::number(pid);
+
+    bool started = QProcess::startDetached(updaterPath, args);
+    if (!started) {
+        qWarning("Failed to start updater");
+        return;
+    }
+
+    QApplication::quit();
+}
 
 void ChatsWidget::showNotification(Chat* chat) {
     if (isActiveWindow() && !isMinimized()) {
@@ -171,10 +191,12 @@ void ChatsWidget::onChangeThemeClicked() {
     if (m_theme == DARK) {
         m_theme = LIGHT;
         setTheme(LIGHT);
+        m_config_manager->setTheme(false);
     }
     else {
         m_theme = DARK;
         setTheme(DARK);
+        m_config_manager->setTheme(true);
     }
 } 
 

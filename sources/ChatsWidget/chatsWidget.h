@@ -13,6 +13,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QFile>
+#include <QProcess>
 
 class ChatsListComponent;
 class MessagingAreaComponent;
@@ -70,6 +71,7 @@ public slots:
 	void selectChatComponent(ChatComponent* component);
 	void createMessagingComponent(std::string friendName, Chat* chat);
 	void onChangeThemeClicked();
+	void updateAndRestart();
 
 	void onSendMessageData(Message* message, Chat* chat);
 	void onFilesData(Message* message, Chat* chat, size_t filesCount);

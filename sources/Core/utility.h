@@ -40,6 +40,7 @@ namespace utility {
     bool isDarkMode();
     bool isHasInternetConnection();
     std::string getFileSavePath(const std::string& fileName);
+    std::string getUpdateTemporaryPath(const std::string& fileName);
 
     // Chat management
     void incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap);

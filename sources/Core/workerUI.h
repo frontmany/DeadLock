@@ -43,6 +43,9 @@ public:
 	virtual void showNewChatOrUpdateExisting(Chat* chat) = 0;
 	virtual void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) = 0;
 	virtual void onStatusReceive(const std::string& friendLogin, const std::string& status) = 0;
+	virtual void supplyTheme(bool isDarkTheme) = 0;
+	virtual void showUpdateButton() = 0;
+	virtual void updateAndRestart() = 0;
 
 	virtual void updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& fileWrapper, bool isError) = 0;
 	virtual void updateFileLoadingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) = 0;

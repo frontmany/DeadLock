@@ -14,6 +14,8 @@
 #include <unordered_map>
 #include <rsa.h>
 
+#include "theme.h"
+
 class Photo;
 class Chat;
 class Database;
@@ -36,6 +38,7 @@ public:
 
     void loadLoginHash();
     void loadPasswordHash();
+    void loadTheme();
     
     //GET && SET
     bool getIsAutoLogin() { return m_is_auto_login; };
@@ -62,6 +65,15 @@ public:
     void setIsHasPhoto(bool isHasPhoto) { m_is_has_photo = isHasPhoto; }
     const bool getIsHasPhoto() const { return m_is_has_photo; }
 
+    void setIsNeedToUpdate(bool isNeedToUpdate) { m_isNeedToUpdate = isNeedToUpdate; }
+    const bool getIsNeedToUpdate() const { return m_isNeedToUpdate; }
+
+    void setNewVersionNumber(const std::string& newVersionNumber) { m_newVersionNumber = newVersionNumber; }
+    const std::string& getNewVersionNumber() const { return m_newVersionNumber; }
+
+    void setTheme(bool isDarkTheme) { m_isDarkTheme = isDarkTheme; }
+    bool getIsDarkTheme() { return m_isDarkTheme; }
+
     void setClient(Client* client) { m_client = client; }
     Client* getClient() const { return m_client; }
 
@@ -81,6 +93,10 @@ private:
     bool m_is_auto_login;
     bool m_is_has_photo;
     Photo* m_my_photo;
+
+    std::string m_newVersionNumber = "";
+    bool m_isNeedToUpdate = false;
+    bool m_isDarkTheme = true;
 
     Client* m_client;
 };

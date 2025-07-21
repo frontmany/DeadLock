@@ -158,6 +158,10 @@ void Client::requestMyInfoFromServerAndResetKeys(const std::string& loginHash) {
     sendPacket(m_packets_builder->getLoadMyInfoPacket(loginHash, newPublicKey), QueryType::LOAD_MY_INFO);
 }
 
+void Client::requestUpdate() {
+    sendPacket(m_packets_builder->getUpdateRequestPacket(m_server_public_key, m_config_manager->getMyLoginHash(), m_config_manager->getNewVersionNumber()), QueryType::UPDATE_REQUEST);
+}
+
 void Client::verifyPassword(const std::string& passwordHash) {
     sendPacket(m_packets_builder->getVerifyPasswordPacket(m_config_manager->getMyLoginHash(), passwordHash), QueryType::VERIFY_PASSWORD);
 }
