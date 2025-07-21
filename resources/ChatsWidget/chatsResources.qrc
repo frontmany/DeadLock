@@ -40,6 +40,10 @@
 		<file>arrowDownDark.png</file>
 		<file>arrowDownLightHover.png</file>
 		<file>arrowDownDarkHover.png</file>
+		<file>arrowDownLightHoverNewMessage.png</file>
+		<file>arrowDownLightNewMessage.png</file>
+		<file>arrowDownDarkHoverNewMessage.png</file>
+		<file>arrowDownDarkNewMessage.png</file>
 		<file>typing.gif</file>
 		<file>hiddenStateButtonLight.png</file>
 		<file>hiddenStateButtonDark.png</file>

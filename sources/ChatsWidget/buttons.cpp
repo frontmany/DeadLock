@@ -244,6 +244,7 @@ QSize ButtonIcon::sizeHint() const
 
 void ButtonIcon::setTheme(Theme theme)
 {
+    m_isTemporaryIcon = false;
     m_theme = theme;
     updateIcon();
     update();
@@ -311,8 +312,22 @@ void ButtonIcon::mouseReleaseEvent(QMouseEvent* event)
     }
 }
 
+void ButtonIcon::setTemporaryIcon(QIcon temporaryIcon, QIcon temporaryIconHover) {
+    m_temporaryIcon = temporaryIcon;
+    m_temporaryIconHover = temporaryIconHover;
+    m_isTemporaryIcon = true;
+
+    m_currentIcon = m_temporaryIcon;
+    update();
+}
+
 void ButtonIcon::updateIcon()
 {
+    if (m_isTemporaryIcon) {
+        m_currentIcon = m_temporaryIcon;
+        return;
+    }
+
     if (m_hovered) {
         m_currentIcon = (m_theme == Theme::DARK) ? m_hoverIconDark : m_hoverIconLight;
     }

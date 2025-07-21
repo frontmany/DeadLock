@@ -177,6 +177,7 @@ public:
     void uploadIconsLight(QIcon light, QIcon lightHover);
     void uploadIconsDark(QIcon dark, QIcon darkHover);
     void setIconSize(QSize size);
+    void setTemporaryIcon(QIcon temporaryIcon, QIcon temporaryIconHover);
 
 signals:
     void clicked();
@@ -197,9 +198,12 @@ private:
     QIcon m_hoverIconLight;
     QIcon m_hoverIconDark;
     QIcon m_currentIcon;
+    QIcon m_temporaryIcon;
+    QIcon m_temporaryIconHover;
     QSize m_iconSize{ 32, 32 };
     Theme m_theme;
     bool m_hovered = false;
+    bool m_isTemporaryIcon = false;
 };
 
 

@@ -985,7 +985,10 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_move_slider_down_button->setIconSize(QSize(40, 40));
     m_move_slider_down_button->hide();
     updateSliderButtonPosition();
-    connect(m_move_slider_down_button, &ButtonIcon::clicked, [this]() {moveSliderDown(false); });
+    connect(m_move_slider_down_button, &ButtonIcon::clicked, [this]() {
+        moveSliderDown(false); 
+        m_move_slider_down_button->setTheme(m_theme);
+    });
 
     m_typingTimer = new QTimer(this);
     m_typingTimer->setInterval(2200);
@@ -1954,6 +1957,21 @@ void MessagingAreaComponent::addMessage(Message* message, bool isRecoveringMessa
     }
 
     if (!isRecoveringMessages) {
+        if (!m_move_slider_down_button->isHidden()) {
+            QIcon icon;
+            QIcon iconHover;
+            if (m_theme == DARK) {
+                icon = QIcon(":/resources/ChatsWidget/arrowDownDarkNewMessage.png");
+                iconHover = QIcon(":/resources/ChatsWidget/arrowDownDarkHoverNewMessage.png");
+
+            }
+            else {
+                icon = QIcon(":/resources/ChatsWidget/arrowDownLightNewMessage.png");
+                iconHover = QIcon(":/resources/ChatsWidget/arrowDownLightHoverNewMessage.png");
+            }
+            m_move_slider_down_button->setTemporaryIcon(icon, iconHover);
+        }
+
         bool isVisible = isMessageVisible(messageComp);
 
         if ((!isDelimiterUnread && !message->getIsSend() && m_chatsWidget->getCurrentMessagingAreaComponent() != this) ||
