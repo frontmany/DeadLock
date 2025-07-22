@@ -1540,6 +1540,10 @@ void MessagingAreaComponent::handleScroll(int value) {
     if (m_move_slider_down_button) 
         m_move_slider_down_button->setVisible(!isNearBottom);
 
+    if (isNearBottom) {
+        m_move_slider_down_button->setTheme(m_theme);
+    }
+
     bool isHidden = client->getIsHidden();
 
     if (!isHidden) {

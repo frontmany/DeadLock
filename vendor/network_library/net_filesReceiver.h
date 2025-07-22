@@ -72,21 +72,22 @@ namespace net
 						m_currentChunksCount++;
 						if (m_currentChunksCount < m_expectedChunksCount) {
 							std::array<char, c_decryptedChunkSize> decryptedChunk = utility::AESDecrypt(m_sessionKey, m_receiveBuffer);
-							if (m_currentChunksCount < m_expectedChunksCount) {
-								m_fileStream.write(decryptedChunk.data(), c_decryptedChunkSize);
-								m_totalReceivedBytes += bytesTransferred - c_overhead;
-								readChunk();
+							m_fileStream.write(decryptedChunk.data(), c_decryptedChunkSize);
+							m_totalReceivedBytes += bytesTransferred - c_overhead;
+							readChunk();
 
-								if (m_totalReceivedBytes < std::stoull(m_file.fileSize)) {
-									const uint64_t fileSize = std::stoull(m_file.fileSize);
-									const uint64_t progress = std::min<uint64_t>((m_totalReceivedBytes * 100) / fileSize, 100);
-									m_onProgressUpdate(m_file, progress);
-								}
+							if (m_totalReceivedBytes < std::stoull(m_file.fileSize)) {
+								const uint64_t fileSize = std::stoull(m_file.fileSize);
+								const uint64_t progress = std::min<uint64_t>((m_totalReceivedBytes * 100) / fileSize, 100);
+								m_onProgressUpdate(m_file, progress);
 							}
-							else if (m_currentChunksCount == m_expectedChunksCount) {
-								m_fileStream.write(decryptedChunk.data(), m_lastChunkSize);
-								finalizeReceiving();
-							}
+							
+							
+						}
+						else if (m_currentChunksCount == m_expectedChunksCount) {
+							std::array<char, c_decryptedChunkSize> decryptedChunk = utility::AESDecrypt(m_sessionKey, m_receiveBuffer);
+							m_fileStream.write(decryptedChunk.data(), m_lastChunkSize);
+							finalizeReceiving();
 						}
 					}
 				});

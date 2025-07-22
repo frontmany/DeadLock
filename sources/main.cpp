@@ -21,7 +21,7 @@ public:
 
 int main(int argc, char* argv[])
 {
-    setlocale(LC_ALL, "ru");
+    setlocale(LC_ALL, "ru"); 
   
     QApplication app(argc, argv);
     CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
