@@ -125,10 +125,6 @@ void ChatsWidget::onCreateChatButtonClicked(QString login) {
 }
 
 void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
-    QList<int> sizes = m_splitter->sizes();
-    
-    removeRightComponent();
-
     auto itMsgAreaComp = std::find_if(m_vec_messaging_components.begin(), m_vec_messaging_components.end(), [chat](MessagingAreaComponent* msgComp) {
         return msgComp->getChatConst()->getFriendLogin() == chat->getFriendLogin();
         });
@@ -138,20 +134,12 @@ void ChatsWidget::onSetChatMessagingArea(Chat* chat, ChatComponent* component) {
         return;
     }
 
-    m_current_messagingAreaComponent = *itMsgAreaComp;
+    MessagingAreaComponent* messagingArea = *itMsgAreaComp;
+    messagingArea->setTheme(m_theme);
 
-    if (m_splitter->count() > 1) {
-        QWidget* oldRight = m_splitter->widget(1);
-        if (oldRight != nullptr) {
-            oldRight->hide();
-            oldRight->setParent(nullptr);
-        }
-    }
-
-    m_splitter->addWidget(m_current_messagingAreaComponent);
-    m_current_messagingAreaComponent->show();
+    QList<int> sizes = m_splitter->sizes();
+    setRightComponent(messagingArea);
     m_splitter->setSizes(sizes);
-    m_current_messagingAreaComponent->setTheme(m_theme);
 
     auto scrollArea = m_current_messagingAreaComponent->getScrollArea();
     auto& unreadMessageComponentsVec = m_current_messagingAreaComponent->getUreadMessageComponents();
@@ -201,13 +189,24 @@ void ChatsWidget::onChangeThemeClicked() {
 } 
 
 void ChatsWidget::onChatDelete(const QString& loginOfRemovedChat) {
-    removeRightComponent();
-
-    m_helloAreaComponent = new HelloAreaComponent(m_theme);
-    m_splitter->addWidget(m_helloAreaComponent);
-    m_is_hello_component = true;
-
     m_chatsListComponent->removeComponent(loginOfRemovedChat);
+
+
+    std::string loginStd = loginOfRemovedChat.toStdString();
+    std::async(std::launch::async, [this, loginStd]() {
+        m_client->deleteFriendMessagesInDatabase(loginStd);
+    });
+    std::async(std::launch::async, [this, loginStd]() {
+        m_config_manager->deleteFriendChatInConfig(loginStd);
+    });
+    m_client->deleteFriendFromChatsMap(utility::calculateHash(loginStd));
+
+
+    HelloAreaComponent* helloComp = new HelloAreaComponent(m_theme);
+
+    auto sizes = m_splitter->sizes();
+    setRightComponent(helloComp);
+    m_splitter->setSizes(sizes);
 
     auto it = std::find_if(m_vec_messaging_components.begin(), m_vec_messaging_components.end(), [loginOfRemovedChat](MessagingAreaComponent* msgComp) {
         return loginOfRemovedChat.toStdString() == msgComp->getChat()->getFriendLogin();
@@ -220,11 +219,6 @@ void ChatsWidget::onChatDelete(const QString& loginOfRemovedChat) {
         area->deleteLater();
         m_current_messagingAreaComponent = nullptr;
     }
-
-    m_config_manager->deleteFriendChatInConfig(loginOfRemovedChat.toStdString());
-    m_client->deleteFriendMessagesInDatabase(loginOfRemovedChat.toStdString());
-    m_client->deleteFriendFromChatsMap(utility::calculateHash(loginOfRemovedChat.toStdString()));
-
 }
 
 void ChatsWidget::createMessagingComponent(std::string friendName, Chat* chat) {
@@ -270,6 +264,7 @@ void ChatsWidget::restoreMessagingAreaComponents() {
 
     for (auto& chatPair : m_client->getMyHashChatsMap()) {
         MessagingAreaComponent* area = new MessagingAreaComponent(this, QString::fromStdString(chatPair.first), m_theme, chatPair.second, this);
+        area->setTheme(m_theme);
         area->hide();
         m_vec_messaging_components.push_back(area);
     }
@@ -315,17 +310,32 @@ bool ChatsWidget::isValidChatCreation(const std::string& loginToCheck) {
 }
 
 void ChatsWidget::removeRightComponent() {
-    if (m_is_hello_component) {
-        m_splitter->widget(1)->hide();
-        m_helloAreaComponent->deleteLater();
-        m_helloAreaComponent = nullptr;
-        setIsHelloAreaComponent(false);
+    if (m_splitter->count() > 1) {
+        QWidget* oldWidget = m_splitter->widget(1);
+        oldWidget->hide();
+
+        if (m_is_hello_component) {
+            oldWidget->deleteLater();
+            m_is_hello_component = false;
+            m_helloAreaComponent = nullptr;
+        }
     }
-    else if (m_current_messagingAreaComponent != nullptr) {
-        m_splitter->widget(1)->hide();
-        m_current_messagingAreaComponent->hide();
-        m_current_messagingAreaComponent->setParent(nullptr);
+}
+
+void ChatsWidget::setRightComponent(std::variant<MessagingAreaComponent*, HelloAreaComponent*> rightComponentVariant) {
+    removeRightComponent();
+
+    if (std::holds_alternative<MessagingAreaComponent*>(rightComponentVariant)) {
+        m_current_messagingAreaComponent = std::get<MessagingAreaComponent*>(rightComponentVariant);
+        m_splitter->insertWidget(1, m_current_messagingAreaComponent);
+        m_current_messagingAreaComponent->show();
+    }
+    else if (std::holds_alternative<HelloAreaComponent*>(rightComponentVariant)) {
+        m_helloAreaComponent = std::get<HelloAreaComponent*>(rightComponentVariant);
         m_current_messagingAreaComponent = nullptr;
+        m_is_hello_component = true;
+        m_splitter->insertWidget(1, m_helloAreaComponent);
+        m_helloAreaComponent->show();
     }
 }
 
@@ -338,7 +348,6 @@ void ChatsWidget::selectChatComponent(ChatComponent* component) {
 
 void ChatsWidget::createAndSetMessagingAreaComponent(Chat* chat) {
     Theme theme = getTheme();
-    QHBoxLayout* mainHLayout = getMainHLayout();
 
     MessagingAreaComponent* messagingAreaComponent = new MessagingAreaComponent(
         this,
@@ -347,11 +356,11 @@ void ChatsWidget::createAndSetMessagingAreaComponent(Chat* chat) {
         chat,
         this
     );
+    messagingAreaComponent->setTheme(m_theme);
 
-    setCurrentMessagingAreaComponent(messagingAreaComponent);
-    messagingAreaComponent->setTheme(theme);
-
-    mainHLayout->addWidget(messagingAreaComponent);
+    auto sizes = m_splitter->sizes();
+    setRightComponent(messagingAreaComponent);
+    m_splitter->setSizes(sizes);
 
     getMessagingAreasVec().push_back(messagingAreaComponent);
 }

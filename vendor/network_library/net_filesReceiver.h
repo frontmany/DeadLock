@@ -107,8 +107,6 @@ namespace net
 							m_fileStream.write(m_receiveBuffer.data(), c_receivedChunkSize);
 							m_totalReceivedBytes += bytesTransferred;
 							readChunkWithoutDecryption();
-
-							std::cout << m_currentChunksCount << " " << m_totalReceivedBytes << std::endl;
 						}
 						else if (m_currentChunksCount == m_expectedChunksCount) {
 							m_fileStream.write(m_receiveBuffer.data(), m_lastChunkSize);

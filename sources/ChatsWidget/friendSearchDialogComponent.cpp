@@ -439,7 +439,6 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     auto& friendInfo = m_suggestions_map[login.toStdString()];
     auto chatsWidget = m_chats_list_component->getChatsWidget();
     auto client = chatsWidget->getClient();
-
     auto& chatsMap = client->getMyHashChatsMap();
 
     auto it = chatsMap.find(utility::calculateHash(login.toStdString()));
@@ -450,7 +449,6 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
         });
         if (itComp != chatCompsVec.end()) {
             ChatComponent* foundComp = *itComp;
-
             chatsWidget->onSetChatMessagingArea(foundComp->getChat(), foundComp);
         }
 
@@ -495,13 +493,13 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
             std::cerr << "Error processing friend photo: " << e.what() << std::endl;
         }
     }
+    
 
     chat->setLayoutIndex(0);
     utility::incrementAllChatLayoutIndexes(client->getMyHashChatsMap());
 
     client->getMyHashChatsMap().emplace(utility::calculateHash(login.toStdString()), chat);
 
-    chatsWidget->removeRightComponent();
     chatsWidget->createAndSetMessagingAreaComponent(chat);
     chatsWidget->createAndAddChatComponentToList(chat);
 

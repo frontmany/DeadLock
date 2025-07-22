@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <mutex>
 #include <iostream>
+#include <future>
 
 #include <QWidget>
 #include <QSplitter>
@@ -59,8 +60,6 @@ public:
 
 	std::vector<MessagingAreaComponent*>& getMessagingAreasVec() { return m_vec_messaging_components; }
 
-	QHBoxLayout* getMainHLayout() { return m_mainHLayout; }
-
 public slots:
 	void onNotificationClicked(Chat* chat);
 	void showNotification(Chat* chat);
@@ -81,6 +80,7 @@ public slots:
 	void onChatDelete(const QString& loginOfRemovedChat);
 
 private:
+	void setRightComponent(std::variant<MessagingAreaComponent*, HelloAreaComponent*> rightComponentVariant);
 	bool isValidChatCreation(const std::string& loginToCheck);
 	void paintEvent(QPaintEvent* event) override;
 
@@ -97,7 +97,6 @@ private:
 	MainWindow*					   m_main_window;
 	std::mutex					   m_mtx;
 	QVBoxLayout*				   m_leftVLayout;
-	QHBoxLayout*				   m_mainHLayout;
 
 
 	std::vector<MessagingAreaComponent*> m_vec_messaging_components;

@@ -285,15 +285,14 @@ void ConfigManager::deleteFriendChatInConfig(const std::string& friendLogin) {
     QJsonObject jsonObject = loadDoc.object();
 
     if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].isArray()) {
-        CryptoPP::SecByteBlock chatConfigKey = getChatConfigKey(friendLogin);
-        
         QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
         QJsonArray newChatsArray;
         for (const QJsonValue& value : chatsArray) {
             if (value.isObject()) {
                 QJsonObject chatObj = value.toObject();
+                Chat* chat = Chat::deserialize(m_client->getPrivateKey(), m_my_login, chatObj, *m_client->getDatabase());
                 if (chatObj.contains("friend_login") &&
-                    utility::AESDecrypt(chatConfigKey, chatObj["friend_login"].toString().toStdString()) != friendLogin) {
+                    utility::AESDecrypt(chat->getChatConfigKey(), chatObj["friend_login"].toString().toStdString()) != friendLogin) {
                     newChatsArray.append(chatObj);
                 }
             }
@@ -470,6 +469,7 @@ bool ConfigManager::checkIsPasswordHashPresentInMyConfig() const {
     return isPresent;
 }
 
+//here
 CryptoPP::SecByteBlock ConfigManager::getChatConfigKey(const std::string& login) {
     auto chatOpt = m_client->findChat(utility::calculateHash(login)); 
     auto chat = *chatOpt;
