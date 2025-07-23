@@ -181,7 +181,13 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_imageLabel->setFixedSize(utility::getScaledSize(500), utility::getScaledSize(500));
     m_imageLabel->setAlignment(Qt::AlignCenter);
 
-    QPixmap pixmap(":/resources/GreetWidget/loadPhoto.png");
+    QPixmap pixmap;
+    if (m_theme == DARK) {
+        pixmap = QPixmap(":/resources/GreetWidget/loadPhotoDark.png");
+    }
+    else {
+        pixmap = QPixmap(":/resources/GreetWidget/loadPhoto.png");
+    }
     pixmap.setDevicePixelRatio(devicePixelRatioF());
     m_imageLabel->setPixmap(pixmap.scaled(
         m_imageLabel->size() * devicePixelRatioF(),
@@ -195,12 +201,19 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_cancelButton->setMaximumSize(utility::getScaledSize(150), utility::getScaledSize(60));
     connect(m_cancelButton, &QPushButton::clicked, [this]() {
         m_profile_editor_widget->setFieldsEditor();
-        m_imageLabel->setPixmap(QPixmap(":/resources/GreetWidget/loadPhoto.png").scaled(utility::getScaledSize(450), utility::getScaledSize(450), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        QPixmap pixmap;
+        if (m_theme == DARK) {
+            pixmap = QPixmap(":/resources/GreetWidget/loadPhotoDark.png");
+        }
+        else {
+            pixmap = QPixmap(":/resources/GreetWidget/loadPhoto.png");
+        }
+        m_imageLabel->setPixmap(pixmap.scaled(utility::getScaledSize(450), utility::getScaledSize(450), Qt::KeepAspectRatio, Qt::SmoothTransformation));
         m_imageLabel->setFixedSize(utility::getScaledSize(450), utility::getScaledSize(450));
         m_cropXSlider->hide();
         m_cropYSlider->hide();
         setFixedHeight(650);
-        });
+    });
 
 
 
@@ -283,6 +296,20 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
 
 void PhotoEditComponent::setTheme(Theme theme) {
     m_theme = theme;
+
+    QPixmap pixmap;
+    if (m_theme == DARK) {
+        pixmap = QPixmap(":/resources/GreetWidget/loadPhotoDark.png");
+    }
+    else {
+        pixmap = QPixmap(":/resources/GreetWidget/loadPhoto.png");
+    }
+    m_imageLabel->setPixmap(pixmap.scaled(
+        m_imageLabel->size() * devicePixelRatioF(),
+        Qt::KeepAspectRatio,
+        Qt::SmoothTransformation
+    ));
+
     if (theme == Theme::DARK) {
         m_cancelButton->setStyleSheet(m_style->ButtonSkipStyleBothTheme);
         m_selectImageButton->setStyleSheet(m_style->DarkButtonStyleBlue);

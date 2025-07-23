@@ -283,7 +283,13 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     m_imageLabel->setFixedSize(getScaledSize(500), getScaledSize(500));
     m_imageLabel->setAlignment(Qt::AlignCenter);
 
-    QPixmap pixmap(":/resources/GreetWidget/loadPhoto.png");
+    QPixmap pixmap;
+    if (m_theme == DARK){
+        pixmap = QPixmap(":/resources/GreetWidget/loadPhotoDark.png");
+    }
+    else {
+        pixmap = QPixmap(":/resources/GreetWidget/loadPhoto.png");
+    }
     pixmap.setDevicePixelRatio(devicePixelRatioF());
     m_imageLabel->setPixmap(pixmap.scaled(
         m_imageLabel->size() * devicePixelRatioF(),

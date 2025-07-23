@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/resources/GreetWidget">
         <file>loadPhoto.png</file>
+        <file>loadPhotoDark.png</file>
         <file>Ilock.ico</file>
         <file>deadlock.ico</file>
     </qresource>

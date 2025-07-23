@@ -317,7 +317,7 @@ void WorkerQt::updateFriendsStatuses(const std::vector<std::pair<std::string, st
 				chatHeader->setLastSeen(QString::fromStdString(itPair->second));
 			}
 		}
-		}, Qt::QueuedConnection);
+	}, Qt::QueuedConnection);
 }
 
 void WorkerQt::onMessageReceive(const std::string& friendLoginHash, Message* message) {
@@ -332,8 +332,6 @@ void WorkerQt::onMessageReceive(const std::string& friendLoginHash, Message* mes
 		return;
 	}
 
-
-
 	ChatComponent* chatComp = *it;
 
 	QMetaObject::invokeMethod(chatsWidget,
@@ -341,13 +339,20 @@ void WorkerQt::onMessageReceive(const std::string& friendLoginHash, Message* mes
 		Qt::QueuedConnection,
 		Q_ARG(Chat*, chatComp->getChat()));
 
-
 	if (chatComp->getChat()->getLayoutIndex() != 0){
 		QMetaObject::invokeMethod(chatsList,
 			"popUpComponent",
 			Qt::QueuedConnection,
 			Q_ARG(ChatComponent*, chatComp));
 	}
+
+	//here
+	if (chatComp->getChat()->getLayoutIndex() != 0) {
+		auto& map = chatsWidget->getClient()->getMyHashChatsMap();
+		utility::increasePreviousChatIndexes(map, chatComp->getChat());
+	}
+	chatComp->getChat()->setLayoutIndex(0);
+
 
 	QString msg = "";
 	if (message->getRelatedFiles().size() > 0) {
@@ -363,16 +368,16 @@ void WorkerQt::onMessageReceive(const std::string& friendLoginHash, Message* mes
 		Q_ARG(const QString&, msg));
 
 	if (chatsWidget->getCurrentMessagingAreaComponent() == nullptr) {
-		QMetaObject::invokeMethod(chatComp,
-			"setUnreadMessageDot",
-			Qt::QueuedConnection,
-			Q_ARG(bool, true));
+		QMetaObject::invokeMethod(chatComp, [chatComp]() {
+			chatComp->setUnreadMessageDot(true);
+		},
+		Qt::QueuedConnection);
 	}
 	else if (utility::calculateHash(chatsWidget->getCurrentMessagingAreaComponent()->getChat()->getFriendLogin()) != friendLoginHash) {
-		QMetaObject::invokeMethod(chatComp,
-			"setUnreadMessageDot",
-			Qt::QueuedConnection,
-			Q_ARG(bool, true));
+		QMetaObject::invokeMethod(chatComp,[chatComp](){
+			chatComp->setUnreadMessageDot(true);
+		},
+		Qt::QueuedConnection);
 	}
 
 

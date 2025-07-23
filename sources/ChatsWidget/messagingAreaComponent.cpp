@@ -1823,14 +1823,12 @@ void MessagingAreaComponent::onSendMessageClicked() {
         msg += '\n';  
     }
 
-    auto& map = m_chatsWidget->getClient()->getMyHashChatsMap();
-
-
     auto chatsList = m_chatsWidget->getChatsList();
     auto& chatCompsVec = chatsList->getChatComponentsVec();
     auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [this](ChatComponent* comp) {
         return m_chat->getFriendLogin() == comp->getChat()->getFriendLogin();
-        });
+    });
+
     if (itComp != chatCompsVec.end()) {
         ChatComponent* foundComp = *itComp;
         int index = foundComp->getChat()->getLayoutIndex();
@@ -1840,6 +1838,7 @@ void MessagingAreaComponent::onSendMessageClicked() {
 
 
     if (m_chat->getLayoutIndex() != 0) {
+        auto& map = m_chatsWidget->getClient()->getMyHashChatsMap();
         utility::increasePreviousChatIndexes(map, m_chat);
     }
     m_chat->setLayoutIndex(0);

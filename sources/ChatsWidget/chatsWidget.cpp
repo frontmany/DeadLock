@@ -277,7 +277,7 @@ void ChatsWidget::restoreChatComponents() {
     for (int i = 0; i < m_client->getMyHashChatsMap().size(); i++) {
         auto it = std::find_if(map.begin(), map.end(), [i](std::pair<std::string, Chat*> chatPair) {
             return chatPair.second->getLayoutIndex() == i;
-            });
+        });
         
         std::pair<std::string, Chat*> chatPair = *it;
 

@@ -598,11 +598,6 @@ void ResponseHandler::onMessageReceive(const std::string& packet) {
         chat->setLastReceivedOrSentMessage(msg->getMessage());
         chat->getMessagesVec().push_back(msg);
 
-        if (chat->getLayoutIndex() != 0) {
-            utility::increasePreviousChatIndexes(chatsHashMap, chat);
-        }
-        chat->setLayoutIndex(0);
-
         m_worker_UI->onMessageReceive(friendLoginHash, msg);
     }
     else {
