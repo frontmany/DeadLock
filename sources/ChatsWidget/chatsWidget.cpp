@@ -180,11 +180,13 @@ void ChatsWidget::onChangeThemeClicked() {
         m_theme = LIGHT;
         setTheme(LIGHT);
         m_config_manager->setTheme(false);
+        m_main_window->setTheme(LIGHT);
     }
     else {
         m_theme = DARK;
         setTheme(DARK);
         m_config_manager->setTheme(true);
+        m_main_window->setTheme(DARK);
     }
 } 
 

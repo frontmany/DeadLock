@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget* parent, Client* client, std::shared_ptr<ConfigMa
     m_theme = utility::isDarkMode() ? DARK : LIGHT;
 
     setWindowTitle("Deadlock");
-    setWindowIcon(QIcon(":/resources/GreetWidget/Ilock.ico"));
+    setWindowIcon(QIcon(":/resources/GreetWidget/Deadlock.ico"));
     
     m_worker_Qt = new WorkerQt(this);
     m_client->setWorkerUI(m_worker_Qt);
