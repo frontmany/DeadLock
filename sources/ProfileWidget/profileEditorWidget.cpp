@@ -36,12 +36,26 @@ ProfileEditorWidget::ProfileEditorWidget(QWidget* parent, ChatsListComponent* ch
 
 void ProfileEditorWidget::setPhotoEditor() {
     setMaximumWidth(800);
-    setFixedHeight(utility::getScaledSize(900));
+    setMaximumHeight(1200);
 
     m_mainVLayout->removeWidget(m_fields_edit_component);
     m_fields_edit_component->hide();
     m_mainVLayout->addWidget(m_photo_edit_component);
     m_photo_edit_component->show();
+
+    qreal scaleFactor = utility::getDeviceScaleFactor();
+    if (scaleFactor > 1 && scaleFactor <= 1.25) {
+        setFixedHeight(740);
+        setMaximumWidth(700);
+    }
+    else if (scaleFactor > 1.25 && scaleFactor <= 1.5) {
+        setFixedHeight(630);
+        setMaximumWidth(560);
+    }
+    else {
+        setMaximumWidth(800);
+        m_photo_edit_component->setFixedHeight(840);
+    }
 }
 
 void ProfileEditorWidget::setFieldsEditor() {

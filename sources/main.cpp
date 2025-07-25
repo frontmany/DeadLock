@@ -32,8 +32,11 @@ int main(int argc, char* argv[])
 
     configManager->setClient(client);
 
-    client->connectTo("192.168.1.44", 8080);
+    client->connectTo("92.255.165.77", 8080);
     client->run();
+    while (!client->isConnected()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     MainWindow* mainWindow = new MainWindow(nullptr, client, configManager);
     if (utility::isApplicationAlreadyRunning()) {
@@ -48,7 +51,6 @@ int main(int argc, char* argv[])
         configManager->loadPasswordHash();
 
         mainWindow->setTheme(configManager->getIsDarkTheme() ? DARK : LIGHT);
-
         client->authorizeClient(configManager->getMyLoginHash(), configManager->getMyPasswordHash());
     }
     else {

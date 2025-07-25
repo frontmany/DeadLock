@@ -129,7 +129,9 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         *quitCalled = true;
         qWarning() << "Couldn't safely close the app!";
         m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+        m_client->disconnect();
         cleanup();
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         QCoreApplication::quit();
     });
 
@@ -138,7 +140,9 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         if (m_client->getIsAbleToClose()) {
             *quitCalled = true;
             m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+            m_client->disconnect();
             cleanup();
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
             QCoreApplication::quit();
         }
     });

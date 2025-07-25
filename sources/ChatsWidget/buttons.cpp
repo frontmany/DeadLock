@@ -323,7 +323,11 @@ void ButtonIcon::setTemporaryIcon(QIcon temporaryIcon, QIcon temporaryIconHover)
 
 void ButtonIcon::updateIcon()
 {
-    if (m_isTemporaryIcon) {
+    if (m_isTemporaryIcon && m_hovered) {
+        m_currentIcon = m_temporaryIconHover;
+        return;
+    }
+    else if (m_isTemporaryIcon){
         m_currentIcon = m_temporaryIcon;
         return;
     }

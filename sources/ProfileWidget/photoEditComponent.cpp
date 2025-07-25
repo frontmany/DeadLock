@@ -175,12 +175,9 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setContentsMargins(utility::getScaledSize(20), utility::getScaledSize(20), utility::getScaledSize(20), utility::getScaledSize(20));
     m_mainVLayout->setAlignment(Qt::AlignTop);
-    
+
 
     m_imageLabel = new QLabel(this);
-    m_imageLabel->setFixedSize(utility::getScaledSize(500), utility::getScaledSize(500));
-    m_imageLabel->setAlignment(Qt::AlignCenter);
-
     QPixmap pixmap;
     if (m_theme == DARK) {
         pixmap = QPixmap(":/resources/GreetWidget/loadPhotoDark.png");
@@ -188,13 +185,10 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     else {
         pixmap = QPixmap(":/resources/GreetWidget/loadPhoto.png");
     }
-    pixmap.setDevicePixelRatio(devicePixelRatioF());
-    m_imageLabel->setPixmap(pixmap.scaled(
-        m_imageLabel->size() * devicePixelRatioF(),
-        Qt::KeepAspectRatio,
-        Qt::SmoothTransformation
-    ));
-    
+    m_imageLabel->setPixmap(pixmap.scaled(utility::getScaledSize(450), utility::getScaledSize(450), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    m_imageLabel->setAlignment(Qt::AlignCenter);
+    m_imageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
 
     m_cancelButton = new QPushButton("cancel", this);
     m_cancelButton->setMinimumSize(utility::getScaledSize(100), utility::getScaledSize(60));
@@ -212,9 +206,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
         m_imageLabel->setFixedSize(utility::getScaledSize(450), utility::getScaledSize(450));
         m_cropXSlider->hide();
         m_cropYSlider->hide();
-        setFixedHeight(650);
     });
-
 
 
     m_selectImageButton = new QPushButton("Choose a photo", this);
@@ -304,11 +296,7 @@ void PhotoEditComponent::setTheme(Theme theme) {
     else {
         pixmap = QPixmap(":/resources/GreetWidget/loadPhoto.png");
     }
-    m_imageLabel->setPixmap(pixmap.scaled(
-        m_imageLabel->size() * devicePixelRatioF(),
-        Qt::KeepAspectRatio,
-        Qt::SmoothTransformation
-    ));
+    m_imageLabel->setPixmap(pixmap.scaled(utility::getScaledSize(450), utility::getScaledSize(450), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     if (theme == Theme::DARK) {
         m_cancelButton->setStyleSheet(m_style->ButtonSkipStyleBothTheme);
