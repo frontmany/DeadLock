@@ -16,7 +16,11 @@
 #include "messageComponent.h"
 #include "mainWindow.h"
 #include "filewrapper.h"
+
+#ifdef Q_OS_WIN
 #include <windows.h>
+#include <shellapi.h>
+#endif
 
 
 
@@ -67,16 +71,47 @@ ChatsWidget::~ChatsWidget() {
 void ChatsWidget::updateAndRestart() {
     m_config_manager->setIsNeedToUpdate(false);
 
+#ifdef Q_OS_WIN
     DWORD pid = GetCurrentProcessId();
     QString updaterPath = "deadlock_updater.exe";
     QStringList args;
     args << QString::number(pid);
 
-    bool started = QProcess::startDetached(updaterPath, args);
-    if (!started) {
+    wchar_t updaterPathW[1024];
+    updaterPath.toWCharArray(updaterPathW);
+    updaterPathW[updaterPath.length()] = '\0';
+
+    QString argsStr = args.join(" ");
+    wchar_t argsW[1024];
+    argsStr.toWCharArray(argsW);
+    argsW[argsStr.length()] = '\0';
+
+    SHELLEXECUTEINFO sei = { sizeof(sei) };
+    sei.lpVerb = L"runas";
+    sei.lpFile = updaterPathW;
+    sei.lpParameters = argsW;
+    sei.nShow = SW_SHOWNORMAL;
+
+    if (!ShellExecuteEx(&sei)) {
+        DWORD err = GetLastError();
+        if (err == ERROR_CANCELLED) {
+            qWarning("User declined UAC prompt");
+        }
+        else {
+            qWarning("Failed to start updater as admin. Error code: %lu", err);
+        }
+        return;
+    }
+#else
+    QString program = "./deadlock_updater"; 
+    QStringList args;
+    args << QString::number(QCoreApplication::applicationPid());
+
+    if (!QProcess::startDetached(program, args)) {
         qWarning("Failed to start updater");
         return;
     }
+#endif
 
     QApplication::quit();
 }

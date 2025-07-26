@@ -57,7 +57,7 @@ void AvatarIcon::setTheme(Theme theme) {
 
 ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
     : QWidget(parent), m_isChecked(false), m_radius(20), m_indicatorX(5) {
-    setFixedSize(54, 31);
+    setFixedSize(58, 31);
     m_theme = theme;
 
     m_sunIcon = QIcon(":/resources/ChatsWidget/sun.png");
