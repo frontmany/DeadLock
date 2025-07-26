@@ -126,34 +126,32 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background-color: #383838;
-    border-color: #555;
+    background-color: rgb(35, 35, 35);
 }
- 
+
 QPushButton:pressed {
-    background-color: #383838;
+    color: rgb(100, 180, 255);
+    background-color: rgba(26, 133, 255, 0.15);
 }
 
 QPushButton:checked {
-    background-color: #183F77;
-    border-color: #4A7DBF;
-    color: #FFFFFF;
+    background-color: rgba(26, 133, 255, 0.15);
+    color: rgb(100, 180, 255);
 }
 
 QPushButton:checked:hover {
-    background-color: #1d4a8a;
+    background-color: rgba(0, 138, 255, 0.18);
 }
 
 QPushButton:disabled {
-    background-color: #252525;
-    color: #707070;
-    border-color: #333;
+    background-color: rgba(80, 80, 80, 0.3);
+    color: #555555;
 }
 )";
 
     LightHideButton = R"(
 QPushButton {
-    background-color: rgb(229, 228, 226);
+    background-color: rgb(240, 238, 237);
     border-radius: 15px;
     padding: 8px 16px;
     color: #100C08;
@@ -164,16 +162,15 @@ QPushButton {
 
 QPushButton:hover {
     background-color: rgb(245, 245, 245);
-    border-color: #B8B8B8;
 }
 
 QPushButton:pressed {
-    background-color: #E8E8E8;
+    background-color: #D1E3F6;
+    color: #2A5885;
 }
 
 QPushButton:checked {
     background-color: #D1E3F6;
-    border-color: #7EB1E8;
     color: #2A5885;
 }
 
@@ -184,7 +181,6 @@ QPushButton:checked:hover {
 QPushButton:disabled {
     background-color: #F0F0F0;
     color: #A0A0A0;
-    border-color: #E0E0E0;
 }
 )";
 
@@ -347,7 +343,6 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
 
     m_hideButton = new QPushButton(this);
     m_hideButton->setObjectName("hideButton");
-    m_hideButton->setFlat(true);
     m_hideButton->setCursor(Qt::PointingHandCursor);
     m_hideButton->setCheckable(true);
     m_hideButton->setFixedSize(125, 32);
@@ -375,42 +370,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     }
     updateHideButton();
 
-    connect(m_hideButton, &QPushButton::toggled, this, [this](bool checked) {
-        m_is_hidden = checked;
-        auto client = m_chatsWidget->getClient();
-        client->setIsHidden(checked);
-        updateHideButton();
-
-        auto currentMessagingAreaComponent = m_chatsWidget->getCurrentMessagingAreaComponent();
-        if (currentMessagingAreaComponent != nullptr) {
-            currentMessagingAreaComponent->markVisibleMessagesAsChecked();
-        }
-
-        if (m_is_hidden) {
-            auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
-            for (auto comp : messagingAreasVec) {
-                comp->getTextEdit()->setDisabled(true);
-                comp->getAttachFileButton()->setDisabled(true);
-                comp->getChatPropertiesComponent()->disable(true);
-                comp->hideSendMessageButton();
-            }
-            
-            m_profileButton->setDisabled(true);
-
-            client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
-        }
-        else {
-            auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
-            for (auto comp : messagingAreasVec) {
-                comp->getTextEdit()->setDisabled(false);
-                comp->getAttachFileButton()->setDisabled(false);
-                comp->getChatPropertiesComponent()->disable(false);
-            }
-            m_profileButton->setDisabled(false);
-
-            client->broadcastMyStatus("online");
-        }
-    });
+    connect(m_hideButton, &QPushButton::toggled, [this](bool checked) {onHideButtonToggled(checked, false); });
     m_profileHLayout->addWidget(m_hideButton);
 
     m_noConnectionLabel = new QLabel;
@@ -420,16 +380,10 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->addWidget(m_noConnectionLabel);
 
 
-    m_moon_icon = new QLabel(this);
-    m_moon_icon->setFixedSize(50, 50);
-    m_moon_icon->setPixmap(QPixmap(":/resources/ChatsWidget/moon.png"));
-
     m_darkModeSwitch = new ToggleSwitch(this, m_theme);
     m_darkModeSwitch->setTheme(m_theme);
     QObject::connect(m_darkModeSwitch, &ToggleSwitch::toggled, this, &ChatsListComponent::toSendChangeTheme);
     m_profileHLayout->addSpacing(1500);
-    m_profileHLayout->addWidget(m_moon_icon);
-    m_profileHLayout->addSpacing(-10);
     m_profileHLayout->addWidget(m_darkModeSwitch);
     m_profileHLayout->addSpacing(15);
 
@@ -491,6 +445,57 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     connect(m_newChatButton, &ButtonIcon::clicked, this, &ChatsListComponent::openAddChatDialog);
     connect(this, &ChatsListComponent::sendCreateChatData, m_chatsWidget, &ChatsWidget::onCreateChatButtonClicked);
     connect(this, &ChatsListComponent::sendChangeTheme, m_chatsWidget, &ChatsWidget::onChangeThemeClicked);
+}
+
+void ChatsListComponent::onHideButtonToggled(bool checked, bool isNeedToToggleButton)
+{
+    if (isNeedToToggleButton) {
+        m_hideButton->click();
+        return;
+    }
+
+    m_is_hidden = checked;
+    auto client = m_chatsWidget->getClient();
+    client->setIsHidden(checked);
+    updateHideButton();
+
+    auto currentMessagingAreaComponent = m_chatsWidget->getCurrentMessagingAreaComponent();
+    if (currentMessagingAreaComponent != nullptr) {
+        currentMessagingAreaComponent->markVisibleMessagesAsChecked();
+    }
+
+    if (m_is_hidden) {
+        enableHiddenMode(client);
+    }
+    else {
+        disableHiddenMode(client);
+    }
+}
+
+void ChatsListComponent::enableHiddenMode(Client* client)
+{
+    auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
+    for (auto comp : messagingAreasVec) {
+        comp->getTextEdit()->setDisabled(true);
+        comp->getAttachFileButton()->setDisabled(true);
+        comp->getChatPropertiesComponent()->disable(true);
+        comp->hideSendMessageButton();
+    }
+
+    m_profileButton->setDisabled(true);
+    client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+}
+
+void ChatsListComponent::disableHiddenMode(Client* client)
+{
+    auto messagingAreasVec = m_chatsWidget->getMessagingAreasVec();
+    for (auto comp : messagingAreasVec) {
+        comp->getTextEdit()->setDisabled(false);
+        comp->getAttachFileButton()->setDisabled(false);
+        comp->getChatPropertiesComponent()->disable(false);
+    }
+    m_profileButton->setDisabled(false);
+    client->broadcastMyStatus("online");
 }
 
 bool ChatsListComponent::eventFilter(QObject* watched, QEvent* event) {

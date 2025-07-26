@@ -64,6 +64,8 @@ public:
     FriendSearchDialogComponent* getFriendSearchDialogComponent() { return m_friend_search_dialog; }
     ProfileEditorWidget* getProfileEditorWidget() { return m_profile_editor_widget; }
 
+    bool getIsHidden() { return m_is_hidden; }
+
     QLineEdit* getSearchLineEdit() { return m_searchLineEdit; }
 
     ChatsWidget* getChatsWidget() const;
@@ -86,6 +88,11 @@ public slots:
 
     void closeEditUserDialogWidnow();
     void openEditUserDialogWidnow();
+
+    void onHideButtonToggled(bool checked, bool isNeedToToggleButton);
+    void disableHiddenMode(Client* client);
+    void enableHiddenMode(Client* client);
+    
 
     void activateProfileButton();
     void disableProfileButton();
@@ -114,7 +121,6 @@ private:
     QHBoxLayout* m_profileHLayout;
     QHBoxLayout* m_contentsHLayout;
 
-    QLabel*             m_moon_icon;
     ToggleSwitch*       m_darkModeSwitch;
     ChatsWidget*        m_chatsWidget;
     QScrollArea*        m_scrollArea;

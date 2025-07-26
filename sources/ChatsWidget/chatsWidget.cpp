@@ -89,6 +89,7 @@ void ChatsWidget::showNotification(Chat* chat) {
     NotificationWidget* notification = new NotificationWidget(
         this,
         chat,
+        m_theme,
         this
     );
 

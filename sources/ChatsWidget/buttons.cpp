@@ -57,8 +57,11 @@ void AvatarIcon::setTheme(Theme theme) {
 
 ToggleSwitch::ToggleSwitch(QWidget* parent, Theme theme)
     : QWidget(parent), m_isChecked(false), m_radius(20), m_indicatorX(5) {
-    setFixedSize(52, 30); 
+    setFixedSize(54, 31);
     m_theme = theme;
+
+    m_sunIcon = QIcon(":/resources/ChatsWidget/sun.png");
+    m_moonIcon = QIcon(":/resources/ChatsWidget/moon.png");
 
     m_animation = new QPropertyAnimation(this, "indicatorX");
     m_animation->setDuration(200);
@@ -77,8 +80,13 @@ void ToggleSwitch::paintEvent(QPaintEvent* event) {
     painter.setBrush(m_backgroundColor);
     painter.drawRoundedRect(0, 0, width(), height(), 15, 15);
 
-    painter.setBrush(m_circleColor);
-    painter.drawEllipse(m_indicatorX, 5, 20, 20);
+    int iconSize = 24; 
+    int yOffset = ((height() - iconSize) / 2); 
+    QRect iconRect(m_indicatorX, yOffset, iconSize, iconSize);
+
+    QIcon icon = (m_theme == DARK) ? m_moonIcon : m_sunIcon;
+    QPixmap pixmap = icon.pixmap(iconSize, iconSize);
+    painter.drawPixmap(iconRect, pixmap);
 }
 
 void ToggleSwitch::mousePressEvent(QMouseEvent* event) {
@@ -91,33 +99,33 @@ void ToggleSwitch::mousePressEvent(QMouseEvent* event) {
 }
 
 void ToggleSwitch::updateAnimation() {
+    int iconSize = 24;
+    int padding = 6; 
+
     if (m_isChecked) {
         m_animation->setStartValue(m_indicatorX);
-        m_animation->setEndValue(width() - m_radius - 5);
+        m_animation->setEndValue(width() - iconSize - padding);
     }
     else {
         m_animation->setStartValue(m_indicatorX);
-        m_animation->setEndValue(5); 
+        m_animation->setEndValue(padding);
     }
 
-    m_animation->start(); 
+    m_animation->start();
 
     connect(m_animation, &QPropertyAnimation::valueChanged, [this](const QVariant& value) {
         m_indicatorX = value.toInt();
-        update(); 
+        update();
         });
 }
 
 void ToggleSwitch::setTheme(Theme theme) {
     m_theme = theme;
     if (m_theme == DARK) {
-        m_circleColor = QColor(102, 102, 102);
         m_backgroundColor = QColor(30, 30, 30);
-
     }
     else {
-        m_circleColor = QColor(255, 255, 255);
-        m_backgroundColor = QColor(212, 212, 212);
+        m_backgroundColor = QColor(240, 238, 237);
     }
     update();
 }

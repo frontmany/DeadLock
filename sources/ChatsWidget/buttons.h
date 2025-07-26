@@ -42,12 +42,14 @@ signals:
     void indicatorXChanged(int newValue);
 
 private:
+    QIcon m_sunIcon;
+    QIcon m_moonIcon;
+
     bool m_isChecked;
     int m_radius; 
     QPropertyAnimation* m_animation;
     int m_indicatorX;
     QColor m_backgroundColor;
-    QColor m_circleColor; 
     Theme m_theme;
 };
 

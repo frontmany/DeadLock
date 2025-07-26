@@ -18,15 +18,51 @@ void MainWindow::stopClient() {
     m_client->stop();
 }
 
-MainWindow::MainWindow(QWidget* parent, Client* client, std::shared_ptr<ConfigManager> configManager)
-    : QMainWindow(parent), m_worker_Qt(nullptr), m_client(client),
-    m_greetWidget(nullptr), m_loginWidget(nullptr), m_chatsWidget(nullptr) , m_config_manager(configManager)
+MainWindow::MainWindow(QWidget* parent)
+    : QMainWindow(parent), m_worker_Qt(nullptr), m_client(nullptr),
+    m_greetWidget(nullptr), m_loginWidget(nullptr), m_chatsWidget(nullptr) , m_config_manager(nullptr)
 {
     m_theme = utility::isDarkMode() ? DARK : LIGHT;
 
     setWindowTitle("Deadlock");
     setWindowIcon(QIcon(":/resources/GreetWidget/Deadlock.ico"));
-    
+}
+
+void MainWindow::changeEvent(QEvent* event)
+{
+    if (event->type() == QEvent::WindowStateChange) {
+        QWindowStateChangeEvent* stateEvent = static_cast<QWindowStateChangeEvent*>(event);
+
+        if (windowState() & Qt::WindowMinimized) {
+            onWindowMinimized(); 
+        }
+        else {
+            onWindowMaximized();
+        }
+    }
+
+    QMainWindow::changeEvent(event);
+}
+
+void MainWindow::onWindowMinimized()
+{
+    if (m_chatsWidget) {
+        if (!m_chatsWidget->getChatsList()->getIsHidden()) {
+            m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+        }
+    }
+}
+
+void MainWindow::onWindowMaximized()
+{
+    if (m_chatsWidget) {
+        if (!m_chatsWidget->getChatsList()->getIsHidden()) {
+            m_client->broadcastMyStatus("online");
+        }
+    }
+}
+
+void MainWindow::setWorkerUIonClient() {
     m_worker_Qt = new WorkerQt(this);
     m_client->setWorkerUI(m_worker_Qt);
 }
@@ -97,60 +133,70 @@ ChatsWidget* MainWindow::getChatsWidget() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
+    if (m_chatsWidget) {
+        if (!m_chatsWidget->getChatsList()->getIsHidden()) {
+            m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+        }
+    }
+
     if (m_client->getIsAbleToClose()) {
-        m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
+        safeShutdown();
         event->accept();
         return;
     }
 
     event->ignore();
 
-    if (windowHandle()) {
-        windowHandle()->setFlag(Qt::WindowCloseButtonHint, false);
-        windowHandle()->show();
+    auto window = windowHandle();
+    if (window) {
+        window->setFlag(Qt::WindowCloseButtonHint, false);
+        window->show();
     }
 
     QTimer* closeCheckTimer = new QTimer(this);
     closeCheckTimer->setInterval(500);
 
-    auto cleanup = [this, closeCheckTimer]() {
+    auto quitRequested = std::make_shared<bool>(false);
+
+    auto cleanup = [this, closeCheckTimer, window, quitRequested]() {
+        if (*quitRequested) return;
+        *quitRequested = true;
+
         closeCheckTimer->stop();
         closeCheckTimer->deleteLater();
-        if (windowHandle()) {
-            windowHandle()->setFlag(Qt::WindowCloseButtonHint, true);
-            windowHandle()->show();
+
+        if (window) {
+            window->setFlag(Qt::WindowCloseButtonHint, true);
+            window->show();
         }
-    };
+        };
 
-    bool* quitCalled = new bool(false);
-
-    QTimer::singleShot(10'000, this, [this, cleanup, quitCalled]() {
-        if (*quitCalled) return;
-        *quitCalled = true;
-        qWarning() << "Couldn't safely close the app!";
-        m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
-        m_client->disconnect();
-        cleanup();
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
-        QCoreApplication::quit();
-    });
-
-    connect(closeCheckTimer, &QTimer::timeout, this, [this, cleanup, quitCalled]() {
-        if (*quitCalled) return;
+    auto tryClose = [this, cleanup, quitRequested]() {
+        if (*quitRequested) return;
         if (m_client->getIsAbleToClose()) {
-            *quitCalled = true;
-            m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
-            m_client->disconnect();
+            safeShutdown();
             cleanup();
-            std::this_thread::sleep_for(std::chrono::milliseconds(300));
-            QCoreApplication::quit();
+            QTimer::singleShot(300, []() { QCoreApplication::quit(); });
         }
-    });
+        };
 
+    connect(closeCheckTimer, &QTimer::timeout, this, tryClose);
+
+    QTimer::singleShot(10'000, this, tryClose);
     closeCheckTimer->start();
 }
 
-
+void MainWindow::safeShutdown() {
+    m_config_manager->save(
+        m_client->getPublicKey(),
+        m_client->getPrivateKey(),
+        m_client->getSpecialServerKey(),
+        m_client->getMyHashChatsMap(),
+        m_client->getIsHidden(),
+        m_client->getDatabase()
+    );
+    m_client->disconnect();
+}
 
 void MainWindow::showAlreadyRunningDialog()
 {

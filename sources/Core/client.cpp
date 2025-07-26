@@ -21,13 +21,16 @@
 #include "photo.h"
 #include "chat.h"
 
-Client::Client(std::shared_ptr<ConfigManager> configManager) :
+Client::Client() :
     m_is_error(false),
     m_is_logged_in(false),
     m_is_hidden(false),
     m_is_able_to_close(true),
-    m_config_manager(configManager)
+    m_config_manager(nullptr)
 {
+    m_config_manager = std::make_shared<ConfigManager>();
+    m_config_manager->setClient(this);
+
     m_db = new Database;
     m_response_handler = new ResponseHandler(this, m_config_manager);
     m_packets_builder = new PacketsBuilder();
@@ -47,11 +50,23 @@ Client::~Client()
     delete m_packets_builder;
 }
 
+bool Client::waitForConnectionWithTimeout(int timeoutMs) {
+    auto startTime = std::chrono::steady_clock::now();
+    while (!isConnected()) {
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count() > timeoutMs) {
+            return false; 
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    return true; 
+}
+
 void Client::initDatabase(const std::string& loginHash) {
     m_db->init(loginHash);
 }
 
-void Client::run() { 
+void Client::startProcessingIncomingPackets() { 
     m_worker_thread = std::thread([this]() { update(); });
 }
 
@@ -84,7 +99,6 @@ void Client::authorizeClient(const std::string& loginHash, const std::string& pa
         sendPacket(m_packets_builder->getAuthorizationPacket(loginHash, passwordHash), QueryType::AUTHORIZATION);
     }
 }
-
 
 void Client::registerClient(const std::string& login, const std::string& password, const std::string& name) {
     // if registration will fail fields will be set empty in "onRegistrationFail" function
@@ -284,11 +298,13 @@ std::string Client::getSpecialServerKey() const {
 void Client::onMessage(net::message<QueryType> message) {
     m_is_able_to_close = false;
     m_response_handler->handleResponse(message);
+    m_is_able_to_close = true;
 }
 
 void Client::onFile(net::file<QueryType> file) {
     m_is_able_to_close = false;
     m_response_handler->onFile(file);
+    m_is_able_to_close = true;
 }
 
 void Client::sendFilesMessage(Message& filesMessage) {

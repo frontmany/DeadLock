@@ -25,7 +25,7 @@ class NotificationWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit NotificationWidget(ChatsWidget* chatsWidget, Chat* chat,
+    explicit NotificationWidget(ChatsWidget* chatsWidget, Chat* chat, Theme theme,
         QWidget* parent = nullptr);
 
     void setTheme(Theme theme);
@@ -47,14 +47,17 @@ private slots:
 
 private:
     void loadAvatar(const Photo* photo);
+    void setHoveredStyle(bool isHovered);
 
 private:
     QTimer* m_closeTimer = nullptr;
     Chat* m_chat;
     Theme m_theme;
     AvatarIcon* m_avatar;
+    QLabel* m_senderLabel; 
     QLabel* m_messageLabel;
+    QPushButton* m_hiddenModeButton;
     ChatsWidget* m_chats_widget;
     ButtonIcon* m_closeButton;
-    bool m_isHovered = false;
+    bool m_isCloseClicked = false;
 };

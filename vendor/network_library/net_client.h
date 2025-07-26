@@ -63,12 +63,18 @@ namespace net {
 		}
 
 		void disconnect() {
+			if (m_context.stopped()) {
+				return; 
+			}
+
 			if (std::this_thread::get_id() == m_context_thread.get_id()) {
 				std::cerr << "Error: disconnect() called from io_context thread!\n";
 				return;
 			}
 
 			try {
+				m_context.stop();
+
 				if (m_messages_connection) {
 					m_messages_connection->disconnect();
 					m_messages_connection.reset();
@@ -79,14 +85,18 @@ namespace net {
 					m_files_connection.reset();
 				}
 
-				m_context.stop();
-
 				if (m_context_thread.joinable()) {
 					m_context_thread.join();
 				}
 			}
+			catch (const std::system_error& e) {
+				std::cerr << "System error on disconnect: " << e.what() << "\n";
+			}
 			catch (const std::exception& e) {
-				std::cout << "error on disconnect " << e.what();
+				std::cerr << "Error on disconnect: " << e.what() << "\n";
+			}
+			catch (...) {
+				std::cerr << "Unknown error on disconnect\n";
 			}
 		}
 

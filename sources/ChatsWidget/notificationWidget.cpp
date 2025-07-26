@@ -3,37 +3,130 @@
 #include "buttons.h"
 #include "photo.h"
 #include "utility.h"
-#include "chatsWidget.h"
+#include "chatsListComponent.h"
 #include "client.h"
 #include "chat.h"
 
-
-
-NotificationWidget::NotificationWidget(ChatsWidget* chatsWidget, Chat* chat,
+NotificationWidget::NotificationWidget(ChatsWidget* chatsWidget, Chat* chat, Theme theme,
     QWidget* parent)
     : QWidget(parent),
     m_chat(chat),
-    m_theme(Theme::LIGHT)
+    m_theme(theme),
+    m_isCloseClicked(false)
 {
     setWindowFlags(Qt::FramelessWindowHint |
         Qt::WindowStaysOnTopHint |
         Qt::Tool);
     setAttribute(Qt::WA_TranslucentBackground);
-    setFixedSize(300, 84);
+    setFixedSize(330, 100);
 
-    m_avatar = new AvatarIcon(this, 24, 48, false, m_theme);
-    loadAvatar(chat->getFriendPhoto()); 
-    m_avatar->setFixedSize(60, 60);
-    m_avatar->installEventFilter(this);
+    QHBoxLayout* mainLayout = new QHBoxLayout(this);
+    mainLayout->setContentsMargins(16, 16, 16, 16);
+    mainLayout->setSpacing(16);
 
-    std::string message = "New message from " + chat->getFriendName();
-    m_messageLabel = new QLabel(QString::fromStdString(message), this);
+    m_avatar = new AvatarIcon(this, 48, 64, false, m_theme);
+    loadAvatar(chat->getFriendPhoto());
+    m_avatar->setFixedSize(64, 64);
+    installEventFilter(this);
+    mainLayout->addWidget(m_avatar, 0, Qt::AlignLeft | Qt::AlignVCenter);
+    mainLayout->addSpacing(-8);
+
+    QVBoxLayout* textLayout = new QVBoxLayout(this);
+    textLayout->setContentsMargins(0, 0, 0, 0);
+    textLayout->addSpacing(10);
+    textLayout->setAlignment(Qt::AlignCenter);
+
+    m_senderLabel = new QLabel(QString::fromStdString(chat->getFriendName()), this);
+    m_senderLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+    m_senderLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    textLayout->addWidget(m_senderLabel);
+    textLayout->addSpacing(-10);
+
+    m_messageLabel = new QLabel("New message", this);
     m_messageLabel->setWordWrap(true);
     m_messageLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    m_messageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_messageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    m_messageLabel->setFixedWidth(100);
+    m_messageLabel->setStyleSheet("color: #666666; font-size: 13px;");
     m_messageLabel->installEventFilter(this);
+    textLayout->addWidget(m_messageLabel);
+    textLayout->addStretch();
 
-    m_closeButton = new ButtonIcon(this, 25, 25);
+    mainLayout->addLayout(textLayout);
+
+    // Buttons container (hidden mode + close)
+    QWidget* buttonsContainer = new QWidget(this);
+    QHBoxLayout* buttonsLayout = new QHBoxLayout(buttonsContainer);
+    buttonsLayout->setContentsMargins(0, 0, 0, 0);
+
+    // Hidden mode button
+    m_hiddenModeButton = new QPushButton("Show hidden", this);
+    m_hiddenModeButton->setFlat(true);
+    m_hiddenModeButton->setAttribute(Qt::WA_NoMousePropagation);
+    if (m_theme == DARK) {
+        m_hiddenModeButton->setStyleSheet(
+            "QPushButton {"
+            "  color: rgb(100, 180, 255);"
+            "  background-color: rgba(26, 133, 255, 0.15);"
+            "  border-radius: 5px;"
+            "  font-size: 12px;"
+            "  padding: 6px 8px;"
+            "  text-align: center;"
+            "  border: none;"
+            "}"
+            "QPushButton:hover {"
+            "  color: rgb(26, 133, 255);"
+            "  background-color: rgba(26, 133, 255, 0.30);"
+            "}"
+            "QPushButton:pressed {"
+            "  color: rgb(0, 102, 204);"
+            "  background-color: rgba(0, 102, 204, 0.40);"
+            "}"
+            "QPushButton:disabled {"
+            "  color: #555555;"
+            "  background-color: rgba(80, 80, 80, 0.3);"
+            "}");
+    }
+    else {
+        m_hiddenModeButton->setStyleSheet(
+            "QPushButton {"
+            "  color: rgb(0, 102, 204);"
+            "  background-color: rgba(0, 102, 204, 0.15);"
+            "  border-radius: 5px;"
+            "  font-size: 12px;"
+            "  padding: 6px 8px;"
+            "  text-align: center;"
+            "  border: none;"
+            "}"
+            "QPushButton:hover {"
+            "  color: rgb(26, 133, 255);"
+            "  background-color: rgba(26, 133, 255, 0.30);"
+            "}"
+            "QPushButton:pressed {"
+            "  color: rgb(0, 76, 153);"
+            "  background-color: rgba(0, 76, 153, 0.40);"
+            "}"
+            "QPushButton:disabled {"
+            "  color: #A0A0A0;"
+            "  background-color: rgba(200, 200, 200, 0.3);"
+            "}");
+    }
+    
+    connect(m_hiddenModeButton, &QPushButton::clicked, [this, chatsWidget]() {
+        closeNotification(false);
+        if (!m_isCloseClicked) {
+            if (!chatsWidget->getChatsList()->getIsHidden()) {
+                chatsWidget->getChatsList()->onHideButtonToggled(true, true);
+            }
+            
+            chatsWidget->onNotificationClicked(m_chat);
+        }
+    });
+    buttonsLayout->addWidget(m_hiddenModeButton);
+
+
+    // Close button
+    m_closeButton = new ButtonIcon(this, 20, 20);
     QIcon icon1(":/resources/ChatsWidget/closeDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/closeHoverDark.png");
     m_closeButton->uploadIconsDark(icon1, iconHover1);
@@ -41,29 +134,47 @@ NotificationWidget::NotificationWidget(ChatsWidget* chatsWidget, Chat* chat,
     QIcon iconHover2(":/resources/ChatsWidget/closeHoverLight.png");
     m_closeButton->uploadIconsLight(icon2, iconHover2);
     m_closeButton->setTheme(m_theme);
-    connect(m_closeButton, &ButtonIcon::clicked, [this]() {closeNotification(true); });
-    connect(this, &NotificationWidget::clicked, [chatsWidget, this]() {
-        closeNotification(false);
-        chatsWidget->onNotificationClicked(m_chat); 
+    m_closeButton->setAttribute(Qt::WA_NoMousePropagation);
+    connect(m_closeButton, &ButtonIcon::clicked, [this]() {
+        m_isCloseClicked = true;
+        closeNotification(true);
     });
+    buttonsLayout->addWidget(m_closeButton);
 
-    QHBoxLayout* mainLayout = new QHBoxLayout(this);
-    mainLayout->setContentsMargins(12, 12, 12, 12);
-    mainLayout->setSpacing(12);
+    mainLayout->addWidget(buttonsContainer, 0, Qt::AlignRight | Qt::AlignTop);
 
-    mainLayout->addWidget(m_avatar);
-    mainLayout->addWidget(m_messageLabel, 1);
-    mainLayout->addWidget(m_closeButton, 0, Qt::AlignTop);
+    // Shadow effect
+    QGraphicsDropShadowEffect* shadow = new QGraphicsDropShadowEffect();
+    shadow->setBlurRadius(20);
+    shadow->setXOffset(0);
+    shadow->setYOffset(4);
+    shadow->setColor(QColor(0, 0, 0, 60));
+    setGraphicsEffect(shadow);
 
+    // Timer setup
     m_closeTimer = new QTimer(this);
     m_closeTimer->setSingleShot(true);
-    m_closeTimer->setInterval(5000); 
-
-    
-
-    connect(m_closeTimer, &QTimer::timeout, [this]() {closeNotification(true); });
+    m_closeTimer->setInterval(5000);
+    connect(m_closeTimer, &QTimer::timeout, [this]() { closeNotification(true); });
     m_closeTimer->start();
+
+    // Connect clicked signal
+    connect(this, &NotificationWidget::clicked, [chatsWidget, this]() {
+        closeNotification(false);
+        if (!m_isCloseClicked) {
+            chatsWidget->onNotificationClicked(m_chat);
+        }
+    });
 }
+
+void NotificationWidget::setTheme(Theme theme) {
+    m_theme = theme;
+    m_avatar->setTheme(theme);
+    m_closeButton->setTheme(theme);
+    // Устанавливаем стиль без hover-эффекта
+    setHoveredStyle(false);
+}
+
 
 void NotificationWidget::loadAvatar(const Photo* photo)
 {
@@ -90,41 +201,6 @@ void NotificationWidget::loadAvatar(const Photo* photo)
     }
 }
 
-void NotificationWidget::setTheme(Theme theme)
-{
-    m_theme = theme;
-    m_avatar->setTheme(theme);
-    m_closeButton->setTheme(theme);
-
-    QString style;
-    if (m_theme == Theme::DARK) {
-        style =
-            "NotificationWidget {"
-            "  background-color: rgba(51, 51, 51);"
-            "  border-radius: 8px;"
-            "}"
-            "QLabel {"
-            "  color: white;"
-            "  font: 12px;"
-            "}";
-    }
-    else {
-        style =
-            "NotificationWidget {"
-            "  background-color: rgba(255, 255, 255);"
-            "  border-radius: 8px;"
-            "  border: 1px solid #e0e0e0;"
-            "}"
-            "QLabel {"
-            "  color: black;"
-            "  font: 12px;"
-            "}";
-    }
-
-    setStyleSheet(style);
-
-}
-
 void NotificationWidget::showEvent(QShowEvent* event)
 {
     Q_UNUSED(event);
@@ -137,8 +213,7 @@ void NotificationWidget::showEvent(QShowEvent* event)
 
 void NotificationWidget::enterEvent(QEnterEvent* event)
 {
-    m_isHovered = true;
-    update();
+    setHoveredStyle(true);
     if (m_closeTimer && m_closeTimer->isActive()) {
         m_closeTimer->stop();
     }
@@ -148,8 +223,7 @@ void NotificationWidget::enterEvent(QEnterEvent* event)
 
 void NotificationWidget::leaveEvent(QEvent* event)
 {
-    m_isHovered = false;
-    update();
+    setHoveredStyle(false);
     if (m_closeTimer) {
         m_closeTimer->start();
     }
@@ -164,6 +238,54 @@ bool NotificationWidget::eventFilter(QObject* watched, QEvent* event) {
     return QWidget::eventFilter(watched, event);
 }
 
+void NotificationWidget::setHoveredStyle(bool isHovered) {
+    QString style;
+
+    if (m_theme == Theme::DARK) {
+        // В темной теме - светлее при наведении
+        style = QString(
+            "NotificationWidget {"
+            "  background-color: %1;"
+            "  border-radius: 12px;"
+            "}"
+        ).arg(isHovered ? "#383838" : "#2D2D2D");
+    }
+    else {
+        // В светлой теме - темнее при наведении
+        style = QString(
+            "NotificationWidget {"
+            "  background-color: %1;"
+            "  border-radius: 12px;"
+            "  border: 1px solid #E0E0E0;"
+            "}"
+        ).arg(isHovered ? "#F5F5F5" : "#FFFFFF");
+    }
+
+    // Сохраняем базовые стили для внутренних компонентов
+    QString baseStyle;
+    if (m_theme == Theme::DARK) {
+        baseStyle =
+            "QLabel {"
+            "  color: #FFFFFF;"
+            "}"
+            "QPushButton {"
+            "  color: #7EB6FF;"
+            "}";
+    }
+    else {
+        baseStyle =
+            "QLabel {"
+            "  color: #333333;"
+            "}"
+            "QPushButton {"
+            "  color: #4A90E2;"
+            "}";
+    }
+
+    setStyleSheet(style + baseStyle);
+    update();
+}
+
 void NotificationWidget::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
@@ -175,17 +297,11 @@ void NotificationWidget::paintEvent(QPaintEvent* event)
     path.addRoundedRect(rect(), 8, 8);
 
     if (m_theme == Theme::DARK) {
-        QColor baseColor(51, 51, 51);
-        if (m_isHovered) {
-            baseColor = baseColor.lighter(110);
-        }
+        QColor baseColor(31, 31, 31);
         painter.fillPath(path, baseColor);
     }
     else {
         QColor baseColor(255, 255, 255);
-        if (m_isHovered) {
-            baseColor = baseColor.darker(110);
-        }
         painter.fillPath(path, baseColor);
         painter.setPen(QColor(224, 224, 224));
         painter.drawPath(path);
@@ -226,7 +342,7 @@ void NotificationWidget::closeNotification(bool isShouldWithAnimation)
     connect(group, &QParallelAnimationGroup::finished, this, [this]() {
         this->hide();
         this->deleteLater();
-        });
+    });
 
     group->start(QAbstractAnimation::DeleteWhenStopped);
 }

@@ -99,8 +99,6 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     else if (msg.header.type == QueryType::UPDATE_OFFER) {
         onUpdateOffer(packet);
     }
-
-    m_client->setIsAbleToClose(true);
 }
 
 void  ResponseHandler::onUpdateOffer(const std::string& packet) {
@@ -202,7 +200,6 @@ void ResponseHandler::processNewVersionLoadedFile(net::file<QueryType>& file) {
 void ResponseHandler::onFile(net::file<QueryType>& file) {
     if (file.senderLoginHash == "server") {
         processNewVersionLoadedFile(file);
-        m_client->setIsAbleToClose(true);
         return;
     }
 

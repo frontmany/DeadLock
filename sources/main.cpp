@@ -13,38 +13,7 @@
 #include "utility.h"
 #include "theme.h"
 
-
-class CustomStyle : public QProxyStyle {
-public:
-    CustomStyle(QStyle* style = nullptr) : QProxyStyle(style) {}
-};
-
-int main(int argc, char* argv[])
-{
-    setlocale(LC_ALL, "ru"); 
-  
-    QApplication app(argc, argv);
-    CustomStyle* customStyle = new CustomStyle(QStyleFactory::create("Fusion"));
-    app.setStyle(customStyle);
-    
-    std::shared_ptr<ConfigManager> configManager = std::make_shared<ConfigManager>();
-    Client* client = new Client(configManager);
-
-    configManager->setClient(client);
-
-    client->connectTo("92.255.165.77", 8080);
-    client->run();
-    while (!client->isConnected()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-
-    MainWindow* mainWindow = new MainWindow(nullptr, client, configManager);
-    if (utility::isApplicationAlreadyRunning()) {
-        QTimer::singleShot(0, [&mainWindow]() {
-            mainWindow->showAlreadyRunningDialog();
-        });
-    }
-
+void tryAutoLoginOrShowLoginForm(MainWindow* mainWindow, Client* client, std::shared_ptr<ConfigManager> configManager) {
     if (configManager->checkIsAutoLogin()) {
         configManager->loadLoginHash();
         configManager->loadTheme();
@@ -56,9 +25,41 @@ int main(int argc, char* argv[])
     else {
         mainWindow->setupLoginWidget();
     }
+}
+
+int main(int argc, char* argv[])
+{
+    QApplication app(argc, argv);
+    app.setStyle(QStyleFactory::create("Fusion"));
+    
+    MainWindow* mainWindow = new MainWindow(nullptr);
+    if (utility::isApplicationAlreadyRunning()) {
+        QTimer::singleShot(0, [&mainWindow]() {
+            mainWindow->showAlreadyRunningDialog();
+        });
+        app.exec();
+        return -1;
+    }
+
+    Client* client = new Client;
+
+    std::shared_ptr<ConfigManager> configManager = client->getConfigManager();
+    mainWindow->setConfigManager(configManager);
+    mainWindow->setClient(client);
+    mainWindow->setWorkerUIonClient();
+
+    client->connectTo("192.168.1.44", 8080);
+    client->startProcessingIncomingPackets();
+    bool isConnected = client->waitForConnectionWithTimeout(1500);
+
+    if (!isConnected) {
+        mainWindow->showMaximized();
+        app.exec();
+        return -1;
+    }
+
+    tryAutoLoginOrShowLoginForm(mainWindow, client, configManager);
     
     mainWindow->showMaximized();
-
     app.exec();
-    delete mainWindow;
 }

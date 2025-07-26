@@ -23,13 +23,14 @@ class      PacketsBuilder;
 
 class Client : public net::client_interface<QueryType> {
 public:
-    Client(std::shared_ptr<ConfigManager> configManager);
+    Client();
     ~Client();
 
     void connectTo(const std::string& ipAddress, int port);
     void setWorkerUI(WorkerUI* workerImpl);
-    void run();
+    void startProcessingIncomingPackets();
     void initDatabase(const std::string& login);
+    bool waitForConnectionWithTimeout(int timeoutMs);
     void stop();
 
     Database* getDatabase() { return m_db; }
@@ -114,6 +115,9 @@ public:
 
     void setPrivateKey(const CryptoPP::RSA::PrivateKey& key);
     const CryptoPP::RSA::PrivateKey& getPrivateKey() const;
+
+    void setConfigManager(std::shared_ptr<ConfigManager> configManager) { m_config_manager = configManager; }
+    std::shared_ptr<ConfigManager> getConfigManager() { return m_config_manager; }
 
     void setServerEncryptionPart(const std::string& encryptionPart);
     const std::string& getServerEncryptionPart() const { return m_server_encryption_part; }
