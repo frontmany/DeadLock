@@ -164,6 +164,32 @@ QSlider::sub-page:vertical {
 }
 )";
 
+
+    DarkHintStyle = R"(
+    QLabel {
+        background-color: rgba(90, 90, 90);
+        color: rgb(240, 240, 240);
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 650;
+        font-family: 'Segoe UI';
+        font-size: 14px;
+        margin: 5px;
+    }
+)";
+
+    LightHintStyle = R"(
+    QLabel {
+        background-color: rgba(245, 245, 245);
+        color: rgb(60, 60, 60);
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 650;
+        font-family: 'Segoe UI';
+        font-size: 14px;
+        margin: 5px;
+    }
+)";
 };
 
 
@@ -176,6 +202,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_mainVLayout->setContentsMargins(utility::getScaledSize(20), utility::getScaledSize(20), utility::getScaledSize(20), utility::getScaledSize(20));
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
+    spacer = new QSpacerItem(80, 10);
 
     m_imageLabel = new QLabel(this);
     QPixmap pixmap;
@@ -206,6 +233,8 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
         m_imageLabel->setFixedSize(utility::getScaledSize(450), utility::getScaledSize(450));
         m_cropXSlider->hide();
         m_cropYSlider->hide();
+        m_hintLabel->hide();
+        m_buttonsHLayout->removeItem(spacer);
     });
 
 
@@ -225,6 +254,7 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
         m_config_manager->setPhoto(photo);
         m_client->updateMyPhoto(*photo);
 
+        m_buttonsHLayout->removeItem(spacer);
         m_profile_editor_widget->setFieldsEditor();
         m_profile_editor_widget->updateAvatar(*photo);
         m_profile_editor_widget->setFieldsEditor();
@@ -242,7 +272,6 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_sliderXLayout->addSpacing(50);
     m_sliderXLayout->addWidget(m_cropXSlider);
 
-
     m_cropYSlider = new QSlider(Qt::Vertical, this);
     m_cropYSlider->setRange(0, 330);
     m_cropYSlider->setInvertedAppearance(true);
@@ -251,13 +280,21 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_cropYSlider->hide();
     connect(m_cropYSlider, &QSlider::valueChanged, this, &PhotoEditComponent::adjustCropArea);
 
+    m_hintLabel = new QLabel("Use mouse\nwheel", this);
+    m_hintLabel->setAlignment(Qt::AlignCenter);
+    m_hintLabel->setFixedSize(utility::getScaledSize(120), 90);
+    m_hintLabel->setWordWrap(true);
+    m_hintLabel->hide();
+
     m_buttonsHLayout = new QHBoxLayout();
     m_buttonsHLayout->setAlignment(Qt::AlignCenter);
+    m_buttonsHLayout->addWidget(m_hintLabel);
+    m_buttonsHLayout->addSpacing(utility::getScaledSize(20));
     m_buttonsHLayout->addWidget(m_selectImageButton);
     m_buttonsHLayout->addSpacing(30);
     m_buttonsHLayout->addWidget(m_continueButton);
     m_buttonsHLayout->addWidget(m_cancelButton);
-    m_buttonsHLayout->addSpacing(-120);
+    m_buttonsHLayout->addSpacing(-80);
 
     m_imageAndYSliderLayout = new QHBoxLayout();
     m_imageAndYSliderLayout->setAlignment(Qt::AlignCenter);
@@ -299,6 +336,7 @@ void PhotoEditComponent::setTheme(Theme theme) {
     m_imageLabel->setPixmap(pixmap.scaled(utility::getScaledSize(450), utility::getScaledSize(450), Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
     if (theme == Theme::DARK) {
+        m_hintLabel->setStyleSheet(m_style->DarkHintStyle);
         m_cancelButton->setStyleSheet(m_style->ButtonSkipStyleBothTheme);
         m_selectImageButton->setStyleSheet(m_style->DarkButtonStyleBlue);
         m_continueButton->setStyleSheet(m_style->DarkButtonStyleBlue);
@@ -307,6 +345,7 @@ void PhotoEditComponent::setTheme(Theme theme) {
 
     }
     if (theme == Theme::LIGHT) {
+        m_hintLabel->setStyleSheet(m_style->LightHintStyle);
         m_cancelButton->setStyleSheet(m_style->ButtonSkipStyleBothTheme);
         m_selectImageButton->setStyleSheet(m_style->LightButtonStyleBlue);
         m_continueButton->setStyleSheet(m_style->LightButtonStyleBlue);
@@ -349,8 +388,10 @@ void PhotoEditComponent::openImagePicker() {
         m_continueButton->setEnabled(true);
         cropImageToCircle();
 
+        m_buttonsHLayout->addSpacerItem(spacer);
         m_cropXSlider->show();
         m_cropYSlider->show();
+        m_hintLabel->show();
     }
 }
 

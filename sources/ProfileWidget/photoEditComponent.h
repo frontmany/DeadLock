@@ -31,6 +31,8 @@ struct StylePhotoEditComponent {
     QString LightButtonStyleBlue;
     QString ConfigManager;
     QString DarkSliderStyle;
+    QString DarkHintStyle;
+    QString LightHintStyle;
 };
 
 class PhotoEditComponent : public QWidget {
@@ -70,6 +72,8 @@ private:
     QPixmap         m_selectedImage;
 
     std::shared_ptr<ConfigManager> m_config_manager;
+    QLabel* m_hintLabel;
+    QSpacerItem* spacer;
     QLabel* m_imageLabel;
     QPushButton* m_selectImageButton;
     QPushButton* m_cancelButton;

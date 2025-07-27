@@ -38,6 +38,8 @@ struct StyleGreetWidget {
     QString LightButtonStyle;
     QString DarkSliderStyle;
     QString LightSliderStyle;
+    QString DarkHintStyle;
+    QString LightHintStyle;
 };
 
 class GreetWidget : public QWidget {
@@ -87,6 +89,8 @@ private:
     std::string     m_filePath;
     QPixmap         m_selectedImage;
 
+    QLabel*         m_hintLabel;
+    QSpacerItem*    spacer;
     QLabel*         m_welcomeLabel;
     QLabel*         m_imageLabel;
     QPushButton*    m_selectImageButton;

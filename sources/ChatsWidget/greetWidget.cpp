@@ -181,6 +181,32 @@ StyleGreetWidget::StyleGreetWidget() {
         )";
 
 
+    DarkHintStyle = R"(
+    QLabel {
+        background-color: rgba(90, 90, 90);
+        color: rgb(240, 240, 240);
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 650;
+        font-family: 'Segoe UI';
+        font-size: 14px;
+        margin: 5px;
+    }
+)";
+
+    LightHintStyle = R"(
+    QLabel {
+        background-color: rgba(245, 245, 245);
+        color: rgb(60, 60, 60);
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 650;
+        font-family: 'Segoe UI';
+        font-size: 14px;
+        margin: 5px;
+    }
+)";
+
     WhiteLabelWelcomeStyle = "font-size: 42px; font-weight: bold; color: white;";
 };
 
@@ -188,6 +214,7 @@ using namespace utility;
 
 void GreetWidget::setTheme(Theme theme) {
     if (m_theme == Theme::DARK) {
+        m_hintLabel->setStyleSheet(m_style->DarkHintStyle);
         m_welcomeLabel->setStyleSheet(m_style->WhiteLabelWelcomeStyle);
         m_skipButton->setStyleSheet(m_style->DarkButtonSkipStyle);
 
@@ -198,6 +225,7 @@ void GreetWidget::setTheme(Theme theme) {
         m_cropYSlider->setStyleSheet(m_style->DarkSliderStyle);
     }
     else {
+        m_hintLabel->setStyleSheet(m_style->LightHintStyle);
         m_welcomeLabel->setStyleSheet(m_style->WhiteLabelWelcomeStyle);
         m_skipButton->setStyleSheet(m_style->LightButtonSkipStyle);
 
@@ -253,6 +281,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     }
     )";
 
+    spacer = new QSpacerItem(80, 10);
     m_sender = new PacketsBuilder();
 
     m_mainVLayout = new QVBoxLayout(this);
@@ -277,6 +306,8 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     m_skipButton->setMaximumSize(getScaledSize(350), getScaledSize(60));
     connect(m_skipButton, &QPushButton::clicked, this, [this]() {
         m_mainWindow->setupChatsWidget();
+        m_hintLabel->hide();
+        m_buttonsHLayout->removeItem(spacer);
     });
 
     m_imageLabel = new QLabel(this);
@@ -401,15 +432,22 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     m_cropYSlider->setInvertedAppearance(true);
     connect(m_cropYSlider, &QSlider::valueChanged, this, &GreetWidget::adjustCropArea);
 
+    m_hintLabel = new QLabel("Use mouse\nwheel", this);
+    m_hintLabel->setAlignment(Qt::AlignCenter);
+    m_hintLabel->setFixedSize(utility::getScaledSize(120), 90);
+    m_hintLabel->setWordWrap(true);
+    m_hintLabel->hide();
 
     m_buttonsHLayout = new QHBoxLayout();
     m_buttonsHLayout->setAlignment(Qt::AlignCenter);
+    m_buttonsHLayout->addWidget(m_hintLabel);
+    m_buttonsHLayout->addSpacing(utility::getScaledSize(20));
     m_buttonsHLayout->addWidget(m_selectImageButton);
     m_buttonsHLayout->addSpacing(getScaledSize(35));
     m_buttonsHLayout->addWidget(m_continueButton);
     m_buttonsHLayout->addWidget(m_skipButton);
-    m_buttonsHLayout->addSpacing(getScaledSize(-145));
-    
+    m_buttonsHLayout->addSpacing(-80);
+
     m_imageAndYSliderLayout = new QHBoxLayout();
     m_imageAndYSliderLayout->setAlignment(Qt::AlignCenter);
     m_imageAndYSliderLayout->addWidget(m_cropYSlider);
@@ -494,8 +532,10 @@ void GreetWidget::openImagePicker() {
 
         cropImageToCircle();
 
+        m_buttonsHLayout->addSpacerItem(spacer);
         m_cropXSlider->show();
         m_cropYSlider->show();
+        m_hintLabel->show();
     }
 
     m_imageLabel->update();
