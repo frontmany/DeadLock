@@ -9,6 +9,7 @@
 #include "photo.h"
 #include "friendInfo.h"
 #include "buttons.h"
+#include "configManager.h"
 
 StyleFriendComponent::StyleFriendComponent()
 {
@@ -499,6 +500,15 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
     utility::incrementAllChatLayoutIndexes(client->getMyHashChatsMap());
 
     client->getMyHashChatsMap().emplace(utility::calculateHash(login.toStdString()), chat);
+    client->getConfigManager()->save(
+        client->getPublicKey(),
+        client->getPrivateKey(),
+        client->getSpecialServerKey(),
+        client->getMyHashChatsMap(),
+        client->getIsHidden(),
+        client->getDatabase()
+    );
+
 
     chatsWidget->createAndSetMessagingAreaComponent(chat);
     chatsWidget->createAndAddChatComponentToList(chat);

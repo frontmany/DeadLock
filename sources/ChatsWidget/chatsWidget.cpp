@@ -229,16 +229,10 @@ void ChatsWidget::onChangeThemeClicked() {
 void ChatsWidget::onChatDelete(const QString& loginOfRemovedChat) {
     m_chatsListComponent->removeComponent(loginOfRemovedChat);
 
-
     std::string loginStd = loginOfRemovedChat.toStdString();
-    std::async(std::launch::async, [this, loginStd]() {
-        m_client->deleteFriendMessagesInDatabase(loginStd);
-    });
-    std::async(std::launch::async, [this, loginStd]() {
-        m_config_manager->deleteFriendChatInConfig(loginStd);
-    });
+    m_client->deleteFriendMessagesInDatabase(loginStd);
+    m_config_manager->deleteFriendChatInConfig(loginStd);
     m_client->deleteFriendFromChatsMap(utility::calculateHash(loginStd));
-
 
     HelloAreaComponent* helloComp = new HelloAreaComponent(m_theme);
 

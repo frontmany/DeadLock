@@ -516,6 +516,14 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     chat->setLastReceivedOrSentMessage("no messages yet");
 
     m_client->getMyHashChatsMap().emplace(utility::calculateHash(login), chat);
+    m_configManager->save(
+        m_client->getPublicKey(),
+        m_client->getPrivateKey(),
+        m_client->getSpecialServerKey(),
+        m_client->getMyHashChatsMap(),
+        m_client->getIsHidden(),
+        m_client->getDatabase()
+    );
 
     m_worker_UI->onChatCreateSuccess(chat);
 }
