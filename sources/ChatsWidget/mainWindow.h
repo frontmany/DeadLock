@@ -65,12 +65,12 @@ protected:
 private:
 	void safeShutdown();
 
-	Client* m_client;
+	Client* m_client = nullptr;
 	std::shared_ptr<ConfigManager> m_config_manager;
 
-	WorkerQt*		m_worker_Qt;
-	GreetWidget*	m_greetWidget;
-	LoginWidget*	m_loginWidget;
-	ChatsWidget*	m_chatsWidget;
+	WorkerQt*		m_worker_Qt = nullptr;
+	GreetWidget*	m_greetWidget = nullptr;;
+	LoginWidget*	m_loginWidget = nullptr;
+	ChatsWidget*	m_chatsWidget = nullptr;
 	Theme			m_theme;
 };

@@ -103,6 +103,9 @@ void MainWindow::setupChatsWidget() {
     m_chatsWidget->restoreChatComponents();
 
     setCentralWidget(m_chatsWidget);
+    if (m_client->getIsWasRegistered()) {
+        m_chatsWidget->getChatsList()->openHiddenButtonHintDialog();
+    }
 
     m_client->setIsUIReadyToUpdate(true);
 }
@@ -137,6 +140,10 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         if (!m_chatsWidget->getChatsList()->getIsHidden()) {
             m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
         }
+    }
+    else {
+        QTimer::singleShot(300, []() { QCoreApplication::quit(); });
+        return;
     }
 
     if (m_client->getIsAbleToClose()) {

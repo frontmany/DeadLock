@@ -123,6 +123,8 @@ public:
     const std::string& getServerEncryptionPart() const { return m_server_encryption_part; }
     std::string getSpecialServerKey() const;
 
+    void setIsWasRegistered(bool isWasRegistered) { m_is_was_registered = isWasRegistered; }
+    bool getIsWasRegistered() { return m_is_was_registered; }
 
     std::optional<Chat*> findChat(const std::string& loginHash) const ;
 
@@ -137,6 +139,7 @@ private:
     std::thread             m_worker_thread;
 
     bool                    m_is_hidden;
+    bool                    m_is_was_registered;
     bool                    m_is_error;
     bool                    m_is_logged_in;
     bool                    m_is_able_to_close;

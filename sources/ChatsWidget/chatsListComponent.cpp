@@ -860,3 +860,88 @@ void ChatsListComponent::showProfileDialog()
 
     dialog->exec();
 }
+
+void ChatsListComponent::openHiddenButtonHintDialog() {
+    if (m_hintDialog) {
+        m_hintDialog->show();
+        return;
+    }
+
+    m_hintOverlay = new OverlayWidget(m_chatsWidget->getMainWindow());
+    m_hintOverlay->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    m_hintOverlay->setAttribute(Qt::WA_TranslucentBackground);
+    m_hintOverlay->showMaximized();
+
+    m_hintDialog = new QDialog(m_hintOverlay);
+    m_hintDialog->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    m_hintDialog->setAttribute(Qt::WA_TranslucentBackground);
+    m_hintDialog->setFixedSize(300, 185);
+
+    QPoint pos = QPoint(50, 65);
+    QPoint globalPos = mapToGlobal(pos);
+    m_hintDialog->move(globalPos);
+
+    QWidget* container = new QWidget(m_hintDialog);
+    container->setObjectName("hintContainer");
+    container->setFixedSize(300, 185);
+
+    QLabel* hintLabel = new QLabel("Click to hide your status and appear offline. Click again to return online.\nWhile offline, you cannot send messages, share files, or edit your profile.", container);
+    hintLabel->setWordWrap(true);
+    hintLabel->setAlignment(Qt::AlignCenter);
+
+    QPushButton* getItButton = new QPushButton("Get it", container);
+    getItButton->setFixedSize(80, 30);
+
+    QString containerStyle;
+    if (m_theme == DARK) {
+        containerStyle =
+            "QWidget#hintContainer {"
+            "   background-color: rgba(40, 40, 40, 0.65);"
+            "   border-radius: 12px;"
+            "}";
+        getItButton->setStyleSheet(style->DarkHideButton);
+        hintLabel->setStyleSheet("color: #E0E0E0; font-size: 14px; font-family: 'Segoe UI'; padding: 0 10px;");
+    }
+    else {
+        containerStyle =
+            "QWidget#hintContainer {"
+            "   background-color: rgba(250, 250, 250, 0.65);"
+            "   border-radius: 12px;"
+            "}";
+        getItButton->setStyleSheet(style->LightHideButton);
+        hintLabel->setStyleSheet("color: #100C08; font-size: 14px; font-family: 'Segoe UI'; padding: 0 10px;");
+    }
+    container->setStyleSheet(containerStyle);
+
+    QVBoxLayout* containerLayout = new QVBoxLayout(container);
+    containerLayout->setContentsMargins(20, 20, 20, 20);
+    containerLayout->setSpacing(25);
+    containerLayout->addWidget(hintLabel);
+    containerLayout->addWidget(getItButton, 0, Qt::AlignCenter);
+
+    // Main dialog layout (just contains the styled container)
+    QVBoxLayout* mainLayout = new QVBoxLayout(m_hintDialog);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->addWidget(container);
+
+    connect(getItButton, &QPushButton::clicked, this, &ChatsListComponent::closeHiddenButtonHintDialog);
+    connect(m_hintDialog, &QDialog::finished, this, [this](int) {
+        closeHiddenButtonHintDialog();
+    });
+
+    m_hintDialog->show();
+}
+
+void ChatsListComponent::closeHiddenButtonHintDialog() {
+    if (m_hintDialog) {
+        m_hintDialog->hide();
+        m_hintDialog->deleteLater();
+        m_hintDialog = nullptr;
+    }
+
+    if (m_hintOverlay) {
+        m_hintOverlay->hide();
+        m_hintOverlay->deleteLater();
+        m_hintOverlay = nullptr;
+    }
+}

@@ -1115,8 +1115,16 @@ void MessagingAreaComponent::onAttachFileClicked()
 
     QStringList correctedPaths;
     for (const QString& path : filePaths) {
+        QFileInfo fileInfo(path);
+        if (fileInfo.size() == 0) {
+            QMessageBox::warning(this,
+                tr("Invalid file"),
+                tr("File \"%1\" has zero size and will be ignored.").arg(fileInfo.fileName()));
+            continue;
+        }
         correctedPaths.append(QDir::toNativeSeparators(path));
     }
+
 
     if (correctedPaths.size() > 10) {
         correctedPaths = correctedPaths.mid(0, 10);
@@ -1231,7 +1239,7 @@ void MessagingAreaComponent::onAttachFileClicked()
 
         QStringList newFiles = QFileDialog::getOpenFileNames(
             filesDialog,
-            tr("Select Files to Add (Remaining: %1").arg(remainingSlots),
+            tr("Select Files to Add (Remaining: %1)").arg(remainingSlots),
             QDir::homePath(),
             tr("All Files (*)")
         );
@@ -1241,8 +1249,15 @@ void MessagingAreaComponent::onAttachFileClicked()
         QStringList uniqueNewFiles;
         for (const QString& filePath : newFiles) {
             QFileInfo newFileInfo(filePath);
-            bool isDuplicate = false;
 
+            if (newFileInfo.size() == 0) {
+                QMessageBox::warning(filesDialog,
+                    tr("Invalid file"),
+                    tr("File \"%1\" has zero size and will be ignored.").arg(newFileInfo.fileName()));
+                continue;
+            }
+
+            bool isDuplicate = false;
             for (const QString& existingPath : m_vec_selected_files) {
                 QFileInfo existingFileInfo(existingPath);
                 if (newFileInfo == existingFileInfo ||
@@ -1257,13 +1272,6 @@ void MessagingAreaComponent::onAttachFileClicked()
             }
         }
 
-        if (uniqueNewFiles.isEmpty()) {
-            QMessageBox::information(this,
-                tr("Duplicate files"),
-                tr("All selected files are already added"));
-            return;
-        }
-
         if (uniqueNewFiles.size() > remainingSlots) {
             uniqueNewFiles = uniqueNewFiles.mid(0, remainingSlots);
             QMessageBox::information(this,
@@ -1276,8 +1284,9 @@ void MessagingAreaComponent::onAttachFileClicked()
 
         QTimer::singleShot(0, [filesDialog]() {
             filesDialog->adjustSize();
-        });
+            });
     });
+
 
     QPushButton* cancelButton = new QPushButton(tr("cancel"));
     connect(cancelButton, &QPushButton::clicked, [this, filesDialog]() {

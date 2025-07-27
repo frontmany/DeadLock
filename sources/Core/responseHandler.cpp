@@ -130,6 +130,7 @@ void ResponseHandler::onRegistrationSuccess(const std::string& packet) {
     m_client->setServerPublicKey(utility::deserializePublicKey(serverPublicKey));
     m_client->initDatabase(m_configManager->getMyLoginHash());
 
+    m_client->setIsWasRegistered(true);
     m_client->afterRegistrationSendMyInfo();
     m_client->generateMyKeyPair();
     m_client->sendPublicKeyToServer();
@@ -370,6 +371,7 @@ void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
         }
     }
 
+    m_client->setIsWasRegistered(false);
     m_client->connectFilesSocket(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
     m_client->setIsLoggedIn(true);
     m_worker_UI->onAuthorizationSuccess();

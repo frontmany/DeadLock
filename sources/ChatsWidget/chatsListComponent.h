@@ -29,6 +29,7 @@ class Client;
 class Photo;
 class Chat;
 class ChatsWidget;
+class OverlayWidget;
 
 struct StyleChatsListComponent {
     StyleChatsListComponent();
@@ -93,6 +94,7 @@ public slots:
     void disableHiddenMode(Client* client);
     void enableHiddenMode(Client* client);
     
+    void openHiddenButtonHintDialog();
 
     void activateProfileButton();
     void disableProfileButton();
@@ -110,6 +112,7 @@ private slots:
 
 
 private:
+    void closeHiddenButtonHintDialog();
     void showProfileDialog();
     void updateHideButton();
 
@@ -125,6 +128,8 @@ private:
     ChatsWidget*        m_chatsWidget;
     QScrollArea*        m_scrollArea;
     QWidget*            m_containerWidget;
+    QDialog*            m_hintDialog = nullptr;
+    OverlayWidget*      m_hintOverlay;
     QVBoxLayout*        m_containerVLayout;
     QLineEdit*          m_searchLineEdit;
 
