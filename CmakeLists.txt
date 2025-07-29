@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 20)
 project(Deadlock)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CRYPTOPP_LIB_DIR "vendor/cryptopp/x64/Output/Debug")
+else()
+    set(CRYPTOPP_LIB_DIR "vendor/cryptopp/x64/Output/Release")
+    if(WIN32)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    endif()
+endif()
 
 file(GLOB SOURCES "sources/*.cpp" "sources/*.h")
 source_group("Source Files" FILES ${SOURCES})
@@ -29,14 +37,14 @@ find_package(Qt6 COMPONENTS Widgets REQUIRED)
 qt_standard_project_setup()
 set(CMAKE_AUTOMOC ON)
 
+add_subdirectory("Deadlock_client_updater")
+
 include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/InMessagingAreaComponents" "sources/Core" "sources/ProfileWidget" "vendor" "vendor/base_64" "vendor/network_library" "vendor/cryptopp")
-link_directories("vendor/sqlite" "vendor/cryptopp/x64/Output/Release")
+link_directories("vendor/sqlite" ${CRYPTOPP_LIB_DIR})
 
 qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/GreetWidget/greetResources.qrc resources/ChatsWidget/chatsResources.qrc)
 
-
 set(RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.rc")
-
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${IN_MESSAGING_AREA_FILES} ${CHATS_FILES} ${CORE_FILES} ${QRC_FILES} ${PROFILE_FILES} ${NET_LIB} ${RC_FILE})
 target_link_libraries(${PROJECT_NAME} Qt6::Widgets ws2_32 sqlite.lib cryptlib.lib)
