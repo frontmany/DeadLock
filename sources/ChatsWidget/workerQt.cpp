@@ -280,23 +280,11 @@ void WorkerQt::onChatCreateFail() {
 	}, Qt::QueuedConnection);
 }
 
-void WorkerQt::showConfigLoadErrorDialog() {
-	QMetaObject::invokeMethod(m_main_window, []() {
-		QMessageBox msgBox;
-		msgBox.setWindowTitle("Configuration loading error");
-		msgBox.setIcon(QMessageBox::Critical);
-
-		QString errorMessage = "The configuration could not be loaded.\n"
-			"Possible causes:\n"
-			"- The configuration file is corrupted\n"
-			"- No access rights\n"
-			"- File not found\n"
-			"- Invalid data format";
-
-		msgBox.setText(errorMessage);
-		msgBox.setStandardButtons(QMessageBox::Ok);
-		msgBox.exec();
-		}, Qt::QueuedConnection);
+void WorkerQt::initializeUIWithConfigErrorDialog() {
+	QMetaObject::invokeMethod(m_main_window, [this]() {
+		m_main_window->setupChatsWidget();
+		m_main_window->showConfigLoadErrorDialog();
+	});
 }
 
 void WorkerQt::updateFriendsStatuses(const std::vector<std::pair<std::string, std::string>>& loginToStatusPairsVec) {

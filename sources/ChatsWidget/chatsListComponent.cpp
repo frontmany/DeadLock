@@ -896,7 +896,7 @@ void ChatsListComponent::openHiddenButtonHintDialog() {
     if (m_theme == DARK) {
         containerStyle =
             "QWidget#hintContainer {"
-            "   background-color: rgba(40, 40, 40, 0.65);"
+            "   background-color: rgba(40, 40, 40, 0.80);"
             "   border-radius: 12px;"
             "}";
         getItButton->setStyleSheet(style->DarkHideButton);
@@ -905,7 +905,7 @@ void ChatsListComponent::openHiddenButtonHintDialog() {
     else {
         containerStyle =
             "QWidget#hintContainer {"
-            "   background-color: rgba(250, 250, 250, 0.65);"
+            "   background-color: rgba(250, 250, 250, 0.70);"
             "   border-radius: 12px;"
             "}";
         getItButton->setStyleSheet(style->LightHideButton);

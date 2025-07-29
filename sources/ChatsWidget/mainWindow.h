@@ -27,6 +27,7 @@ public:
 	MainWindow(QWidget* parent);
 	~MainWindow();
 
+	
 	void setWorkerUIonClient();		
 	LoginWidget* getLoginWidget() {return m_loginWidget; }
 	ChatsWidget* getChatsWidget();
@@ -37,8 +38,8 @@ public slots:
 		m_theme = isDarkTheme ? DARK : LIGHT;
 	}
 
-	void showDoubleConnectionErrorDialog();
 	void showConnectionErrorDialog();
+	void showConfigLoadErrorDialog();
 	void showAlreadyRunningDialog();
 
 	void updateRegistrationUIRedBorder();
@@ -63,6 +64,7 @@ protected:
 	void closeEvent(QCloseEvent* event) override;
 
 private:
+	void showDoubleConnectionErrorDialog();
 	void safeShutdown();
 
 	Client* m_client = nullptr;

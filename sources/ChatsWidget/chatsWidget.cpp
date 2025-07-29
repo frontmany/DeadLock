@@ -397,6 +397,48 @@ void ChatsWidget::createAndSetMessagingAreaComponent(Chat* chat) {
     getMessagingAreasVec().push_back(messagingAreaComponent);
 }
 
+void ChatsWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+
+    const int minWindowWidth = 600;
+
+    const int leftWidgetMinimumWidth = 250;
+
+    const int rightWidgetMinimumWidth = 350;
+
+
+    QList<int> currentSizes = m_splitter->sizes();
+
+    if (width() < minWindowWidth) {
+
+        if (currentSizes[0] > 0) {
+
+            QList<int> newSizes;
+            newSizes << 0 << width(); 
+            m_splitter->setSizes(newSizes);
+        }
+    }
+    else {
+        if (currentSizes[0] == 0) {
+            QList<int> newSizes;
+            int leftWidth = qMax(leftWidgetMinimumWidth, width() - rightWidgetMinimumWidth);
+            newSizes << leftWidth << width() - leftWidth;
+            m_splitter->setSizes(newSizes);
+        }
+        else {
+            int totalWidth = currentSizes[0] + currentSizes[1];
+            if (totalWidth > 0) {
+                double ratio = static_cast<double>(currentSizes[0]) / totalWidth;
+                int newLeftWidth = qMax(leftWidgetMinimumWidth, static_cast<int>(width() * ratio));
+                QList<int> newSizes;
+                newSizes << newLeftWidth << width() - newLeftWidth;
+                m_splitter->setSizes(newSizes);
+            }
+        }
+    }
+}
+
+
 void ChatsWidget::createAndAddChatComponentToList(Chat* chat) {
     Theme theme = getTheme();
     ChatsListComponent* chatsListComponent = getChatsList();

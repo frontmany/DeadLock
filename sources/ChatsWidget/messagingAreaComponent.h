@@ -141,7 +141,7 @@ class FriendProfileComponent : public QWidget
     Q_OBJECT
 public:
     explicit FriendProfileComponent(QWidget* parent, MessagingAreaComponent* messagingAreaComponent, Theme theme);
-    void setUserData(const QString& login, const QString& name);
+    void setUserData(const QString& name);
     void setTheme(Theme theme);
 
 protected:
@@ -152,7 +152,6 @@ private:
     void applyGlassEffect(QPainter& painter, const QPainterPath& path);
 
 private:
-    QLabel* m_login_label;
     QLabel* m_name_label;
 
     //ButtonIcon m_block_button; TODO

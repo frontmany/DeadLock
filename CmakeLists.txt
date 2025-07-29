@@ -38,5 +38,5 @@ qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/G
 set(RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.rc")
 
 
-add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${LOGIN_FILES} ${IN_MESSAGING_AREA_FILES} ${CHATS_FILES} ${CORE_FILES} ${QRC_FILES} ${PROFILE_FILES} ${NET_LIB} ${RC_FILE})
+add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${IN_MESSAGING_AREA_FILES} ${CHATS_FILES} ${CORE_FILES} ${QRC_FILES} ${PROFILE_FILES} ${NET_LIB} ${RC_FILE})
 target_link_libraries(${PROJECT_NAME} Qt6::Widgets ws2_32 sqlite.lib cryptlib.lib)

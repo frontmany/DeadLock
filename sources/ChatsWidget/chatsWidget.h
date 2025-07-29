@@ -79,6 +79,9 @@ public slots:
 	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
 	void onChatDelete(const QString& loginOfRemovedChat);
 
+protected:
+	void resizeEvent(QResizeEvent* event) override;
+
 private:
 	void setRightComponent(std::variant<MessagingAreaComponent*, HelloAreaComponent*> rightComponentVariant);
 	bool isValidChatCreation(const std::string& loginToCheck);

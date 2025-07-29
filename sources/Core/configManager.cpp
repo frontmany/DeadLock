@@ -78,76 +78,81 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
 }
 
 bool ConfigManager::load(const std::string& fileName, const std::string& specialServerKey, Database* database) {
-    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
-    QString fileNameFinal = QString::fromStdString(fileName);
-    QDir saveDir(dir);
-    QString fullPath = saveDir.filePath(fileNameFinal);
+    try {
+        QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
+        QString fileNameFinal = QString::fromStdString(fileName);
+        QDir saveDir(dir);
+        QString fullPath = saveDir.filePath(fileNameFinal);
 
-    QFile file(fullPath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open the .json config file:" << QString::fromStdString(fileName);
-        return false;
-    }
-
-    QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-
-    if (!loadDoc.isObject()) {
-        qWarning() << "Invalid JSON in the file:" << QString::fromStdString(fileName);
-        return false;
-    }
-
-    QJsonObject jsonObject = loadDoc.object();
-
-    if (jsonObject.contains("public_key") && jsonObject.contains("private_key")) {
-        std::string encryptedPublicKeyStr = jsonObject["public_key"].toString().toStdString();
-        m_client->setPublicKey(utility::deserializePublicKey(utility::decryptWithServerKey(encryptedPublicKeyStr, specialServerKey)));
-
-        std::string encryptedPrivateKeyStr = jsonObject["private_key"].toString().toStdString();
-        m_client->setPrivateKey(utility::deserializePrivateKey(utility::decryptWithServerKey(encryptedPrivateKeyStr, specialServerKey)));
-
-        if (!utility::validateKeys(m_client->getPublicKey(), m_client->getPrivateKey()))
-            std::cerr << "error: your keys do not match!\n";
-    }
-
-    CryptoPP::SecByteBlock AESEConfigKey = utility::RSADecryptKey(m_client->getPrivateKey(), jsonObject["encrypted_config_key"].toString().toStdString());
-
-    if (jsonObject.contains("theme")) {
-        m_isDarkTheme = jsonObject["theme"].toString().toStdString() == "true";
-    }
-    if (jsonObject.contains("isNeedToUpdate")) {
-        m_isNeedToUpdate = utility::AESDecrypt(AESEConfigKey, jsonObject["isNeedToUpdate"].toString().toStdString()) == "true";
-    }
-    if (jsonObject.contains("newVersionNumber")) {
-        m_newVersionNumber = utility::AESDecrypt(AESEConfigKey, jsonObject["newVersionNumber"].toString().toStdString());
-    }
-    m_my_login = utility::AESDecrypt(AESEConfigKey, jsonObject["my_login"].toString().toStdString());
-    m_my_name = utility::AESDecrypt(AESEConfigKey, jsonObject["my_name"].toString().toStdString());
-    m_is_has_photo = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_photo"].toString().toStdString()) == "1";
-    m_client->setIsHidden(utility::AESDecrypt(AESEConfigKey, jsonObject["is_hidden"].toString().toStdString()) == "1");
-
-    if (m_is_has_photo && jsonObject.contains("my_photo_path")) {
-        QString photoPath = QString::fromStdString(utility::AESDecrypt(AESEConfigKey, jsonObject["my_photo_path"].toString().toStdString()));
-        if (!photoPath.isEmpty()) {
-            m_my_photo = new Photo(m_client->getPrivateKey(), photoPath.toStdString());
-            m_my_photo->loadBinaryDataFromPc();
+        QFile file(fullPath);
+        if (!file.open(QIODevice::ReadOnly)) {
+            qWarning() << "Couldn't open the .json config file:" << QString::fromStdString(fileName);
+            return false;
         }
-    }
 
-    auto& mapFriendLoginToChat = m_client->getMyHashChatsMap();
-    if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].isArray()) {
-        QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
-        for (const QJsonValue& value : chatsArray) {
-            if (value.isObject()) {
-                Chat* chat = Chat::deserialize(m_client->getPrivateKey(), m_my_login, value.toObject(), *database);
-                if (chat) {
-                    mapFriendLoginToChat[utility::calculateHash(chat->getFriendLogin())] = chat;
+        QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
+        file.close();
+
+        if (!loadDoc.isObject()) {
+            qWarning() << "Invalid JSON in the file:" << QString::fromStdString(fileName);
+            return false;
+        }
+
+        QJsonObject jsonObject = loadDoc.object();
+
+        if (jsonObject.contains("public_key") && jsonObject.contains("private_key")) {
+            std::string encryptedPublicKeyStr = jsonObject["public_key"].toString().toStdString();
+            m_client->setPublicKey(utility::deserializePublicKey(utility::decryptWithServerKey(encryptedPublicKeyStr, specialServerKey)));
+
+            std::string encryptedPrivateKeyStr = jsonObject["private_key"].toString().toStdString();
+            m_client->setPrivateKey(utility::deserializePrivateKey(utility::decryptWithServerKey(encryptedPrivateKeyStr, specialServerKey)));
+
+            if (!utility::validateKeys(m_client->getPublicKey(), m_client->getPrivateKey()))
+                std::cerr << "error: your keys do not match!\n";
+        }
+
+        CryptoPP::SecByteBlock AESEConfigKey = utility::RSADecryptKey(m_client->getPrivateKey(), jsonObject["encrypted_config_key"].toString().toStdString());
+
+        if (jsonObject.contains("theme")) {
+            m_isDarkTheme = jsonObject["theme"].toString().toStdString() == "true";
+        }
+        if (jsonObject.contains("isNeedToUpdate")) {
+            m_isNeedToUpdate = utility::AESDecrypt(AESEConfigKey, jsonObject["isNeedToUpdate"].toString().toStdString()) == "true";
+        }
+        if (jsonObject.contains("newVersionNumber")) {
+            m_newVersionNumber = utility::AESDecrypt(AESEConfigKey, jsonObject["newVersionNumber"].toString().toStdString());
+        }
+        m_my_login = utility::AESDecrypt(AESEConfigKey, jsonObject["my_login"].toString().toStdString());
+        m_my_name = utility::AESDecrypt(AESEConfigKey, jsonObject["my_name"].toString().toStdString());
+        m_is_has_photo = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_photo"].toString().toStdString()) == "1";
+        m_client->setIsHidden(utility::AESDecrypt(AESEConfigKey, jsonObject["is_hidden"].toString().toStdString()) == "1");
+
+        if (m_is_has_photo && jsonObject.contains("my_photo_path")) {
+            QString photoPath = QString::fromStdString(utility::AESDecrypt(AESEConfigKey, jsonObject["my_photo_path"].toString().toStdString()));
+            if (!photoPath.isEmpty()) {
+                m_my_photo = new Photo(m_client->getPrivateKey(), photoPath.toStdString());
+                m_my_photo->loadBinaryDataFromPc();
+            }
+        }
+
+        auto& mapFriendLoginToChat = m_client->getMyHashChatsMap();
+        if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].isArray()) {
+            QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
+            for (const QJsonValue& value : chatsArray) {
+                if (value.isObject()) {
+                    Chat* chat = Chat::deserialize(m_client->getPrivateKey(), m_my_login, value.toObject(), *database);
+                    if (chat) {
+                        mapFriendLoginToChat[utility::calculateHash(chat->getFriendLogin())] = chat;
+                    }
                 }
             }
         }
-    }
 
-    return true;
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
 }
 
 void ConfigManager::updateConfigFileName(const std::string& oldLoginHash, const std::string& newLoginHash) {

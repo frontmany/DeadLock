@@ -167,7 +167,7 @@ QSlider::sub-page:vertical {
 
     DarkHintStyle = R"(
     QLabel {
-        background-color: rgba(90, 90, 90);
+        background-color: rgb(90, 90, 90);
         color: rgb(240, 240, 240);
         border-radius: 8px;
         padding: 12px;
@@ -180,7 +180,7 @@ QSlider::sub-page:vertical {
 
     LightHintStyle = R"(
     QLabel {
-        background-color: rgba(245, 245, 245);
+        background-color: rgb(245, 245, 245);
         color: rgb(60, 60, 60);
         border-radius: 8px;
         padding: 12px;

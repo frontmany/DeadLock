@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), m_worker_Qt(nullptr), m_client(nullptr),
     m_greetWidget(nullptr), m_loginWidget(nullptr), m_chatsWidget(nullptr) , m_config_manager(nullptr)
 {
+    setAttribute(Qt::WA_DeleteOnClose);
     m_theme = utility::isDarkMode() ? DARK : LIGHT;
 
     setWindowTitle("Deadlock");
@@ -67,19 +68,8 @@ void MainWindow::setWorkerUIonClient() {
     m_client->setWorkerUI(m_worker_Qt);
 }
 
-MainWindow::~MainWindow() {
-    qDebug() << "window closing";
-    if (m_client->getIsLoggedIn()) {
-        m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
-        std::cout << "saving\n";
-
-        if (m_config_manager->getIsAutoLogin()) {
-            m_config_manager->save(m_client->getPublicKey(), m_client->getPrivateKey(), m_client->getSpecialServerKey(), m_client->getMyHashChatsMap(), m_client->getIsHidden(), m_client->getDatabase());
-        }
-    }
-
-    delete m_chatsWidget;
-    delete m_worker_Qt;
+MainWindow::~MainWindow() 
+{
 }
 
 void MainWindow::setupGreetWidget() {
@@ -103,7 +93,7 @@ void MainWindow::setupChatsWidget() {
     m_chatsWidget->restoreChatComponents();
 
     setCentralWidget(m_chatsWidget);
-    if (m_client->getIsWasRegistered()) {
+    if (m_client->getIsFirstAuthentication()) {
         m_chatsWidget->getChatsList()->openHiddenButtonHintDialog();
     }
 
@@ -136,13 +126,17 @@ ChatsWidget* MainWindow::getChatsWidget() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-    if (m_chatsWidget) {
+    qDebug() << "close triggered!";
+
+    if (m_client->getIsPassedAuthentication()) {
         if (!m_chatsWidget->getChatsList()->getIsHidden()) {
             m_client->broadcastMyStatus(utility::getCurrentFullDateAndTime());
         }
     }
     else {
-        QTimer::singleShot(300, []() { QCoreApplication::quit(); });
+        QTimer::singleShot(300, []() { 
+            QCoreApplication::quit(); 
+        });
         return;
     }
 
@@ -176,7 +170,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
             window->setFlag(Qt::WindowCloseButtonHint, true);
             window->show();
         }
-        };
+    };
 
     auto tryClose = [this, cleanup, quitRequested]() {
         if (*quitRequested) return;
@@ -185,7 +179,7 @@ void MainWindow::closeEvent(QCloseEvent* event) {
             cleanup();
             QTimer::singleShot(300, []() { QCoreApplication::quit(); });
         }
-        };
+    };
 
     connect(closeCheckTimer, &QTimer::timeout, this, tryClose);
 
@@ -510,6 +504,118 @@ void MainWindow::showDoubleConnectionErrorDialog() {
         QApplication::quit();
     });
 
+    QObject::connect(errorDialog, &QDialog::finished, overlay, &QWidget::deleteLater);
+
+    errorDialog->exec();
+}
+
+void MainWindow::showConfigLoadErrorDialog() {
+    OverlayWidget* overlay = new OverlayWidget(this);
+    overlay->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    overlay->setAttribute(Qt::WA_TranslucentBackground);
+    overlay->showMaximized();
+
+    QDialog* errorDialog = new QDialog(overlay);
+    errorDialog->setWindowTitle(tr("Configuration Error"));
+    errorDialog->setFixedSize(380, 450);
+    errorDialog->setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    errorDialog->setAttribute(Qt::WA_TranslucentBackground);
+
+    QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
+    errorDialog->move(
+        screenGeometry.center() - errorDialog->rect().center()
+    );
+
+    QGraphicsDropShadowEffect* shadowEffect = new QGraphicsDropShadowEffect();
+    shadowEffect->setBlurRadius(15);
+    shadowEffect->setXOffset(0);
+    shadowEffect->setYOffset(0);
+    shadowEffect->setColor(QColor(0, 0, 0, 80));
+
+    QWidget* mainWidget = new QWidget(errorDialog);
+    mainWidget->setGraphicsEffect(shadowEffect);
+    mainWidget->setObjectName("mainWidget");
+
+    QString mainWidgetStyle = m_theme == Theme::DARK ?
+        "QWidget#mainWidget {"
+        "   background-color: rgb(21, 21, 21);"
+        "   border-radius: 12px;"
+        "   border: 1px solid rgb(40, 40, 40);"
+        "}" :
+        "QWidget#mainWidget {"
+        "   background-color: rgb(229, 228, 226);"
+        "   border-radius: 12px;"
+        "   border: 1px solid rgb(200, 200, 200);"
+        "}";
+    mainWidget->setStyleSheet(mainWidgetStyle);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout(errorDialog);
+    mainLayout->setContentsMargins(20, 20, 20, 20);
+    mainLayout->addWidget(mainWidget);
+
+    QVBoxLayout* contentLayout = new QVBoxLayout(mainWidget);
+    contentLayout->setContentsMargins(16, 16, 16, 16);
+    contentLayout->setSpacing(20);
+    contentLayout->setAlignment(Qt::AlignCenter);
+
+    QLabel* iconLabel = new QLabel();
+    QPixmap errorPixmap(":/resources/ChatsWidget/configLoadingError.png");
+
+
+    if (errorPixmap.isNull()) {
+        errorPixmap = QIcon(":/resources/ChatsWidget/error.png").pixmap(64, 64);
+        qWarning() << "Failed to load configLoadingError.png, using fallback icon";
+    }
+    iconLabel->setPixmap(errorPixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    iconLabel->setAlignment(Qt::AlignCenter);
+
+    QLabel* errorLabel = new QLabel(
+        "The configuration file could not be loaded.\n"
+            "Current chat history is unavailable.\n\n"
+            "Possible causes:\n"
+            "- The configuration file is corrupted\n"
+            "- File not found\n"
+            "\n"
+            "Application will start with default settings."
+    );
+
+    errorLabel->setAlignment(Qt::AlignCenter);
+    errorLabel->setWordWrap(true);
+    errorLabel->setStyleSheet(
+        m_theme == Theme::DARK ?
+        "color: white; font-size: 14px;" :
+        "color: black; font-size: 14px;"
+    );
+
+    QPushButton* closeButton = new QPushButton(tr("Close"));
+    closeButton->setFixedHeight(40);
+    closeButton->setStyleSheet(
+        m_theme == Theme::DARK ?
+        "QPushButton {"
+        "   background-color: rgb(45, 45, 45);"
+        "   color: white;"
+        "   border-radius: 6px;"
+        "   padding: 8px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgb(55, 55, 55);"
+        "}" :
+    "QPushButton {"
+        "   background-color: rgb(220, 220, 220);"
+        "   color: black;"
+        "   border-radius: 6px;"
+        "   padding: 8px;"
+        "}"
+        "QPushButton:hover {"
+        "   background-color: rgb(200, 200, 200);"
+        "}"
+        );
+
+    contentLayout->addWidget(iconLabel);
+    contentLayout->addWidget(errorLabel);
+    contentLayout->addWidget(closeButton);
+
+    connect(closeButton, &QPushButton::clicked, errorDialog, &QDialog::reject);
     QObject::connect(errorDialog, &QDialog::finished, overlay, &QWidget::deleteLater);
 
     errorDialog->exec();

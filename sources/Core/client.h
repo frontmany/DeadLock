@@ -123,8 +123,11 @@ public:
     const std::string& getServerEncryptionPart() const { return m_server_encryption_part; }
     std::string getSpecialServerKey() const;
 
-    void setIsWasRegistered(bool isWasRegistered) { m_is_was_registered = isWasRegistered; }
-    bool getIsWasRegistered() { return m_is_was_registered; }
+    void setIsFirstAuthentication(bool isFirstAuthentication) { m_is_first_authentication = isFirstAuthentication; }
+    bool getIsFirstAuthentication() { return m_is_first_authentication; }
+
+    void setIsPassedAuthentication(bool isPassedAuthentication) { m_is_passed_authentication = isPassedAuthentication; }
+    bool getIsPassedAuthentication() { return m_is_passed_authentication; }
 
     std::optional<Chat*> findChat(const std::string& loginHash) const ;
 
@@ -139,7 +142,8 @@ private:
     std::thread             m_worker_thread;
 
     bool                    m_is_hidden;
-    bool                    m_is_was_registered;
+    bool                    m_is_first_authentication;
+    bool                    m_is_passed_authentication;
     bool                    m_is_error;
     bool                    m_is_logged_in;
     bool                    m_is_able_to_close;

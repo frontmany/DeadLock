@@ -39,7 +39,7 @@ public:
 	void blockProfileEditing() override;
 	void activateProfileEditing() override;
 	void updateFriendsStatuses(const std::vector<std::pair<std::string, std::string>>& loginToStatusPairsVec) override;
-	void showConfigLoadErrorDialog() override;
+	void initializeUIWithConfigErrorDialog() override;
 	void showTypingLabel(const std::string& friendLogin) override;
 	void showNowReceiving(const std::string& friendLoginHash) override;
 	void hideTypingLabel(const std::string& friendLogin) override;

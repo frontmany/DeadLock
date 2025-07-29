@@ -458,10 +458,6 @@ void FriendProfileComponent::setupUI()
     m_mainLayout->setSpacing(10);
     m_mainLayout->setContentsMargins(10, 10, 10, 10);
 
-    m_login_label = new QLabel(this);
-    m_login_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_login_label->setAlignment(Qt::AlignLeft);
-
     m_name_label = new QLabel(this);
     m_name_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_name_label->setAlignment(Qt::AlignLeft);
@@ -481,19 +477,17 @@ void FriendProfileComponent::setupUI()
     m_close_button->setParent(this);
     m_close_button->setGeometry(
         170, 
-        5,
+        7,
         width(), 
         120 
     );
 
-    m_mainLayout->addWidget(m_login_label);
     m_mainLayout->addWidget(m_name_label);
     setTheme(m_theme);
 }
 
-void FriendProfileComponent::setUserData(const QString& login, const QString& name)
+void FriendProfileComponent::setUserData(const QString& name)
 {
-    m_login_label->setText("login: " + login);
     m_name_label->setText("name: " + name);
 }
 
@@ -520,13 +514,11 @@ void FriendProfileComponent::setTheme(Theme theme) {
         m_close_button->setTheme(m_theme);
         m_color = new QColor(51, 51, 51);
         m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(245, 245, 245);");
-        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(245, 245, 245);");
     }
     else {
         m_close_button->setTheme(m_theme);
         m_color = new QColor(229, 228, 226);
         m_name_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(26, 133, 255);");
-        m_login_label->setStyleSheet("font-size: 12px; font-weight: bold; color: rgb(26, 133, 255);");
     }
 }
 
@@ -559,7 +551,7 @@ void ChatPropertiesComponent::setupUI() {
     connect(m_delete_chat_button, &QPushButton::clicked, [this]() {
         QDialog logoutDialog(this);
         logoutDialog.setWindowTitle(tr("Delete Chat ?"));
-        logoutDialog.setMinimumSize(300, 150);
+        logoutDialog.setMinimumSize(300, 70);
         logoutDialog.move(m_messagingAreaComponent->getChatsWidget()->getMainWindow()->window()->frameGeometry().center() - logoutDialog.rect().center());
         
 
@@ -874,7 +866,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     m_friend_profile_component = new FriendProfileComponent(this, this, m_theme);
     m_friend_profile_component->hide();
     m_friend_profile_component->setFixedSize(200, 70);
-    m_friend_profile_component->setUserData(QString::fromStdString(chat->getFriendLogin()), QString::fromStdString(chat->getFriendName()));
+    m_friend_profile_component->setUserData(QString::fromStdString(chat->getFriendName()));
     m_friend_profile_component->setParent(m_scrollArea->viewport());
     m_friend_profile_component->setGeometry(
         17,
@@ -1667,7 +1659,7 @@ void MessagingAreaComponent::openFriendProfile() {
     m_friendProfileDialog->setAttribute(Qt::WA_TranslucentBackground);
 
     int dialogWidth = 200;
-    int dialogHeight = 80;
+    int dialogHeight = 40;
 
     m_friendProfileDialog->setFixedSize(dialogWidth, dialogHeight);
 

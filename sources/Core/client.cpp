@@ -26,7 +26,8 @@ Client::Client() :
     m_is_logged_in(false),
     m_is_hidden(false),
     m_is_able_to_close(true),
-    m_is_was_registered(true),
+    m_is_first_authentication(true),
+    m_is_passed_authentication(false),
     m_config_manager(nullptr)
 {
     m_config_manager = std::make_shared<ConfigManager>();
