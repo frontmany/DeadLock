@@ -14,11 +14,8 @@ class Message;
 enum class QueryType : uint32_t;
 
 namespace net {
-	template <typename T>
-	class message;
-	template <typename T>
-	class file;
-
+	class Message;
+	class File;
 }
 
 class ResponseHandler {
@@ -27,8 +24,8 @@ public:
 	void setWorkerUI(WorkerUI* workerImpl);
 	WorkerUI* getWorkerUI() { return m_worker_UI; }
 
-	void handleResponse(net::message<QueryType>& msg);
-	void onFile(net::file<QueryType>& file);
+	void handleResponse(net::Message& msg);
+	void onFile(net::File& file);
 
 	void onRegistrationSuccess(const std::string& packet);
 	void onRegistrationFail();
@@ -59,9 +56,9 @@ public:
 	void onStatusReceive(const std::string& packet);
 
 private:
-	void processNewVersionLoadedFile(net::file<QueryType>& file);
-	void processRequestedFile(net::file<QueryType>& file);
-	void addDataToMessage(Message* message, net::file<QueryType>& file, bool isPresent);
+	void processNewVersionLoadedFile(net::File file);
+	void processRequestedFile(net::File& file);
+	void addDataToMessage(Message* message, net::File& file, bool isPresent);
 	void showFilesMessage(Message* message, const std::string& friendLogin, const std::string& myLogin);
 
 private:

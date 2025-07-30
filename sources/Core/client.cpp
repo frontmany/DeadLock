@@ -75,7 +75,7 @@ void Client::startProcessingIncomingPackets() {
 void Client::connectTo(const std::string& ipAddress, int port) {
     m_server_ipAddress = ipAddress;
     m_server_port = port;
-    connectMessagesSocket(ipAddress, port);
+    createConnection(ipAddress, port);
     runContextThread();
 }
 
@@ -265,8 +265,8 @@ const std::vector<std::string> Client::getFriendsLoginHashesVecFromMap() {
 }
 
 void Client::sendPacket(const std::string& packet, QueryType type) {
-    net::message<QueryType> msg;
-    msg.header.type = type;
+    net::Message msg;
+    msg.header.type = static_cast<uint32_t>(type);
     msg << packet;
     send(msg);
 }
@@ -297,13 +297,13 @@ std::string Client::getSpecialServerKey() const {
     return m_config_manager->getMyPasswordHash() + m_server_encryption_part;
 }
 
-void Client::onMessage(net::message<QueryType> message) {
+void Client::onMessage(net::Message message) {
     m_is_able_to_close = false;
     m_response_handler->handleResponse(message);
     m_is_able_to_close = true;
 }
 
-void Client::onFile(net::file<QueryType> file) {
+void Client::onFile(net::File file) {
     m_is_able_to_close = false;
     m_response_handler->onFile(file);
     m_is_able_to_close = true;
@@ -349,12 +349,12 @@ void Client::requestFile(const fileWrapper& fileWrapper) {
 
 
 
-void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) {
+void Client::onSendMessageError(std::error_code ec, net::Message unsentMessage) {
     std::string messageStr;
     unsentMessage >> messageStr;
     std::istringstream iss(messageStr);
 
-    QueryType type = unsentMessage.header.type;
+    QueryType type = static_cast<QueryType>(unsentMessage.header.type);
 
     if (type == QueryType::MESSAGE) {
         skipLines(iss, 1);
@@ -418,7 +418,7 @@ void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unse
         std::string friendLoginHash;
         std::getline(iss, friendLoginHash);
 
-        net::file<QueryType> file;
+        net::File file;
         file.blobUID = blobUID;
         file.filesInBlobCount = -1;
         file.id = fileId;
@@ -433,7 +433,7 @@ void Client::onSendMessageError(std::error_code ec, net::message<QueryType> unse
     }
 }
 
-void Client::onSendFileError(std::error_code ec, net::file<QueryType> unsentFille) {
+void Client::onSendFileError(std::error_code ec, net::File unsentFille) {
         auto itChat = m_map_friend_loginHash_to_chat.find(unsentFille.receiverLoginHash);
         auto& [friendLogin, chat] = *itChat;
         auto& messagesVec = chat->getMessagesVec();
@@ -446,33 +446,31 @@ void Client::onSendFileError(std::error_code ec, net::file<QueryType> unsentFill
         m_response_handler->getWorkerUI()->onMessageSendingError(friendLogin, msg);
 }
 
-void Client::onReceiveMessageError(std::error_code ec) {
-    if (!utility::isHasInternetConnection()) {
-        onNetworkError();
-    }
-    else {
-        onServerDown();
-    }
-}
 
-void Client::onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) {
+void Client::onReceiveFileError(std::error_code ec, std::optional<net::File> unreadFile) {
     if (!utility::isHasInternetConnection()) {
         onNetworkError();
         return;
     }
-    if (unreadFile.senderLoginHash == "" && unreadFile.receiverLoginHash == "") {
+    if (!unreadFile.has_value()) {
         onServerDown();
         return;
     }
 
-    if (auto vec = m_db->getRequestedFiles(m_config_manager->getMyLoginHash()); std::find(vec.begin(), vec.end(), unreadFile.id) != vec.end()) {
-        m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.receiverLoginHash, { false, unreadFile });
+    if (auto vec = m_db->getRequestedFiles(m_config_manager->getMyLoginHash()); std::find(vec.begin(), vec.end(), unreadFile.value().id) != vec.end()) {
+        m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.value().receiverLoginHash, { false, unreadFile.value() });
     }
 }
 
-void Client::onConnectError(std::error_code ec) {
+void Client::onConnectionError() {
     m_response_handler->getWorkerUI()->onConnectError();
     m_is_error = true;
+
+
+    if (!isStopped()) {
+        stop();
+    }
+    m_response_handler->getWorkerUI()->onNetworkError();
 }
 
 void Client::onNetworkError() {
@@ -487,12 +485,12 @@ void Client::onServerDown() {
     m_response_handler->getWorkerUI()->onServerDown();
 }
 
-void Client::onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+void Client::onSendFileProgressUpdate(const net::File& file, uint32_t progressPercent) {
     waitUntilUIReadyToUpdate();
     m_response_handler->getWorkerUI()->updateFileSendingProgress(file.receiverLoginHash, file, progressPercent);
 }
 
-void Client::onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) {
+void Client::onReceiveFileProgressUpdate(const net::File& file, uint32_t progressPercent) {
     waitUntilUIReadyToUpdate();
 
     m_response_handler->getWorkerUI()->updateFileLoadingProgress(file.senderLoginHash, file, progressPercent);

@@ -6,11 +6,7 @@
 
 namespace net
 {
-    template <typename T>
-    class files_connection;
-
-    template <typename T>
-    struct file {
+    struct File {
         CryptoPP::RSA::PublicKey friendPublicKey;
         std::string blobUID;
         std::string senderLoginHash;
@@ -24,9 +20,9 @@ namespace net
         std::string filesInBlobCount;
         std::string encryptedKey;
 
-        file() = default;
+        File() = default;
 
-        file& operator=(const file& other) {
+        File& operator=(const File& other) {
             if (this != &other) {
                 friendPublicKey = other.friendPublicKey;
                 blobUID = other.blobUID;
@@ -45,7 +41,7 @@ namespace net
             return *this; 
         }
 
-        file& operator=(file&& other) noexcept {
+        File& operator=(File&& other) noexcept {
             if (this != &other) {
                 friendPublicKey = std::move(other.friendPublicKey);
                 blobUID = std::move(other.blobUID);
@@ -64,7 +60,7 @@ namespace net
             return *this;
         }
 
-        file(file&& other) noexcept
+        File(File&& other) noexcept
             : friendPublicKey(std::move(other.friendPublicKey)),
             blobUID(std::move(other.blobUID)),
             senderLoginHash(std::move(other.senderLoginHash)),
@@ -79,7 +75,7 @@ namespace net
             encryptedKey(std::move(other.encryptedKey)){
         }
 
-        file(const file& other) noexcept
+        File(const File& other) noexcept
             : friendPublicKey(other.friendPublicKey),
             blobUID(other.blobUID),
             senderLoginHash(other.senderLoginHash),
@@ -93,12 +89,5 @@ namespace net
             filesInBlobCount(other.filesInBlobCount),
             encryptedKey(other.encryptedKey) {
         }
-    };
-
-
-    template <typename T>
-    struct owned_file {
-        std::shared_ptr<files_connection<T>> remote = nullptr;
-        file<T> file;
     };
 }

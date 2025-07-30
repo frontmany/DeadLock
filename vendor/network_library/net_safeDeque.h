@@ -7,10 +7,10 @@
 namespace net {
 
 	template<typename T>
-	class safe_deque {
+	class SafeDeque {
 	public:
-		safe_deque() = default;
-		safe_deque(const safe_deque<T>&) = delete;
+		SafeDeque() = default;
+		SafeDeque(const safe_deque<T>&) = delete;
 		virtual ~safe_deque() { clear(); }
 
 	public: 

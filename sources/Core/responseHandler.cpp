@@ -19,11 +19,12 @@ void ResponseHandler::setWorkerUI(WorkerUI* workerImpl) {
     m_worker_UI = workerImpl;
 }
 
-void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
-    if (msg.header.type != QueryType::REGISTRATION_SUCCESS && 
-        msg.header.type != QueryType::AUTHORIZATION_SUCCESS &&
-        msg.header.type != QueryType::REGISTRATION_FAIL &&
-        msg.header.type != QueryType::AUTHORIZATION_FAIL) {
+void ResponseHandler::handleResponse(net::Message& msg) {
+    if (msg.header.type != static_cast<uint32_t>(QueryType::REGISTRATION_SUCCESS) &&
+        msg.header.type != static_cast<uint32_t>(QueryType::AUTHORIZATION_SUCCESS) &&
+        msg.header.type != static_cast<uint32_t>(QueryType::REGISTRATION_FAIL) &&
+        msg.header.type != static_cast<uint32_t>(QueryType::AUTHORIZATION_FAIL)) 
+    {
         m_client->waitUntilUIReadyToUpdate();
     }
 
@@ -33,70 +34,70 @@ void ResponseHandler::handleResponse(net::message<QueryType>& msg) {
     }
 
 
-    if (msg.header.type == QueryType::REGISTRATION_SUCCESS) {
+    if (msg.header.type == static_cast<uint32_t>(QueryType::REGISTRATION_SUCCESS)) {
         onRegistrationSuccess(packet);
     }
-    else if (msg.header.type == QueryType::REGISTRATION_FAIL) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::REGISTRATION_FAIL)) {
         onRegistrationFail();
     }
-    else if (msg.header.type == QueryType::AUTHORIZATION_SUCCESS) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::AUTHORIZATION_SUCCESS)) {
         onAuthorizationSuccess(packet);
     }
-    else if (msg.header.type == QueryType::AUTHORIZATION_FAIL) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::AUTHORIZATION_FAIL)) {
         onAuthorizationFail();
     }
-    else if (msg.header.type == QueryType::CHAT_CREATE_SUCCESS) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::CHAT_CREATE_SUCCESS)) {
         onChatCreateSuccess(packet);
     }
-    else if (msg.header.type == QueryType::CHAT_CREATE_FAIL) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::CHAT_CREATE_FAIL)) {
         onChatCreateFail();
     }
-    else if (msg.header.type == QueryType::FRIENDS_STATUSES) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::FRIENDS_STATUSES)) {
         processFriendsStatusesSuccess(packet);
     }
-    else if (msg.header.type == QueryType::MESSAGE) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::MESSAGE)) {
         onMessageReceive(packet);
     }
-    else if (msg.header.type == QueryType::USER_INFO_SUCCESS) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::USER_INFO_SUCCESS)) {
         onUserInfoSuccess(packet);
     }
-    else if (msg.header.type == QueryType::USER_INFO_FAIL) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::USER_INFO_FAIL)) {
         onUserInfoFail(packet);
     }
-    else if (msg.header.type == QueryType::MY_INFO) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::MY_INFO)) {
         onMyInfo(packet);
     }
-    else if (msg.header.type == QueryType::MESSAGES_READ_CONFIRMATION) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::MESSAGES_READ_CONFIRMATION)) {
         onMessageReadConfirmationReceive(packet);
     }
-    else if (msg.header.type == QueryType::STATUS) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::STATUS)) {
         onStatusReceive(packet);
     }
-    else if (msg.header.type == QueryType::VERIFY_PASSWORD_FAIL) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::VERIFY_PASSWORD_FAIL)) {
         onPasswordVerifyFail();
     }
-    else if (msg.header.type == QueryType::VERIFY_PASSWORD_SUCCESS) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::VERIFY_PASSWORD_SUCCESS)) {
         onPasswordVerifySuccess();
     }
-    else if (msg.header.type == QueryType::NEW_LOGIN_SUCCESS) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::NEW_LOGIN_SUCCESS)) {
         onCheckNewLoginSuccess(packet);
     }
-    else if (msg.header.type == QueryType::NEW_LOGIN_FAIL) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::NEW_LOGIN_FAIL)) {
         onPasswordVerifySuccess();
     }
-    else if (msg.header.type == QueryType::ALL_PENDING_MESSAGES_WERE_SENT) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::ALL_PENDING_MESSAGES_WERE_SENT)) {
         m_client->getAllFriendsStatuses();
     }
-    else if (msg.header.type == QueryType::FIND_USER_RESULTS) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::FIND_USER_RESULTS)) {
         onFoundUsers(packet);
     }
-    else if (msg.header.type == QueryType::TYPING) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::TYPING)) {
         onTyping(packet);
     }
-    else if (msg.header.type == QueryType::FILE_PREVIEW) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::FILE_PREVIEW)) {
         onFilePreview(packet);
     }
-    else if (msg.header.type == QueryType::UPDATE_OFFER) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::UPDATE_OFFER)) {
         onUpdateOffer(packet);
     }
 }
@@ -136,7 +137,7 @@ void ResponseHandler::onRegistrationSuccess(const std::string& packet) {
     m_client->generateMyKeyPair();
     m_client->sendPublicKeyToServer();
 
-    m_client->connectFilesSocket(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
+    m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
 
     m_configManager->setIsNeedToAutoLogin(true);
     m_client->setIsLoggedIn(true);
@@ -171,7 +172,7 @@ void ResponseHandler::onChatCreateFail() {
 
 namespace fs = std::filesystem;
 
-void ResponseHandler::processNewVersionLoadedFile(net::file<QueryType>& file) {
+void ResponseHandler::processNewVersionLoadedFile(net::File file) {
     const char* folderName = "updaterTemporary";
     fs::path folderPath = folderName;
 
@@ -199,7 +200,7 @@ void ResponseHandler::processNewVersionLoadedFile(net::file<QueryType>& file) {
     m_worker_UI->updateAndRestart();
 }
 
-void ResponseHandler::onFile(net::file<QueryType>& file) {
+void ResponseHandler::onFile(net::File& file) {
     if (file.senderLoginHash == "server") {
         processNewVersionLoadedFile(file);
         return;
@@ -291,7 +292,7 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     std::string filesInBlobCount;
     std::getline(iss, filesInBlobCount);
     
-    net::file<QueryType> file;
+    net::File file;
     file.blobUID = blobUID;
     file.caption = caption;
     file.filePath = "";
@@ -376,7 +377,7 @@ void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
 
     m_client->setIsFirstAuthentication(false);
     m_client->setIsPassedAuthentication(true);
-    m_client->connectFilesSocket(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
+    m_client->createFilesConnection(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
     m_client->setIsLoggedIn(true);
     m_worker_UI->onAuthorizationSuccess();
 }
@@ -906,7 +907,7 @@ void ResponseHandler::showFilesMessage(Message* message, const std::string& frie
     }
 }
 
-void ResponseHandler::processRequestedFile(net::file<QueryType>& file) {
+void ResponseHandler::processRequestedFile(net::File& file) {
     auto& chatsMap = m_client->getMyHashChatsMap();
 
     auto it = chatsMap.find(file.senderLoginHash);
@@ -941,7 +942,7 @@ void ResponseHandler::processRequestedFile(net::file<QueryType>& file) {
     }
 }
 
-void ResponseHandler::addDataToMessage(Message* message, net::file<QueryType>& file, bool isPresent) {
+void ResponseHandler::addDataToMessage(Message* message, net::File& file, bool isPresent) {
     Database* database = m_client->getDatabase();
 
     message->setIsRead(false);

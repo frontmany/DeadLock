@@ -10,7 +10,7 @@
 struct fileWrapper {
     fileWrapper() = default;
 
-    fileWrapper(bool isPresent, net::file<QueryType> file) {
+    fileWrapper(bool isPresent, net::File file) {
         this->isPresent = isPresent;
         this->file = file;
         isNeedToRetry = false;
@@ -20,7 +20,7 @@ struct fileWrapper {
     bool isNeedToRetry;
     bool isSending;
 	bool isPresent;
-    net::file<QueryType> file;
+    net::File file;
 
     bool checkFilePresence() {
         std::ifstream fileStream(file.filePath);

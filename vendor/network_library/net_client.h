@@ -2,215 +2,63 @@
 
 #include "net_common.h"
 #include "net_connection.h"
-#include "net_files_connection.h"
-#include "net_validator.h"
-#include "net_safe_deque.h"
+#include "net_filesConnection.h"
+
+#include "net_safeDeque.h"
 #include "net_message.h"
 #include "net_file.h"
 #include "rsa.h"
 
-namespace net {
-
-	template<typename T>
-	class client_interface {
+namespace net 
+{
+	class ClientInterface {
 	public:
-		client_interface() 
-		{
-			m_validator = std::make_unique<validator>(
-				m_context,
-				asio::ip::tcp::socket(m_context),
-				asio::ip::tcp::socket(m_context),
-				[this](std::error_code ec) { onConnectError(ec); },
-				[this](asio::ip::tcp::socket socket) { createFilesConnection(std::move(socket)); },
-				[this](asio::ip::tcp::socket socket) { createMessagesConnection(std::move(socket)); }
-			);
-		}
+		ClientInterface();
+		virtual ~ClientInterface() = default;
 
-		virtual ~client_interface() {
-			disconnect();
-		}
+		void runContextThread();
 
-		void runContextThread() {
-			m_context_thread = std::thread([this]() {m_context.run(); });
-		}
+		bool createConnecion(const std::string& host, const uint16_t port);
+		bool createFilesConnection(const std::string& loginHash, const std::string& host, const uint16_t port);
 
-		bool connectMessagesSocket(const std::string& host, const uint16_t port) {
-			try {
-				asio::ip::tcp::resolver resolver(m_context);
-				asio::ip::tcp::resolver::results_type endpoint = resolver.resolve(host, std::to_string(port));
-				m_validator->connectMessagesSocketToServer(endpoint);
+		void disconnect();
 
-				return true;
-			}
-			catch (std::exception& e) {
-				std::cerr << "Client exception: " << e.what() << "\n";
-				return false;
-			}
-		}
+		void send(const net::Message& msg);
+		void sendFile(const File& file);
 
-		bool connectFilesSocket(const std::string& loginHash, const std::string& host, const uint16_t port) {
-			try {
-				asio::ip::tcp::resolver resolver(m_context);
-				asio::ip::tcp::resolver::results_type endpoint = resolver.resolve(host, std::to_string(port));
-				m_validator->connectFilesSocketToServer(std::move(loginHash), endpoint);
+		void update(size_t maxMessagesCount = std::numeric_limits<size_t>::max());
 
-				return true;
-			}
-			catch (std::exception& e) {
-				std::cerr << "Client exception: " << e.what() << "\n";
-				return false;
-			}
-		}
-
-		void disconnect() {
-			if (m_context.stopped()) {
-				return; 
-			}
-
-			if (std::this_thread::get_id() == m_context_thread.get_id()) {
-				std::cerr << "Error: disconnect() called from io_context thread!\n";
-				return;
-			}
-
-			try {
-				m_context.stop();
-
-				if (m_messages_connection) {
-					m_messages_connection->disconnect();
-					m_messages_connection.reset();
-				}
-
-				if (m_files_connection) {
-					m_files_connection->disconnect();
-					m_files_connection.reset();
-				}
-
-				if (m_context_thread.joinable()) {
-					m_context_thread.join();
-				}
-			}
-			catch (const std::system_error& e) {
-				std::cerr << "System error on disconnect: " << e.what() << "\n";
-			}
-			catch (const std::exception& e) {
-				std::cerr << "Error on disconnect: " << e.what() << "\n";
-			}
-			catch (...) {
-				std::cerr << "Unknown error on disconnect\n";
-			}
-		}
-
-		bool isConnected() {
-			if (m_messages_connection) {
-				return m_messages_connection->isConnected();
-			}
-			else {
-				return false;
-			}
-		}
-
-		void send(const message<T>& msg)
-		{
-			if (isConnected())
-				m_messages_connection->send(msg);
-			else {
-				disconnect();
-			}
-		}
-		
-		void sendFile(const net::file<T>& file)
-		{
-			if (isConnected())
-				m_files_connection->sendFile(file);
-			else {
-				disconnect();
-			}
-		}
-
-		bool isStopped() {
-			return m_context.stopped();
-		}
-
-		void update(size_t maxMessagesCount = std::numeric_limits<size_t>::max()) {
-			size_t processedMessages = 0;
-
-			while (true) {
-				if (!m_safe_deque_of_incoming_files.empty()) {
-					net::owned_file<T> file = m_safe_deque_of_incoming_files.pop_front();
-					onFile(std::move(file.file));
-				}
-
-				if (!m_safe_deque_of_incoming_messages.empty() && processedMessages < maxMessagesCount) {
-					net::owned_message<T> msg = m_safe_deque_of_incoming_messages.pop_front();
-					onMessage(std::move(msg.msg));
-					processedMessages++;
-				}
-
-				std::this_thread::yield();
-			}
-		}
-
-		void setServerPublicKey(CryptoPP::RSA::PublicKey serverPublicKey) {
-			m_server_public_key = serverPublicKey;
-		}
-
-		const CryptoPP::RSA::PublicKey& getServerPublicKey() {
-			return m_server_public_key;
-		}
+		void setServerPublicKey(CryptoPP::RSA::PublicKey serverPublicKey);
+		const CryptoPP::RSA::PublicKey& getServerPublicKey();
 
 	protected:
-		virtual void onMessage(net::message<T> message) = 0;
-		virtual void onFile(net::file<T> file) = 0;
-		virtual void onSendFileProgressUpdate(const net::file<T>& file, uint32_t progressPercent) = 0;
+		virtual void onMessage(net::Message message) = 0;
+		virtual void onFile(File file) = 0;
 		virtual void onAllFilesSent() = 0;
-		virtual void onReceiveFileProgressUpdate(const net::file<T>& file, uint32_t progressPercent) = 0;
 
-		//errors
-		virtual void onSendMessageError(std::error_code ec, net::message<T> unsentMessage) = 0;
-		virtual void onReceiveMessageError(std::error_code ec) = 0;
+		virtual void onSendFileProgressUpdate(const File& file, uint32_t progressPercent) = 0;
+		virtual void onReceiveFileProgressUpdate(const File& file, uint32_t progressPercent) = 0;
 		
-		virtual void onSendFileError(std::error_code ec, net::file<T> unsentFile) = 0;
-		virtual void onReceiveFileError(std::error_code ec, net::file<T> unreadFile) = 0;
-
-		virtual void onConnectError(std::error_code ec) = 0;
+		virtual void onReceiveFileError(std::error_code ec, std::optional<File> unsentFile) = 0;
+		virtual void onSendMessageError(std::error_code ec, net::Message unsentMessage) = 0;
+		virtual void onSendFileError(std::error_code ec, File unsentFile) = 0;
+		virtual void onConnectionError() = 0;
 
 		bool is_messages_socket_validated = false;
 
 	private:
-		void createMessagesConnection(asio::ip::tcp::socket messagesSocket) {
-			m_messages_connection = std::make_unique<connection<T>>(
-				m_context,
-				std::move(messagesSocket),
-				m_safe_deque_of_incoming_messages,
-				[this](std::error_code ec, net::message<T> unsentMessage) {onSendMessageError(ec, std::move(unsentMessage)); },
-				[this](std::error_code ec) {onReceiveMessageError(ec); }
-			);
+		void createMessagesConnection(asio::ip::tcp::socket messagesSocket);
 
-			is_messages_socket_validated = true;
-		}
-
-		void createFilesConnection(asio::ip::tcp::socket filesSocket) {
-			m_files_connection = std::make_unique<files_connection<T>>(
-				m_context,
-				std::move(filesSocket),
-				m_safe_deque_of_incoming_files,
-				&m_my_private_key,
-				[this](std::error_code ec, net::file<T> unreadFile) {onReceiveFileError(ec, unreadFile); },
-				[this](std::error_code ec, net::file<T> unsentFile) {onSendFileError(ec, unsentFile); },
-				[this](net::file<T> file, uint32_t progressPercent) {onSendFileProgressUpdate(file, progressPercent); },
-				[this](net::file<T> file, uint32_t progressPercent) {onReceiveFileProgressUpdate(file, progressPercent); },
-				[this]() {onAllFilesSent(); }
-			);
-		}
+		void createFilesConnection(asio::ip::tcp::socket filesSocket);
 
 	private:
-		std::unique_ptr<validator> m_validator;
+		std::unique_ptr<Validator> m_validator;
 		std::thread	m_context_thread;
 		asio::io_context m_context;
-		std::unique_ptr<connection<T>> m_messages_connection;
-		std::unique_ptr<files_connection<T>> m_files_connection;
-		safe_deque<owned_message<T>> m_safe_deque_of_incoming_messages;
-		safe_deque<owned_file<T>> m_safe_deque_of_incoming_files;
+		std::shared_ptr<Connection> m_messages_connection;
+		std::shared_ptr<FilesConnection> m_files_connection;
+		SafeDeque<net::Message> m_safe_deque_of_incoming_messages;
+		SafeDeque<File> m_safe_deque_of_incoming_files;
 
 
 	protected:

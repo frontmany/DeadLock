@@ -21,7 +21,7 @@ class      Photo;
 class      PacketsBuilder;
 
 
-class Client : public net::client_interface<QueryType> {
+class Client : public net::ClientInterface {
 public:
     Client();
     ~Client();
@@ -74,20 +74,16 @@ public:
     void waitUntilUIReadyToUpdate();
     void skipLines(std::istream& iss, int count);
 
-    void onMessage(net::message<QueryType> message) override;
-    void onFile(net::file<QueryType> file) override;
 
-
-    // errors
-    void onSendMessageError(std::error_code ec, net::message<QueryType> unsentMessage) override;
-    void onSendFileError(std::error_code ec, net::file<QueryType> unsentFile) override;
-    void onReceiveMessageError(std::error_code ec) override;
-    void onReceiveFileError(std::error_code ec, net::file<QueryType> unreadFile) override;
-    void onConnectError(std::error_code ec) override;
+    void onMessage(net::Message message) override;
+    void onFile(net::File file) override;
+    void onSendMessageError(std::error_code ec, net::Message unsentMessage) override;
+    void onSendFileError(std::error_code ec, net::File unsentFile) override;
+    void onConnectionError() override;
+    void onReceiveFileError(std::error_code ec, std::optional<net::File> unreadFile) override;
     void onAllFilesSent() override;
-
-    void onSendFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
-    void onReceiveFileProgressUpdate(const net::file<QueryType>& file, uint32_t progressPercent) override;
+    void onSendFileProgressUpdate(const net::File& file, uint32_t progressPercent) override;
+    void onReceiveFileProgressUpdate(const net::File& file, uint32_t progressPercent) override;
 
 
     // GET && SET
