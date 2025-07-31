@@ -5,6 +5,7 @@
 #include "net_filesConnection.h"
 
 #include "net_safeDeque.h"
+#include "net_validator.h"
 #include "net_message.h"
 #include "net_file.h"
 #include "rsa.h"
@@ -18,11 +19,13 @@ namespace net
 
 		void runContextThread();
 
-		bool createConnecion(const std::string& host, const uint16_t port);
+		bool createConnection(const std::string& host, const uint16_t port);
 		bool createFilesConnection(const std::string& loginHash, const std::string& host, const uint16_t port);
-
+		
+		void stop();
 		void disconnect();
 
+		bool isConnected();
 		void send(const net::Message& msg);
 		void sendFile(const File& file);
 
@@ -42,9 +45,7 @@ namespace net
 		virtual void onReceiveFileError(std::error_code ec, std::optional<File> unsentFile) = 0;
 		virtual void onSendMessageError(std::error_code ec, net::Message unsentMessage) = 0;
 		virtual void onSendFileError(std::error_code ec, File unsentFile) = 0;
-		virtual void onConnectionError() = 0;
-
-		bool is_messages_socket_validated = false;
+		virtual void onConnectionDown() = 0;
 
 	private:
 		void createMessagesConnection(asio::ip::tcp::socket messagesSocket);
@@ -52,10 +53,11 @@ namespace net
 		void createFilesConnection(asio::ip::tcp::socket filesSocket);
 
 	private:
+		bool m_is_connected = false;
 		std::unique_ptr<Validator> m_validator;
 		std::thread	m_context_thread;
 		asio::io_context m_context;
-		std::shared_ptr<Connection> m_messages_connection;
+		std::shared_ptr<Connection> m_connection;
 		std::shared_ptr<FilesConnection> m_files_connection;
 		SafeDeque<net::Message> m_safe_deque_of_incoming_messages;
 		SafeDeque<File> m_safe_deque_of_incoming_files;

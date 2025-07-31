@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
 
     if (!isConnected) {
         mainWindow->showMaximized();
+        mainWindow->showConnectionErrorDialog();
         app.exec();
         return -1;
     }

@@ -1,6 +1,6 @@
 #pragma once
 
-enum class QueryType : uint32_t {
+enum QueryType : uint32_t {
 	AUTHORIZATION,
 	REGISTRATION,
 	CREATE_CHAT,
@@ -22,6 +22,7 @@ enum class QueryType : uint32_t {
 	SEND_ME_FILE,
 	PUBLIC_KEY,
 	UPDATE_REQUEST,
+	RECONNECT,
 	_,
 	PREPARE_TO_RECEIVE_FILE,
 	UNEXISTING_FILE,
@@ -44,5 +45,7 @@ enum class QueryType : uint32_t {
 	FIND_USER_RESULTS,
 	FILE_PREVIEW,
 	FILE_COLLECTED,
-	UPDATE_OFFER
+	UPDATE_OFFER,
+	RECONNECT_SUCCESS,
+	RECONNECT_FAIL
 };

@@ -30,19 +30,12 @@ namespace net {
 			std::function<void(const File&, uint32_t)> onReceiveProgressUpdate,
 			std::function<void()> onAllFilesSent
 		);
-		
 
 		~FilesConnection() = default;
 
-		void sendFile(const File& file) {
-			m_filesSender.sendFile(file);
-		}
+		void sendFile(const File& file);
+		void disconnect();
 
-		void disconnect() {
-			if (m_socket.is_open()) {
-				m_socket.close();
-			}
-		}
 
 	private:
 		FilesSender m_filesSender;

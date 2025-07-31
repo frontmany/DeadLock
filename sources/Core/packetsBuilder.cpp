@@ -6,6 +6,11 @@
 
 
 //GET
+
+const std::string PacketsBuilder::getReconnectPacket(const std::string& loginHash, const std::string& passwordHash) {
+    return getAuthorizationPacket(loginHash, passwordHash);
+}
+
 const std::string PacketsBuilder::getAuthorizationPacket(const std::string& loginHash,
     const std::string& passwordHash)
 {

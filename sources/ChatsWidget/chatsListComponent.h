@@ -78,8 +78,7 @@ signals:
 
 
 public slots:
-    void showNoConnectionLabel();
-    void showServerOfflineLabel();
+    void showConnectionDownLabel();
     void showUpdateButton();
 
     void addChatComponent(Theme theme, Chat* chat, bool isSelected);
@@ -136,9 +135,10 @@ private:
     AvatarIcon*         m_profileButton;
     ButtonIcon*         m_newChatButton;
 
+    QPushButton*        m_reconnectButton;
     QPushButton*        m_hideButton;
     QPushButton*        m_updateButton;
-    QLabel*             m_noConnectionLabel;
+    QLabel*             m_connectionDownLabel;
     bool                m_is_hidden;
 
     QTimer* m_search_timer;

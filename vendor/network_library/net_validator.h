@@ -16,8 +16,8 @@ namespace net {
 	class Validator {
 	public:
 		Validator(asio::io_context& asioContext,
-			asio::ip::tcp::socket filesSocket,
-			asio::ip::tcp::socket messagesSocket,
+			asio::ip::tcp::socket&& filesSocket,
+			asio::ip::tcp::socket&& messagesSocket,
 			std::function<void()> errorCallback,
 			std::function<void(asio::ip::tcp::socket socket)> onFilesSocketValidated,
 			std::function<void(asio::ip::tcp::socket socket)> onMessagesSocketValidated

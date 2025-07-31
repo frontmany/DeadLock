@@ -31,13 +31,15 @@ public:
     void startProcessingIncomingPackets();
     void initDatabase(const std::string& login);
     bool waitForConnectionWithTimeout(int timeoutMs);
-    void stop();
+    void stopClient();
+    void tryReconnect();
 
     Database* getDatabase() { return m_db; }
 
     void generateMyKeyPair();
     void sendPublicKeyToServer();
 
+    void reconnectClient();
     void authorizeClient(const std::string& loginHash, const std::string& passwordHash);
     void registerClient(const std::string& loginHash, const std::string& passwordHash, const std::string& nameCipher);
     void afterRegistrationSendMyInfo();
@@ -79,7 +81,7 @@ public:
     void onFile(net::File file) override;
     void onSendMessageError(std::error_code ec, net::Message unsentMessage) override;
     void onSendFileError(std::error_code ec, net::File unsentFile) override;
-    void onConnectionError() override;
+    void onConnectionDown() override;
     void onReceiveFileError(std::error_code ec, std::optional<net::File> unreadFile) override;
     void onAllFilesSent() override;
     void onSendFileProgressUpdate(const net::File& file, uint32_t progressPercent) override;
@@ -99,9 +101,6 @@ public:
 
     void setIsHidden(bool isHidden) { m_is_hidden = isHidden; }
     bool getIsHidden() { return m_is_hidden; }
-
-    void setIsLoggedIn(bool isLoggedIn) { m_is_logged_in = isLoggedIn; }
-    bool getIsLoggedIn() { return m_is_logged_in; }
 
     void setIsAbleToClose(bool isAbleToClose) { m_is_able_to_close = isAbleToClose; }
     bool getIsAbleToClose() { return m_is_able_to_close; }
@@ -131,17 +130,13 @@ private:
     const std::vector<std::string> getFriendsLoginHashesVecFromMap();
     void sendPacket(const std::string& packet, QueryType type);
 
-    void onNetworkError();
-    void onServerDown();
-
 private:
     std::thread             m_worker_thread;
 
     bool                    m_is_hidden;
     bool                    m_is_first_authentication;
     bool                    m_is_passed_authentication;
-    bool                    m_is_error;
-    bool                    m_is_logged_in;
+    bool                    m_is_connection_down;
     bool                    m_is_able_to_close;
     std::atomic<bool>       m_is_ui_ready_to_update;
 

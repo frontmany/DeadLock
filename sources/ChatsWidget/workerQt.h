@@ -47,15 +47,13 @@ public:
 	void showNewChatOrUpdateExisting(Chat* chat) override;
 	void onMessageReadConfirmationReceive(const std::string& friendLogin, const std::string& id) override;
 
-	void updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& fileWrapper, bool isError) override;
-	void updateFileLoadingProgress(const std::string& friendLogin, const net::file<QueryType>& file, uint32_t progressPercent) override;
-	void updateFileSendingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) override;
+	void updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& wrapper, bool isError) override;
+	void updateFileLoadingProgress(const std::string& friendLogin, const net::File& file, uint32_t progressPercent) override;
+	void updateFileSendingProgress(const std::string& friendLoginHash, const net::File& file, uint32_t progressPercent) override;
 
 	void onMessageSendingError(const std::string& friendLogin, Message* message) override;
-	void onRequestedFileError(const std::string& friendLoginHash, fileWrapper fileWrapper) override;
-	void onConnectError() override;
-	void onNetworkError() override;
-	void onServerDown() override;
+	void onRequestedFileError(const std::string& friendLoginHash, fileWrapper wrapper) override;
+	void onConnectionDown() override;
 	void onStatusReceive(const std::string& friendLoginHash, const std::string& status);
 	void supplyTheme(bool isDarkTheme) override;
 	void showUpdateButton() override;

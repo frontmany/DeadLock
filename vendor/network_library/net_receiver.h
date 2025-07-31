@@ -30,7 +30,6 @@ namespace net {
 		SafeDeque<net::Message>& m_safeDequeIncomingMessages;
 
 		std::function<void()> m_onClientDisconnected;
-		std::function<void(net::Message)> m_queueReceivedMessage;
 		std::function<void()> m_onDisconnect;
 	};
 }

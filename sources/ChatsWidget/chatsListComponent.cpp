@@ -373,11 +373,30 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     connect(m_hideButton, &QPushButton::toggled, [this](bool checked) {onHideButtonToggled(checked, false); });
     m_profileHLayout->addWidget(m_hideButton);
 
-    m_noConnectionLabel = new QLabel;
-    m_noConnectionLabel->hide();
-    m_noConnectionLabel->setFixedSize(240, 36);
+    m_connectionDownLabel = new QLabel;
+    m_connectionDownLabel->hide();
+    m_connectionDownLabel->setFixedSize(255, 36);
+    m_profileHLayout->addWidget(m_connectionDownLabel);
 
-    m_profileHLayout->addWidget(m_noConnectionLabel);
+    m_reconnectButton = new QPushButton(this);
+    m_reconnectButton->setStyleSheet("background: transparent; border: none;");
+    connect(m_reconnectButton, &QPushButton::clicked, [this]() {
+        m_chatsWidget->getClient()->tryReconnect();
+    });
+
+    if (m_theme == DARK) {
+        QIcon reconnectIconDark(":/resources/ChatsWidget/reloadDark.png");
+        m_reconnectButton->setIcon(reconnectIconDark);
+    }
+    else {
+        QIcon reconnectIconLight(":/resources/ChatsWidget/reloadLight.png");
+        m_reconnectButton->setIcon(reconnectIconLight);
+    }
+
+    m_reconnectButton->setIconSize(QSize(24, 24));
+    m_reconnectButton->hide();
+
+    m_profileHLayout->addWidget(m_reconnectButton);
 
 
     m_darkModeSwitch = new ToggleSwitch(this, m_theme);
@@ -685,7 +704,11 @@ void ChatsListComponent::setTheme(Theme theme) {
         m_profile_editor_widget->setTheme(theme);
     }
 
+
     if (theme == DARK) {
+        QIcon reconnectIconDark(":/resources/ChatsWidget/reloadDark.png");
+        m_reconnectButton->setIcon(reconnectIconDark);
+
         if (m_isUpdateLoading) {
             m_updateButton->setStyleSheet(style->updateButtonInProgressDark);
         }
@@ -693,7 +716,7 @@ void ChatsListComponent::setTheme(Theme theme) {
             m_updateButton->setStyleSheet(style->updateButtonDark);
         }
 
-        m_noConnectionLabel->setStyleSheet(style->DarkNoConnectionLabelStyle);
+        m_connectionDownLabel->setStyleSheet(style->DarkNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->DarkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
         m_newChatButton->setTheme(theme);
@@ -708,6 +731,9 @@ void ChatsListComponent::setTheme(Theme theme) {
         }
     }
     else {
+        QIcon reconnectIconLight(":/resources/ChatsWidget/reloadLight.png");
+        m_reconnectButton->setIcon(reconnectIconLight);
+
         if (m_isUpdateLoading) {
             m_updateButton->setStyleSheet(style->updateButtonInProgressLight);
         }
@@ -716,7 +742,7 @@ void ChatsListComponent::setTheme(Theme theme) {
         }
 
         m_updateButton->setStyleSheet(style->updateButtonLight);
-        m_noConnectionLabel->setStyleSheet(style->LightNoConnectionLabelStyle);
+        m_connectionDownLabel->setStyleSheet(style->LightNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->LightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
         m_newChatButton->setTheme(theme);
@@ -791,20 +817,14 @@ void ChatsListComponent::setAvatarInProfileEditorWidget(const Photo& photo) {
     m_profile_editor_widget->updateAvatar(photo);
 }
 
-void ChatsListComponent::showNoConnectionLabel() {
+void ChatsListComponent::showConnectionDownLabel() {
+    m_chatsWidget->getClient()->stopClient();
     m_hideButton->hide();
     m_updateButton->hide();
     m_hideButton->setChecked(true);
-    m_noConnectionLabel->setText("Lost in Space (No internet connection)");
-    m_noConnectionLabel->show();
-}
-
-void ChatsListComponent::showServerOfflineLabel() {
-    m_hideButton->hide();
-    m_updateButton->hide();
-    m_hideButton->setChecked(true);
-    m_noConnectionLabel->setText("Galactic Silence (Server Down)");
-    m_noConnectionLabel->show();
+    m_connectionDownLabel->setText("Galactic Silence (Connection Lost)");
+    m_connectionDownLabel->show();
+    m_reconnectButton->show();
 }
 
 void ChatsListComponent::showUpdateButton() {

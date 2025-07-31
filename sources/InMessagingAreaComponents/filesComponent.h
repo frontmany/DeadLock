@@ -57,7 +57,7 @@ public:
     void setRetryStyle(bool isNeedToRetry);
     void requestedFileLoaded(const fileWrapper& fileWrapper);
     void requestedFileUnLoaded(const fileWrapper& fileWrapper);
-    void setProgress(const net::file<QueryType>& file, int percent);
+    void setProgress(const net::File& file, int percent);
 
 
 protected:

@@ -45,26 +45,19 @@ void WorkerQt::onRequestedFileError(const std::string& friendLoginHash, fileWrap
 	updateFileLoadingState(friendLoginHash, fileWrapper, true);
 }
 
-void WorkerQt::onConnectError() {
-	QMetaObject::invokeMethod(m_main_window,
-		"showConnectionErrorDialog",
-		Qt::QueuedConnection);
-}
-
-void WorkerQt::onNetworkError() {
+void WorkerQt::onConnectionDown() {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
-	ChatsListComponent* chatsList = chatsWidget->getChatsList();
-	QMetaObject::invokeMethod(chatsList,
-		"showNoConnectionLabel",
-		Qt::QueuedConnection);
-}
-
-void WorkerQt::onServerDown() {
-	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
-	ChatsListComponent* chatsList = chatsWidget->getChatsList();
-	QMetaObject::invokeMethod(chatsList,
-		"showServerOfflineLabel",
-		Qt::QueuedConnection);
+	if (chatsWidget != nullptr) {
+		ChatsListComponent* chatsList = chatsWidget->getChatsList();
+		QMetaObject::invokeMethod(chatsList,
+			"showConnectionDownLabel",
+			Qt::QueuedConnection);
+	}
+	else {
+		QMetaObject::invokeMethod(m_main_window,
+			"showConnectionErrorDialog",
+			Qt::QueuedConnection);
+	}
 }
 
 void WorkerQt::setRecoveredAvatar(Photo* myRecoveredAvatar) {
@@ -90,7 +83,7 @@ void WorkerQt::setNameFieldInProfileEditorWidget(const std::string& name) {
 		Q_ARG(const std::string&, name));
 }
 
-void WorkerQt::updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& file, bool isError) {
+void WorkerQt::updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& wrapper, bool isError) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
 	auto comp = std::find_if(compsVec.begin(), compsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
@@ -99,7 +92,7 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLoginHash, fileWr
 	MessagingAreaComponent* areaComp = *comp;
 	auto& messagesCompsVec = areaComp->getMessagesComponentsVec();
 
-	std::string blobUID = file.file.blobUID;
+	std::string blobUID = wrapper.file.blobUID;
 	auto messageCompIt = std::find_if(messagesCompsVec.begin(), messagesCompsVec.end(), [&blobUID](MessageComponent* comp) {
 		return comp->getId() == QString::fromStdString(blobUID);
 	});
@@ -109,18 +102,18 @@ void WorkerQt::updateFileLoadingState(const std::string& friendLoginHash, fileWr
 		QMetaObject::invokeMethod(messageComp,
 			"requestedFileLoaded",
 			Qt::QueuedConnection,
-			Q_ARG(const fileWrapper&, file));
+			Q_ARG(const fileWrapper&, wrapper));
 	}
 	else {
 		QMetaObject::invokeMethod(messageComp,
 			"requestedFileUnLoadedError",
 			Qt::QueuedConnection,
-			Q_ARG(const fileWrapper&, file));
+			Q_ARG(const fileWrapper&, wrapper));
 		
 	}
 }
 
-void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) {
+void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, const net::File& file, uint32_t progressPercent) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
 	try {
@@ -143,7 +136,7 @@ void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, con
 				QMetaObject::invokeMethod(messageComp,
 					"setProgress",
 					Qt::QueuedConnection,
-					Q_ARG(const net::file<QueryType>&, file),
+					Q_ARG(net::File, file),
 					Q_ARG(int, progressPercent));
 			}
 		}
@@ -184,7 +177,7 @@ void WorkerQt::showNowReceiving(const std::string& friendLoginHash) {
 
 }
 
-void WorkerQt::updateFileSendingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) {
+void WorkerQt::updateFileSendingProgress(const std::string& friendLoginHash, const net::File& file, uint32_t progressPercent) {
 	updateFileLoadingProgress(friendLoginHash, file, progressPercent);
 }
 

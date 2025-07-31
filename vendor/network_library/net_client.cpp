@@ -3,19 +3,28 @@
 
 namespace net {
 	ClientInterface::ClientInterface()
-		: m_validator(std::make_unique<Validator>(
+	{
+		m_validator = std::make_unique<Validator>(
 			m_context,
 			asio::ip::tcp::socket(m_context),
 			asio::ip::tcp::socket(m_context),
-			[this]() { onConnectionError(); },
-			[this](asio::ip::tcp::socket socket) { createFilesConnection(std::move(socket)); },
-			[this](asio::ip::tcp::socket socket) { createMessagesConnection(std::move(socket)); }
-		))
-	{
+			[this]() { onConnectionDown(); },
+			[this](asio::ip::tcp::socket socket) {
+				createFilesConnection(std::move(socket));
+			},
+			[this](asio::ip::tcp::socket socket) {
+				createMessagesConnection(std::move(socket));
+			}
+		);
 	}
 
 	void ClientInterface::runContextThread() {
-		m_context_thread = std::thread([this]() {m_context.run(); });
+		m_context.restart();
+
+		m_context_thread = std::thread([this]() {
+			std::cout << "Context started\n";
+			m_context.run(); 
+		});
 	}
 
 	bool ClientInterface::createConnection(const std::string& host, const uint16_t port) {
@@ -36,7 +45,7 @@ namespace net {
 		try {
 			asio::ip::tcp::resolver resolver(m_context);
 			asio::ip::tcp::resolver::results_type endpoint = resolver.resolve(host, std::to_string(port));
-			m_validator->connectFilesSocketToServer(std::move(loginHash), endpoint);
+			m_validator->connectFilesSocketToServer(loginHash, endpoint);
 
 			return true;
 		}
@@ -46,16 +55,23 @@ namespace net {
 		}
 	}
 
-	void ClientInterface::disconnect() {
-		if (m_context.stopped()) {
-			return;
+	void ClientInterface::stop() {
+		m_context.reset();
+
+		if (m_context_thread.joinable()) {
+			m_context_thread.join();
+			std::cout << "Context stopped successfully\n";
 		}
+	}
 
+	bool ClientInterface::isConnected() {
+		return m_is_connected;
+	}
+
+	void ClientInterface::disconnect() {
 		try {
-			m_context.stop();
-
-			if (m_messages_connection) {
-				m_messages_connection->disconnect();
+			if (m_connection) {
+				m_connection->disconnect();
 
 			}
 
@@ -63,24 +79,29 @@ namespace net {
 				m_files_connection->disconnect();
 			}
 
-			if (m_context_thread.joinable()) {
-				m_context_thread.join();
+			if (!m_context.stopped()) {
+				m_context.stop();
 			}
+
+			m_is_connected = false;
 		}
 		catch (const std::system_error& e) {
 			std::cerr << "System error on disconnect: " << e.what() << "\n";
+			m_is_connected = false;
 		}
 		catch (const std::exception& e) {
 			std::cerr << "Error on disconnect: " << e.what() << "\n";
+			m_is_connected = false;
 		}
 		catch (...) {
 			std::cerr << "Unknown error on disconnect\n";
+			m_is_connected = false;
 		}
 	}
 
 	void ClientInterface::send(const net::Message& msg)
 	{
-		m_messages_connection->send(msg);
+		m_connection->send(msg);
 	}
 
 	void ClientInterface::sendFile(const File& file)
@@ -89,7 +110,7 @@ namespace net {
 	}
 
 
-	void ClientInterface::update(size_t maxMessagesCount = std::numeric_limits<size_t>::max()) {
+	void ClientInterface::update(size_t maxMessagesCount) {
 		size_t processedMessages = 0;
 
 		while (true) {
@@ -117,15 +138,15 @@ namespace net {
 	}
 
 	void ClientInterface::createMessagesConnection(asio::ip::tcp::socket messagesSocket) {
-		m_messages_connection = std::make_shared<Connection>(
+		m_connection = std::make_shared<Connection>(
 			m_context,
 			std::move(messagesSocket),
 			m_safe_deque_of_incoming_messages,
 			[this](std::error_code ec, net::Message unsentMessage) {onSendMessageError(ec, std::move(unsentMessage)); },
-			[this](){onConnectionError(); }
+			[this](){onConnectionDown(); }
 		);
 
-		is_messages_socket_validated = true;
+		m_is_connected = true;
 	}
 
 	void ClientInterface::createFilesConnection(asio::ip::tcp::socket filesSocket) {
@@ -134,7 +155,7 @@ namespace net {
 			std::move(filesSocket),
 			m_safe_deque_of_incoming_files,
 			&m_my_private_key,
-			[this](std::error_code ec, File unreadFile) {onReceiveFileError(ec, unreadFile); },
+			[this](std::error_code ec, std::optional<File> unreadFile) {onReceiveFileError(ec, unreadFile); },
 			[this](std::error_code ec, File unsentFile) {onSendFileError(ec, unsentFile); },
 			[this](File file, uint32_t progressPercent) {onSendFileProgressUpdate(file, progressPercent); },
 			[this](File file, uint32_t progressPercent) {onReceiveFileProgressUpdate(file, progressPercent); },

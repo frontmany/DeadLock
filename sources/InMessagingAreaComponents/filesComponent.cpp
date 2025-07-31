@@ -432,7 +432,7 @@ void FilesComponent::clearLayout() {
     }
 }
 
-void FilesComponent::setProgress(const net::file<QueryType>& file, int percent) {
+void FilesComponent::setProgress(const net::File& file, int percent) {
     for (auto* fileItem : m_vec_file_items) {
         if (fileItem->getFileWrapper().file.id == file.id) {
             fileItem->setProgress(percent);

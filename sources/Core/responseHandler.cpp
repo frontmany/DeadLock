@@ -100,6 +100,12 @@ void ResponseHandler::handleResponse(net::Message& msg) {
     else if (msg.header.type == static_cast<uint32_t>(QueryType::UPDATE_OFFER)) {
         onUpdateOffer(packet);
     }
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::RECONNECT_FAIL)) {
+        onReconnectSuccess();
+    }
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::RECONNECT_SUCCESS)) {
+        onReconnectFail();
+    }
 }
 
 void  ResponseHandler::onUpdateOffer(const std::string& packet) {
@@ -140,7 +146,6 @@ void ResponseHandler::onRegistrationSuccess(const std::string& packet) {
     m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
 
     m_configManager->setIsNeedToAutoLogin(true);
-    m_client->setIsLoggedIn(true);
     m_worker_UI->onRegistrationSuccess();
 }
 
@@ -151,7 +156,12 @@ void ResponseHandler::onRegistrationFail() {
 void ResponseHandler::onAuthorizationFail() {
     m_configManager->setMyLoginHash("");
     m_configManager->setMyPasswordHash("");
-    m_worker_UI->onAuthorizationFail();
+    if (!m_configManager->getIsAutoLogin()) {
+        m_worker_UI->onAuthorizationFail();
+    }
+    else {
+        m_worker_UI->onConnectionDown();
+    }
 }
 
 void ResponseHandler::onPasswordVerifySuccess() {
@@ -346,6 +356,14 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
     }
 }
 
+void ResponseHandler::onReconnectSuccess() {
+    m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
+}
+
+void ResponseHandler::onReconnectFail() {
+
+}
+
 void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
     std::istringstream iss(packet);
 
@@ -378,7 +396,6 @@ void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
     m_client->setIsFirstAuthentication(false);
     m_client->setIsPassedAuthentication(true);
     m_client->createFilesConnection(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
-    m_client->setIsLoggedIn(true);
     m_worker_UI->onAuthorizationSuccess();
 }
 

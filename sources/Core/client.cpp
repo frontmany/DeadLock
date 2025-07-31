@@ -22,9 +22,9 @@
 #include "chat.h"
 
 Client::Client() :
-    m_is_error(false),
-    m_is_logged_in(false),
+    net::ClientInterface(),
     m_is_hidden(false),
+    m_is_connection_down(false),
     m_is_able_to_close(true),
     m_is_first_authentication(true),
     m_is_passed_authentication(false),
@@ -50,6 +50,17 @@ Client::~Client()
 
     delete m_response_handler;
     delete m_packets_builder;
+}
+
+void Client::tryReconnect() {
+    createConnection(m_server_ipAddress, m_server_port);
+    bool isConnected = waitForConnectionWithTimeout(1500);
+    if (isConnected) {
+        
+    }
+
+    createFilesConnection(m_config_manager->getMyLoginHash(), m_server_ipAddress, m_server_port);
+    runContextThread();
 }
 
 bool Client::waitForConnectionWithTimeout(int timeoutMs) {
@@ -79,8 +90,8 @@ void Client::connectTo(const std::string& ipAddress, int port) {
     runContextThread();
 }
 
-void Client::stop() {
-    disconnect();
+void Client::stopClient() {
+    stop();
 }
 
 void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
@@ -90,16 +101,13 @@ void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
 }
 
 void Client::authorizeClient(const std::string& loginHash, const std::string& passwordHash) {
-    while (!is_messages_socket_validated) {
-        if (m_is_error) {
-            break;
-        }
-    }
-    if (!m_is_error) {
-        m_config_manager->setMyLoginHash(loginHash);
-        m_config_manager->setMyPasswordHash(passwordHash);
-        sendPacket(m_packets_builder->getAuthorizationPacket(loginHash, passwordHash), QueryType::AUTHORIZATION);
-    }
+    m_config_manager->setMyLoginHash(loginHash);
+    m_config_manager->setMyPasswordHash(passwordHash);
+    sendPacket(m_packets_builder->getAuthorizationPacket(loginHash, passwordHash), QueryType::AUTHORIZATION);
+}
+
+void Client::reconnectClient() {
+    sendPacket(m_packets_builder->getReconnectPacket(m_config_manager->getMyLoginHash(), m_config_manager->getMyPasswordHash()), QueryType::RECONNECT);
 }
 
 void Client::registerClient(const std::string& login, const std::string& password, const std::string& name) {
@@ -425,12 +433,6 @@ void Client::onSendMessageError(std::error_code ec, net::Message unsentMessage) 
 
         m_response_handler->getWorkerUI()->onRequestedFileError(friendLoginHash, { false, file });
     }
-
-    if (type != QueryType::AUTHORIZATION) {
-        if (!utility::isHasInternetConnection()) {
-            m_response_handler->getWorkerUI()->onNetworkError();
-        }
-    }
 }
 
 void Client::onSendFileError(std::error_code ec, net::File unsentFille) {
@@ -448,41 +450,16 @@ void Client::onSendFileError(std::error_code ec, net::File unsentFille) {
 
 
 void Client::onReceiveFileError(std::error_code ec, std::optional<net::File> unreadFile) {
-    if (!utility::isHasInternetConnection()) {
-        onNetworkError();
-        return;
-    }
-    if (!unreadFile.has_value()) {
-        onServerDown();
-        return;
-    }
+    onConnectionDown();
 
     if (auto vec = m_db->getRequestedFiles(m_config_manager->getMyLoginHash()); std::find(vec.begin(), vec.end(), unreadFile.value().id) != vec.end()) {
         m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.value().receiverLoginHash, { false, unreadFile.value() });
     }
 }
 
-void Client::onConnectionError() {
-    m_response_handler->getWorkerUI()->onConnectError();
-    m_is_error = true;
-
-
-    if (!isStopped()) {
-        stop();
-    }
-    m_response_handler->getWorkerUI()->onNetworkError();
-}
-
-void Client::onNetworkError() {
-    if (!isStopped()) {
-        stop();
-    }
-    m_response_handler->getWorkerUI()->onNetworkError();
-}
-
-void Client::onServerDown() {
-    stop();
-    m_response_handler->getWorkerUI()->onServerDown();
+void Client::onConnectionDown() {
+    disconnect();
+    m_response_handler->getWorkerUI()->onConnectionDown();
 }
 
 void Client::onSendFileProgressUpdate(const net::File& file, uint32_t progressPercent) {

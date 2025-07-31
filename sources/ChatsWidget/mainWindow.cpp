@@ -9,14 +9,8 @@
 #include "chatsWidget.h"
 #include "greetWidget.h"
 #include "mainWindow.h"
-#include "mainWindow.h"
 #include "workerQt.h"
-#include "utility.h"
 #include "client.h"
-
-void MainWindow::stopClient() {
-    m_client->stop();
-}
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), m_worker_Qt(nullptr), m_client(nullptr),
@@ -304,6 +298,8 @@ void MainWindow::showAlreadyRunningDialog()
 }
 
 void MainWindow::showConnectionErrorDialog() {
+    m_client->stopClient();
+
     OverlayWidget* overlay = new OverlayWidget(this);
     overlay->show();
 

@@ -36,7 +36,7 @@ namespace net
 		std::ifstream m_fileStream;
 		uint64_t m_totalBytesSent;
 		CryptoPP::SecByteBlock m_sessionKey;
-		net::Message	m_metadataMessage;
+		net::Message m_metadataMessage;
 		File m_file;
 
 		std::function<void(const File&, uint32_t)> m_onSendProgressUpdate;

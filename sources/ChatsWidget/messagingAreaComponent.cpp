@@ -1378,7 +1378,7 @@ void MessagingAreaComponent::onSendFiles() {
             }
         }
 
-        net::file<QueryType> tmpFile;
+        net::File tmpFile;
         tmpFile.filePath = newFilePath.toUtf8().constData();
         tmpFile.fileName = fileInfo.fileName().toUtf8().constData();
         tmpFile.blobUID = blobUID;

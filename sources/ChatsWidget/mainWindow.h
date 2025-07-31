@@ -47,7 +47,6 @@ public slots:
 	void setupChatsWidget();
 	void setupLoginWidget();
 	void setupGreetWidget();
-	void stopClient();
 
 	void setClient(Client* client) { 
 		m_client = client;

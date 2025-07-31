@@ -39,6 +39,9 @@ public:
 	void onAuthorizationSuccess(const std::string& packet);
 	void onAuthorizationFail();
 
+	void onReconnectSuccess();
+	void onReconnectFail();
+
 	void onChatCreateSuccess(const std::string& packet);
 	void onChatCreateFail();
 

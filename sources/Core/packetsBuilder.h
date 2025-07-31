@@ -15,6 +15,7 @@ public:
 	PacketsBuilder& operator=(const PacketsBuilder& other) { return *this; }
 
 	//GET
+	const std::string getReconnectPacket(const std::string& loginHash, const std::string& passwordHash);
 	const std::string getAuthorizationPacket(const std::string& loginHash, const std::string& passwordHash);
 	const std::string getRegistrationPacket(const std::string& loginHash, const std::string& passwordHash);
 	const std::string getAfterRegistrationSendMyInfoPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name);

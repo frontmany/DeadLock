@@ -10,8 +10,7 @@ class Photo;
 class fileWrapper;
 
 namespace net {
-	template <typename T>
-	class file;
+	class File;
 }
 
 class WorkerUI {
@@ -48,14 +47,12 @@ public:
 	virtual void updateAndRestart() = 0;
 
 	virtual void updateFileLoadingState(const std::string& friendLoginHash, fileWrapper& fileWrapper, bool isError) = 0;
-	virtual void updateFileLoadingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) = 0;
-	virtual void updateFileSendingProgress(const std::string& friendLoginHash, const net::file<QueryType>& file, uint32_t progressPercent) = 0;
+	virtual void updateFileLoadingProgress(const std::string& friendLoginHash, const net::File& file, uint32_t progressPercent) = 0;
+	virtual void updateFileSendingProgress(const std::string& friendLoginHash, const net::File& file, uint32_t progressPercent) = 0;
 
 	virtual void onMessageSendingError(const std::string& friendLogin, Message* message) = 0;
-	virtual void onRequestedFileError(const std::string& friendLoginHash, fileWrapper fileWrapper) = 0;
-	virtual void onConnectError() = 0;
-	virtual void onNetworkError() = 0;
-	virtual void onServerDown() = 0;
+	virtual void onRequestedFileError(const std::string& friendLoginHash, fileWrapper wrapper) = 0;
+	virtual void onConnectionDown() = 0;
 
 	virtual void setNameFieldInProfileEditorWidget(const std::string& name) = 0;
 	virtual void setRecoveredAvatar(Photo* myRecoveredAvatar) = 0;

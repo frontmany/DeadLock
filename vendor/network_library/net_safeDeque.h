@@ -10,8 +10,8 @@ namespace net {
 	class SafeDeque {
 	public:
 		SafeDeque() = default;
-		SafeDeque(const safe_deque<T>&) = delete;
-		virtual ~safe_deque() { clear(); }
+		SafeDeque(const SafeDeque<T>&) = delete;
+		virtual ~SafeDeque() { clear(); }
 
 	public: 
 		const T& front() {

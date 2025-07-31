@@ -21,20 +21,14 @@ namespace net
 
 	private:
 		void readMetadataHeader();
-
-
 		void readMetadataBody();
 
 		void readChunk();
-
 		void readChunkWithoutDecryption();
 
 		void parseMetadata();
-
 		void finalizeReceiving();
-
 		void removePartiallyDownloadedFile();
-
 		void openFile();
 
 	private:
@@ -50,7 +44,6 @@ namespace net
 		SafeDeque<File>& m_incomingFilesQueue;
 		CryptoPP::RSA::PrivateKey* m_myPrivateKey;
 		asio::ip::tcp::socket& m_socket;
-
 		std::array<char, c_receivedChunkSize> m_receiveBuffer{};
 		CryptoPP::SecByteBlock m_sessionKey;
 		net::Message m_metadataMessage;
