@@ -70,7 +70,9 @@
 		<file>trashCanLight.png</file>
 		<file>trashCanLightHover.png</file>
 		<file>reloadDark.png</file>
+		<file>reloadDarkHover.png</file>
 		<file>reloadLight.png</file>
+		<file>reloadLightHover.png</file>
 		<file>networkError.png</file>
 		<file>warning.png</file>
 		<file>loading.gif</file>

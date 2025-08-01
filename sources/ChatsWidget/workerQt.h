@@ -35,6 +35,9 @@ public:
 	void onChatCreateSuccess(Chat* chat) override;
 	void onChatCreateFail() override;
 
+	void showConnectionDownLabel() override;
+	void setupRegistrationWidget() override;
+	void removeConnectionErrorLabel() override;
 	void processFoundUsers(std::vector<FriendInfo*>&& vec) override;
 	void blockProfileEditing() override;
 	void activateProfileEditing() override;

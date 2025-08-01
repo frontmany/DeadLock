@@ -100,10 +100,10 @@ void ResponseHandler::handleResponse(net::Message& msg) {
     else if (msg.header.type == static_cast<uint32_t>(QueryType::UPDATE_OFFER)) {
         onUpdateOffer(packet);
     }
-    else if (msg.header.type == static_cast<uint32_t>(QueryType::RECONNECT_FAIL)) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::RECONNECT_SUCCESS)) {
         onReconnectSuccess();
     }
-    else if (msg.header.type == static_cast<uint32_t>(QueryType::RECONNECT_SUCCESS)) {
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::RECONNECT_FAIL)) {
         onReconnectFail();
     }
 }
@@ -160,7 +160,7 @@ void ResponseHandler::onAuthorizationFail() {
         m_worker_UI->onAuthorizationFail();
     }
     else {
-        m_worker_UI->onConnectionDown();
+        m_worker_UI->setupRegistrationWidget();
     }
 }
 
@@ -358,10 +358,11 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 
 void ResponseHandler::onReconnectSuccess() {
     m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
+    m_worker_UI->removeConnectionErrorLabel();
 }
 
 void ResponseHandler::onReconnectFail() {
-
+    m_worker_UI->setupRegistrationWidget();
 }
 
 void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {

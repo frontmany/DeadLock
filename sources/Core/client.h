@@ -39,7 +39,6 @@ public:
     void generateMyKeyPair();
     void sendPublicKeyToServer();
 
-    void reconnectClient();
     void authorizeClient(const std::string& loginHash, const std::string& passwordHash);
     void registerClient(const std::string& loginHash, const std::string& passwordHash, const std::string& nameCipher);
     void afterRegistrationSendMyInfo();

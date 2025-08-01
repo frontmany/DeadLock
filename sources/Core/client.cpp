@@ -54,13 +54,17 @@ Client::~Client()
 
 void Client::tryReconnect() {
     createConnection(m_server_ipAddress, m_server_port);
-    bool isConnected = waitForConnectionWithTimeout(1500);
-    if (isConnected) {
-        
-    }
-
-    createFilesConnection(m_config_manager->getMyLoginHash(), m_server_ipAddress, m_server_port);
     runContextThread();
+
+    bool isConnected = waitForConnectionWithTimeout(2500);
+    if (isConnected) {
+        sendPacket(m_packets_builder->getReconnectPacket(m_config_manager->getMyLoginHash(), m_config_manager->getMyPasswordHash()), QueryType::RECONNECT);
+    }
+    else {
+        disconnect();
+        stop();
+        m_response_handler->getWorkerUI()->showConnectionDownLabel();
+    }
 }
 
 bool Client::waitForConnectionWithTimeout(int timeoutMs) {
@@ -104,10 +108,6 @@ void Client::authorizeClient(const std::string& loginHash, const std::string& pa
     m_config_manager->setMyLoginHash(loginHash);
     m_config_manager->setMyPasswordHash(passwordHash);
     sendPacket(m_packets_builder->getAuthorizationPacket(loginHash, passwordHash), QueryType::AUTHORIZATION);
-}
-
-void Client::reconnectClient() {
-    sendPacket(m_packets_builder->getReconnectPacket(m_config_manager->getMyLoginHash(), m_config_manager->getMyPasswordHash()), QueryType::RECONNECT);
 }
 
 void Client::registerClient(const std::string& login, const std::string& password, const std::string& name) {

@@ -45,6 +45,16 @@ void WorkerQt::onRequestedFileError(const std::string& friendLoginHash, fileWrap
 	updateFileLoadingState(friendLoginHash, fileWrapper, true);
 }
 
+void WorkerQt::showConnectionDownLabel() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	if (chatsWidget != nullptr) {
+		ChatsListComponent* chatsList = chatsWidget->getChatsList();
+		QMetaObject::invokeMethod(chatsList,
+			"showConnectionDownLabel",
+			Qt::QueuedConnection);
+	}
+}
+
 void WorkerQt::onConnectionDown() {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	if (chatsWidget != nullptr) {
@@ -185,6 +195,10 @@ WorkerQt::WorkerQt(MainWindow* mainWindow)
 	: m_main_window(mainWindow) {
 }
 
+void WorkerQt::setupRegistrationWidget() {
+	QMetaObject::invokeMethod(m_main_window, "setupLoginWidget", Qt::QueuedConnection);
+}
+
 void WorkerQt::onRegistrationSuccess() {
 	QMetaObject::invokeMethod(m_main_window, "setupGreetWidget", Qt::QueuedConnection);
 }
@@ -212,6 +226,14 @@ void WorkerQt::onPasswordVerifySuccess() {
 			"showNewPasswordInput",
 			Qt::QueuedConnection);
 	}
+}
+
+void WorkerQt::removeConnectionErrorLabel() {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsListComponent = chatsWidget->getChatsList();
+	QMetaObject::invokeMethod(chatsListComponent,
+		"removeConnectionDownLabel",
+		Qt::QueuedConnection);
 }
 
 void WorkerQt::supplyTheme(bool isDarkTheme) {

@@ -35,10 +35,11 @@ int main(int argc, char* argv[])
     MainWindow* mainWindow = new MainWindow(nullptr);
     if (utility::isApplicationAlreadyRunning()) {
         QTimer::singleShot(0, [&mainWindow]() {
+            mainWindow->showMaximized();
             mainWindow->showAlreadyRunningDialog();
         });
+
         app.exec();
-        return -1;
     }
 
     Client* client = new Client;
@@ -52,14 +53,9 @@ int main(int argc, char* argv[])
     client->startProcessingIncomingPackets();
     bool isConnected = client->waitForConnectionWithTimeout(1500);
 
-    if (!isConnected) {
-        mainWindow->showMaximized();
-        mainWindow->showConnectionErrorDialog();
-        app.exec();
-        return -1;
+    if (isConnected) {
+        tryAutoLoginOrShowLoginForm(mainWindow, client, configManager);
     }
-
-    tryAutoLoginOrShowLoginForm(mainWindow, client, configManager);
     
     mainWindow->showMaximized();
     app.exec();

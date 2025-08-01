@@ -78,6 +78,7 @@ signals:
 
 
 public slots:
+    void removeConnectionDownLabel();
     void showConnectionDownLabel();
     void showUpdateButton();
 
@@ -134,8 +135,8 @@ private:
 
     AvatarIcon*         m_profileButton;
     ButtonIcon*         m_newChatButton;
-
-    QPushButton*        m_reconnectButton;
+    QLabel*             m_reconnectionGif;
+    ButtonIcon*         m_reconnectButton;
     QPushButton*        m_hideButton;
     QPushButton*        m_updateButton;
     QLabel*             m_connectionDownLabel;

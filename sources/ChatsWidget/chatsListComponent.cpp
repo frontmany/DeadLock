@@ -378,26 +378,33 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_connectionDownLabel->setFixedSize(255, 36);
     m_profileHLayout->addWidget(m_connectionDownLabel);
 
-    m_reconnectButton = new QPushButton(this);
-    m_reconnectButton->setStyleSheet("background: transparent; border: none;");
-    connect(m_reconnectButton, &QPushButton::clicked, [this]() {
+
+    m_reconnectButton = new ButtonIcon(this, 32, 32);
+    QIcon reconnectIconDark(":/resources/ChatsWidget/reloadDark.png");
+    QIcon reconnectIconDarkHover(":/resources/ChatsWidget/reloadDarkHover.png");
+    m_reconnectButton->uploadIconsDark(reconnectIconDark, reconnectIconDarkHover);
+    QIcon reconnectIconLight(":/resources/ChatsWidget/reloadLight.png");
+    QIcon reconnectIconLightHover(":/resources/ChatsWidget/reloadLightHover.png");
+    m_reconnectButton->uploadIconsLight(reconnectIconLight, reconnectIconLightHover);
+    m_reconnectButton->setTheme(m_theme);
+    connect(m_reconnectButton, &ButtonIcon::clicked, [this]() {
+        m_reconnectButton->hide();
+        m_reconnectionGif->show();
         m_chatsWidget->getClient()->tryReconnect();
     });
-
-    if (m_theme == DARK) {
-        QIcon reconnectIconDark(":/resources/ChatsWidget/reloadDark.png");
-        m_reconnectButton->setIcon(reconnectIconDark);
-    }
-    else {
-        QIcon reconnectIconLight(":/resources/ChatsWidget/reloadLight.png");
-        m_reconnectButton->setIcon(reconnectIconLight);
-    }
-
     m_reconnectButton->setIconSize(QSize(24, 24));
     m_reconnectButton->hide();
 
     m_profileHLayout->addWidget(m_reconnectButton);
 
+
+    m_reconnectionGif = new QLabel(this);
+    QMovie* movie = new QMovie(":/resources/ChatsWidget/process.gif"); 
+    m_reconnectionGif->setMovie(movie);
+    movie->start();
+    m_reconnectionGif->hide();
+
+    m_profileHLayout->addWidget(m_reconnectionGif);
 
     m_darkModeSwitch = new ToggleSwitch(this, m_theme);
     m_darkModeSwitch->setTheme(m_theme);
@@ -697,6 +704,8 @@ void ChatsListComponent::setTheme(Theme theme) {
     m_darkModeSwitch->setTheme(m_theme);
     m_profileButton->setTheme(m_theme);
     m_friend_search_dialog->setTheme(m_theme);
+    m_newChatButton->setTheme(m_theme);
+    m_reconnectButton->setTheme(m_theme);
 
     updateHideButton();
 
@@ -706,9 +715,6 @@ void ChatsListComponent::setTheme(Theme theme) {
 
 
     if (theme == DARK) {
-        QIcon reconnectIconDark(":/resources/ChatsWidget/reloadDark.png");
-        m_reconnectButton->setIcon(reconnectIconDark);
-
         if (m_isUpdateLoading) {
             m_updateButton->setStyleSheet(style->updateButtonInProgressDark);
         }
@@ -719,7 +725,8 @@ void ChatsListComponent::setTheme(Theme theme) {
         m_connectionDownLabel->setStyleSheet(style->DarkNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->DarkSlider);
         m_searchLineEdit->setStyleSheet(style->DarkLineEditStyle);
-        m_newChatButton->setTheme(theme);
+
+
         for (auto comp : m_vec_chatComponents) {
             comp->setTheme(DARK);
         }
@@ -731,9 +738,6 @@ void ChatsListComponent::setTheme(Theme theme) {
         }
     }
     else {
-        QIcon reconnectIconLight(":/resources/ChatsWidget/reloadLight.png");
-        m_reconnectButton->setIcon(reconnectIconLight);
-
         if (m_isUpdateLoading) {
             m_updateButton->setStyleSheet(style->updateButtonInProgressLight);
         }
@@ -745,7 +749,7 @@ void ChatsListComponent::setTheme(Theme theme) {
         m_connectionDownLabel->setStyleSheet(style->LightNoConnectionLabelStyle);
         m_scrollArea->verticalScrollBar()->setStyleSheet(style->LightSlider);
         m_searchLineEdit->setStyleSheet(style->LightLineEditStyle);
-        m_newChatButton->setTheme(theme);
+
         for (auto comp : m_vec_chatComponents) {
             comp->setTheme(LIGHT);
         }
@@ -821,10 +825,20 @@ void ChatsListComponent::showConnectionDownLabel() {
     m_chatsWidget->getClient()->stopClient();
     m_hideButton->hide();
     m_updateButton->hide();
+    m_reconnectionGif->hide();
     m_hideButton->setChecked(true);
     m_connectionDownLabel->setText("Galactic Silence (Connection Lost)");
     m_connectionDownLabel->show();
-    m_reconnectButton->show();
+    QTimer::singleShot(5000, this, [this]() {
+        m_reconnectButton->show();
+    });
+}
+
+void ChatsListComponent::removeConnectionDownLabel() {
+    m_connectionDownLabel->hide();
+    m_reconnectionGif->hide();
+    m_reconnectButton->hide();
+    m_hideButton->show();
 }
 
 void ChatsListComponent::showUpdateButton() {

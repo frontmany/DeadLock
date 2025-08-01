@@ -20,13 +20,13 @@ public:
 
     const std::string& getBinaryData() const { return m_binaryData; }
     void setBinaryData(const std::string& data) { m_binaryData = data; }
-    void loadBinaryDataFromPc();
 
-    std::string encryptForServerBase64(const CryptoPP::RSA::PublicKey& serverPublicKey) const;
     static Photo* deserializeAndSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& data, std::string login);
     static Photo* deserializeWithoutSaveOnDisc(const CryptoPP::RSA::PrivateKey& privateKey, const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& data);
 
+    std::string encryptForServerBase64(const CryptoPP::RSA::PublicKey& serverPublicKey) const;
     const std::size_t getSize() const { return m_size; }
+    void loadBinaryDataFromPc();
 
 private:
     Photo() { m_size = 0; }
@@ -35,7 +35,7 @@ private:
 
 private:
     CryptoPP::RSA::PrivateKey m_private_key;
+    std::string m_binaryData;
     std::string m_photoPath;
     std::size_t m_size;
-    std::string m_binaryData;
 };

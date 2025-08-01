@@ -28,20 +28,17 @@ namespace net {
 	}
 
 	void Connection::disconnect() {
-		auto self = shared_from_this();
-
-		asio::post(m_asioContext, [this, self]() {
-			if (m_socket.is_open()) {
-				std::error_code ec;
-				m_socket.close(ec);
-				if (ec) {
-					std::cerr << "Socket close error: " << ec.message() << "\n";
-				}
-				else {
-					std::cout << "Connection closed successfully\n";
-				}
+		if (m_socket.is_open()) {
+			std::error_code ec;
+			m_socket.close(ec);
+			if (ec) {
+				std::cerr << "Socket close error: " << ec.message() << "\n";
 			}
-		});
+			else {
+				std::cout << "Connection closed successfully\n";
+			}
+			m_socket.cancel();
+		}
 	}
 
 	void Connection::send(const Message& message) {

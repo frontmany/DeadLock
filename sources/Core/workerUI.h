@@ -30,6 +30,9 @@ public:
 	virtual void onCheckNewLoginFail() = 0;
 	virtual void onCheckNewLoginSuccess() = 0;
 
+	virtual void showConnectionDownLabel() = 0;
+	virtual void setupRegistrationWidget() = 0;
+	virtual void removeConnectionErrorLabel() = 0;
 	virtual void processFoundUsers(std::vector<FriendInfo*>&& vec) = 0;
 	virtual void blockProfileEditing() = 0;
 	virtual void activateProfileEditing() = 0;

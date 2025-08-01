@@ -56,8 +56,6 @@ namespace net {
 	}
 
 	void ClientInterface::stop() {
-		m_context.reset();
-
 		if (m_context_thread.joinable()) {
 			m_context_thread.join();
 			std::cout << "Context stopped successfully\n";
@@ -81,6 +79,8 @@ namespace net {
 
 			if (!m_context.stopped()) {
 				m_context.stop();
+				m_context.reset();
+				m_context.restart();
 			}
 
 			m_is_connected = false;
