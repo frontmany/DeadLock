@@ -21,6 +21,7 @@ namespace net
 
 	private:
 		void sendMetadata();
+		void sendFileChunkWithoutEncryption();
 		void sendFileChunk();
 		bool openFile();
 

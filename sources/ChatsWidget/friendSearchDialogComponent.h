@@ -21,6 +21,7 @@ class FriendInfo;
 class Chat;
 class ButtonIcon;
 class AvatarIcon;
+class Avatar;
 
 struct StyleFriendComponent {
     StyleFriendComponent();
@@ -57,11 +58,11 @@ public:
     FriendComponent(QWidget* parent, 
         FriendSearchDialogComponent* friendSearchDialogComponent, Theme theme);
 
-    void setFriendData(const QString& name, const QString& login, const QPixmap& photo = QPixmap());
+    void setFriendData(const QString& name, const QString& loginHash, const QPixmap& photo = QPixmap());
     void setTheme(Theme theme);
 
 signals:
-    void sendData(const QString login);
+    void sendData(const QString loginHash);
 
 private slots:
     void slotToSendData();
@@ -73,7 +74,7 @@ private:
     AvatarIcon*           m_avatar_button;
     QLabel*               m_name_label;
 
-    QString m_login;
+    QString m_login_hash;
     bool m_hovered = false;
     FriendSearchDialogComponent* m_friend_search_dialog_component;
 };
@@ -93,22 +94,31 @@ public:
     void setTheme(Theme theme);
 
 public slots:
-    void refreshFriendsList(const std::vector<FriendInfo*>& friendInfoVec);
-    void onFriendComponentClicked(const QString& login);
+    void supplyNewFriendsList(const std::vector<FriendInfo*>& friendInfoVec);
+    void supplyAvatar(Avatar* avatar, std::string loginHash);
+    void onFriendComponentClicked(const QString& loginHash);
 
 private:
-    void updateFriendsListUI();
+    void showExistingChat(const std::string& loginHash);
+    void addNewChatAndShow(const std::string& loginHash, FriendInfo* friendInfo);
+    void showNoUsersFoundLabel();
+    void addToFriendsListUI(const std::string& loginHash);
+    void clearComponentsMapAndUI();
+    void deduceAvatarAndSetDataTo(FriendComponent* friendComp, FriendInfo* friendInfo, bool isPhotoReceived);
 
 
 private:
 
-    std::unordered_map<std::string, FriendInfo*> m_suggestions_map;
+    std::unordered_map<std::string, std::pair<FriendInfo*, bool>> m_suggestions_map;
     std::unordered_map<std::string, FriendComponent*> m_components_map;
 
     StyleFriendSearchDialogComponent*            m_style;
     ChatsListComponent*                          m_chats_list_component;
     Theme                                        m_theme;
     bool                                         m_is_visible;
+
+    uint32_t countUsersWithPhoto = 0;
+    uint32_t countUsersWithPhotoReceived = 0;
 
     QLabel*      m_not_found_label = nullptr;
     QVBoxLayout* m_mainVLayout;

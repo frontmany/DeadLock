@@ -28,6 +28,9 @@ public:
 	void setFriendLogin(const std::string& friendLogin) { m_friend_login = friendLogin; }
 	const std::string& getFriendLogin() const { return m_friend_login; }
 
+	void setPublicKey(const CryptoPP::RSA::PublicKey& publicKey) { m_publicKey = publicKey; }
+	const CryptoPP::RSA::PublicKey& getPublicKey() const { return m_publicKey; }
+	
 	void setLastReceivedOrSentMessage(const std::string& lastReceivedOrSentMessage) { m_last_received_or_sent_message = lastReceivedOrSentMessage; }
 	const std::string& getLastReceivedOrSentMessage() const { return m_last_received_or_sent_message; }
 
@@ -53,6 +56,7 @@ public:
 
 private:
 	CryptoPP::SecByteBlock	  m_AESE_chat_configKey;
+	CryptoPP::RSA::PublicKey& m_publicKey;
 	std::vector<Message*>	  m_vec_messages;
 	std::string				  m_friend_last_seen;
 	std::string				  m_friend_login;

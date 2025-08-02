@@ -242,7 +242,8 @@ void ResponseHandler::onAvatar(net::File& file) {
 }
 
 void ResponseHandler::onAvatarPreview(net::File& file) {
-    m_worker_UI->updateFriendAvatarPreview(friendAvatar);
+    Avatar* friendAvatar = new Avatar(m_client->getAvatarsKey(), file.filePath);
+    m_worker_UI->updateFriendAvatarPreview(friendAvatar, file.senderLoginHash);
 }
 
 void ResponseHandler::onFile(net::File& file) {
@@ -477,40 +478,11 @@ void ResponseHandler::onFoundUsers(const std::string& packet) {
         std::string sizeStr;
         std::getline(iss, sizeStr);
         sizeStr = utility::AESDecrypt(key, sizeStr);
-        
-        if (isHasPhoto) {
-            std::string photoEncrypted;
-            std::getline(iss, photoEncrypted);
-            std::string photoDecrypted = utility::AESDecrypt(key, photoEncrypted);
-
-            size_t pos = photoDecrypted.find('\n');
-            std::string dataFirstPartStr;
-            std::string dataSecondPartStr;
-
-            if (pos != std::string::npos) {
-                dataFirstPartStr = photoDecrypted.substr(0, pos);
-                dataSecondPartStr = photoDecrypted.substr(pos + 1);
-            }
-            else {
-                dataFirstPartStr = photoDecrypted;
-                dataSecondPartStr.clear();
-            }
-
-
-            Photo* photo = Photo::deserializeWithoutSaveOnDisc(m_client->getPrivateKey(), m_client->getServerPublicKey(), dataFirstPartStr + "\n" + dataSecondPartStr);
-            friendInfo->setFriendPhoto(photo);
-        }
-        else {
-            std::string spaceString;
-            std::getline(iss, spaceString);
-            std::getline(iss, spaceString);
-        }
 
         std::string friendPublicKeyStr;
         std::getline(iss, friendPublicKeyStr);
         auto friendPublicKey = utility::deserializePublicKey(friendPublicKeyStr);
         friendInfo->setPublicKey(friendPublicKey);
-
         
         vec.emplace_back(friendInfo);
     }

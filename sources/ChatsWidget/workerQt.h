@@ -35,7 +35,7 @@ public:
 	void onChatCreateSuccess(Chat* chat) override;
 	void onChatCreateFail() override;
 
-	void updateFriendAvatarPreview(Avatar* avatar) override;
+	void updateFriendAvatarPreview(Avatar* avatar, const std::string& friendLoginHash) override;
 	void updateFriendAvatar(Avatar* avatar, const std::string& friendLogin) override;
 	void showConnectionDownLabel() override;
 	void setupRegistrationWidget() override;

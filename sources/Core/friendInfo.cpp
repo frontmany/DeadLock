@@ -1,6 +1,9 @@
 #include"friendInfo.h"
 #include"utility.h"
 
+void FriendInfo::setFriendLoginHash(const std::string& friendLoginHash) { m_friend_login_hash = friendLoginHash; }
+const std::string& FriendInfo::getFriendLoginHash() const { return m_friend_login_hash; }
+
 void FriendInfo::setFriendLogin(const std::string& friendLogin) { m_friend_login = friendLogin; }
 const std::string& FriendInfo::getFriendLogin() const { return m_friend_login; }
 
@@ -13,11 +16,11 @@ const std::string& FriendInfo::getFriendName() const { return m_friend_name; }
 void FriendInfo::setFriendLastSeen(const std::string& lastSeen) { m_friend_last_seen = lastSeen; }
 const std::string& FriendInfo::getFriendLastSeen() const { return m_friend_last_seen; }
 
-void FriendInfo::setIsFriendHasPhoto(const bool isHasPhoto) { m_is_friend_has_photo = isHasPhoto; }
-const bool FriendInfo::getIsFriendHasPhoto() const { return m_is_friend_has_photo; }
+void FriendInfo::setIsFriendHasAvatar(const bool isHasAvatar) { m_is_friend_has_avatar = isHasAvatar; }
+const bool FriendInfo::getIsFriendHasAvatar() const { return m_is_friend_has_avatar; }
 
-void FriendInfo::setFriendPhoto(Photo* photo) { m_friend_photo = photo; }
-const Photo* FriendInfo::getFriendPhoto() const { return m_friend_photo; }
+void FriendInfo::setFriendAvatar(Avatar* avatar) { m_friend_avatar = avatar; }
+Avatar* FriendInfo::getFriendAvatar() const { return m_friend_avatar; }
 
 void FriendInfo::setLayoutIndex(int index) { m_index_at_layout = index; }
 const int FriendInfo::getLayoutIndex() const { return m_index_at_layout; }

@@ -6,7 +6,7 @@
 #include "chatComponent.h"
 #include "chat.h"
 #include "client.h"
-#include "photo.h"
+#include "avatar.h"
 #include "friendInfo.h"
 #include "buttons.h"
 #include "configManager.h"
@@ -256,15 +256,15 @@ void FriendComponent::setTheme(Theme theme) {
     }
 }
 
-void FriendComponent::setFriendData(const QString& name, const QString& login, const QPixmap& photo)
+void FriendComponent::setFriendData(const QString& name, const QString& loginHash, const QPixmap& avatar)
 {
     m_name_label->setText(name);
-    m_login = login;
+    m_login_hash = loginHash;
 
-    if (!photo.isNull()) {
-        QIcon ic(photo);
+    if (!avatar.isNull()) {
+        QIcon ic(avatar);
         
-        m_avatar_button->setIcon(QIcon(photo));
+        m_avatar_button->setIcon(QIcon(avatar));
     }
     else {
         QPixmap defaultAvatar(":/resources/ChatsWidget/userFriend.png");
@@ -276,7 +276,7 @@ void FriendComponent::setFriendData(const QString& name, const QString& login, c
 
 
 void FriendComponent::slotToSendData() {
-    emit sendData(m_login);
+    emit sendData(m_login_hash);
 }
 
 
@@ -327,23 +327,62 @@ FriendSearchDialogComponent::FriendSearchDialogComponent(QWidget* parent, ChatsL
 }
 
 
-void FriendSearchDialogComponent::refreshFriendsList(const std::vector<FriendInfo*>& friendInfoVec) {
+void FriendSearchDialogComponent::supplyNewFriendsList(const std::vector<FriendInfo*>& friendInfoVec) {
     for (auto& pair : m_suggestions_map) {
-        delete pair.second;
+        delete pair.second.first;
     }
     m_suggestions_map.clear();
 
-    for (FriendInfo* friendInfo : friendInfoVec) {
-        m_suggestions_map[friendInfo->getFriendLogin()] = friendInfo;
+    clearComponentsMapAndUI();
+    m_scrollHLayout->addSpacerItem(new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::Minimum));
+
+    countUsersWithPhoto = 0;
+    countUsersWithPhotoReceived = 0;
+
+    if (friendInfoVec.size() == 0) {
+        showNoUsersFoundLabel();
     }
 
-    updateFriendsListUI();
+    for (FriendInfo* friendInfo : friendInfoVec) {
+        if (friendInfo->getIsFriendHasAvatar()) {
+            countUsersWithPhoto++;
+            m_suggestions_map[friendInfo->getFriendLoginHash()] = std::make_pair(friendInfo, false);
+        }
+        else {
+            m_suggestions_map[friendInfo->getFriendLoginHash()] = std::make_pair(friendInfo, true);
+            addToFriendsListUI(friendInfo->getFriendLoginHash());
+        }
+    }
+}
+
+void FriendSearchDialogComponent::supplyAvatar(Avatar* avatar, std::string loginHash) {
+    auto& [friendInfo, isPhotoReceived] = m_suggestions_map.at(loginHash);
+    isPhotoReceived = true;
+    friendInfo->setFriendAvatar(avatar);
+
+    addToFriendsListUI(loginHash);
+}
+
+void FriendSearchDialogComponent::showNoUsersFoundLabel() {
+    m_not_found_label = new QLabel("User not found. Try a different name or login.", this);
+    if (m_theme == Theme::DARK) {
+        m_not_found_label->setStyleSheet(m_style->labelStyleDark);
+    }
+    else {
+        m_not_found_label->setStyleSheet(m_style->labelStyleLight);
+    }
+    m_scrollHLayout->setAlignment(Qt::AlignTop);
+    m_scrollHLayout->addWidget(m_not_found_label);
+
+    showDialog(35);
 }
 
 void FriendSearchDialogComponent::showDialog(int size) {
     if (m_is_visible) {
         return;
     }
+
+    m_is_visible = true;
     this->show();
     this->setFixedHeight(size);
 }
@@ -353,7 +392,7 @@ void FriendSearchDialogComponent::closeDialog() {
     m_is_visible = false;
 }
 
-void FriendSearchDialogComponent::updateFriendsListUI() {
+void FriendSearchDialogComponent::clearComponentsMapAndUI() {
     QLayoutItem* item;
     while ((item = m_scrollHLayout->takeAt(0)) != nullptr) {
         delete item;
@@ -368,56 +407,41 @@ void FriendSearchDialogComponent::updateFriendsListUI() {
         delete pair.second;
     }
     m_components_map.clear();
+}
 
-    m_scrollHLayout->addSpacerItem(new QSpacerItem(10, 10, QSizePolicy::Minimum, QSizePolicy::Minimum));
 
-    for (const auto& [login, friendInfo] : m_suggestions_map) {
-        FriendComponent* friendComp = new FriendComponent(m_scrollContent, this, m_theme);
-        QString name = QString::fromStdString(friendInfo->getFriendName());
+void FriendSearchDialogComponent::addToFriendsListUI(const std::string& loginHash) {
+    
+    auto& [friendInfo, isPhotoReceived] = m_suggestions_map.at(loginHash);
 
-        QPixmap avatar;
-        bool avatarLoaded = false;
+    FriendComponent* friendComp = new FriendComponent(m_scrollContent, this, m_theme);
+    QString name = QString::fromStdString(friendInfo->getFriendName());
+    
+    deduceAvatarAndSetDataTo(friendComp, friendInfo, isPhotoReceived);
 
-        if (friendInfo->getIsFriendHasPhoto() && friendInfo->getFriendPhoto() != nullptr) {
-            std::string binaryData = friendInfo->getFriendPhoto()->getBinaryData();
-            QByteArray imageData = QByteArray::fromStdString(binaryData);
-            if (avatar.loadFromData(imageData)) {
-                avatar = avatar.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                avatarLoaded = true;
-            }
+    m_components_map[loginHash] = friendComp;
+    m_scrollHLayout->addWidget(friendComp);
+
+    m_scrollHLayout->setAlignment(Qt::AlignLeft);
+    showDialog(160);
+}
+
+void FriendSearchDialogComponent::deduceAvatarAndSetDataTo(FriendComponent* friendComp, FriendInfo* friendInfo, bool isPhotoReceived) {
+    QPixmap avatar;
+
+    if (friendInfo->getIsFriendHasAvatar() && isPhotoReceived) {
+        std::string binaryData = friendInfo->getFriendAvatar()->getBinaryData();
+        QByteArray imageData = QByteArray::fromStdString(binaryData);
+        if (avatar.loadFromData(imageData)) {
+            avatar = avatar.scaled(50, 50, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
-        if (!avatarLoaded) {
-            avatar = QPixmap(":/resources/ChatsWidget/userFriend.png")
-                .scaled(60, 60, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        
-        }
-
-        friendComp->setFriendData(name, QString::fromStdString(login), avatar);
-        m_components_map[login] = friendComp;
-        m_scrollHLayout->addWidget(friendComp);
+    }
+    if (!friendInfo->getIsFriendHasAvatar()) {
+        avatar = QPixmap(":/resources/ChatsWidget/userFriend.png")
+            .scaled(60, 60, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
 
-    int size = 0;
-    if (m_components_map.size() == 0) {
-        m_not_found_label = new QLabel("User not found. Try a different name or login.", this);
-        if (m_theme == Theme::DARK) {
-            m_not_found_label->setStyleSheet(m_style->labelStyleDark);
-        }
-        else {
-            m_not_found_label->setStyleSheet(m_style->labelStyleLight);
-        }
-
-        size = 35;
-        m_scrollHLayout->setAlignment(Qt::AlignTop);
-        m_scrollHLayout->addWidget(m_not_found_label);
-    }
-    else {
-        size = 160;
-        m_scrollHLayout->setAlignment(Qt::AlignLeft);
-    }
-
-    setTheme(m_theme);
-    showDialog(size);
+    friendComp->setFriendData(QString::fromStdString(friendInfo->getFriendName()), QString::fromStdString(friendInfo->getFriendLoginHash()), avatar);
 }
 
 void FriendSearchDialogComponent::setTheme(Theme theme) {
@@ -428,78 +452,60 @@ void FriendSearchDialogComponent::setTheme(Theme theme) {
     }
 
     if (m_theme == Theme::DARK) {
+        if (m_not_found_label) {
+            m_not_found_label->setStyleSheet(m_style->labelStyleDark);
+        }
+
         m_scrollArea->horizontalScrollBar()->setStyleSheet(m_style->darkSlider);
 
     }
     else {
+        if (m_not_found_label) {
+            m_not_found_label->setStyleSheet(m_style->labelStyleLight);
+        }
+
         m_scrollArea->horizontalScrollBar()->setStyleSheet(m_style->lightSlider);
     }
 }
 
-void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login) {
-    auto& friendInfo = m_suggestions_map[login.toStdString()];
-    auto chatsWidget = m_chats_list_component->getChatsWidget();
-    auto client = chatsWidget->getClient();
-    auto& chatsMap = client->getMyHashChatsMap();
+void FriendSearchDialogComponent::showExistingChat(const std::string& loginHash) {
+    auto& chatCompsVec = m_chats_list_component->getChatComponentsVec();
 
-    auto it = chatsMap.find(utility::calculateHash(login.toStdString()));
-    if (it != chatsMap.end()) {
-        auto& chatCompsVec = m_chats_list_component->getChatComponentsVec();
-        auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [login](ChatComponent* comp) {
-            return login.toStdString() == comp->getChat()->getFriendLogin();
-        });
-        if (itComp != chatCompsVec.end()) {
-            ChatComponent* foundComp = *itComp;
-            chatsWidget->onSetChatMessagingArea(foundComp->getChat(), foundComp);
-        }
+    auto itComp = std::find_if(chatCompsVec.begin(), chatCompsVec.end(), [loginHash](ChatComponent* comp) {
+        return loginHash == utility::calculateHash(comp->getChat()->getFriendLogin());
+    });
 
-        m_chats_list_component->getSearchLineEdit()->setText("");
-        closeDialog();
-        return;
+    if (itComp != chatCompsVec.end()) {
+        ChatComponent* foundComp = *itComp;
+        m_chats_list_component->getChatsWidget()->onSetChatMessagingArea(foundComp->getChat(), foundComp);
     }
 
+    m_chats_list_component->getSearchLineEdit()->setText("");
+    closeDialog();
+    return;
+}
+
+void FriendSearchDialogComponent::addNewChatAndShow(const std::string& loginHash, FriendInfo* friendInfo) {
     Chat* chat = new Chat;
-    chat->setFriendLogin(login.toStdString());
+    chat->setFriendLogin(friendInfo->getFriendLogin());
     chat->setFriendName(friendInfo->getFriendName());
     chat->setFriendLastSeen(friendInfo->getFriendLastSeen());
     chat->setLastReceivedOrSentMessage("no messages yet");
-    chat->setIsFriendHasPhoto(friendInfo->getIsFriendHasPhoto());
     chat->setPublicKey(friendInfo->getPublicKey());
 
-    if (friendInfo->getIsFriendHasPhoto()) {
-        try {
-            const std::string& binaryData = friendInfo->getFriendPhoto()->getBinaryData();
-
-            CryptoPP::SecByteBlock aesKey;
-            utility::generateAESKey(aesKey);
-
-            std::string newEncryptedData = utility::AESEncrypt(aesKey, binaryData);
-            std::string newEncryptedAesKey = utility::RSAEncryptKey(
-                m_chats_list_component->getChatsWidget()->getClient()->getPublicKey(),
-                aesKey
-            );
-
-            std::string newCombined = newEncryptedAesKey + "\n" + newEncryptedData;
-
-
-            Photo* photo = Photo::deserializeAndSaveOnDisc(
-                m_chats_list_component->getChatsWidget()->getClient()->getPrivateKey(),
-                newCombined,
-                login.toStdString()
-            );
-
-            chat->setFriendPhoto(photo);
-        }
-        catch (const std::exception& e) {
-            std::cerr << "Error processing friend photo: " << e.what() << std::endl;
-        }
+    chat->setIsFriendHasAvatar(friendInfo->getIsFriendHasAvatar());
+    if (friendInfo->getIsFriendHasAvatar()) {
+        chat->setFriendAvatar(friendInfo->getFriendAvatar());
     }
-    
+
+    auto chatsWidget = m_chats_list_component->getChatsWidget();
+    auto client = chatsWidget->getClient();
 
     chat->setLayoutIndex(0);
     utility::incrementAllChatLayoutIndexes(client->getMyHashChatsMap());
 
-    client->getMyHashChatsMap().emplace(utility::calculateHash(login.toStdString()), chat);
+    client->getMyHashChatsMap().emplace(loginHash, chat);
+
     client->getConfigManager()->save(
         client->getPublicKey(),
         client->getPrivateKey(),
@@ -509,10 +515,25 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& login)
         client->getDatabase()
     );
 
-
     chatsWidget->createAndSetMessagingAreaComponent(chat);
     chatsWidget->createAndAddChatComponentToList(chat);
 
     m_chats_list_component->getSearchLineEdit()->setText("");
     closeDialog();
+}
+
+void FriendSearchDialogComponent::onFriendComponentClicked(const QString& loginHash) {
+    std::string loginHashStd = loginHash.toStdString();
+    
+    auto& [friendInfo, isPhotoReceived] = m_suggestions_map[loginHashStd];
+    auto chatsWidget = m_chats_list_component->getChatsWidget();
+    auto client = chatsWidget->getClient();
+
+    auto& chatsMap = client->getMyHashChatsMap();
+    if (chatsMap.contains(loginHashStd)) {
+        showExistingChat(loginHashStd);
+    }
+    else {
+        addNewChatAndShow(loginHashStd, friendInfo);
+    }
 }

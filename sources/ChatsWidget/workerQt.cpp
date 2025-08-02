@@ -84,8 +84,17 @@ void WorkerQt::updateFriendAvatar(Avatar* avatar, const std::string& friendLogin
 	}
 }
 
-void WorkerQt::updateFriendAvatarPreview(Avatar* avatar) {
-	-
+void WorkerQt::updateFriendAvatarPreview(Avatar* avatar, const std::string& friendLoginHash) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	auto friendSearchDialogComponent = chatsList->getFriendSearchDialogComponent();
+	
+	QMetaObject::invokeMethod(chatsList,
+		"supplyAvatar",
+		Qt::QueuedConnection,
+		Q_ARG(Avatar*, avatar),
+		Q_ARG(std::string, friendLoginHash)
+	);
 }
 
 void WorkerQt::showConnectionDownLabel() {
@@ -639,7 +648,7 @@ void WorkerQt::processFoundUsers(std::vector<FriendInfo*>&& vec) {
 	auto friendSearchDialogComponent = chatsList->getFriendSearchDialogComponent();
 	
 	QMetaObject::invokeMethod(friendSearchDialogComponent,
-		"refreshFriendsList",
+		"supplyNewFriendsList",
 		Qt::QueuedConnection,
 		Q_ARG(const std::vector<FriendInfo*>&, std::move(vec)));
 	

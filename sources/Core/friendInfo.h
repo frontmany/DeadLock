@@ -5,10 +5,13 @@
 #include"rsa.h"
 
 class Message;
-class Photo;
+class Avatar;
 
 class FriendInfo {
 public:
+	void setFriendLoginHash(const std::string& friendLoginHash);
+	const std::string& getFriendLoginHash() const;
+
 	void setFriendLogin(const std::string& friendLogin);
 	const std::string& getFriendLogin() const;
 
@@ -21,11 +24,11 @@ public:
 	void setFriendLastSeen(const std::string& lastSeen);
 	const std::string& getFriendLastSeen() const;
 
-	void setIsFriendHasPhoto(const bool isHasPhoto);
-	const bool getIsFriendHasPhoto() const;
+	void setIsFriendHasAvatar(const bool isHasAvatar);
+	const bool getIsFriendHasAvatar() const;
 
-	void setFriendPhoto(Photo* photo);
-	const Photo* getFriendPhoto() const;
+	void setFriendAvatar(Avatar* avatar);
+	Avatar* getFriendAvatar() const;
 
 	void setLayoutIndex(int index);
 	const int getLayoutIndex() const;
@@ -36,11 +39,12 @@ public:
 private:
 	std::vector<Message*>	 m_vec_messages;
 	std::string				 m_friend_last_seen;
+	std::string				 m_friend_login_hash;
 	std::string				 m_friend_login;
 	std::string				 m_friend_name;
 	std::string				 m_last_received_or_sent_message;
-	bool					 m_is_friend_has_photo;
-	Photo*					 m_friend_photo;
+	bool					 m_is_friend_has_avatar;
+	Avatar*					 m_friend_avatar = nullptr;
 	int						 m_index_at_layout;
 	CryptoPP::RSA::PublicKey m_public_key;
 };
