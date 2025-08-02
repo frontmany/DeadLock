@@ -63,7 +63,7 @@ private slots:
     void adjustCropArea(int value);
 
 private:
-    int saveCroppedImage();
+    int saveImage();
 
 private:
     MainWindow*             m_mainWindow;

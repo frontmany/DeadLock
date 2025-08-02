@@ -17,7 +17,7 @@ class      WorkerUI;
 class      ResponseHandler;
 class      ConfigManager;
 class      Chat;
-class      Photo;
+class      Avatar;
 class      PacketsBuilder;
 
 
@@ -46,7 +46,7 @@ public:
     void updateMyName(const std::string& newName);
     void updateMyLogin(const std::string& newLogin);
     void updateMyPassword(const std::string& newPasswordHash);
-    void updateMyPhoto(const Photo& newPhoto);
+    void updateMyAvatar(const Avatar* newAvatar);
 
     void requestFile(const fileWrapper& fileWrapper);
     void createChatWith(const std::string& friendLogin);
@@ -113,6 +113,9 @@ public:
     void setConfigManager(std::shared_ptr<ConfigManager> configManager) { m_config_manager = configManager; }
     std::shared_ptr<ConfigManager> getConfigManager() { return m_config_manager; }
 
+    CryptoPP::SecByteBlock getAvatarsKey() { return m_AESE_avatarsKey; }
+    void setAvatarsKey(const CryptoPP::SecByteBlock& avatarsKey) { m_AESE_avatarsKey = avatarsKey; }
+
     void setServerEncryptionPart(const std::string& encryptionPart);
     const std::string& getServerEncryptionPart() const { return m_server_encryption_part; }
     std::string getSpecialServerKey() const;
@@ -126,7 +129,7 @@ public:
     std::optional<Chat*> findChat(const std::string& loginHash) const ;
 
 private:
-    const std::vector<std::string> getFriendsLoginHashesVecFromMap();
+    std::vector<std::string> getFriendsLoginHashesVecFromMap();
     void sendPacket(const std::string& packet, QueryType type);
 
 private:
@@ -139,6 +142,7 @@ private:
     bool                    m_is_able_to_close;
     std::atomic<bool>       m_is_ui_ready_to_update;
 
+    CryptoPP::SecByteBlock	m_AESE_avatarsKey;
     ResponseHandler*        m_response_handler;
     PacketsBuilder*         m_packets_builder;
     Database*               m_db;

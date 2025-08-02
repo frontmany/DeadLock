@@ -19,6 +19,8 @@ namespace net
         std::string fileSize;
         std::string filesInBlobCount;
         std::string encryptedKey;
+        bool isAvatar = false;
+        std::string ifFileIsAvatarFriendLoginHashesList;
 
         File() = default;
 

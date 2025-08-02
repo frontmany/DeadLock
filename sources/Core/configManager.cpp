@@ -2,7 +2,7 @@
 #include "database.h"
 #include "utility.h"
 #include "chat.h"
-#include "photo.h"
+#include "avatar.h"
 #include "client.h"
 
 #include <rsa.h>                                           
@@ -16,8 +16,8 @@ ConfigManager::ConfigManager()
     m_my_login(""),
     m_my_name(""),
     m_is_auto_login(false),
-    m_is_has_photo(false),
-    m_my_photo(nullptr),
+    m_is_has_avatar(false),
+    m_my_avatar(nullptr),
     m_client(nullptr)
 {
 }
@@ -37,7 +37,7 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
     jsonObject["is_hidden"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, (isHidden ? "1" : "0")));
     jsonObject["my_name"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_name));
     jsonObject["is_has_photo"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, (m_is_has_photo ? "1" : "0")));
-    if (m_is_has_photo && m_my_photo) {
+    if (m_is_has_photo && m_my_avatar) {
         jsonObject["my_photo_path"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_photo->getPhotoPath()));
     }
     if (!checkIsPasswordHashPresentInMyConfig() && !m_is_undo_auto_login) {
@@ -51,7 +51,6 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
 
     std::string encryptedAESEConfigKey = utility::RSAEncryptKey(myPublicKey, AESEConfigKey);
     jsonObject["encrypted_config_key"] = QString::fromStdString(encryptedAESEConfigKey);
-
 
 
     QJsonArray chatsArray;
@@ -124,14 +123,14 @@ bool ConfigManager::load(const std::string& fileName, const std::string& special
         }
         m_my_login = utility::AESDecrypt(AESEConfigKey, jsonObject["my_login"].toString().toStdString());
         m_my_name = utility::AESDecrypt(AESEConfigKey, jsonObject["my_name"].toString().toStdString());
-        m_is_has_photo = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_photo"].toString().toStdString()) == "1";
+        m_is_has_avatar = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_photo"].toString().toStdString()) == "1";
         m_client->setIsHidden(utility::AESDecrypt(AESEConfigKey, jsonObject["is_hidden"].toString().toStdString()) == "1");
 
-        if (m_is_has_photo && jsonObject.contains("my_photo_path")) {
+        if (m_is_has_avatar && jsonObject.contains("my_photo_path")) {
             QString photoPath = QString::fromStdString(utility::AESDecrypt(AESEConfigKey, jsonObject["my_photo_path"].toString().toStdString()));
             if (!photoPath.isEmpty()) {
-                m_my_photo = new Photo(m_client->getPrivateKey(), photoPath.toStdString());
-                m_my_photo->loadBinaryDataFromPc();
+                m_my_avatar = new Avatar(m_client->getPrivateKey(), photoPath.toStdString());
+                m_my_avatar->loadBinaryDataFromPc();
             }
         }
 

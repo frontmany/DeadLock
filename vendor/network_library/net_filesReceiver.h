@@ -27,6 +27,7 @@ namespace net
 		void readChunkWithoutDecryption();
 
 		void parseMetadata();
+		void parseAvatarMetadata();
 		void finalizeReceiving();
 		void removePartiallyDownloadedFile();
 		void openFile();

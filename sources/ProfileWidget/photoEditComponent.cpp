@@ -4,7 +4,7 @@
 #include "profileEditorWidget.h"
 #include "client.h"
 #include "utility.h"
-#include "photo.h"
+#include "avatar.h"
 #include "chatsWidget.h"
 #include "configManager.h"
 #include "chatsListComponent.h"
@@ -248,16 +248,79 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
     m_continueButton->setMinimumSize(utility::getScaledSize(200), utility::getScaledSize(60));
     m_continueButton->setMaximumSize(utility::getScaledSize(250), utility::getScaledSize(60));
     connect(m_continueButton, &QPushButton::clicked, [this]() {
-        saveCroppedImage();
-        Photo* photo = new Photo(m_config_manager->getClient()->getPrivateKey(), m_filePath);
-        m_config_manager->setIsHasPhoto(true);
-        m_config_manager->setPhoto(photo);
-        m_client->updateMyPhoto(*photo);
+        int res = saveImage();
+        if (res == 1) {
+            QDialog* errorDialog = new QDialog(this);
+            errorDialog->setWindowFlags(Qt::Dialog);
+            errorDialog->setFixedHeight(85);
+            errorDialog->setFixedWidth(140);
+            errorDialog->setWindowTitle("We are sorry :( ");
+            errorDialog->setFixedSize(300, 150);
 
-        m_buttonsHLayout->removeItem(spacer);
-        m_profile_editor_widget->setFieldsEditor();
-        m_profile_editor_widget->updateAvatar(*photo);
-        m_profile_editor_widget->setFieldsEditor();
+            QVBoxLayout* layout = new QVBoxLayout(errorDialog);
+
+
+            QLabel* textLabel = new QLabel("Couldn't save image. Try to choose a smaller photo or reduce the circle.", errorDialog);
+            textLabel->setWordWrap(true);
+            textLabel->setFixedHeight(40);
+            textLabel->setStyleSheet(
+                "QLabel {"
+                "   font-family: 'Segoe UI';"
+                "   font-size: 12pt;"
+                "   color: white;"
+                "   background: transparent;"
+                "}"
+            );
+            textLabel->setAlignment(Qt::AlignCenter);
+
+            QPushButton* okButton = new QPushButton("OK", errorDialog);
+            okButton->setFixedHeight(30);
+            okButton->setFixedWidth(140);
+
+            QString buttonStyleGray = R"(
+                QPushButton {
+                    background-color: rgb(145, 145, 145); 
+                    color: rgb(255, 255, 255);   
+                    border: none;                  
+                    padding: 5px 10px;   
+                    border-radius: 5px;           
+                    font-family: 'Arial';          
+                    font-size: 20px;               
+                }
+                QPushButton:hover {
+                    color: rgb(255, 255, 255);     
+                    background-color: rgb( 173, 173, 173 ); 
+                }
+                QPushButton:pressed {
+                    background-color: rgb( 173, 173, 173 ); 
+                    color: rgb(255, 255, 255);                  
+                }
+                )";
+
+            okButton->setStyleSheet(buttonStyleGray);
+            connect(okButton, &QPushButton::clicked, errorDialog, &QDialog::accept);
+
+            layout->addWidget(textLabel);
+
+            QHBoxLayout* hla = new QHBoxLayout;
+            hla->addWidget(okButton);
+            hla->setAlignment(Qt::AlignCenter);
+
+            layout->addLayout(hla);
+
+            errorDialog->exec();
+        }
+        else {
+            Avatar* avatar = new Avatar(m_client->getAvatarsKey(), m_filePath);
+            m_config_manager->setIsHasAvatar(true);
+            m_config_manager->setAvatar(avatar);
+            m_client->updateMyAvatar(avatar);
+
+            m_buttonsHLayout->removeItem(spacer);
+            m_profile_editor_widget->setFieldsEditor();
+            m_profile_editor_widget->updateAvatar(avatar);
+            m_profile_editor_widget->setFieldsEditor();
+        }
     });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
@@ -491,10 +554,10 @@ void PhotoEditComponent::wheelEvent(QWheelEvent* event) {
     cropImageToCircle();
 }
 
-void PhotoEditComponent::saveCroppedImage() {
+int PhotoEditComponent::saveImage() {
     if (m_selectedImage.isNull()) {
-        qWarning() << "Нет изображения для сохранения";
-        return;
+        qWarning() << "There is no image to save";
+        return 1;
     }
 
     QPixmap circularMask(m_cropSize, m_cropSize);
@@ -510,53 +573,40 @@ void PhotoEditComponent::saveCroppedImage() {
     croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
 
     QImage image = croppedImage.toImage();
-
-    while (image.sizeInBytes() > 58 * 1024 && image.width() > 10 && image.height() > 10) {
-        image = image.scaled(image.width() * 0.9, image.height() * 0.9,
-            Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    }
-
     QByteArray imageData;
     QBuffer buffer(&imageData);
     buffer.open(QIODevice::WriteOnly);
 
     if (!image.save(&buffer, "PNG")) {
-        return;
+        qWarning() << "Couldn't save image to buffer";
+        return 1;
     }
 
-    if (imageData.size() > 58 * 1024) {
-        return;
-    }
+    std::string fileName = m_config_manager->getMyLoginHash() + ".dph";
+    m_filePath = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
 
+    CryptoPP::SecByteBlock key = m_client->getAvatarsKey();
 
-    std::string fileName = m_config_manager->getMyLoginHash() + "myMainPhoto.dph";
-
-
+    std::string encryptedImage;
     try {
-        CryptoPP::SecByteBlock aesKey;
-        utility::generateAESKey(aesKey);
-
-        std::string encryptedImage = utility::AESEncrypt(aesKey,
-            std::string(imageData.constData(), imageData.size()));
-
-        std::string encryptedKey = utility::RSAEncryptKey(m_client->getPublicKey(), aesKey);
-
-        std::string finalData = encryptedKey + "\n" + encryptedImage;
-
-
-        std::string path = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
-        std::ofstream outFile(path, std::ios::binary);
-        if (!outFile) {
-            return;
-        }
-
-        outFile.write(finalData.data(), finalData.size());
-        m_filePath = path;
+        encryptedImage = utility::AESEncrypt(key, std::string(imageData.constData(), imageData.size()));
     }
     catch (const std::exception& e) {
-        return;
+        qWarning() << "Image encryption error:" << e.what();
+        return 1;
     }
-    catch (...) {
-        return;
+
+    std::ofstream outFile(m_filePath, std::ios::binary);
+    if (!outFile) {
+        qWarning() << "Couldn't open the file for writing:" << m_filePath.c_str();
+        return 1;
     }
+
+    outFile.write(encryptedImage.data(), encryptedImage.size());
+    if (!outFile) {
+        qWarning() << "Error writing to a file";
+        return 1;
+    }
+
+    return 0;
 }

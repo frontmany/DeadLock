@@ -18,7 +18,7 @@
 #include "workerUI.h"
 #include "utility.h"
 #include "client.h"
-#include "photo.h"
+#include "avatar.h"
 #include "chat.h"
 
 Client::Client() :
@@ -228,9 +228,13 @@ void Client::updateMyPassword(const std::string& newPasswordHash) {
     sendPacket(m_packets_builder->getUpdateMyPasswordPacket(m_config_manager->getMyLoginHash(), newPasswordHash), QueryType::UPDATE_MY_PASSWORD);
 }
 
-void Client::updateMyPhoto(const Photo& newPhoto) {
-    const std::vector<std::string>& tmpFriendsLoginHashesVec = getFriendsLoginHashesVecFromMap();
-    sendPacket(m_packets_builder->getUpdateMyPhotoPacket(m_server_public_key, m_config_manager->getMyLoginHash(), newPhoto, tmpFriendsLoginHashesVec), QueryType::UPDATE_MY_PHOTO);
+void Client::updateMyAvatar(const Avatar* newAvatar) {
+    net::File avatarFile;
+    avatarFile.senderLoginHash = m_config_manager->getMyLoginHash();
+    avatarFile.isAvatar = true;
+    avatarFile.fileSize = newAvatar->getEncryptedSize();
+    avatarFile.ifFileIsAvatarFriendLoginHashesList = m_packets_builder->getSerializedFriendsLoginHashesVec(std::move(getFriendsLoginHashesVecFromMap()));
+    sendFile(avatarFile);
 }
 
 
@@ -261,7 +265,7 @@ void Client::setWorkerUI(WorkerUI* workerImpl) {
     m_response_handler->setWorkerUI(workerImpl);
 }
 
-const std::vector<std::string> Client::getFriendsLoginHashesVecFromMap() {
+std::vector<std::string> Client::getFriendsLoginHashesVecFromMap() {
     std::vector<std::string> result;
     result.reserve(m_map_friend_loginHash_to_chat.size());
     std::transform(m_map_friend_loginHash_to_chat.begin(),
@@ -312,9 +316,17 @@ void Client::onMessage(net::Message message) {
 }
 
 void Client::onFile(net::File file) {
-    m_is_able_to_close = false;
-    m_response_handler->onFile(file);
-    m_is_able_to_close = true;
+    if (file.filePath.find(utility::getAvatarPreviewsDirectory()) != std::string::npos) {
+        m_response_handler->onAvatarPreview(file);
+    }
+    if (file.filePath.find(utility::getConfigsAndPhotosDirectory()) != std::string::npos) {
+        m_response_handler->onAvatar(file);
+    }
+    else {
+        m_is_able_to_close = false;
+        m_response_handler->onFile(file);
+        m_is_able_to_close = true;
+    }
 }
 
 void Client::sendFilesMessage(Message& filesMessage) {

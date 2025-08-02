@@ -30,6 +30,8 @@ public:
 	virtual void onCheckNewLoginFail() = 0;
 	virtual void onCheckNewLoginSuccess() = 0;
 
+	virtual void updateFriendAvatarPreview(Avatar* avatar) = 0;
+	virtual void updateFriendAvatar(Avatar* avatar, const std::string& friendLogin) = 0;
 	virtual void showConnectionDownLabel() = 0;
 	virtual void setupRegistrationWidget() = 0;
 	virtual void removeConnectionErrorLabel() = 0;

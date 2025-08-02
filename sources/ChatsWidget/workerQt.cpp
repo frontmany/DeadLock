@@ -20,7 +20,7 @@
 #include "client.h"
 #include "friendInfo.h"
 #include "friendSearchDialogComponent.h"
-#include "photo.h"
+#include "avatar.h"
 
 void WorkerQt::onMessageSendingError(const std::string& friendLogin, Message* message) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
@@ -43,6 +43,49 @@ void WorkerQt::onMessageSendingError(const std::string& friendLogin, Message* me
 
 void WorkerQt::onRequestedFileError(const std::string& friendLoginHash, fileWrapper fileWrapper) {
 	updateFileLoadingState(friendLoginHash, fileWrapper, true);
+}
+
+void WorkerQt::updateFriendAvatar(Avatar* avatar, const std::string& friendLogin) {
+	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+
+	auto& chatsComponentsVec = chatsList->getChatComponentsVec();
+	auto chatCompIt = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [&friendLogin](ChatComponent* chatComp) {
+		return friendLogin == chatComp->getChat()->getFriendLogin();
+	});
+
+	auto& compsVec = chatsWidget->getMessagingAreasVec();
+	auto compIt = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
+		return comp->getChat()->getFriendLogin() == friendLogin;
+	});
+
+	if (compIt != compsVec.end() && chatCompIt != chatsComponentsVec.end()) {
+		MessagingAreaComponent* areaComp = *compIt;
+		ChatComponent* chatComp = *chatCompIt;
+
+		QMetaObject::invokeMethod(
+			nullptr, 
+			[chatComp, areaComp, avatar]() {
+				const std::string& avatarBinaryData = avatar->getBinaryData();
+				QByteArray imageData(avatarBinaryData.data(), static_cast<int>(avatarBinaryData.size()));
+				QPixmap avatarPixmap;
+				avatarPixmap.loadFromData(imageData);
+
+				if (avatarPixmap.isNull()) {
+					qWarning() << "Failed to load avatar from binary data!";
+					return;
+				}
+
+				chatComp->setAvatar(avatarPixmap);
+				areaComp->setAvatar(avatarPixmap);
+			},
+			Qt::QueuedConnection
+		);
+	}
+}
+
+void WorkerQt::updateFriendAvatarPreview(Avatar* avatar) {
+	-
 }
 
 void WorkerQt::showConnectionDownLabel() {

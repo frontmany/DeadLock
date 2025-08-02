@@ -64,6 +64,7 @@ namespace net
 
 
 	protected:
+		CryptoPP::SecByteBlock	  m_AESE_avatarsKey;
 		CryptoPP::RSA::PublicKey  m_server_public_key;
 		CryptoPP::RSA::PrivateKey m_my_private_key;
 		CryptoPP::RSA::PublicKey  m_my_public_key;

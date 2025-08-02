@@ -59,11 +59,11 @@ public:
     void setMyName(const std::string& name) { m_my_name = name; }
     const std::string& getMyName() const { return m_my_name; }
 
-    void setPhoto(Photo* photo) { m_my_photo = photo; }
-    const Photo* getPhoto() const { return m_my_photo; }
+    void setAvatar(Avatar* avatar) { m_my_avatar = avatar; }
+    const Avatar* getAvatar() const { return m_my_avatar; }
 
-    void setIsHasPhoto(bool isHasPhoto) { m_is_has_photo = isHasPhoto; }
-    const bool getIsHasPhoto() const { return m_is_has_photo; }
+    void setIsHasAvatar(bool isHasPhoto) { m_is_has_avatar = isHasPhoto; }
+    const bool getIsHasAvatar() const { return m_is_has_avatar; }
 
     void setIsNeedToUpdate(bool isNeedToUpdate) { m_isNeedToUpdate = isNeedToUpdate; }
     const bool getIsNeedToUpdate() const { return m_isNeedToUpdate; }
@@ -91,8 +91,8 @@ private:
     std::string m_my_login;
     std::string m_my_name;
     bool m_is_auto_login;
-    bool m_is_has_photo;
-    Photo* m_my_photo;
+    bool m_is_has_avatar;
+    Avatar* m_my_avatar;
 
     std::string m_newVersionNumber = "";
     bool m_isNeedToUpdate = false;

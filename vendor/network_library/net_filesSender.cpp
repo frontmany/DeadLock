@@ -25,33 +25,44 @@ namespace net
 				m_file = m_outgoingFilesQueue.front();
 				sendMetadata();
 			}
-			});
+		});
 	}
 
 	void FilesSender::sendMetadata() {
-		utility::generateAESKey(m_sessionKey);
-		std::string encryptedKey = utility::RSAEncryptKey(m_file.friendPublicKey, m_sessionKey);
+		if (m_file.isAvatar) {
+			std::ostringstream oss;
+			oss << m_file.senderLoginHash << '\n'
+				<< m_file.fileSize << '\n'
+				<< m_file.ifFileIsAvatarFriendLoginHashesList;
 
-		std::ostringstream oss;
-		oss << encryptedKey << '\n'
-			<< m_file.id << '\n'
-			<< m_file.blobUID << "\n"
-			<< m_file.receiverLoginHash << '\n'
-			<< m_file.senderLoginHash << '\n'
-			<< m_file.fileSize << '\n'
-			<< utility::AESEncrypt(m_sessionKey, m_file.fileName) << '\n'
-			<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n'
-			<< m_file.filesInBlobCount << '\n';
+			m_metadataMessage.header.type = static_cast<uint32_t>(QueryType::UPDATE_MY_AVATAR);
 
-		if (m_file.caption != "") {
-			oss << utility::AESEncrypt(m_sessionKey, m_file.caption) << '\n';
+			m_metadataMessage << oss.str();
+			m_metadataMessage.header.size = m_metadataMessage.size();
 		}
+		else {
+			utility::generateAESKey(m_sessionKey);
+			std::string encryptedKey = utility::RSAEncryptKey(m_file.friendPublicKey, m_sessionKey);
 
+			std::ostringstream oss;
+			oss << encryptedKey << '\n'
+				<< m_file.id << '\n'
+				<< m_file.blobUID << "\n"
+				<< m_file.receiverLoginHash << '\n'
+				<< m_file.senderLoginHash << '\n'
+				<< m_file.fileSize << '\n'
+				<< utility::AESEncrypt(m_sessionKey, m_file.fileName) << '\n'
+				<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n'
+				<< m_file.filesInBlobCount << '\n';
 
+			if (m_file.caption != "") {
+				oss << utility::AESEncrypt(m_sessionKey, m_file.caption);
+			}
 
-		m_metadataMessage.header.type = static_cast<uint32_t>(QueryType::PREPARE_TO_RECEIVE_FILE);
-		m_metadataMessage << oss.str();
-		m_metadataMessage.header.size = m_metadataMessage.size();
+			m_metadataMessage.header.type = static_cast<uint32_t>(QueryType::PREPARE_TO_RECEIVE_FILE);
+			m_metadataMessage << oss.str();
+			m_metadataMessage.header.size = m_metadataMessage.size();
+		}
 
 		asio::async_write(
 			m_socket,
@@ -72,13 +83,59 @@ namespace net
 								m_onSendError(ec, m_outgoingFilesQueue.pop_front());
 							}
 							else {
-								sendFileChunk();
+								if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::UPDATE_MY_AVATAR)) {
+									sendFileChunkWithoutEncryption();
+								}
+								else {
+									sendFileChunk();
+								}
 							}
 						}
 					);
 				}
 			}
 		);
+	}
+
+	void FilesSender::sendFileChunkWithoutEncryption() {
+		if (!m_fileStream.is_open()) {
+			bool isOpen = openFile();
+			if (!isOpen)
+				return;
+		}
+
+		m_fileStream.read(m_encryptedBuffer.data(), c_encryptedOutputChunkSize);
+		std::streamsize bytesRead = m_fileStream.gcount();
+
+		if (bytesRead > 0) {
+			asio::async_write(
+				m_socket,
+				asio::buffer(m_encryptedBuffer.data(), c_encryptedOutputChunkSize),
+				[this](std::error_code ec, std::size_t) {
+					if (ec) {
+						m_onSendError(ec, m_outgoingFilesQueue.front());
+					}
+					else {
+						m_totalBytesSent += c_readChunkSize;
+						sendFileChunkWithoutEncryption();
+					}
+				}
+			);
+		}
+		else {
+			m_totalBytesSent = 0;
+			m_fileStream.close();
+			m_metadataMessage = net::Message{};
+			m_file = File{};
+			m_sessionKey = CryptoPP::SecByteBlock{};
+
+			m_outgoingFilesQueue.pop_front();
+			if (!m_outgoingFilesQueue.empty())
+			{
+				m_file = m_outgoingFilesQueue.front();
+				sendMetadata();
+			}
+		}
 	}
 
 	void FilesSender::sendFileChunk() {

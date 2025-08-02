@@ -1,5 +1,5 @@
 #include"packetsBuilder.h"
-#include"photo.h"
+#include"avatar.h"
 #include"message.h"
 #include"queryType.h"
 #include"utility.h"
@@ -101,34 +101,14 @@ const std::string PacketsBuilder::getUpdateMyPasswordPacket(
     return oss.str();
 }
 
-const std::string PacketsBuilder::getUpdateMyPhotoPacket(const CryptoPP::RSA::PublicKey& serverPublicKey,
-    const std::string& loginHash,
-    const Photo& photo,
-    const std::vector<std::string>& friendsLoginsVec)
+const std::string PacketsBuilder::getSerializedFriendsLoginHashesVec(const std::vector<std::string>& friendsLoginHashesVec)
 {
     std::ostringstream oss;
 
-    CryptoPP::SecByteBlock key;
-    utility::generateAESKey(key);
-
-    std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
-
-
-    oss << get << '\n'
-        << encryptedKey << '\n'
-        << loginHash << '\n';
-
     oss << vecBegin << '\n';
-    for (const auto& loginHash : friendsLoginsVec) {
+    for (const auto& loginHash : friendsLoginHashesVec) {
         oss << loginHash << '\n';
     }
-
-    oss << vecEnd << '\n';
-    oss << utility::AESEncrypt(key, "true") << '\n';
-    oss << utility::AESEncrypt(key, std::to_string(photo.getSize())) << '\n';
-
-    std::string serializedPhoto = photo.encryptForServerBase64(serverPublicKey);
-    oss << serializedPhoto << '\n';
 
     return oss.str();
 }

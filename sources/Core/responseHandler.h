@@ -25,6 +25,7 @@ public:
 	WorkerUI* getWorkerUI() { return m_worker_UI; }
 
 	void handleResponse(net::Message& msg);
+	void onAvatar(net::File& file);
 	void onFile(net::File& file);
 
 	void onRegistrationSuccess(const std::string& packet);
@@ -45,6 +46,7 @@ public:
 	void onChatCreateSuccess(const std::string& packet);
 	void onChatCreateFail();
 
+	void onAvatarsKey(const std::string& packet);
 	void onUpdateOffer(const std::string& packet);
 	void onMessageReceive(const std::string& packet);
 	void onUserInfoSuccess(const std::string& packet);
@@ -53,6 +55,7 @@ public:
 	void onTyping(const std::string& packet);
 	void onMessageReadConfirmationReceive(const std::string& packet);
 
+	void onAvatarPreview(net::File& file);
 	void onFilePreview(const std::string& packet);
 	void processFriendsStatusesSuccess(const std::string& packet);
 	void onFoundUsers(const std::string& packet);

@@ -89,6 +89,16 @@ std::string utility::getConfigsAndPhotosDirectory() {
     return saveDirectory;
 }
 
+std::string utility::getAvatarPreviewsDirectory() {
+    std::string saveDirectory = "./Avatars_Tmp";
+
+    if (!std::filesystem::exists(saveDirectory)) {
+        std::filesystem::create_directories(saveDirectory);
+    }
+
+    return saveDirectory;
+}
+
 std::string utility::generateId() {
     HRESULT hr = CoInitialize(NULL);
     if (FAILED(hr)) {
@@ -604,6 +614,47 @@ std::string utility::decryptWithServerKey(const std::string& ciphertext, const s
     }
     catch (const std::exception& e) {
         throw std::runtime_error("Decryption error: " + std::string(e.what()));
+    }
+}
+
+
+std::string utility::serializeAESEKey(const CryptoPP::SecByteBlock& key) {
+    std::string encoded;
+
+    CryptoPP::StringSource ss(
+        key.data(),
+        key.size(),
+        true,
+        new CryptoPP::Base64Encoder(
+            new CryptoPP::StringSink(encoded),
+            false 
+        )
+    );
+
+    return encoded;
+}
+
+CryptoPP::SecByteBlock utility::deserializeAESEKey(const std::string& keyStr) {
+    try {
+        std::string decoded;
+
+        CryptoPP::StringSource ss(
+            keyStr,
+            true,
+            new CryptoPP::Base64Decoder(
+                new CryptoPP::StringSink(decoded)
+            )
+        );
+
+        CryptoPP::SecByteBlock key(
+            reinterpret_cast<const CryptoPP::byte*>(decoded.data()),
+            decoded.size()
+        );
+
+        return key;
+    }
+    catch (const CryptoPP::Exception& e) {
+        throw std::runtime_error("Failed to deserialize AES key: " + std::string(e.what()));
     }
 }
 

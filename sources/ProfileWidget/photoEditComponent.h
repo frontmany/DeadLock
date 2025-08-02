@@ -47,7 +47,7 @@ public:
 
 protected:
     void wheelEvent(QWheelEvent* event) override;
-    void saveCroppedImage();
+    int saveImage();
 
 private slots:
     void openImagePicker();

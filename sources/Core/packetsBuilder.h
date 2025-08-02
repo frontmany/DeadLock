@@ -3,7 +3,7 @@
 
 #include "rsa.h"
 
-class Photo;
+class Avatar;
 class Message;
 
 
@@ -25,7 +25,7 @@ public:
 	const std::string getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const std::string& newName, const std::vector<std::string>& friendsLoginsVec);
 	const std::string getUpdateMyPasswordPacket(const std::string& loginHash, const std::string& newPasswordHash);
 	const std::string getUpdateMyLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLoginHash, const std::string& newLogin, const std::vector<std::string>& friendsLoginHashesVec);
-	const std::string getUpdateMyPhotoPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const Photo& photo, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getSerializedFriendsLoginHashesVec(const std::vector<std::string>& friendsLoginHashesVec);
 
 	const std::string getLoadUserInfoPacket(const std::string& loginHashToSearch, const std::string& loginHash);
 	const std::string getLoadMyInfoPacket(const std::string& loginHash, const CryptoPP::RSA::PublicKey& myNewPublicKey);

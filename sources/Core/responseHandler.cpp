@@ -8,7 +8,7 @@
 #include "queryType.h"
 #include "database.h"
 #include "message.h"
-#include "photo.h"
+#include "avatar.h"
 #include "chat.h"
 #include "net.h"
 
@@ -23,6 +23,7 @@ void ResponseHandler::handleResponse(net::Message& msg) {
     if (msg.header.type != static_cast<uint32_t>(QueryType::REGISTRATION_SUCCESS) &&
         msg.header.type != static_cast<uint32_t>(QueryType::AUTHORIZATION_SUCCESS) &&
         msg.header.type != static_cast<uint32_t>(QueryType::REGISTRATION_FAIL) &&
+        msg.header.type != static_cast<uint32_t>(QueryType::AVATARS_KEY) &&
         msg.header.type != static_cast<uint32_t>(QueryType::AUTHORIZATION_FAIL)) 
     {
         m_client->waitUntilUIReadyToUpdate();
@@ -106,9 +107,25 @@ void ResponseHandler::handleResponse(net::Message& msg) {
     else if (msg.header.type == static_cast<uint32_t>(QueryType::RECONNECT_FAIL)) {
         onReconnectFail();
     }
+    else if (msg.header.type == static_cast<uint32_t>(QueryType::AVATARS_KEY)) {
+        onAvatarsKey(packet);
+    }
 }
 
-void  ResponseHandler::onUpdateOffer(const std::string& packet) {
+void ResponseHandler::onAvatarsKey(const std::string& packet) {
+    std::istringstream iss(packet);
+
+    std::string encryptedKey;
+    std::getline(iss, encryptedKey);
+    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
+
+    std::string avatarsKey;
+    std::getline(iss, avatarsKey);
+
+    m_client->setAvatarsKey(utility::deserializeAESEKey(avatarsKey));
+}
+
+void ResponseHandler::onUpdateOffer(const std::string& packet) {
     std::istringstream iss(packet);
 
     std::string encryptedKey;
@@ -208,6 +225,24 @@ void ResponseHandler::processNewVersionLoadedFile(net::File file) {
     }
 
     m_worker_UI->updateAndRestart();
+}
+
+void ResponseHandler::onAvatar(net::File& file) {
+    auto& chatsMap =m_client->getMyHashChatsMap();
+
+    if (chatsMap.contains(file.senderLoginHash)) {
+        auto chat = chatsMap.at(file.senderLoginHash);
+        chat->setIsFriendHasAvatar(true);
+
+        Avatar* friendAvatar = new Avatar(m_client->getAvatarsKey(), file.filePath);
+        chat->setFriendAvatar(friendAvatar);
+
+        m_worker_UI->updateFriendAvatar(friendAvatar, chat->getFriendLogin());
+    }
+}
+
+void ResponseHandler::onAvatarPreview(net::File& file) {
+    m_worker_UI->updateFriendAvatarPreview(friendAvatar);
 }
 
 void ResponseHandler::onFile(net::File& file) {

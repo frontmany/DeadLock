@@ -3,7 +3,7 @@
 #include "mainwindow.h"
 #include "client.h"
 #include "utility.h"
-#include "photo.h"
+#include "avatar.h"
 #include "chatsWidget.h"
 #include "packetsBuilder.h"
 #include "configManager.h"
@@ -339,7 +339,7 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     m_continueButton->setMaximumSize(getScaledSize(350), getScaledSize(60));
 
     connect(m_continueButton, &QPushButton::clicked, this, [this]() {
-        int res = saveCroppedImage();
+        int res = saveImage();
 
         if (res == 1) {
             QDialog* errorDialog = new QDialog(this);
@@ -403,14 +403,13 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
             errorDialog->exec();
         }
         else {
-            Photo* photo = new Photo(m_private_key, m_filePath);
-            m_config_manager->setPhoto(photo);
-            m_config_manager->setIsHasPhoto(true);
-            m_client->updateMyPhoto(*photo);
+            Avatar* avatar = new Avatar(m_client->getAvatarsKey(), m_filePath);
+            m_config_manager->setAvatar(avatar);
+            m_config_manager->setIsHasAvatar(true);
+            m_client->updateMyAvatar(avatar);
             m_mainWindow->setupChatsWidget();
         }
-       
-        });
+    });
 
     m_cropXSlider = new QSlider(Qt::Horizontal, this);
     m_cropXSlider->setFixedSize(getScaledSize(400), getScaledSize(20));
@@ -690,9 +689,9 @@ void GreetWidget::setBackGround(Theme theme) {
     }
 }
 
-int GreetWidget::saveCroppedImage() {
+int GreetWidget::saveImage() {
     if (m_selectedImage.isNull()) {
-        qWarning() << "Нет изображения для сохранения";
+        qWarning() << "There is no image to save";
         return 1;
     }
 
@@ -709,52 +708,41 @@ int GreetWidget::saveCroppedImage() {
     croppedImage.setMask(circularMask.createMaskFromColor(Qt::transparent));
 
     QImage image = croppedImage.toImage();
-
-    while (image.sizeInBytes() > 58 * 1024 && image.width() > 10 && image.height() > 10) {
-        image = image.scaled(image.width() * 0.9, image.height() * 0.9,
-            Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    }
-
     QByteArray imageData;
     QBuffer buffer(&imageData);
     buffer.open(QIODevice::WriteOnly);
 
     if (!image.save(&buffer, "PNG")) {
+        qWarning() << "Couldn't save image to buffer";
         return 1;
     }
 
-    if (imageData.size() > 58 * 1024) {
-        return 1;
-    }
-
-
-    std::string fileName = utility::calculateHash(m_login) + "myMainPhoto.dph";
+    std::string fileName = utility::calculateHash(m_login) + ".dph";
     m_filePath = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
 
+    CryptoPP::SecByteBlock key = m_client->getAvatarsKey();
+
+    std::string encryptedImage;
     try {
-        CryptoPP::SecByteBlock aesKey;
-        utility::generateAESKey(aesKey);
-
-        std::string encryptedImage = utility::AESEncrypt(aesKey,
-            std::string(imageData.constData(), imageData.size()));
-
-        std::string encryptedKey = utility::RSAEncryptKey(m_public_key, aesKey);
-
-        std::string finalData = encryptedKey + "\n" + encryptedImage;
-
-        std::ofstream outFile(m_filePath, std::ios::binary);
-        if (!outFile) {
-            return 1;
-        }
-
-        outFile.write(finalData.data(), finalData.size());
-        return outFile ? 0 : 1;
+        encryptedImage = utility::AESEncrypt(key, std::string(imageData.constData(), imageData.size()));
     }
     catch (const std::exception& e) {
+        qWarning() << "Image encryption error:" << e.what();
         return 1;
     }
-    catch (...) {
+
+    std::ofstream outFile(m_filePath, std::ios::binary);
+    if (!outFile) {
+        qWarning() << "Couldn't open the file for writing:" << m_filePath.c_str();
         return 1;
     }
+
+    outFile.write(encryptedImage.data(), encryptedImage.size());
+    if (!outFile) {
+        qWarning() << "Error writing to a file";
+        return 1;
+    }
+
+    return 0;
 }
 

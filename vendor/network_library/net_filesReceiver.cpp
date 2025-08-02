@@ -48,10 +48,17 @@ namespace net
 					}
 				}
 				else {
-					parseMetadata();
+					if (m_metadataMessage.header.type == QueryType::AVATAR ||
+						m_metadataMessage.header.type == QueryType::AVATAR_FOR_PREVIEW) {
+						parseAvatarMetadata();
+					}
+					else {
+						parseMetadata();
+					}
+
 					openFile();
 
-					if (m_file.senderLoginHash == "server") {
+					if (m_file.senderLoginHash == "server" || m_file.isAvatar) {
 						readChunkWithoutDecryption();
 					}
 					else {
@@ -121,6 +128,38 @@ namespace net
 					}
 				}
 			});
+	}
+
+	void FilesReceiver::parseAvatarMetadata() {
+		std::string metadataString;
+		m_metadataMessage >> metadataString;
+		std::istringstream iss(metadataString);
+
+		std::string senderLoginHash;
+		std::getline(iss, senderLoginHash);
+
+		std::string fileSize;
+		std::getline(iss, fileSize);
+
+		m_file.fileSize = fileSize;
+		m_file.senderLoginHash = senderLoginHash;
+		m_file.isAvatar = true;
+
+		if (m_metadataMessage.header.type == QueryType::AVATAR) {
+			m_file.filePath = utility::getConfigsAndPhotosDirectory() + "/" + senderLoginHash + ".dph";
+		}
+		else if (m_metadataMessage.header.type == QueryType::AVATAR_FOR_PREVIEW) {
+			m_file.filePath = utility::getAvatarPreviewsDirectory() + "/" + senderLoginHash + ".dph";
+		}
+
+		m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(m_file.fileSize)) / c_receivedChunkSize));
+		int lastChunksSize = std::stoi(m_file.fileSize) - (m_expectedChunksCount * c_receivedChunkSize);
+		if (lastChunksSize == 0) {
+			m_lastChunkSize = c_receivedChunkSize;
+		}
+		else {
+			m_lastChunkSize = lastChunksSize + c_receivedChunkSize;
+		}
 	}
 
 	void FilesReceiver::parseMetadata() {
