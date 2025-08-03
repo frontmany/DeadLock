@@ -38,7 +38,7 @@ void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const Cryp
     jsonObject["my_name"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_name));
     jsonObject["is_has_avatar"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, (m_is_has_avatar ? "1" : "0")));
     if (m_is_has_avatar && m_my_avatar) {
-        jsonObject["my_avatar_path"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_avatar->getPhotoPath()));
+        jsonObject["my_avatar_path"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_avatar->getPath()));
     }
     if (!checkIsPasswordHashPresentInMyConfig() && !m_is_undo_auto_login) {
         jsonObject["my_password_hash"] = QString::fromStdString(m_my_password_hash);

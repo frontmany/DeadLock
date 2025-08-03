@@ -207,6 +207,8 @@ void Client::updateMyLogin(const std::string& newLogin) {
     std::string oldLoginHash = m_config_manager->getMyLoginHash();
     std::string newLoginHash = utility::calculateHash(newLogin);
 
+    Avatar::rename(oldLoginHash + ".dph", newLoginHash + ".dph");
+
     m_config_manager->setMyLogin(newLogin);
     m_config_manager->setMyLoginHash(newLoginHash);
     m_config_manager->updateConfigFileName(oldLoginHash, newLoginHash);

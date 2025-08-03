@@ -15,9 +15,11 @@ class Avatar {
 public:
     Avatar(const CryptoPP::SecByteBlock& avatarsKey, const std::string& photoPath = "");
 
-    const std::string& getPhotoPath() const { return m_photoPath; }
-    const std::string& getBinaryData() const { return m_binaryData; }
+    static void rename(const std::string& oldName, const std::string& newName);
+
+    const std::string& getPath() const { return m_photoPath; }
     const std::size_t getSize() const { return m_size; }
+    const std::string& getBinaryData() const { return m_binaryData; }
     const std::size_t getEncryptedSize() const { return m_encryptedSize; }
 
 private:

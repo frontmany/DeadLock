@@ -8,6 +8,19 @@ Avatar::Avatar(const CryptoPP::SecByteBlock& avatarsKey, const std::string& phot
     }
 }
 
+void Avatar::rename(const std::string& oldName, const std::string& newName) {
+    std::string directory = utility::getConfigsAndPhotosDirectory();
+
+    std::filesystem::path oldPath(directory + oldName);
+    if (std::filesystem::exists(oldPath)) {
+        std::filesystem::path newPath(directory + newName);
+        std::filesystem::rename(oldPath, newPath);
+    }
+    else {
+        std::cerr << "error on renaming an Avatar\n";
+    }
+}
+
 void Avatar::update(const CryptoPP::SecByteBlock& avatarsKey) {
     std::ifstream file(m_photoPath, std::ios::binary);
     if (!file) {

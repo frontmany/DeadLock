@@ -24,7 +24,7 @@ QJsonObject Chat::serialize(const CryptoPP::RSA::PublicKey& myPublicKey,
         jsonObject["public_key"] = QString::fromStdString(utility::serializePublicKey(m_publicKey));
         
         if (m_friend_avatar) {
-            jsonObject["avatar_path"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_avatar->getPhotoPath()));
+            jsonObject["avatar_path"] = QString::fromStdString(utility::AESEncrypt(m_AESE_chat_configKey, m_friend_avatar->getPath()));
         }
 
         jsonObject["chat_config_key"] = QString::fromStdString(utility::RSAEncryptKey(myPublicKey, m_AESE_chat_configKey));

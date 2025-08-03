@@ -712,6 +712,8 @@ void ResponseHandler::onUserInfoSuccess(const std::string& packet) {
             node.key() = utility::calculateHash(newLogin);
             
             chatsMap.insert(std::move(node));
+
+            Avatar::rename(utility::calculateHash(login) + ".dph", utility::calculateHash(newLogin) + ".dph");
         }
 
         m_configManager->updateInConfigFriendLogin(login, newLogin);
