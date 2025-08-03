@@ -1,7 +1,7 @@
 #include "notificationWidget.h"
 #include "chatsWidget.h"
 #include "buttons.h"
-#include "photo.h"
+#include "avatar.h"
 #include "utility.h"
 #include "chatsListComponent.h"
 #include "client.h"
@@ -25,7 +25,7 @@ NotificationWidget::NotificationWidget(ChatsWidget* chatsWidget, Chat* chat, The
     mainLayout->setSpacing(16);
 
     m_avatar = new AvatarIcon(this, 48, 64, false, m_theme);
-    loadAvatar(chat->getFriendPhoto());
+    loadAvatar(chat->getFriendAvatar());
     m_avatar->setFixedSize(64, 64);
     installEventFilter(this);
     mainLayout->addWidget(m_avatar, 0, Qt::AlignLeft | Qt::AlignVCenter);
@@ -176,15 +176,15 @@ void NotificationWidget::setTheme(Theme theme) {
 }
 
 
-void NotificationWidget::loadAvatar(const Photo* photo)
+void NotificationWidget::loadAvatar(const Avatar* avatar)
 {
-    if (photo == nullptr) {
+    if (avatar == nullptr) {
         m_avatar->setIcon(QIcon(":/resources/ChatsWidget/userFriend.png"));
         return;
     }
 
     try {
-        std::string binaryData = photo->getBinaryData();
+        std::string binaryData = avatar->getBinaryData();
         QByteArray imageData(binaryData.data(), static_cast<int>(binaryData.size()));
 
         QPixmap avatarPixmap;

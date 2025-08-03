@@ -13,7 +13,12 @@ class Avatar;
 
 class Chat {
 public:
-	Chat() : m_is_friend_has_avatar(false), m_index_at_layout(100000), m_friend_avatar(nullptr) {}
+	Chat() : m_is_friend_has_avatar(false),
+		m_index_at_layout(100000),
+		m_friend_avatar(nullptr) 
+	{
+	}
+	
 	~Chat() {
 		for (auto msg : m_vec_messages) {
 			delete msg;
@@ -56,7 +61,7 @@ public:
 
 private:
 	CryptoPP::SecByteBlock	  m_AESE_chat_configKey;
-	CryptoPP::RSA::PublicKey& m_publicKey;
+	CryptoPP::RSA::PublicKey  m_publicKey;
 	std::vector<Message*>	  m_vec_messages;
 	std::string				  m_friend_last_seen;
 	std::string				  m_friend_login;

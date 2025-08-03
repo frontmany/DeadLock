@@ -3,7 +3,7 @@
 #include"profileEditorWidget.h"
 #include"client.h"
 #include"utility.h"
-#include"photo.h"
+#include"avatar.h"
 #include"configManager.h"
 
 StyleFieldsEditComponent::StyleFieldsEditComponent() {
@@ -183,8 +183,8 @@ FieldsEditComponent::FieldsEditComponent(QWidget* parent, ProfileEditorWidget* p
     m_avatar_label = new QLabel();
 
     QPixmap currentAvatar;
-    if (m_config_manager->getIsHasPhoto()) {
-        updateAvatar(*m_config_manager->getPhoto());
+    if (m_config_manager->getIsHasAvatar()) {
+        updateAvatar(m_config_manager->getAvatar());
     }
     else {
         currentAvatar = QPixmap(":/resources/ChatsWidget/userFriend.png");
@@ -449,41 +449,13 @@ void FieldsEditComponent::setTheme(Theme theme) {
     }
 }
 
-void FieldsEditComponent::updateAvatar(const Photo& photo) {
+void FieldsEditComponent::updateAvatar(Avatar* avatar) {
     try {
-        std::string path = photo.getPhotoPath();
-        if (path.empty()) {
-            throw std::runtime_error("Empty photo path");
-        }
-
-        std::ifstream file(path, std::ios::binary);
-        if (!file) {
-            throw std::runtime_error("Failed to open photo file");
-        }
-
-        file.seekg(0, std::ios::end);
-        size_t fileSize = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        std::string fileData(fileSize, '\0');
-        file.read(&fileData[0], fileSize);
-        file.close();
-
-        size_t delimiterPos = fileData.find('\n');
-        if (delimiterPos == std::string::npos) {
-            throw std::runtime_error("Invalid photo file format");
-        }
-
-        std::string encryptedKey = fileData.substr(0, delimiterPos);
-        std::string encryptedData = fileData.substr(delimiterPos + 1);
-
-        auto aesKey = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
-
-        std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
+        const std::string& data = avatar->getBinaryData();
 
         QPixmap avatar;
-        if (!avatar.loadFromData(reinterpret_cast<const uchar*>(decryptedData.data()),
-            decryptedData.size())) {
+        if (!avatar.loadFromData(reinterpret_cast<const uchar*>(data.data()),
+            data.size())) {
             throw std::runtime_error("Failed to create pixmap from decrypted data");
         }
 

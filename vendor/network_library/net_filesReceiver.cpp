@@ -48,8 +48,8 @@ namespace net
 					}
 				}
 				else {
-					if (m_metadataMessage.header.type == QueryType::AVATAR ||
-						m_metadataMessage.header.type == QueryType::AVATAR_FOR_PREVIEW) {
+					if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR) ||
+						m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR_FOR_PREVIEW)) {
 						parseAvatarMetadata();
 					}
 					else {
@@ -145,10 +145,10 @@ namespace net
 		m_file.senderLoginHash = senderLoginHash;
 		m_file.isAvatar = true;
 
-		if (m_metadataMessage.header.type == QueryType::AVATAR) {
+		if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR)) {
 			m_file.filePath = utility::getConfigsAndPhotosDirectory() + "/" + senderLoginHash + ".dph";
 		}
-		else if (m_metadataMessage.header.type == QueryType::AVATAR_FOR_PREVIEW) {
+		else if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR_FOR_PREVIEW)) {
 			m_file.filePath = utility::getAvatarPreviewsDirectory() + "/" + senderLoginHash + ".dph";
 		}
 

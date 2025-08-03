@@ -9,7 +9,7 @@
 #include "notificationWidget.h"
 #include "client.h"
 #include "message.h"
-#include "photo.h"
+#include "avatar.h"
 #include "utility.h"
 #include "chat.h"
 #include "chatComponent.h"
@@ -35,8 +35,8 @@ ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client
         m_chatsListComponent->showUpdateButton();
     }
 
-    if (m_config_manager->getPhoto() != nullptr) {
-        m_chatsListComponent->setAvatar(*m_config_manager->getPhoto());
+    if (m_config_manager->getIsHasAvatar()) {
+        m_chatsListComponent->setAvatar(m_config_manager->getAvatar());
     }
 
     m_leftWidget = new QWidget(this);

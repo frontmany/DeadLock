@@ -536,4 +536,31 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& loginH
     else {
         addNewChatAndShow(loginHashStd, friendInfo);
     }
+
+    namespace fs = std::filesystem;
+
+    std::string fileName = loginHashStd + ".dph";
+
+    fs::path previewsDir = utility::getAvatarPreviewsDirectory();
+    fs::path configsDir = utility::getConfigsAndPhotosDirectory();
+
+    fs::path sourcePath = previewsDir / fileName;
+    fs::path destPath = configsDir / fileName;
+
+    try {
+        if (fs::exists(sourcePath)) {
+            fs::rename(sourcePath, destPath);
+
+            fs::copy_file(sourcePath, destPath, fs::copy_options::overwrite_existing);
+        }
+        else {
+            std::cerr << "File not found: " << sourcePath << std::endl;
+        }
+    }
+    catch (const fs::filesystem_error& e) {
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "General error: " << e.what() << std::endl;
+    }
 }

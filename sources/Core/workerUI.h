@@ -6,7 +6,7 @@
 class Message;
 class FriendInfo;
 class Chat;
-class Photo;
+class Avatar;
 class fileWrapper;
 
 namespace net {
@@ -60,5 +60,5 @@ public:
 	virtual void onConnectionDown() = 0;
 
 	virtual void setNameFieldInProfileEditorWidget(const std::string& name) = 0;
-	virtual void setRecoveredAvatar(Photo* myRecoveredAvatar) = 0;
+	virtual void setRecoveredAvatar(Avatar* myRecoveredAvatar) = 0;
 };

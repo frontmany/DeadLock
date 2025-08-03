@@ -26,7 +26,7 @@ class ButtonIcon;
 class ToggleSwitch;
 class ChatComponent;
 class Client;
-class Photo;
+class Avatar;
 class Chat;
 class ChatsWidget;
 class OverlayWidget;
@@ -101,9 +101,9 @@ public slots:
     void receiveCreateChatData(QString login);
     void popUpComponent(ChatComponent* comp);
 
-    void setAvatar(const Photo& photo);
+    void setAvatar(Avatar* avatar);
     void setNameFieldInProfileEditorWidget(const std::string& name);
-    void setAvatarInProfileEditorWidget(const Photo& photo);
+    void setAvatarInProfileEditorWidget(Avatar* avatar);
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;
 

@@ -1,5 +1,4 @@
 #include "database.h"
-#include "photo.h"
 #include "utility.h"
 #include <iostream>
 #include <sstream>

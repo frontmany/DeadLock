@@ -123,6 +123,29 @@ void ResponseHandler::onAvatarsKey(const std::string& packet) {
     std::getline(iss, avatarsKey);
 
     m_client->setAvatarsKey(utility::deserializeAESEKey(avatarsKey));
+
+
+    const std::string& myLoginHash = m_configManager->getMyLoginHash();
+    m_client->initDatabase(myLoginHash);
+
+    if (!m_configManager->getIsAutoLogin()) {
+        bool res = m_configManager->load((myLoginHash + ".json"), m_client->getSpecialServerKey(), m_client->getDatabase());
+        if (!res) {
+            m_client->requestMyInfoFromServerAndResetKeys(m_configManager->getMyLoginHash());
+            m_client->setIsFirstAuthentication(false);
+            m_worker_UI->initializeUIWithConfigErrorDialog();
+            return;
+        }
+        else {
+            m_worker_UI->supplyTheme(m_configManager->getIsDarkTheme());
+            m_configManager->setIsNeedToAutoLogin(true);
+        }
+    }
+
+    m_client->setIsFirstAuthentication(false);
+    m_client->setIsPassedAuthentication(true);
+    m_client->createFilesConnection(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
+    m_worker_UI->onAuthorizationSuccess();
 }
 
 void ResponseHandler::onUpdateOffer(const std::string& packet) {
@@ -228,6 +251,11 @@ void ResponseHandler::processNewVersionLoadedFile(net::File file) {
 }
 
 void ResponseHandler::onAvatar(net::File& file) {
+    if (file.senderLoginHash == m_configManager->getMyLoginHash()) {
+        Avatar* myAvatar = new Avatar(m_client->getAvatarsKey(), file.filePath);
+        m_worker_UI->setRecoveredAvatar(myAvatar);
+    }
+    
     auto& chatsMap =m_client->getMyHashChatsMap();
 
     if (chatsMap.contains(file.senderLoginHash)) {
@@ -412,28 +440,6 @@ void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
 
     m_client->setServerEncryptionPart(encryptionPart);
     m_client->setServerPublicKey(utility::deserializePublicKey(serverPublicKey));
-
-    const std::string& myLoginHash = m_configManager->getMyLoginHash();
-    m_client->initDatabase(myLoginHash);
-
-    if (!m_configManager->getIsAutoLogin()) {
-        bool res = m_configManager->load((myLoginHash + ".json"), m_client->getSpecialServerKey(), m_client->getDatabase());
-        if (!res) {
-            m_client->requestMyInfoFromServerAndResetKeys(m_configManager->getMyLoginHash());
-            m_client->setIsFirstAuthentication(false);
-            m_worker_UI->initializeUIWithConfigErrorDialog();
-            return;
-        }
-        else {
-            m_worker_UI->supplyTheme(m_configManager->getIsDarkTheme());
-            m_configManager->setIsNeedToAutoLogin(true);
-        }
-    }
-
-    m_client->setIsFirstAuthentication(false);
-    m_client->setIsPassedAuthentication(true);
-    m_client->createFilesConnection(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
-    m_worker_UI->onAuthorizationSuccess();
 }
 
 void ResponseHandler::onFoundUsers(const std::string& packet) {
@@ -469,15 +475,11 @@ void ResponseHandler::onFoundUsers(const std::string& packet) {
         lastSeen = utility::AESDecrypt(key, lastSeen);
         friendInfo->setFriendLastSeen(lastSeen);
 
-        std::string isHasPhotoStr;
-        std::getline(iss, isHasPhotoStr);
-        isHasPhotoStr = utility::AESDecrypt(key, isHasPhotoStr);
-        bool isHasPhoto = isHasPhotoStr == "true";
-        friendInfo->setIsFriendHasPhoto(isHasPhoto);
-
-        std::string sizeStr;
-        std::getline(iss, sizeStr);
-        sizeStr = utility::AESDecrypt(key, sizeStr);
+        std::string isHasAvatarStr;
+        std::getline(iss, isHasAvatarStr);
+        isHasAvatarStr = utility::AESDecrypt(key, isHasAvatarStr);
+        bool isHasAvatar = isHasAvatarStr == "true";
+        friendInfo->setIsFriendHasAvatar(isHasAvatar);
 
         std::string friendPublicKeyStr;
         std::getline(iss, friendPublicKeyStr);
@@ -518,16 +520,6 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     std::getline(iss, lastSeen);
     lastSeen = utility::AESDecrypt(key, lastSeen);
 
-    Photo* photo = nullptr;
-    if (isHasPhoto == "true") {
-        std::string dataFirstPartStr;
-        std::getline(iss, dataFirstPartStr);
-        std::string dataSecondPartStr;
-        std::getline(iss, dataSecondPartStr);
-
-         photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
-    }
-
     std::string friendPublicKeyStr;
     std::getline(iss, friendPublicKeyStr);
     auto friendPublicKey = utility::deserializePublicKey(friendPublicKeyStr);
@@ -535,13 +527,12 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     Chat* chat = new Chat;
     chat->setFriendLogin(login);
     chat->setFriendName(name);
-    chat->setIsFriendHasPhoto(isHasPhoto == "true");
+    chat->setIsFriendHasAvatar(isHasPhoto == "true");
     chat->setLayoutIndex(0);
     chat->setPublicKey(friendPublicKey);
 
     utility::incrementAllChatLayoutIndexes(m_client->getMyHashChatsMap());
 
-    chat->setFriendPhoto(photo);
     chat->setFriendLastSeen(lastSeen);
     chat->setLastReceivedOrSentMessage("no messages yet");
 
@@ -675,26 +666,12 @@ void ResponseHandler::onUserInfoSuccess(const std::string& packet) {
     isHasPhotoStr = utility::AESDecrypt(key, isHasPhotoStr);
     bool isHasPhoto = isHasPhotoStr == "true";
 
-    Photo* photo = nullptr;
-    if (isHasPhoto) {
-        std::string dataFirstPartStr;
-        std::getline(iss, dataFirstPartStr);
-
-
-        std::string dataSecondPartStr;
-        std::getline(iss, dataSecondPartStr);
-
-        photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
-        photo->loadBinaryDataFromPc();
-    }
-
     std::string friendPublicKeyStr;
     std::getline(iss, friendPublicKeyStr);
     auto friendPublicKey = utility::deserializePublicKey(friendPublicKeyStr);
 
     std::string newLogin;
     std::getline(iss, newLogin);
-
 
     auto& chatsMap = m_client->getMyHashChatsMap();
     const auto it = chatsMap.find(utility::calculateHash(login));
@@ -711,9 +688,8 @@ void ResponseHandler::onUserInfoSuccess(const std::string& packet) {
     chat->setFriendLogin(login);
     chat->setFriendName(name);
     chat->setFriendLastSeen(lastSeen);
-    chat->setIsFriendHasPhoto(isHasPhoto);
+    chat->setIsFriendHasAvatar(isHasPhoto);
     chat->setPublicKey(friendPublicKey);
-    chat->setFriendPhoto(isHasPhoto ? photo : nullptr);
 
     if (chat->getMessagesVec().size() == 0) {
         chat->setLastReceivedOrSentMessage("no messages yet");
@@ -767,31 +743,12 @@ void ResponseHandler::onMyInfo(const std::string& packet) {
     std::getline(iss, lastSeen);
     lastSeen = utility::AESDecrypt(key, lastSeen);
 
-    std::string isHasPhotoStr;
-    std::getline(iss, isHasPhotoStr);
-    isHasPhotoStr = utility::AESDecrypt(key, isHasPhotoStr);
-    bool isHasPhoto = isHasPhotoStr == "true";
+    std::string isHasAvatarStr;
+    std::getline(iss, isHasAvatarStr);
+    isHasAvatarStr = utility::AESDecrypt(key, isHasAvatarStr);
+    bool isHasAvatar = isHasAvatarStr == "true";
 
-    std::string sizeStr;
-    std::getline(iss, sizeStr);
-    sizeStr = utility::AESDecrypt(key, sizeStr);
-
-    std::string dataFirstPartStr;
-    std::getline(iss, dataFirstPartStr);
-    std::string dataSecondPartStr;
-    std::getline(iss, dataSecondPartStr);
-
-    if (std::stoi(sizeStr) != 0) {
-        Photo* photo = Photo::deserializeAndSaveOnDisc(m_client->getPrivateKey(), dataFirstPartStr + "\n" + dataSecondPartStr, login);
-        m_configManager->setIsHasPhoto(true);
-        m_configManager->setPhoto(photo);
-        m_worker_UI->setRecoveredAvatar(photo);
-    }
-    else {
-        m_configManager->setIsHasPhoto(false);
-        m_configManager->setPhoto(nullptr);
-    }
-
+    m_configManager->setIsHasAvatar(isHasAvatar);
     m_configManager->setIsNeedToAutoLogin(true);
     m_client->setIsPassedAuthentication(true);
     m_configManager->setMyLogin(login);

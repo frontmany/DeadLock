@@ -12,7 +12,7 @@ class PhotoEditComponent;
 class PasswordEditComponent;
 class ConfigManager;
 class Client;
-class Photo;
+class Avatar;
 enum  Theme;
 
 class ProfileEditorWidget : public QWidget {
@@ -20,7 +20,7 @@ class ProfileEditorWidget : public QWidget {
 
 public:
     explicit ProfileEditorWidget(QWidget* parent, ChatsListComponent* chatsListComponent, Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
-    void updateAvatar(const Photo& photo);
+    void updateAvatar(Avatar* avatar);
     void setTheme(Theme theme);
     void setName(const std::string& name);
     void setDialog(QDialog* dialog) { m_dialog = dialog; }

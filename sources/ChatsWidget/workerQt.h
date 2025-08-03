@@ -64,7 +64,7 @@ public:
 	void showUpdateButton() override;
 	void updateAndRestart() override;
 
-	void setRecoveredAvatar(Photo* myRecoveredAvatar) override;
+	void setRecoveredAvatar(Avatar* myRecoveredAvatar) override;
 	void setNameFieldInProfileEditorWidget(const std::string& name) override;
 
 private:

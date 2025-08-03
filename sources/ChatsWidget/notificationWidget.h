@@ -15,7 +15,7 @@
 
 #include "theme.h"
 
-class Photo;
+class Avatar;
 class AvatarIcon;
 class ChatsWidget;
 class ButtonIcon;
@@ -46,7 +46,7 @@ private slots:
     void closeNotification(bool isShouldWithAnimation);
 
 private:
-    void loadAvatar(const Photo* photo);
+    void loadAvatar(const Avatar* avatar);
     void setHoveredStyle(bool isHovered);
 
 private:

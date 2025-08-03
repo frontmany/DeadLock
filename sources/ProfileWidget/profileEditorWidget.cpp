@@ -5,7 +5,7 @@
 #include "photoEditComponent.h"
 #include "chatsListComponent.h"
 #include "client.h"
-#include "photo.h"
+#include "avatar.h"
 #include "utility.h"
 #include "chatsWidget.h"
 #include "mainwindow.h"
@@ -119,9 +119,9 @@ void ProfileEditorWidget::close() {
     m_dialog->accept();
 }
 
-void ProfileEditorWidget::updateAvatar(const Photo& photo) {
-    m_fields_edit_component->updateAvatar(photo);
-    m_chats_list_component->setAvatar(photo);
+void ProfileEditorWidget::updateAvatar(Avatar* avatar) {
+    m_fields_edit_component->updateAvatar(avatar);
+    m_chats_list_component->setAvatar(avatar);
 }
 
 void ProfileEditorWidget::setName(const std::string& name) {

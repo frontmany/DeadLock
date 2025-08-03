@@ -10,7 +10,7 @@
 #include "mainwindow.h"
 #include "chatHeaderComponent.h"
 #include "buttons.h"
-#include "photo.h"
+#include "avatar.h"
 #include "utility.h"
 #include "client.h"
 #include "chat.h"
@@ -771,39 +771,11 @@ void ChatsListComponent::setNameFieldInProfileEditorWidget(const std::string& na
     m_profile_editor_widget->setName(name);
 }
 
-void ChatsListComponent::setAvatar(const Photo& photo) {
+void ChatsListComponent::setAvatar(Avatar* avatar) {
     try {
-        std::string path = photo.getPhotoPath();
-        if (path.empty()) {
-            throw std::runtime_error("Empty photo path");
-        }
+        const std::string& data = avatar->getBinaryData();
 
-        std::ifstream file(path, std::ios::binary);
-        if (!file) {
-            throw std::runtime_error("Failed to open photo file");
-        }
-
-        file.seekg(0, std::ios::end);
-        size_t fileSize = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        std::string fileData(fileSize, '\0');
-        file.read(&fileData[0], fileSize);
-        file.close();
-
-        size_t delimiterPos = fileData.find('\n');
-        if (delimiterPos == std::string::npos) {
-            throw std::runtime_error("Invalid photo file format");
-        }
-
-        std::string encryptedKey = fileData.substr(0, delimiterPos);
-        std::string encryptedData = fileData.substr(delimiterPos + 1);
-
-        auto aesKey = utility::RSADecryptKey(m_chats_widget->getClient()->getPrivateKey(), encryptedKey);
-
-        std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
-
-        QByteArray imageData(decryptedData.data(), decryptedData.size());
+        QByteArray imageData(data.data(), data.size());
         QPixmap avatarPixmap;
         if (!avatarPixmap.loadFromData(imageData)) {
             throw std::runtime_error("Failed to load decrypted avatar");
@@ -817,8 +789,8 @@ void ChatsListComponent::setAvatar(const Photo& photo) {
     }
 }
 
-void ChatsListComponent::setAvatarInProfileEditorWidget(const Photo& photo) {
-    m_profile_editor_widget->updateAvatar(photo);
+void ChatsListComponent::setAvatarInProfileEditorWidget(Avatar* avatar) {
+    m_profile_editor_widget->updateAvatar(avatar);
 }
 
 void ChatsListComponent::showConnectionDownLabel() {

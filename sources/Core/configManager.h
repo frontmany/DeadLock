@@ -16,7 +16,7 @@
 
 #include "theme.h"
 
-class Photo;
+class Avatar;
 class Chat;
 class Database;
 class Client;
@@ -60,9 +60,9 @@ public:
     const std::string& getMyName() const { return m_my_name; }
 
     void setAvatar(Avatar* avatar) { m_my_avatar = avatar; }
-    const Avatar* getAvatar() const { return m_my_avatar; }
+    Avatar* getAvatar() const { return m_my_avatar; }
 
-    void setIsHasAvatar(bool isHasPhoto) { m_is_has_avatar = isHasPhoto; }
+    void setIsHasAvatar(bool isHasAvatar) { m_is_has_avatar = isHasAvatar; }
     const bool getIsHasAvatar() const { return m_is_has_avatar; }
 
     void setIsNeedToUpdate(bool isNeedToUpdate) { m_isNeedToUpdate = isNeedToUpdate; }

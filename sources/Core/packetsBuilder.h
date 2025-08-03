@@ -3,7 +3,6 @@
 
 #include "rsa.h"
 
-class Avatar;
 class Message;
 
 

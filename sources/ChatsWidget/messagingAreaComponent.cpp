@@ -13,7 +13,7 @@
 #include "buttons.h"
 #include "message.h"
 #include "client.h"
-#include "photo.h"
+#include "avatar.h"
 #include "chat.h"
 
 
@@ -808,47 +808,22 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     setMinimumSize(300, 400);
     this->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    if (chat->getIsFriendHasPhoto() == true) {
+    if (chat->getIsFriendHasAvatar() == true) {
+
         QPixmap avatarPixmap;
         try {
-            std::string path = m_chat->getFriendPhoto()->getPhotoPath();
-            if (path.empty()) {
-                throw std::runtime_error("Empty photo path");
-            }
+            const std::string& data = m_chat->getFriendAvatar()->getBinaryData();
 
-            std::ifstream file(path, std::ios::binary);
-            if (!file) {
-                throw std::runtime_error("Failed to open photo file");
-            }
-
-            file.seekg(0, std::ios::end);
-            size_t fileSize = file.tellg();
-            file.seekg(0, std::ios::beg);
-
-            std::string fileData(fileSize, '\0');
-            file.read(&fileData[0], fileSize);
-            file.close();
-
-            size_t delimiterPos = fileData.find('\n');
-            if (delimiterPos == std::string::npos) {
-                throw std::runtime_error("Invalid photo file format");
-            }
-
-            std::string encryptedKey = fileData.substr(0, delimiterPos);
-            std::string encryptedData = fileData.substr(delimiterPos + 1);
-
-            auto aesKey = utility::RSADecryptKey(chatsWidget->getClient()->getPrivateKey(), encryptedKey);
-
-            std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
-
-            QByteArray imageData(decryptedData.data(), decryptedData.size());
+            QByteArray imageData(data.data(), data.size());
             if (!avatarPixmap.loadFromData(imageData)) {
-                throw std::runtime_error("Failed to load decrypted avatar");
+                throw std::runtime_error("Failed to load avatar");
             }
 
             m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), avatarPixmap);
         }
         catch (const std::exception& e) {
+            avatarPixmap = QPixmap(":/resources/ChatsWidget/userFriend.png");
+            m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), avatarPixmap);
             qWarning() << "Avatar load error:" << e.what();
         }
     }

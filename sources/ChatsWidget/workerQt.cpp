@@ -122,18 +122,18 @@ void WorkerQt::onConnectionDown() {
 	}
 }
 
-void WorkerQt::setRecoveredAvatar(Photo* myRecoveredAvatar) {
+void WorkerQt::setRecoveredAvatar(Avatar* myRecoveredAvatar) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
 	ChatsListComponent* chatsList = chatsWidget->getChatsList();
 	QMetaObject::invokeMethod(chatsList,
 		"setAvatar",
 		Qt::QueuedConnection,
-		Q_ARG(const Photo&, *myRecoveredAvatar));
+		Q_ARG(Avatar*, myRecoveredAvatar));
 
 	QMetaObject::invokeMethod(chatsList,
 		"setAvatarInProfileEditorWidget",
 		Qt::QueuedConnection,
-		Q_ARG(const Photo&, *myRecoveredAvatar));
+		Q_ARG(Avatar*, myRecoveredAvatar));
 }
 
 void WorkerQt::setNameFieldInProfileEditorWidget(const std::string& name) {
@@ -574,7 +574,7 @@ bool  WorkerQt::updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat) {
 
 	auto chatCompIt = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [chat](ChatComponent* chatComp) {
 		return chat->getFriendLogin() == chatComp->getChat()->getFriendLogin();
-		});
+	});
 
 	if (chatCompIt != chatsComponentsVec.end()) {
 		ChatComponent* chatComp = *chatCompIt;
@@ -583,58 +583,6 @@ bool  WorkerQt::updateExistingChatComp(ChatsWidget* chatsWidget, Chat* chat) {
 			"setName",
 			Qt::QueuedConnection,
 			Q_ARG(const QString&, QString::fromStdString(chat->getFriendName())));
-
-
-		auto photo = chat->getFriendPhoto();
-		if (photo != nullptr) {
-			try {
-				std::string path = photo->getPhotoPath();
-				if (path.empty()) {
-					throw std::runtime_error("Empty photo path");
-				}
-
-				std::ifstream file(path, std::ios::binary);
-				if (!file) {
-					throw std::runtime_error("Failed to open photo file");
-				}
-
-				file.seekg(0, std::ios::end);
-				size_t fileSize = file.tellg();
-				file.seekg(0, std::ios::beg);
-
-				std::string fileData(fileSize, '\0');
-				file.read(&fileData[0], fileSize);
-				file.close();
-
-				size_t delimiterPos = fileData.find('\n');
-				if (delimiterPos == std::string::npos) {
-					throw std::runtime_error("Invalid photo file format");
-				}
-
-				std::string encryptedKey = fileData.substr(0, delimiterPos);
-				std::string encryptedData = fileData.substr(delimiterPos + 1);
-
-				auto aesKey = utility::RSADecryptKey(chatsWidget->getClient()->getPrivateKey(), encryptedKey);
-
-				std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
-
-				QByteArray imageData(decryptedData.data(), decryptedData.size());
-				QPixmap avatarPixmap;
-				if (!avatarPixmap.loadFromData(imageData)) {
-					throw std::runtime_error("Failed to load decrypted avatar");
-				}
-
-
-				QMetaObject::invokeMethod(chatComp,
-					"setAvatar",
-					Qt::QueuedConnection,
-					Q_ARG(QPixmap, avatarPixmap));
-
-			}
-			catch (const std::exception& e) {
-				qWarning() << "Avatar load error:" << e.what();
-			}
-		}
 
 		return true;
 	}
@@ -656,71 +604,19 @@ void WorkerQt::processFoundUsers(std::vector<FriendInfo*>&& vec) {
 
 bool WorkerQt::updateExistingMessagingAreaComp(ChatsWidget* chatsWidget, Chat* chat) {
 	auto& messagingAreasVec = chatsWidget->getMessagingAreasVec();
+	
 	auto messagingAreaIt = std::find_if(messagingAreasVec.begin(), messagingAreasVec.end(), [chat](MessagingAreaComponent* messagingAreaComp) {
 		return chat->getFriendLogin() == messagingAreaComp->getChat()->getFriendLogin();
-		});
+	});
 
 
 	if (messagingAreaIt != messagingAreasVec.end()) {
 		MessagingAreaComponent* messagingArea = *messagingAreaIt;
 
-
 		QMetaObject::invokeMethod(messagingArea,
 			"setName",
 			Qt::QueuedConnection,
 			Q_ARG(const QString&, QString::fromStdString(chat->getFriendName())));
-
-		
-		auto photo = chat->getFriendPhoto();
-		if (photo != nullptr) {
-			try {
-				std::string path = photo->getPhotoPath();
-				if (path.empty()) {
-					throw std::runtime_error("Empty photo path");
-				}
-
-				std::ifstream file(path, std::ios::binary);
-				if (!file) {
-					throw std::runtime_error("Failed to open photo file");
-				}
-
-				file.seekg(0, std::ios::end);
-				size_t fileSize = file.tellg();
-				file.seekg(0, std::ios::beg);
-
-				std::string fileData(fileSize, '\0');
-				file.read(&fileData[0], fileSize);
-				file.close();
-
-				size_t delimiterPos = fileData.find('\n');
-				if (delimiterPos == std::string::npos) {
-					throw std::runtime_error("Invalid photo file format");
-				}
-
-				std::string encryptedKey = fileData.substr(0, delimiterPos);
-				std::string encryptedData = fileData.substr(delimiterPos + 1);
-
-				auto aesKey = utility::RSADecryptKey(chatsWidget->getClient()->getPrivateKey(), encryptedKey);
-
-				std::string decryptedData = utility::AESDecrypt(aesKey, encryptedData);
-
-				QByteArray imageData(decryptedData.data(), decryptedData.size());
-				QPixmap avatarPixmap;
-				if (!avatarPixmap.loadFromData(imageData)) {
-					throw std::runtime_error("Failed to load decrypted avatar");
-				}
-
-
-				QMetaObject::invokeMethod(messagingArea,
-					"setAvatar",
-					Qt::QueuedConnection,
-					Q_ARG(QPixmap, avatarPixmap));
-
-			}
-			catch (const std::exception& e) {
-				qWarning() << "Avatar load error:" << e.what();
-			}
-		}
 
 		return true;
 	}

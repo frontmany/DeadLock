@@ -18,7 +18,7 @@ class EditDialogComponent;
 class ProfileEditorWidget;
 class ConfigManager;
 class Client;
-class Photo;
+class Avatar;
 enum  Theme;
 
 struct StyleFieldsEditComponent {
@@ -49,7 +49,7 @@ public:
     FieldsEditComponent(QWidget* parent, ProfileEditorWidget* profileEditorWidget,  Client* client, std::shared_ptr<ConfigManager> configManager, Theme theme);
     void setTheme(Theme theme);
     void setName(const std::string& name);
-    void updateAvatar(const Photo& photo);
+    void updateAvatar(Avatar* avatar);
 
 signals:
     void logoutRequested();

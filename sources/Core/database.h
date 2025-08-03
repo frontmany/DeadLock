@@ -8,7 +8,6 @@
 #include"message.h" 
 
 class User;
-class Photo;
 
 class Database {
 public:

@@ -1,5 +1,4 @@
 #include"packetsBuilder.h"
-#include"avatar.h"
 #include"message.h"
 #include"queryType.h"
 #include"utility.h"
