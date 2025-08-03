@@ -1,6 +1,5 @@
 #include "net_filesSender.h"
 
-
 namespace net
 {
 	FilesSender::FilesSender(asio::io_context& asioContext,
@@ -194,25 +193,34 @@ namespace net
 	}
 
 	bool FilesSender::openFile() {
-		try {
-			std::filesystem::path filePath;
+		std::error_code ec;
 
 #ifdef _WIN32
-			filePath = std::filesystem::u8path(m_file.filePath);
-#else
-			filePath = m_file.filePath;
-#endif
-			m_fileStream.open(filePath, std::ios::binary);
-
-			if (!m_fileStream.is_open()) {
-				std::cerr << "Failed to open file: " << filePath.string() << '\n';
-				return false;
-			}
-
-		}
-		catch (const std::exception& e) {
-			std::cerr << "Error opening file: " << e.what() << '\n';
+		int size_needed = MultiByteToWideChar(CP_UTF8, 0,
+			m_file.filePath.c_str(),
+			-1, nullptr, 0);
+		if (size_needed == 0) {
+			std::cerr << "UTF-8 to UTF-16 conversion failed\n";
 			return false;
 		}
+
+		std::wstring filePath(size_needed, 0);
+		MultiByteToWideChar(CP_UTF8, 0,
+			m_file.filePath.c_str(),
+			-1, &filePath[0], size_needed);
+
+		if (!filePath.empty() && filePath.back() == L'\0')
+			filePath.pop_back();
+#else
+		std::string filePath = m_fileMetadataToHold.filePath;
+#endif
+
+		m_fileStream.open(filePath, std::ios::binary);
+		if (!m_fileStream) {
+			std::cerr << "Failed to open file\n";
+			return false;
+		}
+
+		return true;
 	}
 }

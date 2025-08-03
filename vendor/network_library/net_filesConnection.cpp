@@ -30,7 +30,7 @@ namespace net
 			std::error_code ec;
 			m_socket.close(ec);
 			if (ec) {
-				std::cerr << "Socket close error: " << ec.message() << "\n";
+				std::cerr << "Socket close error my: " << ec.message() << "\n";
 			}
 			else {
 				std::cout << "Connection closed successfully\n";

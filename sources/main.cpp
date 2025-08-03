@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
     mainWindow->setClient(client);
     mainWindow->setWorkerUIonClient();
 
-    client->connectTo("192.168.1.44", 8080);
+    client->connectTo("192.168.1.45", 8080);
     client->startProcessingIncomingPackets();
     bool isConnected = client->waitForConnectionWithTimeout(1500);
 

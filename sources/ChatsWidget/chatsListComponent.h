@@ -79,8 +79,8 @@ signals:
 
 public slots:
     void removeConnectionDownLabel();
-    void showConnectionDownLabel();
     void showUpdateButton();
+    void showConnectionDownLabel();
 
     void addChatComponent(Theme theme, Chat* chat, bool isSelected);
 

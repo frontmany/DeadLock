@@ -126,7 +126,7 @@ bool ConfigManager::load(const std::string& fileName, const std::string& special
         m_is_has_avatar = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_avatar"].toString().toStdString()) == "1";
         m_client->setIsHidden(utility::AESDecrypt(AESEConfigKey, jsonObject["is_hidden"].toString().toStdString()) == "1");
 
-        if (m_is_has_avatar && jsonObject.contains("my_photo_path")) {
+        if (m_is_has_avatar && jsonObject.contains("my_avatar_path")) {
             QString photoPath = QString::fromStdString(utility::AESDecrypt(AESEConfigKey, jsonObject["my_avatar_path"].toString().toStdString()));
             if (!photoPath.isEmpty()) {
                 m_my_avatar = new Avatar(m_client->getAvatarsKey(), photoPath.toStdString());

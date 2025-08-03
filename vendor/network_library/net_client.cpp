@@ -86,15 +86,16 @@ namespace net {
 			m_is_connected = false;
 		}
 		catch (const std::system_error& e) {
-			std::cerr << "System error on disconnect: " << e.what() << "\n";
+			setlocale(LC_ALL, "ru");
+			std::cerr << "System error on disconnect my: " << e.what() << "\n";
 			m_is_connected = false;
 		}
 		catch (const std::exception& e) {
-			std::cerr << "Error on disconnect: " << e.what() << "\n";
+			std::cerr << "Error on disconnect my: " << e.what() << "\n";
 			m_is_connected = false;
 		}
 		catch (...) {
-			std::cerr << "Unknown error on disconnect\n";
+			std::cerr << "Unknown error on disconnect my\n";
 			m_is_connected = false;
 		}
 	}

@@ -115,10 +115,6 @@ void ResponseHandler::handleResponse(net::Message& msg) {
 void ResponseHandler::onAvatarsKey(const std::string& packet) {
     std::istringstream iss(packet);
 
-    std::string encryptedKey;
-    std::getline(iss, encryptedKey);
-    CryptoPP::SecByteBlock key = utility::RSADecryptKey(m_client->getPrivateKey(), encryptedKey);
-
     std::string avatarsKey;
     std::getline(iss, avatarsKey);
 
@@ -510,11 +506,6 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     std::string isHasPhoto;
     std::getline(iss, isHasPhoto);
     isHasPhoto = utility::AESDecrypt(key, isHasPhoto);
-
-    std::string sizeStr;
-    std::getline(iss, sizeStr);
-    sizeStr = utility::AESDecrypt(key, sizeStr);
-    size_t size = std::stoi(sizeStr);
 
     std::string lastSeen;
     std::getline(iss, lastSeen);

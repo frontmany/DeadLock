@@ -234,8 +234,13 @@ void Client::updateMyAvatar(const Avatar* newAvatar) {
     net::File avatarFile;
     avatarFile.senderLoginHash = m_config_manager->getMyLoginHash();
     avatarFile.isAvatar = true;
-    avatarFile.fileSize = newAvatar->getEncryptedSize();
+    avatarFile.fileSize = std::to_string(newAvatar->getEncryptedSize());
     avatarFile.ifFileIsAvatarFriendLoginHashesList = m_packets_builder->getSerializedFriendsLoginHashesVec(std::move(getFriendsLoginHashesVecFromMap()));
+
+    std::string fileName = m_config_manager->getMyLoginHash() + ".dph";
+    std::string filePath = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
+    avatarFile.filePath = filePath;
+
     sendFile(avatarFile);
 }
 

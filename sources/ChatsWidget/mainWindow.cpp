@@ -190,7 +190,6 @@ void MainWindow::safeShutdown() {
         m_client->getIsHidden(),
         m_client->getDatabase()
     );
-    m_client->disconnect();
 }
 
 void MainWindow::showAlreadyRunningDialog()
