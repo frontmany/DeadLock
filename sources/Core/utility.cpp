@@ -618,7 +618,7 @@ std::string utility::decryptWithServerKey(const std::string& ciphertext, const s
 }
 
 
-std::string utility::serializeAESEKey(const CryptoPP::SecByteBlock& key) {
+std::string utility::serializeAESKey(const CryptoPP::SecByteBlock& key) {
     std::string encoded;
 
     CryptoPP::StringSource ss(
@@ -634,7 +634,7 @@ std::string utility::serializeAESEKey(const CryptoPP::SecByteBlock& key) {
     return encoded;
 }
 
-CryptoPP::SecByteBlock utility::deserializeAESEKey(const std::string& keyStr) {
+CryptoPP::SecByteBlock utility::deserializeAESKey(const std::string& keyStr) {
     try {
         std::string decoded;
 

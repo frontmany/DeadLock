@@ -108,6 +108,7 @@ const std::string PacketsBuilder::getSerializedFriendsLoginHashesVec(const std::
     for (const auto& loginHash : friendsLoginHashesVec) {
         oss << loginHash << '\n';
     }
+    oss << vecEnd << '\n';
 
     return oss.str();
 }

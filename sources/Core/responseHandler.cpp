@@ -122,7 +122,7 @@ void ResponseHandler::onAvatarsKey(const std::string& packet) {
     std::string avatarsKey;
     std::getline(iss, avatarsKey);
 
-    m_client->setAvatarsKey(utility::deserializeAESEKey(avatarsKey));
+    m_client->setAvatarsKey(utility::deserializeAESKey(avatarsKey));
 
 
     const std::string& myLoginHash = m_configManager->getMyLoginHash();

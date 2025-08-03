@@ -63,8 +63,8 @@ namespace utility {
     std::array<char, 8192> AESDecrypt(const CryptoPP::SecByteBlock& key, const std::array<char, 8220>& cipherBytesArray);
 
     // Key serialization
-    std::string serializeAESEKey(const CryptoPP::SecByteBlock& key);
-    CryptoPP::SecByteBlock deserializeAESEKey(const std::string& keyStr);
+    std::string serializeAESKey(const CryptoPP::SecByteBlock& key);
+    CryptoPP::SecByteBlock deserializeAESKey(const std::string& keyStr);
     std::string serializePublicKey(const CryptoPP::RSA::PublicKey& key);
     CryptoPP::RSA::PublicKey deserializePublicKey(const std::string& keyStr);
     std::string serializePrivateKey(const CryptoPP::RSA::PrivateKey& key);
