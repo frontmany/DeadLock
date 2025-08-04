@@ -421,7 +421,13 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_search_timer->setSingleShot(true);
 
     connect(m_searchLineEdit, &QLineEdit::textChanged, [this]() {
-        m_search_timer->start();
+        std::string text = m_searchLineEdit->text().trimmed().toStdString();
+        if (text == "") {
+            m_friend_search_dialog->closeDialog();
+        }
+        else {
+            m_search_timer->start();
+        }
     });
 
     connect(m_search_timer, &QTimer::timeout, [this]() {
@@ -431,7 +437,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
                 m_chatsWidget->getClient()->findUser(text);
             }
             else if (text == ""){
-                m_friend_search_dialog->close();
+                m_friend_search_dialog->hide();
             }
         }
     });

@@ -30,7 +30,7 @@ void Database::init(const std::string& loginHash) {
         "AES_KEY              BLOB    NOT NULL,"
         "CHECK (FILES_RECEIVED <= FILES_COUNT_IN_BLOB));";
 
-    std::string sqlRequestedFiles = "CREATE TABLE IF NOT EXISTS REQUESTED_FILES_" + loginHash + " ("
+    std::string sqlRequestedFiles = "CREATE TABLE IF NOT EXISTS REQUESTED_FILES" + loginHash + " ("
         "FILE_ID TEXT NOT NULL PRIMARY KEY);";
 
     char* errMsg = nullptr;
@@ -68,7 +68,7 @@ void Database::init(const std::string& loginHash) {
         return;
     }
     else {
-        std::cout << "Table REQUESTED_FILES_" << loginHash << " created successfully" << std::endl;
+        std::cout << "Table REQUESTED_FILES" << loginHash << " created successfully" << std::endl;
     }
 }
 
@@ -77,7 +77,7 @@ void Database::init(const std::string& loginHash) {
 bool Database::addRequestedFile(const std::string& loginHash, const std::string& fileId) {
     if (!m_db) return false;
 
-    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string tableName = "REQUESTED_FILES" + loginHash;
     std::string sql = "INSERT INTO " + tableName + " (FILE_ID) VALUES (?);";
 
     sqlite3_stmt* stmt = nullptr;
@@ -106,7 +106,7 @@ bool Database::addRequestedFile(const std::string& loginHash, const std::string&
 bool Database::removeRequestedFile(const std::string& loginHash, const std::string& fileId) {
     if (!m_db) return false;
 
-    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string tableName = "REQUESTED_FILES" + loginHash;
     std::string sql = "DELETE FROM " + tableName + " WHERE FILE_ID = ?;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -137,7 +137,7 @@ bool Database::removeRequestedFile(const std::string& loginHash, const std::stri
 bool Database::checkRequestedFile(const std::string& loginHash, const std::string& fileId) {
     if (!m_db) return false;
 
-    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string tableName = "REQUESTED_FILES" + loginHash;
     std::string sql = "SELECT 1 FROM " + tableName + " WHERE FILE_ID = ? LIMIT 1;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -165,7 +165,7 @@ std::vector<std::string> Database::getRequestedFiles(const std::string& loginHas
     std::vector<std::string> files;
     if (!m_db) return files;
 
-    std::string tableName = "REQUESTED_FILES_" + loginHash;
+    std::string tableName = "REQUESTED_FILES" + loginHash;
     std::string sql = "SELECT FILE_ID FROM " + tableName + ";";
 
     sqlite3_stmt* stmt = nullptr;

@@ -20,6 +20,7 @@ namespace net
         std::string filesInBlobCount;
         std::string encryptedKey;
         bool isAvatar = false;
+        bool isAvatarPreview = false;
         std::string ifFileIsAvatarFriendLoginHashesList;
 
         File() = default;

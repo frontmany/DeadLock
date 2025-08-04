@@ -95,10 +95,11 @@ public:
 
 public slots:
     void supplyNewFriendsList(const std::vector<FriendInfo*>& friendInfoVec);
-    void supplyAvatar(Avatar* avatar, std::string loginHash);
     void onFriendComponentClicked(const QString& loginHash);
+    void supplyAvatar(Avatar* avatar, std::string loginHash);
 
 private:
+    void clear();
     void showExistingChat(const std::string& loginHash);
     void addNewChatAndShow(const std::string& loginHash, FriendInfo* friendInfo);
     void showNoUsersFoundLabel();
@@ -115,7 +116,6 @@ private:
     StyleFriendSearchDialogComponent*            m_style;
     ChatsListComponent*                          m_chats_list_component;
     Theme                                        m_theme;
-    bool                                         m_is_visible;
 
     uint32_t countUsersWithPhoto = 0;
     uint32_t countUsersWithPhotoReceived = 0;

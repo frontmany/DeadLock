@@ -117,31 +117,31 @@ void ResponseHandler::onAvatarsKey(const std::string& packet) {
 
     std::string avatarsKey;
     std::getline(iss, avatarsKey);
-
     m_client->setAvatarsKey(utility::deserializeAESKey(avatarsKey));
 
+    m_client->initDatabase(m_configManager->getMyLoginHash());
+    m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
 
-    const std::string& myLoginHash = m_configManager->getMyLoginHash();
-    m_client->initDatabase(myLoginHash);
-
-    if (!m_configManager->getIsAutoLogin()) {
-        bool res = m_configManager->load((myLoginHash + ".json"), m_client->getSpecialServerKey(), m_client->getDatabase());
-        if (!res) {
-            m_client->requestMyInfoFromServerAndResetKeys(m_configManager->getMyLoginHash());
-            m_client->setIsFirstAuthentication(false);
-            m_worker_UI->initializeUIWithConfigErrorDialog();
-            return;
-        }
-        else {
-            m_worker_UI->supplyTheme(m_configManager->getIsDarkTheme());
-            m_configManager->setIsNeedToAutoLogin(true);
-        }
+    if (m_client->getIsFirstAuthentication()) {
+        m_worker_UI->onRegistrationSuccess();
     }
+    else {
+        if (!m_configManager->getIsAutoLogin()) {
+            bool res = m_configManager->load((m_configManager->getMyLoginHash() + ".json"), m_client->getSpecialServerKey(), m_client->getDatabase());
+            if (!res) {
+                m_client->requestMyInfoFromServerAndResetKeys(m_configManager->getMyLoginHash());
+                m_client->setIsFirstAuthentication(false);
+                m_worker_UI->initializeUIWithConfigErrorDialog();
+                return;
+            }
+            else {
+                m_worker_UI->supplyTheme(m_configManager->getIsDarkTheme());
+                m_configManager->setIsNeedToAutoLogin(true);
+            }
+        }
 
-    m_client->setIsFirstAuthentication(false);
-    m_client->setIsPassedAuthentication(true);
-    m_client->createFilesConnection(myLoginHash, m_client->getServerIpAddress(), m_client->geServerPort());
-    m_worker_UI->onAuthorizationSuccess();
+        m_worker_UI->onAuthorizationSuccess();
+    }
 }
 
 void ResponseHandler::onUpdateOffer(const std::string& packet) {
@@ -171,23 +171,36 @@ void ResponseHandler::onRegistrationSuccess(const std::string& packet) {
 
     m_client->setServerEncryptionPart(encryptionPart);
     m_client->setServerPublicKey(utility::deserializePublicKey(serverPublicKey));
-    m_client->initDatabase(m_configManager->getMyLoginHash());
-
-    m_client->setIsFirstAuthentication(true);
-    m_client->setIsPassedAuthentication(true);
-    m_client->afterRegistrationSendMyInfo();
+    
     m_client->generateMyKeyPair();
     m_client->sendPublicKeyToServer();
 
-    m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
-
     m_configManager->setIsNeedToAutoLogin(true);
-    m_worker_UI->onRegistrationSuccess();
+    m_client->setIsFirstAuthentication(true);
+    m_client->setIsPassedAuthentication(true);
+
+    m_client->afterRegistrationSendMyInfo();
 }
 
 void ResponseHandler::onRegistrationFail() {
     m_worker_UI->onRegistrationFail();
 }
+
+void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
+    std::istringstream iss(packet);
+
+    std::string encryptionPart;
+    std::getline(iss, encryptionPart);
+
+    std::string serverPublicKey;
+    std::getline(iss, serverPublicKey);
+
+    m_client->setIsFirstAuthentication(false);
+    m_client->setIsPassedAuthentication(true);
+    m_client->setServerEncryptionPart(encryptionPart);
+    m_client->setServerPublicKey(utility::deserializePublicKey(serverPublicKey));
+}
+
 
 void ResponseHandler::onAuthorizationFail() {
     m_configManager->setMyLoginHash("");
@@ -251,17 +264,27 @@ void ResponseHandler::onAvatar(net::File& file) {
         Avatar* myAvatar = new Avatar(m_client->getAvatarsKey(), file.filePath);
         m_worker_UI->setRecoveredAvatar(myAvatar);
     }
-    
-    auto& chatsMap =m_client->getMyHashChatsMap();
+    else {
+        auto& chatsMap = m_client->getMyHashChatsMap();
 
-    if (chatsMap.contains(file.senderLoginHash)) {
-        auto chat = chatsMap.at(file.senderLoginHash);
-        chat->setIsFriendHasAvatar(true);
+        if (chatsMap.contains(file.senderLoginHash)) {
+            auto chat = chatsMap.at(file.senderLoginHash);
+            chat->setIsFriendHasAvatar(true);
 
-        Avatar* friendAvatar = new Avatar(m_client->getAvatarsKey(), file.filePath);
-        chat->setFriendAvatar(friendAvatar);
+            Avatar* friendAvatar = new Avatar(m_client->getAvatarsKey(), file.filePath);
+            chat->setFriendAvatar(friendAvatar);
 
-        m_worker_UI->updateFriendAvatar(friendAvatar, chat->getFriendLogin());
+            m_configManager->save(
+                m_client->getPublicKey(),
+                m_client->getPrivateKey(),
+                m_client->getSpecialServerKey(),
+                m_client->getMyHashChatsMap(),
+                m_client->getIsHidden(),
+                m_client->getDatabase()
+            );
+
+            m_worker_UI->onChatCreateSuccess(chat);
+        }
     }
 }
 
@@ -425,19 +448,6 @@ void ResponseHandler::onReconnectFail() {
     m_worker_UI->setupRegistrationWidget();
 }
 
-void ResponseHandler::onAuthorizationSuccess(const std::string& packet) {
-    std::istringstream iss(packet);
-
-    std::string encryptionPart;
-    std::getline(iss, encryptionPart);
-
-    std::string serverPublicKey;
-    std::getline(iss, serverPublicKey);
-
-    m_client->setServerEncryptionPart(encryptionPart);
-    m_client->setServerPublicKey(utility::deserializePublicKey(serverPublicKey));
-}
-
 void ResponseHandler::onFoundUsers(const std::string& packet) {
     std::istringstream iss(packet);
 
@@ -460,6 +470,7 @@ void ResponseHandler::onFoundUsers(const std::string& packet) {
         std::getline(iss, login);
         login = utility::AESDecrypt(key, login);
         friendInfo->setFriendLogin(login);
+        friendInfo->setFriendLoginHash(utility::calculateHash(login));
 
         std::string name;
         std::getline(iss, name);
@@ -503,9 +514,10 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     std::getline(iss, name);
     name = utility::AESDecrypt(key, name);
 
-    std::string isHasPhoto;
-    std::getline(iss, isHasPhoto);
-    isHasPhoto = utility::AESDecrypt(key, isHasPhoto);
+    std::string isHasPhotoStr;
+    std::getline(iss, isHasPhotoStr);
+    isHasPhotoStr = utility::AESDecrypt(key, isHasPhotoStr);
+    bool isHasPhoto = (isHasPhotoStr == "true");
 
     std::string lastSeen;
     std::getline(iss, lastSeen);
@@ -518,7 +530,7 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     Chat* chat = new Chat;
     chat->setFriendLogin(login);
     chat->setFriendName(name);
-    chat->setIsFriendHasAvatar(isHasPhoto == "true");
+    chat->setIsFriendHasAvatar(isHasPhoto);
     chat->setLayoutIndex(0);
     chat->setPublicKey(friendPublicKey);
 
@@ -528,16 +540,19 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     chat->setLastReceivedOrSentMessage("no messages yet");
 
     m_client->getMyHashChatsMap().emplace(utility::calculateHash(login), chat);
-    m_configManager->save(
-        m_client->getPublicKey(),
-        m_client->getPrivateKey(),
-        m_client->getSpecialServerKey(),
-        m_client->getMyHashChatsMap(),
-        m_client->getIsHidden(),
-        m_client->getDatabase()
-    );
 
-    m_worker_UI->onChatCreateSuccess(chat);
+    if (!isHasPhoto) {
+        m_configManager->save(
+            m_client->getPublicKey(),
+            m_client->getPrivateKey(),
+            m_client->getSpecialServerKey(),
+            m_client->getMyHashChatsMap(),
+            m_client->getIsHidden(),
+            m_client->getDatabase()
+        );
+
+        m_worker_UI->onChatCreateSuccess(chat);
+    }
 }
 
 void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {

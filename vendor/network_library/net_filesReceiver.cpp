@@ -119,7 +119,6 @@ namespace net
 					m_currentChunksCount++;
 					if (m_currentChunksCount < m_expectedChunksCount) {
 						m_fileStream.write(m_receiveBuffer.data(), c_receivedChunkSize);
-						m_totalReceivedBytes += bytesTransferred;
 						readChunkWithoutDecryption();
 					}
 					else if (m_currentChunksCount == m_expectedChunksCount) {
@@ -147,9 +146,11 @@ namespace net
 
 		if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR)) {
 			m_file.filePath = utility::getConfigsAndPhotosDirectory() + "/" + senderLoginHash + ".dph";
+			m_file.isAvatarPreview = false;
 		}
 		else if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR_FOR_PREVIEW)) {
 			m_file.filePath = utility::getAvatarPreviewsDirectory() + "/" + senderLoginHash + ".dph";
+			m_file.isAvatarPreview = true;
 		}
 
 		m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(m_file.fileSize)) / c_receivedChunkSize));
@@ -248,7 +249,7 @@ namespace net
 	void FilesReceiver::finalizeReceiving() {
 		m_fileStream.close();
 
-		if (m_file.senderLoginHash != "server")
+		if (m_file.senderLoginHash != "server" && !m_file.isAvatar)
 			m_onProgressUpdate(m_file, 100);
 
 		m_lastChunkSize = 0;
@@ -286,7 +287,7 @@ namespace net
 #else
 			filePath = m_file.filePath;
 #endif
-			m_fileStream.open(filePath, std::ios::binary);
+			m_fileStream.open(filePath, std::ios::binary | std::ios::trunc);
 
 			if (!m_fileStream.is_open()) {
 				std::cerr << "Failed to open file: " << filePath.string() << '\n';

@@ -1682,6 +1682,7 @@ void MessagingAreaComponent::closeFriendProfile() {
 
 
 void MessagingAreaComponent::onChatDelete() {
+    m_typingTimer->stop();
     m_chatsWidget->onChatDelete(QString::fromStdString(m_chat->getFriendLogin()));
 }
 

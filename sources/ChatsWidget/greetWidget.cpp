@@ -688,7 +688,6 @@ void GreetWidget::setBackGround(Theme theme) {
         }
     }
 }
-
 int GreetWidget::saveImage() {
     if (m_selectedImage.isNull()) {
         qWarning() << "There is no image to save";
@@ -717,7 +716,7 @@ int GreetWidget::saveImage() {
         return 1;
     }
 
-    std::string fileName = utility::calculateHash(m_login) + ".dph";
+    std::string fileName = m_config_manager->getMyLoginHash() + ".dph";
     m_filePath = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
 
     CryptoPP::SecByteBlock key = m_client->getAvatarsKey();

@@ -89,12 +89,14 @@ void WorkerQt::updateFriendAvatarPreview(Avatar* avatar, const std::string& frie
 	ChatsListComponent* chatsList = chatsWidget->getChatsList();
 	auto friendSearchDialogComponent = chatsList->getFriendSearchDialogComponent();
 	
-	QMetaObject::invokeMethod(chatsList,
-		"supplyAvatar",
-		Qt::QueuedConnection,
-		Q_ARG(Avatar*, avatar),
-		Q_ARG(std::string, friendLoginHash)
-	);
+	QMetaObject::invokeMethod(friendSearchDialogComponent, [chatsList, avatar, friendLoginHash]() {
+		std::string text = chatsList->getSearchLineEdit()->text().trimmed().toStdString();
+		if (text != "") {
+			auto friendSearchDialogComponent = chatsList->getFriendSearchDialogComponent();
+			friendSearchDialogComponent->supplyAvatar(avatar, friendLoginHash);
+		}
+	},
+	Qt::QueuedConnection);
 }
 
 void WorkerQt::showConnectionDownLabel() {
