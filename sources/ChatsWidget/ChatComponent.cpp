@@ -16,6 +16,8 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
     setMouseTracking(true);
     setAttribute(Qt::WA_Hover);
 
+    setMinimumWidth(100);
+
     m_nameLabel = new QLabel(this);
     m_nameLabel->setText(QString::fromStdString(m_chat->getFriendName()));
 
@@ -246,7 +248,7 @@ void ChatComponent::hoverEnter(QHoverEvent* event)
 {
     if (m_theme == LIGHT) {
         if (m_isSelected == true) {
-            m_currentColor = QColor(21, 119, 232);
+            m_currentColor = QColor(26, 133, 255);
         }
         else {
             m_currentColor = m_hoverColorLight;

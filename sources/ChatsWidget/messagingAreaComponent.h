@@ -149,7 +149,6 @@ protected:
 
 private:
     void setupUI();
-    void applyGlassEffect(QPainter& painter, const QPainterPath& path);
 
 private:
     QLabel* m_name_label;

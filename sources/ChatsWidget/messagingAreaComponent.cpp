@@ -499,11 +499,6 @@ void FriendProfileComponent::paintEvent(QPaintEvent* event)
     QPainterPath path;
     path.addRoundedRect(rect(), 5, 5);
     painter.setClipPath(path);
-    applyGlassEffect(painter, path);
-}
-
-void FriendProfileComponent::applyGlassEffect(QPainter& painter, const QPainterPath& path)
-{
     painter.fillPath(path, *m_color);
 }
 
@@ -1785,9 +1780,19 @@ void MessagingAreaComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    painter.setBrush(m_backColor); 
+    QRectF rect = this->rect();
+    int radius = 16;
+
+    QPainterPath path;
+    path.addRoundedRect(rect, radius, radius);
+    
+    QPainterPath rightRect;
+    rightRect.addRect(rect.adjusted(radius, 0, 0, 0));
+    path = path.united(rightRect);
+
+    painter.setBrush(m_backColor);
     painter.setPen(Qt::NoPen);
-    painter.drawRoundedRect(rect(), 15, 15); 
+    painter.drawPath(path);
 }
 
 
