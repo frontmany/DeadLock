@@ -457,7 +457,7 @@ void Client::onSendMessageError(std::error_code ec, net::Message unsentMessage) 
 
 void Client::onSendFileError(std::error_code ec, net::File unsentFille) {
         auto itChat = m_map_friend_loginHash_to_chat.find(unsentFille.receiverLoginHash);
-        auto& [friendLogin, chat] = *itChat;
+        auto& [friendLoginHash, chat] = *itChat;
         auto& messagesVec = chat->getMessagesVec();
         auto msgChatIt = std::find_if(messagesVec.begin(), messagesVec.end(), [&unsentFille](Message* msg) {
             return msg->getId() == unsentFille.blobUID;
@@ -465,7 +465,7 @@ void Client::onSendFileError(std::error_code ec, net::File unsentFille) {
 
         Message* msg = *msgChatIt;
         msg->setIsNeedToRetry(true);
-        m_response_handler->getWorkerUI()->onMessageSendingError(friendLogin, msg);
+        m_response_handler->getWorkerUI()->onMessageSendingError(chat->getFriendLogin(), msg);
 }
 
 

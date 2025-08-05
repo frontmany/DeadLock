@@ -7,9 +7,10 @@
 #include "chat.h"
 #include "utility.h"
 #include "client.h"
+#include <QRadialGradient>
 
 ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* chat)
-    : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat), m_isClicked(true), m_isSelected(false) {
+    : QWidget(parent), m_avatarSize(50), m_theme(DARK), m_chat(chat), m_isClicked(true), m_isSelected(false), m_isOnline(false) {
 
 
     setMouseTracking(true);
@@ -104,6 +105,12 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
 
     setLayout(m_mainHLayout);
 }
+
+void ChatComponent::setOnlineIndicator(bool isOnline) {
+    m_isOnline = isOnline;
+    update();
+}
+
 void ChatComponent::setSelected(bool isSelected) {
     m_isSelected = isSelected;
     if (isSelected == true) {
@@ -217,6 +224,38 @@ void ChatComponent::paintEvent(QPaintEvent* event) {
     painter.setBrush(m_currentColor);
     painter.setPen(Qt::NoPen);
     painter.drawRoundedRect(rect(), 5, 5);
+    
+    // Отрисовываем индикатор онлайн статуса
+    if (m_isOnline) {
+        // Получаем позицию аватара
+        QPoint avatarPos = m_avatar_ico->pos();
+        int avatarSize = m_avatarSize;
+        
+        // Позиция индикатора (в правом нижнем углу аватара)
+        int indicatorSize = 16;
+        int indicatorX = avatarPos.x() + avatarSize - indicatorSize - 2; // 2 пикселя отступ от края аватара
+        int indicatorY = avatarPos.y() + avatarSize - indicatorSize - 2;
+        
+        // Рисуем синий кружочек с градиентом для лучшего вида
+        QRadialGradient gradient(indicatorX + indicatorSize/2, indicatorY + indicatorSize/2, indicatorSize/2);
+        gradient.setColorAt(0, QColor(0, 122, 255)); // Яркий синий в центре
+        gradient.setColorAt(0.7, QColor(0, 100, 220)); // Темнее по краям
+        gradient.setColorAt(1, QColor(0, 80, 200)); // Еще темнее на краю
+        
+        painter.setBrush(gradient);
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(indicatorX, indicatorY, indicatorSize, indicatorSize);
+        
+        // Добавляем белую обводку для лучшей видимости
+        painter.setBrush(Qt::transparent);
+        painter.setPen(QPen(Qt::white, 2));
+        painter.drawEllipse(indicatorX, indicatorY, indicatorSize, indicatorSize);
+        
+        // Добавляем небольшое внутреннее свечение
+        painter.setBrush(Qt::transparent);
+        painter.setPen(QPen(QColor(255, 255, 255, 100), 1));
+        painter.drawEllipse(indicatorX + 1, indicatorY + 1, indicatorSize - 2, indicatorSize - 2);
+    }
 }
 
 bool ChatComponent::event(QEvent* event)

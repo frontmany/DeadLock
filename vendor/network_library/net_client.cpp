@@ -79,7 +79,6 @@ namespace net {
 
 			if (!m_context.stopped()) {
 				m_context.stop();
-				m_context.reset();
 				m_context.restart();
 			}
 

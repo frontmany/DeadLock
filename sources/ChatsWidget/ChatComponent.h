@@ -30,6 +30,7 @@ public:
     void setSelected(bool isSelected);
     const Chat* getChatConst() const { return m_chat; }
     Chat* getChat() { return m_chat; }
+    bool isOnline() const { return m_isOnline; }
 
    
    
@@ -47,6 +48,7 @@ private slots:
 
 
 public slots:
+    void setOnlineIndicator(bool isOnline);
     void setName(const QString& name);
     void setAvatar(const QPixmap& avatar);
     void setUnreadMessageDot(bool isUnreadMessages);
@@ -80,6 +82,7 @@ private:
 
     bool         m_isClicked;
     bool         m_isSelected;
+    bool         m_isOnline;
     int          m_avatarSize;
 
 };

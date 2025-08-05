@@ -561,6 +561,33 @@ void WorkerQt::onStatusReceive(const std::string& friendLoginHash, const std::st
 	auto messagingAreaIt = std::find_if(messagingAreaCompsVec.begin(), messagingAreaCompsVec.end(), [&friendLoginHash](MessagingAreaComponent* comp) {
 		return utility::calculateHash(comp->getChat()->getFriendLogin()) == friendLoginHash;
 	});
+	
+	
+	auto chatsList = chatsWidget->getChatsList();
+	auto& chatsComponentsVec = chatsList->getChatComponentsVec();
+
+	auto chatCompIt = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [&friendLoginHash](ChatComponent* chatComp) {
+		return friendLoginHash == utility::calculateHash(chatComp->getChat()->getFriendLogin());
+		});
+
+	if (chatCompIt != chatsComponentsVec.end()) {
+		ChatComponent* comp = *chatCompIt;
+		if (status == "online") {
+			QMetaObject::invokeMethod(comp,
+				"setOnlineIndicator",
+				Qt::QueuedConnection,
+				Q_ARG(bool, true));
+		}
+		else {
+			QMetaObject::invokeMethod(comp,
+				"setOnlineIndicator",
+				Qt::QueuedConnection,
+				Q_ARG(bool, false));
+		}
+		
+	}
+	
+	
 
 	if (messagingAreaIt != messagingAreaCompsVec.end()) {
 		MessagingAreaComponent* areaComp = *messagingAreaIt;

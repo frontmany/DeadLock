@@ -115,20 +115,27 @@ void MessageComponent::setRetry() {
     m_main_HLayout->setAlignment(m_retryButtonContainer, Qt::AlignRight | Qt::AlignBottom);
 
     connect(m_retryButton, &QPushButton::clicked, [this]() {
-        qDebug() << "Retry button clicked for message:" << m_id;
-        if (m_messaging_area_component) {
-            m_message->setIsSending(true);
-            auto& wrappersVec = m_message->getRelatedFiles();
-            for (auto& wrap : wrappersVec) {
-                if (wrap.isNeedToRetry) {
-                    wrap.isSending = true;
+        if (m_messaging_area_component->getChatsWidget()->getClient()->isConnected()) {
+            if (m_messaging_area_component) {
+                m_message->setIsSending(true);
+                auto& wrappersVec = m_message->getRelatedFiles();
+                for (auto& wrap : wrappersVec) {
+                    if (wrap.isNeedToRetry) {
+                        wrap.isSending = true;
+                    }
                 }
+                m_messaging_area_component->onRetryClicked(m_message);
             }
-            m_messaging_area_component->onRetryClicked(m_message);
-        }
 
-        removeRetry();
+            removeRetry();
+        }
     });
+
+    auto& vec = m_message->getRelatedFiles();
+    for (auto& fileWrap : vec) {
+        setProgress(fileWrap.file, 1000);
+        fileWrap.isNeedToRetry = true;
+    }
 }
 
 void MessageComponent::removeRetry() {
