@@ -59,6 +59,10 @@ public:
 	ChatsListComponent* getChatsList() { return m_chatsListComponent; }
 
 	std::vector<MessagingAreaComponent*>& getMessagingAreasVec() { return m_vec_messaging_components; }
+	
+	// Методы для работы со сплиттером
+	QSplitter* getSplitter() { return m_splitter; }
+	bool isSplitterCollapsed() const;
 
 public slots:
 	void onNotificationClicked(Chat* chat);
@@ -78,6 +82,13 @@ public slots:
 	void onCreateChatButtonClicked(QString login);
 	void onSetChatMessagingArea(Chat* chat, ChatComponent* component);
 	void onChatDelete(const QString& loginOfRemovedChat);
+	
+
+	void onWindowStateChanged(bool isNeedToCollapse);
+	void saveSplitterPosition();
+	void restoreSplitterPosition();
+	void collapseSplitter(bool isReversed);
+	bool deduceIsNeedToCollapse(); 
 
 protected:
 	void resizeEvent(QResizeEvent* event) override;
@@ -106,4 +117,5 @@ private:
 
 
 	bool m_is_hello_component = true;
+	QList<int> m_saved_splitter_sizes;
 };

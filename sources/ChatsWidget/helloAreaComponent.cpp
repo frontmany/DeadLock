@@ -50,7 +50,7 @@ HelloAreaComponent::HelloAreaComponent(Theme theme)
 
     m_main_VLayout->addLayout(m_main_HLayout);
     
-    this->setMinimumSize(600, 300);
+    this->setMinimumSize(300, 300);
     this->setMaximumSize(1600, 3000);
 
     setTheme(m_theme);

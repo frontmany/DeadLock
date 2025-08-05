@@ -321,7 +321,7 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_mainVLayout = new QVBoxLayout(this);
     m_mainVLayout->setAlignment(Qt::AlignTop);
 
-    setMinimumSize(510, 300);
+    setMinimumWidth(300);
 
     m_profileHLayout = new QHBoxLayout();
     m_profileHLayout->addSpacing(20);
@@ -663,7 +663,6 @@ void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelect
     chatComponent->setTheme(theme);
     chatComponent->setSelected(isSelected);
     
-    // Устанавливаем онлайн индикатор на основе статуса пользователя
     std::string lastSeen = chat->getFriendLastSeen();
     bool isOnline = (lastSeen == "online");
     chatComponent->setOnlineIndicator(isOnline);
