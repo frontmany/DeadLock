@@ -8,6 +8,66 @@ AvatarIcon::AvatarIcon(QWidget* parent, int iconSize, int size, bool needHover, 
     setAttribute(Qt::WA_Hover);
 }
 
+void AvatarIcon::setIcon(const QIcon& icon)
+{
+    m_icon = icon;
+    update();
+}
+
+void AvatarIcon::setIconSize(QSize size)
+{
+    m_iconSize = size;
+    update();
+}
+
+void AvatarIcon::setOnlineIndicator(bool isOnline)
+{
+    m_isOnline = isOnline;
+    update();
+}
+
+bool AvatarIcon::event(QEvent* event)
+{
+    switch (event->type())
+    {
+    case QEvent::HoverEnter:
+        hoverEnter(static_cast<QHoverEvent*>(event));
+        return true;
+    case QEvent::HoverLeave:
+        hoverLeave(static_cast<QHoverEvent*>(event));
+        return true;
+    case QEvent::HoverMove:
+        hoverMove(static_cast<QHoverEvent*>(event));
+        return true;
+    default:
+        return QWidget::event(event);
+    }
+}
+
+void AvatarIcon::hoverEnter(QHoverEvent* event)
+{
+    m_hovered = true;
+    update();
+}
+
+void AvatarIcon::hoverLeave(QHoverEvent* event)
+{
+    m_hovered = false;
+    update();
+}
+
+void AvatarIcon::hoverMove(QHoverEvent* event)
+{
+    update();
+}
+
+void AvatarIcon::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton) {
+        emit clicked();
+    }
+}
+
 void AvatarIcon::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
@@ -47,6 +107,16 @@ void AvatarIcon::paintEvent(QPaintEvent* event)
         int y = (height() - m_size) / 2;
 
         painter.drawPixmap(x, y, pixmap);
+    }
+
+    if (m_isOnline) {
+        int indicatorSize = 10;
+        int indicatorX = width() - indicatorSize;
+        int indicatorY = height() - indicatorSize - 5;
+        
+        painter.setBrush(Qt::white);
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(indicatorX, indicatorY, indicatorSize, indicatorSize);
     }
 }
 

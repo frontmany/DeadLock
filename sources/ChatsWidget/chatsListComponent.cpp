@@ -662,6 +662,12 @@ void ChatsListComponent::addChatComponent(Theme theme, Chat* chat, bool isSelect
     chatComponent->setName(QString::fromStdString(chat->getFriendName()));
     chatComponent->setTheme(theme);
     chatComponent->setSelected(isSelected);
+    
+    // Устанавливаем онлайн индикатор на основе статуса пользователя
+    std::string lastSeen = chat->getFriendLastSeen();
+    bool isOnline = (lastSeen == "online");
+    chatComponent->setOnlineIndicator(isOnline);
+    
     m_containerVLayout->insertWidget(chatComponent->getChat()->getLayoutIndex(), chatComponent);
     m_vec_chatComponents.push_back(chatComponent);
 

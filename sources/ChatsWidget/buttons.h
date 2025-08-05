@@ -95,17 +95,11 @@ public:
 
     void setTheme(Theme theme);
 
-    void setIcon(const QIcon& icon)
-    {
-        m_icon = icon;
-        update();
-    }
+    void setIcon(const QIcon& icon);
 
-    void setIconSize(QSize size)
-    {
-        m_iconSize = size;
-        update();
-    }
+    void setIconSize(QSize size);
+
+    void setOnlineIndicator(bool isOnline);
 
 signals:
     void clicked();
@@ -114,47 +108,15 @@ protected:
     void paintEvent(QPaintEvent* event) override;
 
 
-    bool event(QEvent* event) override
-    {
-        switch (event->type())
-        {
-        case QEvent::HoverEnter:
-            hoverEnter(static_cast<QHoverEvent*>(event));
-            return true;
-        case QEvent::HoverLeave:
-            hoverLeave(static_cast<QHoverEvent*>(event));
-            return true;
-        case QEvent::HoverMove:
-            hoverMove(static_cast<QHoverEvent*>(event));
-            return true;
-        default:
-            return QWidget::event(event);
-        }
-    }
+    bool event(QEvent* event) override;
 
-    void hoverEnter(QHoverEvent* event)
-    {
-        m_hovered = true;
-        update();
-    }
+    void hoverEnter(QHoverEvent* event);
 
-    void hoverLeave(QHoverEvent* event)
-    {
-        m_hovered = false;
-        update();
-    }
+    void hoverLeave(QHoverEvent* event);
 
-    void hoverMove(QHoverEvent* event)
-    {
-        update();
-    }
+    void hoverMove(QHoverEvent* event);
 
-    void mouseReleaseEvent(QMouseEvent* event) override
-    {
-        if (event->button() == Qt::LeftButton) {
-            emit clicked();
-        }
-    }
+    void mouseReleaseEvent(QMouseEvent* event) override;
 
 private:
     Theme m_theme;
@@ -164,6 +126,7 @@ private:
     int   m_size;
     bool m_hovered = false;
     bool m_needHover = false;
+    bool m_isOnline = false;
 };
 
 

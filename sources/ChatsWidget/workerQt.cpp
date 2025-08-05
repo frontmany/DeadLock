@@ -379,6 +379,25 @@ void WorkerQt::updateFriendsStatuses(const std::vector<std::pair<std::string, st
 				chatHeader->setLastSeen(QString::fromStdString(itPair->second));
 			}
 		}
+		
+		// Обновляем онлайн индикаторы в ChatComponent
+		ChatsListComponent* chatsList = chatsWidget->getChatsList();
+		auto& chatComponentsVec = chatsList->getChatComponentsVec();
+		
+		for (auto chatComponent : chatComponentsVec) {
+			std::string friendLogin = chatComponent->getChat()->getFriendLogin();
+			std::string friendLoginHash = utility::calculateHash(friendLogin);
+			
+			auto itPair = std::find_if(loginToStatusPairsVec.begin(), loginToStatusPairsVec.end(),
+				[&friendLoginHash](const auto& pair) {
+					return pair.first == friendLoginHash;
+				});
+				
+			if (itPair != loginToStatusPairsVec.end()) {
+				bool isOnline = (itPair->second == "online");
+				chatComponent->setOnlineIndicator(isOnline);
+			}
+		}
 	}, Qt::QueuedConnection);
 }
 
