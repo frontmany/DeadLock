@@ -148,7 +148,7 @@ void MessageComponent::removeRetry() {
     }
 }
 
-void MessageComponent::setProgress(net::File& file, int percent) {
+void MessageComponent::setProgress(const net::File& file, int percent) {
     if (percent >= 100) {
         m_message->setIsSending(false);
         m_message->setIsNeedToRetry(false);

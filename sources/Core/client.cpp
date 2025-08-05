@@ -323,11 +323,11 @@ void Client::onMessage(net::Message message) {
 }
 
 void Client::onFile(net::File file) {
-    if (file.isAvatarPreview) {
+    if (file.isAvatarPreview && file.isAvatar) {
         m_response_handler->onAvatarPreview(file);
         return;
     }
-    else if (!file.isAvatarPreview) {
+    else if (!file.isAvatarPreview && file.isAvatar) {
         m_response_handler->onAvatar(file);
     }
     else {
@@ -345,7 +345,6 @@ void Client::sendFilesMessage(Message& filesMessage) {
     for (auto& wrapper : relatedFiles) {
         auto chat = m_map_friend_loginHash_to_chat[wrapper.file.receiverLoginHash];
         wrapper.file.friendPublicKey = chat->getPublicKey();
-        sendFile(wrapper.file);
         sendFile(wrapper.file);
     }
 }

@@ -498,7 +498,7 @@ void FriendSearchDialogComponent::showExistingChat(const std::string& loginHash)
     return;
 }
 
-void FriendSearchDialogComponent::addNewChatAndShow(const std::string& loginHash, FriendInfo* friendInfo) {
+void FriendSearchDialogComponent::addNewChatAndShow(const std::string& loginHash, FriendInfo* friendInfo, const std::string& avatarNewPath) {
     Chat* chat = new Chat;
     chat->setFriendLogin(friendInfo->getFriendLogin());
     chat->setFriendName(friendInfo->getFriendName());
@@ -508,7 +508,9 @@ void FriendSearchDialogComponent::addNewChatAndShow(const std::string& loginHash
 
     chat->setIsFriendHasAvatar(friendInfo->getIsFriendHasAvatar());
     if (friendInfo->getIsFriendHasAvatar()) {
-        chat->setFriendAvatar(friendInfo->getFriendAvatar());
+        Avatar* avatar = friendInfo->getFriendAvatar();
+        avatar->setNewPath(avatarNewPath);
+        chat->setFriendAvatar(avatar);
     }
 
     auto chatsWidget = m_chats_list_component->getChatsWidget();
@@ -576,7 +578,7 @@ void FriendSearchDialogComponent::onFriendComponentClicked(const QString& loginH
         showExistingChat(loginHashStd);
     }
     else {
-        addNewChatAndShow(loginHashStd, friendInfo);
+        addNewChatAndShow(loginHashStd, friendInfo, destPath.string());
     }
 
    

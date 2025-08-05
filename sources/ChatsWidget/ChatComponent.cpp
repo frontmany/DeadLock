@@ -23,11 +23,17 @@ ChatComponent::ChatComponent(QWidget* parent, ChatsWidget* chatsWidget, Chat* ch
 
     if (m_chat->getIsFriendHasAvatar() == true) {
         try {
-            const std::string& data = m_chat->getFriendAvatar()->getBinaryData();
+            auto avatar = m_chat->getFriendAvatar();
+            if (avatar != nullptr) {
+                const std::string& data = avatar->getBinaryData();
 
-            QByteArray imageData(data.data(), data.size());
-            if (!m_avatar.loadFromData(imageData)) {
-                throw std::runtime_error("Failed to load avatar");
+                QByteArray imageData(data.data(), data.size());
+                if (!m_avatar.loadFromData(imageData)) {
+                    throw std::runtime_error("Failed to load avatar");
+                }
+            }
+            else {
+                m_avatar = QPixmap(":/resources/ChatsWidget/userFriend.png");
             }
 
             update();

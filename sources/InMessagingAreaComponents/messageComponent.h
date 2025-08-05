@@ -62,7 +62,7 @@ public slots:
     void onSendMeFile(const fileWrapper& fileWrapper);
     void requestedFileLoaded(const fileWrapper& fileWrapper);
     void setIsRead(bool isRead);
-    void setProgress(net::File& file, int percent);
+    void setProgress(const net::File& file, int percent);
 
 private:
     void removeRetry();

@@ -47,40 +47,45 @@ void WorkerQt::onRequestedFileError(const std::string& friendLoginHash, fileWrap
 
 void WorkerQt::updateFriendAvatar(Avatar* avatar, const std::string& friendLogin) {
 	ChatsWidget* chatsWidget = m_main_window->getChatsWidget();
-	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	if (!chatsWidget) return;
 
-	auto& chatsComponentsVec = chatsList->getChatComponentsVec();
-	auto chatCompIt = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(), [&friendLogin](ChatComponent* chatComp) {
-		return friendLogin == chatComp->getChat()->getFriendLogin();
-	});
+	const std::string& avatarBinaryData = avatar->getBinaryData();
+	QByteArray imageData(avatarBinaryData.data(), static_cast<int>(avatarBinaryData.size()));
+	QPixmap avatarPixmap;
+	avatarPixmap.loadFromData(imageData);
+
+	if (avatarPixmap.isNull()) {
+		qWarning() << "Failed to load avatar from binary data!";
+		return;
+	}
+
+	ChatsListComponent* chatsList = chatsWidget->getChatsList();
+	if (chatsList) {
+		auto& chatsComponentsVec = chatsList->getChatComponentsVec();
+		auto chatCompIt = std::find_if(chatsComponentsVec.begin(), chatsComponentsVec.end(),
+			[&friendLogin](ChatComponent* chatComp) {
+				return friendLogin == chatComp->getChat()->getFriendLogin();
+			});
+
+		if (chatCompIt != chatsComponentsVec.end()) {
+			QMetaObject::invokeMethod(*chatCompIt,
+				"setAvatar",
+				Qt::QueuedConnection,
+				Q_ARG(const QPixmap&, avatarPixmap));
+		}
+	}
 
 	auto& compsVec = chatsWidget->getMessagingAreasVec();
-	auto compIt = std::find_if(compsVec.begin(), compsVec.end(), [&friendLogin](MessagingAreaComponent* comp) {
-		return comp->getChat()->getFriendLogin() == friendLogin;
-	});
+	auto compIt = std::find_if(compsVec.begin(), compsVec.end(),
+		[&friendLogin](MessagingAreaComponent* comp) {
+			return comp->getChat()->getFriendLogin() == friendLogin;
+		});
 
-	if (compIt != compsVec.end() && chatCompIt != chatsComponentsVec.end()) {
-		MessagingAreaComponent* areaComp = *compIt;
-		ChatComponent* chatComp = *chatCompIt;
-
-		QMetaObject::invokeMethod(
-			nullptr, 
-			[chatComp, areaComp, avatar]() {
-				const std::string& avatarBinaryData = avatar->getBinaryData();
-				QByteArray imageData(avatarBinaryData.data(), static_cast<int>(avatarBinaryData.size()));
-				QPixmap avatarPixmap;
-				avatarPixmap.loadFromData(imageData);
-
-				if (avatarPixmap.isNull()) {
-					qWarning() << "Failed to load avatar from binary data!";
-					return;
-				}
-
-				chatComp->setAvatar(avatarPixmap);
-				areaComp->setAvatar(avatarPixmap);
-			},
-			Qt::QueuedConnection
-		);
+	if (compIt != compsVec.end()) {
+		QMetaObject::invokeMethod(*compIt,
+			"setAvatar",
+			Qt::QueuedConnection,
+			Q_ARG(const QPixmap&, avatarPixmap));
 	}
 }
 
@@ -200,7 +205,7 @@ void WorkerQt::updateFileLoadingProgress(const std::string& friendLoginHash, con
 				QMetaObject::invokeMethod(messageComp,
 					"setProgress",
 					Qt::QueuedConnection,
-					Q_ARG(net::File, file),
+					Q_ARG(const net::File&, file),
 					Q_ARG(int, progressPercent));
 			}
 		}

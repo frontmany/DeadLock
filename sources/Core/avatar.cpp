@@ -1,9 +1,9 @@
 #include "avatar.h"
 #include "utility.h"
 
-Avatar::Avatar(const CryptoPP::SecByteBlock& avatarsKey, const std::string& photoPath)
-    : m_photoPath(photoPath), m_size(0), m_encryptedSize(0) {
-    if (photoPath != "") {
+Avatar::Avatar(const CryptoPP::SecByteBlock& avatarsKey, const std::string& avatarPath)
+    : m_avatarPath(avatarPath), m_size(0), m_encryptedSize(0) {
+    if (avatarPath != "") {
         update(avatarsKey);
     }
 }
@@ -21,8 +21,12 @@ void Avatar::rename(const std::string& oldName, const std::string& newName) {
     }
 }
 
+void Avatar::setNewPath(const std::string& newAvatarPath) {
+    m_avatarPath = newAvatarPath;
+}
+
 void Avatar::update(const CryptoPP::SecByteBlock& avatarsKey) {
-    std::ifstream file(m_photoPath, std::ios::binary);
+    std::ifstream file(m_avatarPath, std::ios::binary);
     if (!file) {
         m_size = 0;
         return;

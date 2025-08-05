@@ -812,14 +812,21 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
 
         QPixmap avatarPixmap;
         try {
-            const std::string& data = m_chat->getFriendAvatar()->getBinaryData();
+            auto avatar = m_chat->getFriendAvatar();
+            if (avatar != nullptr) {
+                const std::string& data = avatar->getBinaryData();
 
-            QByteArray imageData(data.data(), data.size());
-            if (!avatarPixmap.loadFromData(imageData)) {
-                throw std::runtime_error("Failed to load avatar");
+                QByteArray imageData(data.data(), data.size());
+                if (!avatarPixmap.loadFromData(imageData)) {
+                    throw std::runtime_error("Failed to load avatar");
+                }
+            }
+            else {
+                avatarPixmap = QPixmap(":/resources/ChatsWidget/userFriend.png");
             }
 
             m_header = new ChatHeaderComponent(this, this, m_theme, QString::fromStdString(m_chat->getFriendName()), QString::fromStdString(m_chat->getFriendLastSeen()), avatarPixmap);
+
         }
         catch (const std::exception& e) {
             avatarPixmap = QPixmap(":/resources/ChatsWidget/userFriend.png");

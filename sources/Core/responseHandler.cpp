@@ -120,10 +120,10 @@ void ResponseHandler::onAvatarsKey(const std::string& packet) {
     m_client->setAvatarsKey(utility::deserializeAESKey(avatarsKey));
 
     m_client->initDatabase(m_configManager->getMyLoginHash());
-    m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
 
     if (m_client->getIsFirstAuthentication()) {
         m_worker_UI->onRegistrationSuccess();
+        m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
     }
     else {
         if (!m_configManager->getIsAutoLogin()) {
@@ -140,6 +140,7 @@ void ResponseHandler::onAvatarsKey(const std::string& packet) {
             }
         }
 
+        m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
         m_worker_UI->onAuthorizationSuccess();
     }
 }
@@ -274,16 +275,7 @@ void ResponseHandler::onAvatar(net::File& file) {
             Avatar* friendAvatar = new Avatar(m_client->getAvatarsKey(), file.filePath);
             chat->setFriendAvatar(friendAvatar);
 
-            m_configManager->save(
-                m_client->getPublicKey(),
-                m_client->getPrivateKey(),
-                m_client->getSpecialServerKey(),
-                m_client->getMyHashChatsMap(),
-                m_client->getIsHidden(),
-                m_client->getDatabase()
-            );
-
-            m_worker_UI->onChatCreateSuccess(chat);
+            m_worker_UI->updateFriendAvatar(friendAvatar, chat->getFriendLogin());
         }
     }
 }
@@ -541,18 +533,17 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
 
     m_client->getMyHashChatsMap().emplace(utility::calculateHash(login), chat);
 
-    if (!isHasPhoto) {
-        m_configManager->save(
-            m_client->getPublicKey(),
-            m_client->getPrivateKey(),
-            m_client->getSpecialServerKey(),
-            m_client->getMyHashChatsMap(),
-            m_client->getIsHidden(),
-            m_client->getDatabase()
-        );
+    m_configManager->save(
+        m_client->getPublicKey(),
+        m_client->getPrivateKey(),
+        m_client->getSpecialServerKey(),
+        m_client->getMyHashChatsMap(),
+        m_client->getIsHidden(),
+        m_client->getDatabase()
+    );
 
-        m_worker_UI->onChatCreateSuccess(chat);
-    }
+    m_worker_UI->onChatCreateSuccess(chat);
+    
 }
 
 void ResponseHandler::processFriendsStatusesSuccess(const std::string& packet) {

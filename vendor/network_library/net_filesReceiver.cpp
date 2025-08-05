@@ -217,6 +217,8 @@ namespace net
 		m_file.caption = caption;
 		m_file.blobUID = blobUID;
 		m_file.filesInBlobCount = filesCountInBlob;
+		m_file.isAvatar = false;
+		m_file.isAvatarPreview = false;
 
 
 		if (senderLoginHash == "server") {

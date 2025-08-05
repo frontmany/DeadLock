@@ -101,7 +101,7 @@ public slots:
 private:
     void clear();
     void showExistingChat(const std::string& loginHash);
-    void addNewChatAndShow(const std::string& loginHash, FriendInfo* friendInfo);
+    void addNewChatAndShow(const std::string& loginHash, FriendInfo* friendInfo, const std::string& avatarNewPath);
     void showNoUsersFoundLabel();
     void addToFriendsListUI(const std::string& loginHash);
     void clearComponentsMapAndUI();
