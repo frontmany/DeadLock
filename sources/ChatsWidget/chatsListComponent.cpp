@@ -379,32 +379,13 @@ ChatsListComponent::ChatsListComponent(QWidget* parent, ChatsWidget* chatsWidget
     m_profileHLayout->addWidget(m_connectionDownLabel);
 
 
-    m_reconnectButton = new ButtonIcon(this, 32, 32);
-    QIcon reconnectIconDark(":/resources/ChatsWidget/reloadDark.png");
-    QIcon reconnectIconDarkHover(":/resources/ChatsWidget/reloadDarkHover.png");
-    m_reconnectButton->uploadIconsDark(reconnectIconDark, reconnectIconDarkHover);
-    QIcon reconnectIconLight(":/resources/ChatsWidget/reloadLight.png");
-    QIcon reconnectIconLightHover(":/resources/ChatsWidget/reloadLightHover.png");
-    m_reconnectButton->uploadIconsLight(reconnectIconLight, reconnectIconLightHover);
-    m_reconnectButton->setTheme(m_theme);
-    connect(m_reconnectButton, &ButtonIcon::clicked, [this]() {
-        m_reconnectButton->hide();
-        m_reconnectionGif->show();
-        m_chatsWidget->getClient()->tryReconnect();
-    });
-    m_reconnectButton->setIconSize(QSize(24, 24));
-    m_reconnectButton->hide();
-
-    m_profileHLayout->addWidget(m_reconnectButton);
-
-
     m_reconnectionGif = new QLabel(this);
     QMovie* movie = new QMovie(":/resources/ChatsWidget/process.gif"); 
     m_reconnectionGif->setMovie(movie);
     movie->start();
     m_reconnectionGif->hide();
-
     m_profileHLayout->addWidget(m_reconnectionGif);
+
 
     m_darkModeSwitch = new ToggleSwitch(this, m_theme);
     m_darkModeSwitch->setTheme(m_theme);
@@ -716,7 +697,6 @@ void ChatsListComponent::setTheme(Theme theme) {
     m_profileButton->setTheme(m_theme);
     m_friend_search_dialog->setTheme(m_theme);
     m_newChatButton->setTheme(m_theme);
-    m_reconnectButton->setTheme(m_theme);
 
     updateHideButton();
 
@@ -812,15 +792,34 @@ void ChatsListComponent::showConnectionDownLabel() {
     m_hideButton->setChecked(true);
     m_connectionDownLabel->setText("Galactic Silence (Connection Lost)");
     m_connectionDownLabel->show();
-    QTimer::singleShot(5000, this, [this]() {
-        m_reconnectButton->show();
-    });
+
+    startReconnectionAttempts();
+}
+
+void ChatsListComponent::startReconnectionAttempts() {
+    m_reconnectAttempts = 0;
+    if (!m_reconnectTimer) {
+        m_reconnectTimer = new QTimer(this);
+        connect(m_reconnectTimer, &QTimer::timeout, this, &ChatsListComponent::tryReconnect);
+    }
+    m_reconnectTimer->start(5000); 
+}
+
+void ChatsListComponent::tryReconnect() {
+    bool isReconnected = m_chatsWidget->getClient()->tryReconnect();
+    m_reconnectAttempts++;
+
+    if (isReconnected || m_reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        m_reconnectTimer->stop();
+        if (!isReconnected) {
+            qDebug() << "Reconnection failed after" << (m_reconnectAttempts * 5) << "seconds";
+        }
+    }
 }
 
 void ChatsListComponent::removeConnectionDownLabel() {
     m_connectionDownLabel->hide();
     m_reconnectionGif->hide();
-    m_reconnectButton->hide();
     m_hideButton->show();
 }
 

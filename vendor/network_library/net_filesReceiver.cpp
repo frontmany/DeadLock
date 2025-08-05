@@ -27,7 +27,7 @@ namespace net
 		asio::async_read(m_socket, asio::buffer(&m_metadataMessage.header, sizeof(MessageHeader)),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec) {
-					if (ec != asio::error::connection_reset) {
+					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
 						m_onReceiveError(ec, std::nullopt);
 					}
 				}
@@ -43,7 +43,7 @@ namespace net
 		asio::async_read(m_socket, asio::buffer(m_metadataMessage.body.data(), m_metadataMessage.body.size()),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec) {
-					if (ec != asio::error::connection_reset) {
+					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
 						m_onReceiveError(ec, std::nullopt);
 					}
 				}
@@ -74,7 +74,7 @@ namespace net
 			[this](std::error_code ec, std::size_t bytesTransferred) {
 				if (ec) {
 					removePartiallyDownloadedFile();
-					if (ec != asio::error::connection_reset) {
+					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
 						m_onReceiveError(ec, m_file);
 					}
 					return;
@@ -110,7 +110,7 @@ namespace net
 			[this](std::error_code ec, std::size_t bytesTransferred) {
 				if (ec) {
 					removePartiallyDownloadedFile();
-					if (ec != asio::error::connection_reset) {
+					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
 						m_onReceiveError(ec, m_file);
 					}
 					return;

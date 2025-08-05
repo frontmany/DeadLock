@@ -304,7 +304,7 @@ private:
     QScrollArea*            m_scrollArea;  
     QWidget*                m_containerWidget;
     MyTextEdit*             m_messageInputEdit;
-    ButtonCursor*           m_sendMessageButton;
+    ButtonIcon*           m_sendMessageButton;
     ButtonIcon*             m_attachFileButton;
     ButtonIcon*              m_move_slider_down_button;
     MyTextEdit*             m_files_caption_edit = nullptr;

@@ -32,7 +32,7 @@ public:
     void initDatabase(const std::string& login);
     bool waitForConnectionWithTimeout(int timeoutMs);
     void stopClient();
-    void tryReconnect();
+    bool tryReconnect();
 
     Database* getDatabase() { return m_db; }
 

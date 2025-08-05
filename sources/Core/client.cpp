@@ -52,18 +52,19 @@ Client::~Client()
     delete m_packets_builder;
 }
 
-void Client::tryReconnect() {
+bool Client::tryReconnect() {
     createConnection(m_server_ipAddress, m_server_port);
     runContextThread();
 
     bool isConnected = waitForConnectionWithTimeout(2500);
     if (isConnected) {
         sendPacket(m_packets_builder->getReconnectPacket(m_config_manager->getMyLoginHash(), m_config_manager->getMyPasswordHash()), QueryType::RECONNECT);
+        return true;
     }
     else {
         disconnect();
         stop();
-        m_response_handler->getWorkerUI()->showConnectionDownLabel();
+        return false;
     }
 }
 

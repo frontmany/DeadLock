@@ -1,7 +1,6 @@
 <RCC>
     <qresource prefix="/resources/ChatsWidget">
         <file>darkChatsBackground.jpg</file>
-        <file>lightChatsBackground.jpg</file>
         <file>startChatDark.png</file>
         <file>startChatLight.png</file>
         <file>startChatHoverDark.png</file>
@@ -10,10 +9,8 @@
         <file>closeLight.png</file>
         <file>closeHoverLight.png</file>
         <file>closeHoverDark.png</file>
-        <file>sendHoverDark.png</file>
-        <file>sendHoverLight.png</file>
-        <file>sendDark.png</file>
-        <file>sendLight.png</file>
+        <file>sendHover.png</file>
+        <file>send.png</file>
         <file>userFriend.png</file> 
         <file>menuHoverLight.png</file>
         <file>menuHoverDark.png</file>
@@ -30,12 +27,6 @@
         <file>sun.png</file>
 		<file>lockDark.png</file>
 		<file>lockLight.png</file>
-		<file>closeHoverLightGray.png</file>
-		<file>closeLightGray.png</file>
-		<file>logoutDark.png</file>
-		<file>logoutHoverDark.png</file>
-		<file>logoutLight.png</file>
-		<file>logoutHoverLight.png</file>
 		<file>trashBinDark.png</file>
 		<file>trashBinLight.png</file>
 		<file>arrowDownLight.png</file>
@@ -70,9 +61,7 @@
 		<file>trashCanLight.png</file>
 		<file>trashCanLightHover.png</file>
 		<file>reloadDark.png</file>
-		<file>reloadDarkHover.png</file>
 		<file>reloadLight.png</file>
-		<file>reloadLightHover.png</file>
 		<file>networkError.png</file>
 		<file>warning.png</file>
 		<file>loading.gif</file>

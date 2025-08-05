@@ -112,6 +112,8 @@ private slots:
 
 
 private:
+    void startReconnectionAttempts();
+    void tryReconnect();
     void closeHiddenButtonHintDialog();
     void showProfileDialog();
     void updateHideButton();
@@ -136,11 +138,16 @@ private:
     AvatarIcon*         m_profileButton;
     ButtonIcon*         m_newChatButton;
     QLabel*             m_reconnectionGif;
-    ButtonIcon*         m_reconnectButton;
     QPushButton*        m_hideButton;
     QPushButton*        m_updateButton;
     QLabel*             m_connectionDownLabel;
     bool                m_is_hidden;
+
+
+    int m_reconnectAttempts = 0;
+    const int MAX_RECONNECT_ATTEMPTS = 24;
+    QTimer* m_reconnectTimer = nullptr;
+
 
     QTimer* m_search_timer;
     FriendSearchDialogComponent* m_friend_search_dialog;

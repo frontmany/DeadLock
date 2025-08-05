@@ -463,12 +463,12 @@ void FriendProfileComponent::setupUI()
     m_name_label->setAlignment(Qt::AlignLeft);
 
 
-    m_close_button = new ButtonIcon(this, 25, 25);
+    m_close_button = new ButtonIcon(this, 30, 30);
     QIcon icon1(":/resources/ChatsWidget/closeDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/closeHoverDark.png");
     m_close_button->uploadIconsDark(icon1, iconHover1);
-    QIcon icon2(":/resources/ChatsWidget/closeLightGray.png");
-    QIcon iconHover2(":/resources/ChatsWidget/closeHoverLightGray.png");
+    QIcon icon2(":/resources/ChatsWidget/closeLight.png");
+    QIcon iconHover2(":/resources/ChatsWidget/closeHoverLight.png");
     m_close_button->uploadIconsLight(icon2, iconHover2);
     m_close_button->setTheme(m_theme);
 
@@ -477,9 +477,9 @@ void FriendProfileComponent::setupUI()
     m_close_button->setParent(this);
     m_close_button->setGeometry(
         170, 
-        7,
+        5,
         width(), 
-        120 
+        102 
     );
 
     m_mainLayout->addWidget(m_name_label);
@@ -541,6 +541,7 @@ void ChatPropertiesComponent::setupUI() {
     m_mainLayout->setAlignment(Qt::AlignVCenter);
 
     m_delete_chat_button = new  QPushButton(" delete chat");
+    m_delete_chat_button->setCursor(Qt::PointingHandCursor);
     m_delete_chat_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_delete_chat_button->setFixedHeight(40);
     connect(m_delete_chat_button, &QPushButton::clicked, [this]() {
@@ -656,12 +657,12 @@ void ChatPropertiesComponent::setupUI() {
         }
     });
 
-    m_close_button = new ButtonIcon(this, 25, 25);
+    m_close_button = new ButtonIcon(this, 30, 30);
     QIcon icon1(":/resources/ChatsWidget/closeDark.png");
     QIcon iconHover1(":/resources/ChatsWidget/closeHoverDark.png");
     m_close_button->uploadIconsDark(icon1, iconHover1);
-    QIcon icon2(":/resources/ChatsWidget/closeLightGray.png");
-    QIcon iconHover2(":/resources/ChatsWidget/closeHoverLightGray.png");
+    QIcon icon2(":/resources/ChatsWidget/closeLight.png");
+    QIcon iconHover2(":/resources/ChatsWidget/closeHoverLight.png");
     m_close_button->uploadIconsLight(icon2, iconHover2);
     m_close_button->setTheme(m_theme);
     connect(m_close_button, &ButtonIcon::clicked, m_messagingAreaComponent, &MessagingAreaComponent::closeChatPropertiesDialog);
@@ -876,13 +877,12 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
 
 
 
-    m_sendMessageButton = new ButtonCursor(this, m_theme);
-    QIcon icon1(":/resources/ChatsWidget/sendDark.png");
-    QIcon iconHover1(":/resources/ChatsWidget/sendHoverDark.png");
+    m_sendMessageButton = new ButtonIcon(this, 50, 50);
+    m_sendMessageButton->setCursor(Qt::PointingHandCursor);
+    QIcon icon1(":/resources/ChatsWidget/send.png");
+    QIcon iconHover1(":/resources/ChatsWidget/sendHover.png");
     m_sendMessageButton->uploadIconsDark(icon1, iconHover1);
-    QIcon icon2(":/resources/ChatsWidget/sendLight.png");
-    QIcon iconHover2(":/resources/ChatsWidget/sendHoverLight.png");
-    m_sendMessageButton->uploadIconsLight(icon2, iconHover2);
+    m_sendMessageButton->uploadIconsLight(icon1, iconHover1);
     m_sendMessageButton->setTheme(m_theme);
     m_sendMessageButton->hide();
 
@@ -981,7 +981,7 @@ MessagingAreaComponent::MessagingAreaComponent(QWidget* parent, QString friendNa
     connect(m_messageInputEdit, &MyTextEdit::pasteExceeded, this, &MessagingAreaComponent::setErrorLabelText);
 
 
-    connect(m_sendMessageButton, &ButtonCursor::clicked, this, &MessagingAreaComponent::onSendMessageClicked);
+    connect(m_sendMessageButton, &ButtonIcon::clicked, this, &MessagingAreaComponent::onSendMessageClicked);
     connect(this, &MessagingAreaComponent::sendMessageData, m_chatsWidget, &ChatsWidget::onSendMessageData);
 
     connect(m_attachFileButton, &ButtonIcon::clicked, this, &MessagingAreaComponent::onAttachFileClicked);

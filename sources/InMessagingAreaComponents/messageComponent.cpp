@@ -69,6 +69,7 @@ MessageComponent::~MessageComponent() {
 }
 
 void MessageComponent::setRetry() {
+
     if (!m_message->getIsSend() || m_retryButtonContainer) {
         return;
     }
@@ -97,16 +98,6 @@ void MessageComponent::setRetry() {
 
     m_retryButton->setStyleSheet(buttonStyle);
     m_retryButton->setCursor(Qt::PointingHandCursor);
-
-    QIcon retryIcon;
-    if (m_theme == DARK) {
-        retryIcon = QIcon("C:/prj/test_project_qt/reloadDark.png");
-    }
-    else {
-        retryIcon = QIcon("C:/prj/test_project_qt/reloadLight.png");
-    }
-    m_retryButton->setIcon(retryIcon);
-    m_retryButton->setIconSize(QSize(16, 16));
 
     containerLayout->addWidget(m_retryButton);
     containerLayout->setAlignment(m_retryButton, Qt::AlignRight | Qt::AlignBottom);
@@ -198,10 +189,10 @@ void MessageComponent::setTheme(Theme theme) {
     if (m_retryButtonContainer != nullptr) {
         QIcon retryIcon;
         if (m_theme == DARK) {
-            retryIcon = QIcon("C:/prj/test_project_qt/reloadDark.png");
+            retryIcon = QIcon(":/resources/ChatsWidget/reloadDark.png");
         }
         else {
-            retryIcon = QIcon("C:/prj/test_project_qt/reloadLight.png");
+            retryIcon = QIcon(":/resources/ChatsWidget/reloadLight.png");
         }
 
         m_retryButton->setIcon(retryIcon);

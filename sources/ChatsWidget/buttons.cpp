@@ -315,11 +315,6 @@ ButtonIcon::ButtonIcon(QWidget* parent, int x, int y)
     setAttribute(Qt::WA_Hover);
 }
 
-QSize ButtonIcon::sizeHint() const
-{
-    return QSize(50, 50);
-}
-
 void ButtonIcon::setTheme(Theme theme)
 {
     m_isTemporaryIcon = false;

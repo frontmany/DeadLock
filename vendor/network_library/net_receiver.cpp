@@ -19,7 +19,9 @@ namespace net {
 		asio::async_read(*m_socket, asio::buffer(&m_temporaryMessage.header, sizeof(MessageHeader)),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec) {
-					m_onDisconnect();
+					if (ec != asio::error::operation_aborted) {
+						m_onDisconnect();
+					}
 				}
 				else {
 					if (m_temporaryMessage.header.size > sizeof(MessageHeader)) {
@@ -38,7 +40,9 @@ namespace net {
 		asio::async_read(*m_socket, asio::buffer(m_temporaryMessage.body.data(), m_temporaryMessage.body.size()),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec) {
-					m_onDisconnect();
+					if (ec != asio::error::operation_aborted) {
+						m_onDisconnect();
+					}
 				}
 				else {
 					m_safeDequeIncomingMessages.push_back(m_temporaryMessage);

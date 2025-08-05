@@ -137,7 +137,6 @@ class ButtonIcon : public QWidget
 public:
     ButtonIcon(QWidget* parent, int x, int y);
 
-    QSize sizeHint() const override;
     void setTheme(Theme theme);
     void uploadIconsLight(QIcon light, QIcon lightHover);
     void uploadIconsDark(QIcon dark, QIcon darkHover);
