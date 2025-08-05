@@ -104,6 +104,7 @@ private:
 
     Theme           m_theme;
 
+    bool m_spacerAdded = false;
     int m_cropX;
     int m_cropY;
     int m_cropWidth;

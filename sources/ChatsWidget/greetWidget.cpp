@@ -307,7 +307,10 @@ GreetWidget::GreetWidget(QWidget* parent, MainWindow* mw, Client* client, std::s
     connect(m_skipButton, &QPushButton::clicked, this, [this]() {
         m_mainWindow->setupChatsWidget();
         m_hintLabel->hide();
-        m_buttonsHLayout->removeItem(spacer);
+        if (m_spacerAdded) {
+            m_buttonsHLayout->removeItem(spacer);
+            m_spacerAdded = false;
+        }
     });
 
     m_imageLabel = new QLabel(this);
@@ -531,7 +534,14 @@ void GreetWidget::openImagePicker() {
 
         cropImageToCircle();
 
+        
+        if (m_spacerAdded) {
+            m_buttonsHLayout->removeItem(spacer);
+            m_spacerAdded = false;
+        }
         m_buttonsHLayout->addSpacerItem(spacer);
+        m_spacerAdded = true;
+
         m_cropXSlider->show();
         m_cropYSlider->show();
         m_hintLabel->show();

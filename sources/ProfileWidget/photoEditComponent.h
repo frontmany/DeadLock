@@ -79,11 +79,10 @@ private:
     QPushButton* m_cancelButton;
     QPushButton* m_continueButton;
 
+    bool m_spacerAdded = false;
     int m_cropX;
     int m_cropY;
     int m_cropSize;
     int m_cropWidth;
     int m_cropHeight;
-
-
 };

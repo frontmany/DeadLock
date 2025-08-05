@@ -316,7 +316,10 @@ PhotoEditComponent::PhotoEditComponent(QWidget* parent, ProfileEditorWidget* pro
             m_config_manager->setAvatar(avatar);
             m_client->updateMyAvatar(avatar);
 
-            m_buttonsHLayout->removeItem(spacer);
+            if (m_spacerAdded) {
+                m_buttonsHLayout->removeItem(spacer);
+                m_spacerAdded = false;
+            }
             m_profile_editor_widget->setFieldsEditor();
             m_profile_editor_widget->updateAvatar(avatar);
             m_profile_editor_widget->setFieldsEditor();
@@ -451,7 +454,13 @@ void PhotoEditComponent::openImagePicker() {
         m_continueButton->setEnabled(true);
         cropImageToCircle();
 
+        if (m_spacerAdded) {
+            m_buttonsHLayout->removeItem(spacer);
+            m_spacerAdded = false;
+        }
         m_buttonsHLayout->addSpacerItem(spacer);
+        m_spacerAdded = true;
+
         m_cropXSlider->show();
         m_cropYSlider->show();
         m_hintLabel->show();
