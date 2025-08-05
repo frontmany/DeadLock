@@ -25,18 +25,22 @@ MainWindow::MainWindow(QWidget* parent)
 
 void MainWindow::changeEvent(QEvent* event)
 {
-    if (event->type() == QEvent::WindowStateChange) {
-        QWindowStateChangeEvent* stateEvent = static_cast<QWindowStateChangeEvent*>(event);
+    Qt::WindowStates newState = windowState();
 
-        if (windowState() & Qt::WindowMinimized) {
-            onWindowMinimized(); 
-        }
-        else {
-            onWindowMaximized();
+    if (newState == Qt::WindowNoState) {
+        if (m_chatsWidget) {
+            m_chatsWidget->onWindowStateChanged(true);
         }
     }
-
-    QMainWindow::changeEvent(event);
+    else if (newState == Qt::WindowMinimized) {
+        onWindowMinimized(); 
+    }
+    else if (newState == Qt::WindowMaximized) {
+        onWindowMaximized();
+        if (m_chatsWidget) {
+            m_chatsWidget->onWindowStateChanged(false);
+        }
+    }
 }
 
 void MainWindow::onWindowMinimized()

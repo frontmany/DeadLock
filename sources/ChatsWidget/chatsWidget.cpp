@@ -16,6 +16,7 @@
 #include "messageComponent.h"
 #include "mainWindow.h"
 #include "filewrapper.h"
+#include <QTimer>
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -60,6 +61,8 @@ ChatsWidget::ChatsWidget(QWidget* parent, MainWindow* mainWindow, Client* client
     setLayout(mainLayout);
 
     m_is_hello_component = true;
+    
+    m_saved_splitter_sizes = m_splitter->sizes();
 }
 
 ChatsWidget::~ChatsWidget() {
@@ -400,44 +403,23 @@ void ChatsWidget::createAndSetMessagingAreaComponent(Chat* chat) {
 void ChatsWidget::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
 
-    const int minWindowWidth = 600;
-
     const int leftWidgetMinimumWidth = 250;
-
     const int rightWidgetMinimumWidth = 350;
-
 
     QList<int> currentSizes = m_splitter->sizes();
 
-    if (width() < minWindowWidth) {
-
-        if (currentSizes[0] > 0) {
-
-            QList<int> newSizes;
-            newSizes << 0 << width(); 
-            m_splitter->setSizes(newSizes);
+    if (deduceIsNeedToCollapse()) {
+        if (m_is_hello_component) {
+            collapseSplitter(true);
+        }
+        else {
+            collapseSplitter(false);
         }
     }
     else {
-        if (currentSizes[0] == 0) {
-            QList<int> newSizes;
-            int leftWidth = qMax(leftWidgetMinimumWidth, width() - rightWidgetMinimumWidth);
-            newSizes << leftWidth << width() - leftWidth;
-            m_splitter->setSizes(newSizes);
-        }
-        else {
-            int totalWidth = currentSizes[0] + currentSizes[1];
-            if (totalWidth > 0) {
-                double ratio = static_cast<double>(currentSizes[0]) / totalWidth;
-                int newLeftWidth = qMax(leftWidgetMinimumWidth, static_cast<int>(width() * ratio));
-                QList<int> newSizes;
-                newSizes << newLeftWidth << width() - newLeftWidth;
-                m_splitter->setSizes(newSizes);
-            }
-        }
+        restoreSplitterPosition();
     }
 }
-
 
 void ChatsWidget::createAndAddChatComponentToList(Chat* chat) {
     Theme theme = getTheme();
@@ -449,4 +431,67 @@ void ChatsWidget::createAndAddChatComponentToList(Chat* chat) {
 void ChatsWidget::closeAddChatDialog() {
     ChatsListComponent* chatsListComponent = getChatsList();
     chatsListComponent->closeAddChatDialog();
+}
+
+bool ChatsWidget::deduceIsNeedToCollapse() {
+    const int minWindowWidth = 800;
+    return width() < minWindowWidth;
+}
+
+void ChatsWidget::onWindowStateChanged(bool isNeedToCollapse) {
+    if (isNeedToCollapse) {
+        if (deduceIsNeedToCollapse()) {
+            saveSplitterPosition();
+            if (m_is_hello_component) {
+                collapseSplitter(true);
+            }
+            else {
+                collapseSplitter(false);
+            }
+        }
+    }
+    else {
+        if (!m_saved_splitter_sizes.isEmpty()) {
+            restoreSplitterPosition();
+        }
+    }
+}
+
+void ChatsWidget::saveSplitterPosition() {
+    if (m_splitter && m_splitter->sizes().size() >= 2) {
+        m_saved_splitter_sizes = m_splitter->sizes();
+    }
+}
+
+void ChatsWidget::restoreSplitterPosition() {
+    if (!m_splitter) return;
+
+    int totalWidth = width();
+
+    QList<int> newSizes;
+    newSizes << totalWidth / 2 << totalWidth / 2;
+
+    m_splitter->setSizes(newSizes);
+}
+
+void ChatsWidget::collapseSplitter(bool isReversed) {
+    if (!m_splitter) return;
+
+    QList<int> newSizes;
+
+    if (isReversed) {
+        newSizes << width() << 0;
+    }
+    else {
+        newSizes << 0 << width();
+    }
+
+    m_splitter->setSizes(newSizes);
+}
+
+bool ChatsWidget::isSplitterCollapsed() const {
+    if (m_splitter && m_splitter->sizes().size() >= 2) {
+        return m_splitter->sizes()[0] == 0;
+    }
+    return false;
 }

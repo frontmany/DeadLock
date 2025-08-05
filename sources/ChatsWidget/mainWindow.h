@@ -61,7 +61,7 @@ protected:
 	void onWindowMinimized();
 	void onWindowMaximized();
 	void closeEvent(QCloseEvent* event) override;
-
+	
 private:
 	void showDoubleConnectionErrorDialog();
 	void safeShutdown();
