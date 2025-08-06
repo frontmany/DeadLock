@@ -82,20 +82,20 @@ void HelloAreaComponent::setTheme(Theme theme) {
 void HelloAreaComponent::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(Qt::NoPen);
 
+    QRectF rect = this->rect();
+    int radius = 16;
 
     QPainterPath path;
-    QRect rect = this->rect();
-    int radius = 20; 
     path.addRoundedRect(rect, radius, radius);
 
+    QPainterPath rightRect;
+    rightRect.addRect(rect.adjusted(radius, 0, 0, 0));
+    path = path.united(rightRect);
 
-    painter.setClipPath(path); 
-    painter.drawPixmap(rect, m_background);
-    painter.setClipping(false);
-
-    QWidget::paintEvent(event);
+    painter.setBrush(m_background);
+    painter.setPen(Qt::NoPen);
+    painter.drawPath(path);
 }
 
 
