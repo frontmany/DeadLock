@@ -31,7 +31,6 @@ public:
     void startProcessingIncomingPackets();
     void initDatabase(const std::string& login);
     bool waitForConnectionWithTimeout(int timeoutMs);
-    void stopClient();
     bool tryReconnect();
 
     Database* getDatabase() { return m_db; }

@@ -785,7 +785,6 @@ void ChatsListComponent::setAvatarInProfileEditorWidget(Avatar* avatar) {
 }
 
 void ChatsListComponent::showConnectionDownLabel() {
-    m_chatsWidget->getClient()->stopClient();
     m_hideButton->hide();
     m_updateButton->hide();
     m_reconnectionGif->hide();

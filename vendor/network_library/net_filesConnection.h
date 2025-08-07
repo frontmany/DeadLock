@@ -33,11 +33,14 @@ namespace net {
 
 		~FilesConnection() = default;
 
-		void sendFile(const File& file);
 		void disconnect();
+		bool isConnected();
+		void sendFile(const File& file);
+
 
 
 	private:
+
 		FilesSender m_filesSender;
 		FilesReceiver m_filesReceiver;
 		asio::ip::tcp::socket m_socket;

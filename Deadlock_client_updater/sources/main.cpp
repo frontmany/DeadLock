@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     }
 
     std::string oldFileName = lastLine + ".exe";
-    const std::string newFileName = "Deadlock.exe";
+    const std::string newFileName = lastLine + ".exe";
 
     try {
         fs::path sourcePath = fs::path(folderName) / oldFileName;

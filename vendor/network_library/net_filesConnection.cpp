@@ -20,14 +20,19 @@ namespace net
 		m_filesReceiver.startReceiving();
 	}
 
-
 	void FilesConnection::sendFile(const File& file) {
 		m_filesSender.sendFile(file);
 	}
 
+	bool FilesConnection::isConnected() {
+		return m_socket.is_open();
+	}
+
+
 	void FilesConnection::disconnect() {
 		if (m_socket.is_open()) {
 			std::error_code ec;
+			m_socket.cancel();
 			m_socket.close(ec);
 			if (ec) {
 				std::cerr << "Socket close error my: " << ec.message() << "\n";
@@ -35,8 +40,6 @@ namespace net
 			else {
 				std::cout << "Connection closed successfully\n";
 			}
-
-			m_socket.cancel();
 		}
 	}
 }

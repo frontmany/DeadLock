@@ -16,10 +16,10 @@ namespace net {
 
 		~Connection();
 
-
+		asio::ip::tcp::socket& socket();
 		void disconnect();
+		bool isConnected();
 		void send(const net::Message& message);
-		asio::ip::tcp::endpoint getEndpoint();
 
 	private:
 		asio::ip::tcp::socket m_socket;

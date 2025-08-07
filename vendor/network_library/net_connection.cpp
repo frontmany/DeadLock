@@ -30,6 +30,7 @@ namespace net {
 	void Connection::disconnect() {
 		if (m_socket.is_open()) {
 			std::error_code ec;
+			m_socket.cancel();
 			m_socket.close(ec);
 			if (ec) {
 				std::cerr << "Socket close error my: " << ec.message() << "\n";
@@ -37,18 +38,19 @@ namespace net {
 			else {
 				std::cout << "Connection closed successfully\n";
 			}
-
-			m_socket.cancel();
 		}
+	}
+
+	asio::ip::tcp::socket& Connection::socket() {
+		return m_socket;
+	}
+
+	bool Connection::isConnected() {
+		return m_socket.is_open();
 	}
 
 	void Connection::send(const Message& message) {
 		m_sender.send(message);
-	}
-
-
-	asio::ip::tcp::endpoint Connection::getEndpoint() {
-		return m_socket.remote_endpoint();
 	}
 }
 

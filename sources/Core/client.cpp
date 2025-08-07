@@ -53,8 +53,7 @@ Client::~Client()
 }
 
 bool Client::tryReconnect() {
-    createConnection(m_server_ipAddress, m_server_port);
-    runContextThread();
+    reconnectMessagesConnection();
 
     bool isConnected = waitForConnectionWithTimeout(2500);
     if (isConnected) {
@@ -62,8 +61,6 @@ bool Client::tryReconnect() {
         return true;
     }
     else {
-        disconnect();
-        stop();
         return false;
     }
 }
@@ -93,10 +90,6 @@ void Client::connectTo(const std::string& ipAddress, int port) {
     m_server_port = port;
     createConnection(ipAddress, port);
     runContextThread();
-}
-
-void Client::stopClient() {
-    stop();
 }
 
 void Client::typingNotify(const std::string& friendLogin, bool isTyping) {
@@ -477,6 +470,8 @@ void Client::onReceiveFileError(std::error_code ec, std::optional<net::File> unr
         m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.value().receiverLoginHash, { false, unreadFile.value() });
     }
 }
+
+
 
 void Client::onConnectionDown() {
     disconnect();

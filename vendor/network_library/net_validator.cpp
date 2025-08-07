@@ -7,8 +7,12 @@ namespace net {
 		asio::ip::tcp::socket&& messagesSocket,
 		std::function<void()> errorCallback,
 		std::function<void(asio::ip::tcp::socket socket)> onFilesSocketValidated,
-		std::function<void(asio::ip::tcp::socket socket)> onMessagesSocketValidated)
+		std::function<void(asio::ip::tcp::socket socket)> onMessagesSocketValidated,
+		std::function<void()> filesSocketReconnected,
+		std::function<void()> messagesSocketReconnected)
 		: m_asio_context(asioContext),
+		m_filesSocketReconnected(filesSocketReconnected),
+		m_messagesSocketReconnected(messagesSocketReconnected),
 		m_on_connect_error(std::move(errorCallback)),
 		m_on_files_socket_validated(std::move(onFilesSocketValidated)),
 		m_on_messages_socket_validated(std::move(onMessagesSocketValidated)),
@@ -54,76 +58,197 @@ namespace net {
 	}
 
 	void Validator::writeFilesSocketValidation(std::string loginHash) {
-		asio::async_write(m_files_socket,
-			asio::buffer(&m_files_socket_hand_shake_out, sizeof(uint64_t)),
-			[loginHash, this](std::error_code ec, std::size_t length) {
-				if (ec) {
-					m_on_connect_error();
-					return;
-				}
+		if (m_isReconnectingFilesSocket) {
+			asio::async_write(*m_tmp_files_socket_to_reconnect,
+				asio::buffer(&m_files_socket_hand_shake_out, sizeof(uint64_t)),
+				[loginHash, this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+						return;
+					}
 
-				uint32_t login_length = static_cast<uint32_t>(loginHash.size());
-				asio::async_write(m_files_socket,
-					asio::buffer(&login_length, sizeof(uint32_t)),
-					[loginHash, this](std::error_code ec, std::size_t length) {
-						if (ec) {
-							m_on_connect_error();
-							return;
-						}
+					uint32_t login_length = static_cast<uint32_t>(loginHash.size());
+					asio::async_write(*m_tmp_files_socket_to_reconnect,
+						asio::buffer(&login_length, sizeof(uint32_t)),
+						[loginHash, this](std::error_code ec, std::size_t length) {
+							if (ec) {
+								m_on_connect_error();
+							}
+							else {
+								asio::async_write(*m_tmp_files_socket_to_reconnect,
+									asio::buffer(loginHash.data(), loginHash.size()),
+									[loginHash, this](std::error_code ec, std::size_t length) {
+										if (ec) {
+											m_on_connect_error();
+											return;
+										}
+										else {
+											m_filesSocketReconnected();
+											m_isReconnectingFilesSocket = false;
+											m_tmp_files_socket_to_reconnect = nullptr;
+										}
 
-						asio::async_write(m_files_socket,
-							asio::buffer(loginHash.data(), loginHash.size()),
-							[loginHash, this](std::error_code ec, std::size_t length) {
-								if (ec) {
-									m_on_connect_error();
-									return;
-								}
+									});
+							}
+						});
+				});
+		}
+		else {
+			asio::async_write(m_files_socket,
+				asio::buffer(&m_files_socket_hand_shake_out, sizeof(uint64_t)),
+				[loginHash, this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+						return;
+					}
 
-								m_on_files_socket_validated(std::move(m_files_socket));
-							});
-					});
-			});
+					uint32_t login_length = static_cast<uint32_t>(loginHash.size());
+					asio::async_write(m_files_socket,
+						asio::buffer(&login_length, sizeof(uint32_t)),
+						[loginHash, this](std::error_code ec, std::size_t length) {
+							if (ec) {
+								m_on_connect_error();
+							}
+							else {
+								asio::async_write(m_files_socket,
+									asio::buffer(loginHash.data(), loginHash.size()),
+									[loginHash, this](std::error_code ec, std::size_t length) {
+										if (ec) {
+											m_on_connect_error();
+											return;
+										}
+										else {
+											m_on_files_socket_validated(std::move(m_files_socket));
+										}
+
+									});
+							}
+						});
+				});
+		}
 	}
 
 	void Validator::writeMessagesSocketValidation() {
-		asio::async_write(m_messages_socket, asio::buffer(&m_messages_socket_hand_shake_out, sizeof(uint64_t)),
-			[this](std::error_code ec, std::size_t length) {
-				if (ec) {
-					m_on_connect_error();
-				}
-				else {
-					m_on_messages_socket_validated(std::move(m_messages_socket));
-				}
-			});
+		if (m_isReconnectingMessagesSocket) {
+			asio::async_write(*m_tmp_messages_socket_to_reconnect, asio::buffer(&m_messages_socket_hand_shake_out, sizeof(uint64_t)),
+				[this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+					}
+					else {
+						m_messagesSocketReconnected();
+						m_isReconnectingMessagesSocket = false;
+						m_tmp_messages_socket_to_reconnect = nullptr;
+					}
+				});
+		}
+		else {
+			asio::async_write(m_messages_socket, asio::buffer(&m_messages_socket_hand_shake_out, sizeof(uint64_t)),
+				[this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+					}
+					else {
+						m_on_messages_socket_validated(std::move(m_messages_socket));
+					}
+				});
+		}
 	}
 
 	void Validator::readFilesSocketValidation(std::string loginHash) {
-		asio::async_read(m_files_socket, asio::buffer(&m_files_socket_hand_shake_in, sizeof(uint64_t)),
-			[loginHash, this](std::error_code ec, std::size_t length) {
-				if (ec) {
-					m_on_connect_error();
-				}
-				else {
-					m_files_socket_hand_shake_out = scramble(m_files_socket_hand_shake_in);
-					m_files_socket_hand_shake_out++;
-					writeFilesSocketValidation(std::move(loginHash));
-				}
-			});
+		if (m_isReconnectingFilesSocket) {
+			asio::async_read(*m_tmp_files_socket_to_reconnect, asio::buffer(&m_files_socket_hand_shake_in, sizeof(uint64_t)),
+				[loginHash, this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+					}
+					else {
+						m_files_socket_hand_shake_out = scramble(m_files_socket_hand_shake_in);
+						m_files_socket_hand_shake_out++;
+						writeFilesSocketValidation(std::move(loginHash));
+					}
+				});
+		}
+		else {
+			asio::async_read(m_files_socket, asio::buffer(&m_files_socket_hand_shake_in, sizeof(uint64_t)),
+				[loginHash, this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+					}
+					else {
+						m_files_socket_hand_shake_out = scramble(m_files_socket_hand_shake_in);
+						m_files_socket_hand_shake_out++;
+						writeFilesSocketValidation(std::move(loginHash));
+					}
+				});
+		}
 	}
 
 	void Validator::readMessagesSocketValidation() {
-		asio::async_read(m_messages_socket, asio::buffer(&m_messages_socket_hand_shake_in, sizeof(uint64_t)),
-			[this](std::error_code ec, std::size_t length) {
+		if (m_isReconnectingMessagesSocket) {
+			asio::async_read(*m_tmp_messages_socket_to_reconnect, asio::buffer(&m_messages_socket_hand_shake_in, sizeof(uint64_t)),
+				[this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+					}
+					else {
+						m_messages_socket_hand_shake_out = scramble(m_messages_socket_hand_shake_in);
+						writeMessagesSocketValidation();
+					}
+				});
+		}
+		else {
+			asio::async_read(m_messages_socket, asio::buffer(&m_messages_socket_hand_shake_in, sizeof(uint64_t)),
+				[this](std::error_code ec, std::size_t length) {
+					if (ec) {
+						m_on_connect_error();
+					}
+					else {
+						m_messages_socket_hand_shake_out = scramble(m_messages_socket_hand_shake_in);
+						writeMessagesSocketValidation();
+					}
+				});
+		}
+		
+	}
+
+	void Validator::reconnectMessagesSocket(asio::ip::tcp::socket& socket, const asio::ip::tcp::resolver::results_type& endpoint) {
+		m_tmp_messages_socket_to_reconnect = &socket;
+		m_isReconnectingMessagesSocket = true;
+		
+		asio::async_connect(*m_tmp_messages_socket_to_reconnect, endpoint,
+			[this](std::error_code ec, const asio::ip::tcp::endpoint& endpoint) {
 				if (ec) {
-					m_on_connect_error();
+					if (m_on_connect_error) {
+						m_on_connect_error();
+					}
+					std::cerr << "Connection failed: " << ec.message() << std::endl;
 				}
 				else {
-					m_messages_socket_hand_shake_out = scramble(m_messages_socket_hand_shake_in);
-					writeMessagesSocketValidation();
+					std::cout << "Connected to: " << endpoint << std::endl;
+					readMessagesSocketValidation();
 				}
 			});
 	}
 
+	void Validator::reconnectFilesSocket(asio::ip::tcp::socket& socket, std::string loginHash, const asio::ip::tcp::resolver::results_type& endpoint) {
+		m_tmp_files_socket_to_reconnect = &socket;
+		m_isReconnectingFilesSocket = true;
+
+		asio::async_connect(socket, endpoint,
+			[loginHash, this](std::error_code ec, const asio::ip::tcp::endpoint& endpoint) {
+				if (ec) {
+					if (m_on_connect_error) {
+						m_on_connect_error();
+					}
+					std::cerr << "Connection failed: " << ec.message() << std::endl;
+				}
+				else {
+					std::cout << "Connected to: " << endpoint << std::endl;
+					readFilesSocketValidation(std::move(loginHash));
+				}
+			});
+	}
 
 	void Validator::disconnect() {
 		if (m_messages_socket.is_open()) {

@@ -20,7 +20,9 @@ namespace net {
 			asio::ip::tcp::socket&& messagesSocket,
 			std::function<void()> errorCallback,
 			std::function<void(asio::ip::tcp::socket socket)> onFilesSocketValidated,
-			std::function<void(asio::ip::tcp::socket socket)> onMessagesSocketValidated
+			std::function<void(asio::ip::tcp::socket socket)> onMessagesSocketValidated,
+			std::function<void()> filesSocketReconnected,
+			std::function<void()> messagesSocketReconnected
 		);
 
 		Validator() = default;
@@ -44,9 +46,20 @@ namespace net {
 
 		void disconnect();
 
+		void reconnectMessagesSocket(asio::ip::tcp::socket& socket, const asio::ip::tcp::resolver::results_type& endpoint);
+		void reconnectFilesSocket(asio::ip::tcp::socket& socket, std::string loginHash, const asio::ip::tcp::resolver::results_type& endpoint);
+
 		uint64_t scramble(uint64_t inputNumber);
 
 	private:
+		bool m_isReconnectingFilesSocket = false;
+		bool m_isReconnectingMessagesSocket = false;
+
+		asio::ip::tcp::socket* m_tmp_files_socket_to_reconnect = nullptr;
+		asio::ip::tcp::socket* m_tmp_messages_socket_to_reconnect = nullptr;
+
+
+
 		asio::ip::tcp::socket m_files_socket;
 		asio::ip::tcp::socket m_messages_socket;
 		asio::io_context& m_asio_context;
@@ -58,6 +71,8 @@ namespace net {
 		uint64_t m_files_socket_hand_shake_in;
 
 		std::function<void()> m_on_connect_error;
+		std::function<void()> m_filesSocketReconnected;
+		std::function<void()> m_messagesSocketReconnected;
 		std::function<void(asio::ip::tcp::socket filesSocket)> m_on_files_socket_validated;
 		std::function<void(asio::ip::tcp::socket messagesSocket)> m_on_messages_socket_validated;
 	};

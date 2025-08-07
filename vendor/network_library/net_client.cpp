@@ -2,7 +2,9 @@
 #include "net_validator.h"
 
 namespace net {
-	ClientInterface::ClientInterface()
+	ClientInterface::ClientInterface() 
+		:
+		m_workGuard(asio::make_work_guard(m_context))
 	{
 		m_validator = std::make_unique<Validator>(
 			m_context,
@@ -14,7 +16,9 @@ namespace net {
 			},
 			[this](asio::ip::tcp::socket socket) {
 				createMessagesConnection(std::move(socket));
-			}
+			},
+			[this]() { onMessagesConnectionReconnected(); },
+			[this]() { onFilesConnectionReconnected(); }
 		);
 	}
 
@@ -27,11 +31,19 @@ namespace net {
 		});
 	}
 
+	void ClientInterface::reconnectMessagesConnection() {
+		m_validator->reconnectMessagesSocket(m_connection->socket(), m_serverEndpoint);
+	}
+
+	void ClientInterface::reconnectFilesConnection(const std::string& loginHash) {
+		m_validator->reconnectFilesSocket(m_connection->socket(), loginHash, m_serverEndpoint);
+	}
+
 	bool ClientInterface::createConnection(const std::string& host, const uint16_t port) {
 		try {
 			asio::ip::tcp::resolver resolver(m_context);
-			asio::ip::tcp::resolver::results_type endpoint = resolver.resolve(host, std::to_string(port));
-			m_validator->connectMessagesSocketToServer(endpoint);
+			m_serverEndpoint = resolver.resolve(host, std::to_string(port));
+			m_validator->connectMessagesSocketToServer(m_serverEndpoint);
 
 			return true;
 		}
@@ -55,31 +67,26 @@ namespace net {
 		}
 	}
 
-	void ClientInterface::stop() {
-		if (m_context_thread.joinable()) {
-			m_context_thread.join();
-			std::cout << "Context stopped successfully\n";
-		}
-	}
-
 	bool ClientInterface::isConnected() {
 		return m_is_connected;
 	}
 
+	void ClientInterface::onMessagesConnectionReconnected() {
+		m_is_connected = true;
+	}
+	
+	void ClientInterface::onFilesConnectionReconnected() 
+	{
+	}
+
 	void ClientInterface::disconnect() {
 		try {
-			if (m_connection) {
+			if (m_connection->isConnected()) {
 				m_connection->disconnect();
-
 			}
 
-			if (m_files_connection) {
+			if (m_files_connection->isConnected()) {
 				m_files_connection->disconnect();
-			}
-
-			if (!m_context.stopped()) {
-				m_context.stop();
-				m_context.restart();
 			}
 
 			m_is_connected = false;

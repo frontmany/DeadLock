@@ -432,7 +432,7 @@ void ResponseHandler::onFilePreview(const std::string& packet) {
 }
 
 void ResponseHandler::onReconnectSuccess() {
-    m_client->createFilesConnection(m_configManager->getMyLoginHash(), m_client->getServerIpAddress(), m_client->geServerPort());
+    m_client->reconnectFilesConnection(m_configManager->getMyLoginHash());
     m_worker_UI->removeConnectionErrorLabel();
 }
 
@@ -531,7 +531,12 @@ void ResponseHandler::onChatCreateSuccess(const std::string& packet) {
     chat->setFriendLastSeen(lastSeen);
     chat->setLastReceivedOrSentMessage("no messages yet");
 
-    m_client->getMyHashChatsMap().emplace(utility::calculateHash(login), chat);
+    if (!m_client->getMyHashChatsMap().contains(utility::calculateHash(login))) {
+        m_client->getMyHashChatsMap().emplace(utility::calculateHash(login), chat);
+    }
+    else {
+        return;
+    }
 
     m_configManager->save(
         m_client->getPublicKey(),

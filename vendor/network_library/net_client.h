@@ -21,9 +21,10 @@ namespace net
 
 		bool createConnection(const std::string& host, const uint16_t port);
 		bool createFilesConnection(const std::string& loginHash, const std::string& host, const uint16_t port);
-		
-		void stop();
+	
 		void disconnect();
+		void reconnectMessagesConnection();
+		void reconnectFilesConnection(const std::string& loginHash);
 
 		bool isConnected();
 		void send(const net::Message& msg);
@@ -48,20 +49,25 @@ namespace net
 		virtual void onConnectionDown() = 0;
 
 	private:
+		void onMessagesConnectionReconnected();
+		void onFilesConnectionReconnected();
+
 		void createMessagesConnection(asio::ip::tcp::socket messagesSocket);
 
 		void createFilesConnection(asio::ip::tcp::socket filesSocket);
 
 	private:
+		asio::io_context m_context;
+		asio::executor_work_guard<asio::io_context::executor_type, void, void> m_workGuard;
+
 		bool m_is_connected = false;
 		std::unique_ptr<Validator> m_validator;
 		std::thread	m_context_thread;
-		asio::io_context m_context;
 		std::shared_ptr<Connection> m_connection;
 		std::shared_ptr<FilesConnection> m_files_connection;
 		SafeDeque<net::Message> m_safe_deque_of_incoming_messages;
 		SafeDeque<File> m_safe_deque_of_incoming_files;
-
+		asio::ip::tcp::resolver::results_type m_serverEndpoint;
 
 	protected:
 		CryptoPP::RSA::PublicKey  m_server_public_key;

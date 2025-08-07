@@ -301,8 +301,6 @@ void MainWindow::showAlreadyRunningDialog()
 }
 
 void MainWindow::showConnectionErrorDialog() {
-    m_client->stopClient();
-
     OverlayWidget* overlay = new OverlayWidget(this);
     overlay->show();
 
