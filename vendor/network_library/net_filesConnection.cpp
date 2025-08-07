@@ -17,6 +17,9 @@ namespace net
 		m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError, onAllFilesSent),
 		m_filesReceiver(myPrivateKey, incomingFilesQueue, m_socket, onReceiveProgressUpdate, onReceiveFileError)
 	{
+	}
+
+	void FilesConnection::startReceiving() {
 		m_filesReceiver.startReceiving();
 	}
 

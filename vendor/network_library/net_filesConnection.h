@@ -35,6 +35,7 @@ namespace net {
 
 		void disconnect();
 		bool isConnected();
+		void startReceiving();
 		void sendFile(const File& file);
 
 

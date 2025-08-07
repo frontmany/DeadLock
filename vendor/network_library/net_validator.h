@@ -21,8 +21,8 @@ namespace net {
 			std::function<void()> errorCallback,
 			std::function<void(asio::ip::tcp::socket socket)> onFilesSocketValidated,
 			std::function<void(asio::ip::tcp::socket socket)> onMessagesSocketValidated,
-			std::function<void()> filesSocketReconnected,
-			std::function<void()> messagesSocketReconnected
+			std::function<void()> messagesSocketReconnected,
+			std::function<void()> filesSocketReconnected
 		);
 
 		Validator() = default;

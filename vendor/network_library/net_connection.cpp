@@ -20,6 +20,9 @@ namespace net {
 			safeDequeIncomingMessages,
 			onDisconnect)
 	{
+	}
+
+	void Connection::startReceiving() {
 		m_receiver.startReceiving();
 	}
 

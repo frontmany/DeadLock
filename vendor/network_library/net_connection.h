@@ -19,6 +19,7 @@ namespace net {
 		asio::ip::tcp::socket& socket();
 		void disconnect();
 		bool isConnected();
+		void startReceiving();
 		void send(const net::Message& message);
 
 	private:

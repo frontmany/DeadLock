@@ -73,10 +73,12 @@ namespace net {
 
 	void ClientInterface::onMessagesConnectionReconnected() {
 		m_is_connected = true;
+		m_connection->startReceiving();
 	}
 	
 	void ClientInterface::onFilesConnectionReconnected() 
 	{
+		m_files_connection->startReceiving();
 	}
 
 	void ClientInterface::disconnect() {
@@ -153,6 +155,7 @@ namespace net {
 			[this](){onConnectionDown(); }
 		);
 
+		m_connection->startReceiving();
 		m_is_connected = true;
 	}
 
@@ -168,5 +171,7 @@ namespace net {
 			[this](File file, uint32_t progressPercent) {onReceiveFileProgressUpdate(file, progressPercent); },
 			[this]() {onAllFilesSent(); }
 		);
+
+		m_files_connection->startReceiving();
 	}
 }
