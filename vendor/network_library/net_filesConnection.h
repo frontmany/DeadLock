@@ -33,6 +33,7 @@ namespace net {
 
 		~FilesConnection() = default;
 
+		asio::ip::tcp::socket& socket();
 		void disconnect();
 		bool isConnected();
 		void startReceiving();

@@ -31,6 +31,9 @@ namespace net
 		return m_socket.is_open();
 	}
 
+	asio::ip::tcp::socket& FilesConnection::socket() {
+		return m_socket;
+	}
 
 	void FilesConnection::disconnect() {
 		if (m_socket.is_open()) {

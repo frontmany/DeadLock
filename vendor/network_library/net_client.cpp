@@ -36,7 +36,7 @@ namespace net {
 	}
 
 	void ClientInterface::reconnectFilesConnection(const std::string& loginHash) {
-		m_validator->reconnectFilesSocket(m_connection->socket(), loginHash, m_serverEndpoint);
+		m_validator->reconnectFilesSocket(m_files_connection->socket(), loginHash, m_serverEndpoint);
 	}
 
 	bool ClientInterface::createConnection(const std::string& host, const uint16_t port) {
