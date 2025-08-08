@@ -20,8 +20,6 @@ Deadlock Messenger is a secure, privacy-focused messaging app designed for users
 
 All messages, files, and metadata in Deadlock are end-to-end encrypted (E2EE) using AES-256 and RSA-4096 with alghoritsm provided by CryptoPP library. Even data stored locally on your device remains encrypted with a unique key, part of which is securely retrieved from the server only during login. This means no one, even someone with your computer can access your conversations without physically unlocking your account through the app. Your chats always stays private.
 
-![lock picture](/secure-chat-dark.png)
-
 
 
 
