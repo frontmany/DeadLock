@@ -279,13 +279,6 @@ void FriendComponent::slotToSendData() {
     emit sendData(m_login_hash);
 }
 
-
-
-
-
-
-
-
 FriendSearchDialogComponent::FriendSearchDialogComponent(QWidget* parent, ChatsListComponent* chatsListComponent, Theme theme)
     : QWidget(parent), m_chats_list_component(chatsListComponent), m_theme(theme), m_scrollHLayout(nullptr), m_mainVLayout(nullptr)
 {

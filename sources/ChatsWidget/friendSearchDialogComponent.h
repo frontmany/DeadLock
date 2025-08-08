@@ -80,8 +80,6 @@ private:
 };
 
 
-
-
 class FriendSearchDialogComponent : public QWidget {
     Q_OBJECT
 
