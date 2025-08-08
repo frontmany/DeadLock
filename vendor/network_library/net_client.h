@@ -5,7 +5,7 @@
 #include "net_filesConnection.h"
 
 #include "net_safeDeque.h"
-#include "net_validator.h"
+#include "net_connectionsManager.h"
 #include "net_message.h"
 #include "net_file.h"
 #include "rsa.h"
@@ -61,7 +61,7 @@ namespace net
 		asio::executor_work_guard<asio::io_context::executor_type, void, void> m_workGuard;
 
 		bool m_is_connected = false;
-		std::unique_ptr<Validator> m_validator;
+		std::unique_ptr<ConnectionsManager> m_connectionsManager;
 		std::thread	m_context_thread;
 		std::shared_ptr<Connection> m_connection;
 		std::shared_ptr<FilesConnection> m_files_connection;

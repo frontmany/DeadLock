@@ -1,8 +1,8 @@
-#include "net_validator.h"
+#include "net_connectionsManager.h"
 
 
 namespace net {
-	Validator::Validator(asio::io_context& asioContext,
+	ConnectionsManager::ConnectionsManager(asio::io_context& asioContext,
 		asio::ip::tcp::socket&& filesSocket,
 		asio::ip::tcp::socket&& messagesSocket,
 		std::function<void()> errorCallback,
@@ -25,7 +25,7 @@ namespace net {
 		m_files_socket_hand_shake_in = 0;
 	}
 
-	void Validator::connectFilesSocketToServer(std::string loginHash, const asio::ip::tcp::resolver::results_type& endpoint) {
+	void ConnectionsManager::connectFilesSocketToServer(std::string loginHash, const asio::ip::tcp::resolver::results_type& endpoint) {
 		asio::async_connect(m_files_socket, endpoint,
 			[loginHash, this](std::error_code ec, const asio::ip::tcp::endpoint& endpoint) {
 				if (ec) {
@@ -41,7 +41,7 @@ namespace net {
 			});
 	}
 
-	void Validator::connectMessagesSocketToServer(const asio::ip::tcp::resolver::results_type& endpoint) {
+	void ConnectionsManager::connectMessagesSocketToServer(const asio::ip::tcp::resolver::results_type& endpoint) {
 		asio::async_connect(m_messages_socket, endpoint,
 			[this](std::error_code ec, const asio::ip::tcp::endpoint& endpoint) {
 				if (ec) {
@@ -57,7 +57,7 @@ namespace net {
 			});
 	}
 
-	void Validator::writeFilesSocketValidation(std::string loginHash) {
+	void ConnectionsManager::writeFilesSocketValidation(std::string loginHash) {
 		if (m_isReconnectingFilesSocket) {
 			asio::async_write(*m_tmp_files_socket_to_reconnect,
 				asio::buffer(&m_files_socket_hand_shake_out, sizeof(uint64_t)),
@@ -128,7 +128,7 @@ namespace net {
 		}
 	}
 
-	void Validator::writeMessagesSocketValidation() {
+	void ConnectionsManager::writeMessagesSocketValidation() {
 		if (m_isReconnectingMessagesSocket) {
 			asio::async_write(*m_tmp_messages_socket_to_reconnect, asio::buffer(&m_messages_socket_hand_shake_out, sizeof(uint64_t)),
 				[this](std::error_code ec, std::size_t length) {
@@ -155,7 +155,7 @@ namespace net {
 		}
 	}
 
-	void Validator::readFilesSocketValidation(std::string loginHash) {
+	void ConnectionsManager::readFilesSocketValidation(std::string loginHash) {
 		if (m_isReconnectingFilesSocket) {
 			asio::async_read(*m_tmp_files_socket_to_reconnect, asio::buffer(&m_files_socket_hand_shake_in, sizeof(uint64_t)),
 				[loginHash, this](std::error_code ec, std::size_t length) {
@@ -184,7 +184,7 @@ namespace net {
 		}
 	}
 
-	void Validator::readMessagesSocketValidation() {
+	void ConnectionsManager::readMessagesSocketValidation() {
 		if (m_isReconnectingMessagesSocket) {
 			asio::async_read(*m_tmp_messages_socket_to_reconnect, asio::buffer(&m_messages_socket_hand_shake_in, sizeof(uint64_t)),
 				[this](std::error_code ec, std::size_t length) {
@@ -212,7 +212,7 @@ namespace net {
 		
 	}
 
-	void Validator::reconnectMessagesSocket(asio::ip::tcp::socket& socket, const asio::ip::tcp::resolver::results_type& endpoint) {
+	void ConnectionsManager::reconnectMessagesSocket(asio::ip::tcp::socket& socket, const asio::ip::tcp::resolver::results_type& endpoint) {
 		m_tmp_messages_socket_to_reconnect = &socket;
 		m_isReconnectingMessagesSocket = true;
 		
@@ -231,7 +231,7 @@ namespace net {
 			});
 	}
 
-	void Validator::reconnectFilesSocket(asio::ip::tcp::socket& socket, std::string loginHash, const asio::ip::tcp::resolver::results_type& endpoint) {
+	void ConnectionsManager::reconnectFilesSocket(asio::ip::tcp::socket& socket, std::string loginHash, const asio::ip::tcp::resolver::results_type& endpoint) {
 		m_tmp_files_socket_to_reconnect = &socket;
 		m_isReconnectingFilesSocket = true;
 
@@ -250,7 +250,7 @@ namespace net {
 			});
 	}
 
-	void Validator::disconnect() {
+	void ConnectionsManager::disconnect() {
 		if (m_messages_socket.is_open()) {
 			asio::post(m_asio_context, [this]() { m_messages_socket.close(); });
 		}
@@ -259,7 +259,7 @@ namespace net {
 		}
 	}
 
-	uint64_t Validator::scramble(uint64_t inputNumber) {
+	uint64_t ConnectionsManager::scramble(uint64_t inputNumber) {
 		uint64_t out = inputNumber ^ 0xDEADBEEFC;
 		out = (out & 0xF0F0F0F0F) >> 4 | (out & 0x0F0F0F0F0F) << 4;
 		return out ^ 0xC0DEFACE12345678;

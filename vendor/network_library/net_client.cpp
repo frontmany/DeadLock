@@ -1,12 +1,11 @@
 #include "net_client.h"
-#include "net_validator.h"
 
 namespace net {
 	ClientInterface::ClientInterface() 
 		:
 		m_workGuard(asio::make_work_guard(m_context))
 	{
-		m_validator = std::make_unique<Validator>(
+		m_connectionsManager = std::make_unique<ConnectionsManager>(
 			m_context,
 			asio::ip::tcp::socket(m_context),
 			asio::ip::tcp::socket(m_context),
@@ -32,18 +31,18 @@ namespace net {
 	}
 
 	void ClientInterface::reconnectMessagesConnection() {
-		m_validator->reconnectMessagesSocket(m_connection->socket(), m_serverEndpoint);
+		m_connectionsManager->reconnectMessagesSocket(m_connection->socket(), m_serverEndpoint);
 	}
 
 	void ClientInterface::reconnectFilesConnection(const std::string& loginHash) {
-		m_validator->reconnectFilesSocket(m_files_connection->socket(), loginHash, m_serverEndpoint);
+		m_connectionsManager->reconnectFilesSocket(m_files_connection->socket(), loginHash, m_serverEndpoint);
 	}
 
 	bool ClientInterface::createConnection(const std::string& host, const uint16_t port) {
 		try {
 			asio::ip::tcp::resolver resolver(m_context);
 			m_serverEndpoint = resolver.resolve(host, std::to_string(port));
-			m_validator->connectMessagesSocketToServer(m_serverEndpoint);
+			m_connectionsManager->connectMessagesSocketToServer(m_serverEndpoint);
 
 			return true;
 		}
@@ -57,7 +56,7 @@ namespace net {
 		try {
 			asio::ip::tcp::resolver resolver(m_context);
 			asio::ip::tcp::resolver::results_type endpoint = resolver.resolve(host, std::to_string(port));
-			m_validator->connectFilesSocketToServer(loginHash, endpoint);
+			m_connectionsManager->connectFilesSocketToServer(loginHash, endpoint);
 
 			return true;
 		}

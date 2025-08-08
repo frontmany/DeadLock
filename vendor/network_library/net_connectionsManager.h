@@ -13,9 +13,9 @@
 #include <codecvt>   
 
 namespace net {
-	class Validator {
+	class ConnectionsManager {
 	public:
-		Validator(asio::io_context& asioContext,
+		ConnectionsManager(asio::io_context& asioContext,
 			asio::ip::tcp::socket&& filesSocket,
 			asio::ip::tcp::socket&& messagesSocket,
 			std::function<void()> errorCallback,
@@ -25,10 +25,10 @@ namespace net {
 			std::function<void()> filesSocketReconnected
 		);
 
-		Validator() = default;
-		~Validator() = default;
-		Validator(const Validator&) = delete;
-		Validator& operator=(const Validator&) = delete;
+		ConnectionsManager() = default;
+		~ConnectionsManager() = default;
+		ConnectionsManager(const ConnectionsManager&) = delete;
+		ConnectionsManager& operator=(const ConnectionsManager&) = delete;
 
 
 
