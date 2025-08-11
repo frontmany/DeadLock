@@ -31,36 +31,36 @@ void ConfigManager::save(const std::unordered_map<std::string, ChatPtr>& mapFrie
     utility::generateAESKey(mainConfigKey);
 
     nlohmann::json jsonObject;
-    jsonObject["currentVersionNumber"] = utility::AESEncrypt(mainConfigKey, m_currentVersionNumber);
-    jsonObject["myUID"] = utility::AESEncrypt(mainConfigKey, m_myUID);
+    jsonObject[CURRENT_VERSION_NUMBER] = utility::AESEncrypt(mainConfigKey, m_currentVersionNumber);
+    jsonObject[MY_UID] = utility::AESEncrypt(mainConfigKey, m_myUID);
 
     if (isAutoLogin) {
-        jsonObject["passwordHash"] = m_myPasswordHash;
+        jsonObject[PASSWORD_HASH] = m_myPasswordHash;
     }
 
 
-    jsonObject["loginHash"] = m_myLoginHash;
-    jsonObject["login"] = utility::AESEncrypt(mainConfigKey, m_myLogin);
-    jsonObject["name"] = utility::AESEncrypt(mainConfigKey, m_myName);
-    jsonObject["isHasAvatar"] = utility::AESEncrypt(mainConfigKey, (m_isHasAvatar ? "1" : "0"));
+    jsonObject[LOGIN_HASH] = m_myLoginHash;
+    jsonObject[LOGIN] = utility::AESEncrypt(mainConfigKey, m_myLogin);
+    jsonObject[NAME] = utility::AESEncrypt(mainConfigKey, m_myName);
+    jsonObject[IS_HAS_AVATAR] = utility::AESEncrypt(mainConfigKey, (m_isHasAvatar ? ONE_STR : ZERO_STR));
 
     if (m_isHasAvatar) {
-        jsonObject["myAvatarPath"] = utility::AESEncrypt(mainConfigKey, m_myAvatar->getPath());
+        jsonObject[MY_AVATAR_PATH] = utility::AESEncrypt(mainConfigKey, m_myAvatar->getPath());
     }
 
-    jsonObject["isHidden"] = m_isHidden;
-    jsonObject["isDarkTheme"] = m_isDarkTheme;
-    jsonObject["publicKey"] = utility::encryptWithServerKey(utility::serializePublicKey(m_keysManager->getMyPublicKey()), m_keysManager->getServerSpecialKey());
-    jsonObject["privateKey"] = utility::encryptWithServerKey(utility::serializePrivateKey(m_keysManager->getMyPrivateKey()), m_keysManager->getServerSpecialKey());
-    jsonObject["encryptedMainConfigKey"] = utility::RSAEncryptKey(m_keysManager->getMyPublicKey(), mainConfigKey);
+    jsonObject[IS_HIDDEN] = m_isHidden;
+    jsonObject[IS_DARK_THEME] = m_isDarkTheme;
+    jsonObject[PUBLIC_KEY] = utility::encryptWithServerKey(utility::serializePublicKey(m_keysManager->getMyPublicKey()), m_keysManager->getServerSpecialKey());
+    jsonObject[PRIVATE_KEY] = utility::encryptWithServerKey(utility::serializePrivateKey(m_keysManager->getMyPrivateKey()), m_keysManager->getServerSpecialKey());
+    jsonObject[ENCRYPTED_MAIN_CONFIG_KEY] = utility::RSAEncryptKey(m_keysManager->getMyPublicKey(), mainConfigKey);
 
     nlohmann::json chatsArray = nlohmann::json::array();
     for (const auto& chatPair : mapFriendUIDToChat) {
         chatsArray.push_back(chatPair.second->serialize(m_keysManager->getMyPublicKey(), m_myUID, database));
     }
-    jsonObject["chatsArray"] = chatsArray;
+    jsonObject[CHATS_ARRAY] = chatsArray;
 
-    std::string fileName = m_myUID + ".json";
+    std::string fileName = m_myUID + JSON_EXT;
     std::string dir = utility::getConfigsAndPhotosDirectory();
     std::filesystem::path fullPath = std::filesystem::path(dir) / fileName;
 
@@ -90,11 +90,11 @@ bool ConfigManager::load(std::unordered_map<std::string, ChatPtr>& mapFriendUIDT
         file >> jsonObject;
         file.close();
 
-        std::string encryptedPublicKeyStr = jsonObject["publicKey"].get<std::string>();
+        std::string encryptedPublicKeyStr = jsonObject[PUBLIC_KEY].get<std::string>();
         m_keysManager->setMyPublicKey(utility::deserializePublicKey(
             utility::decryptWithServerKey(encryptedPublicKeyStr, m_keysManager->getServerSpecialKey())));
 
-        std::string encryptedPrivateKeyStr = jsonObject["privateKey"].get<std::string>();
+        std::string encryptedPrivateKeyStr = jsonObject[PRIVATE_KEY].get<std::string>();
         m_keysManager->setMyPrivateKey(utility::deserializePrivateKey(
             utility::decryptWithServerKey(encryptedPrivateKeyStr, m_keysManager->getServerSpecialKey())));
 
@@ -105,29 +105,29 @@ bool ConfigManager::load(std::unordered_map<std::string, ChatPtr>& mapFriendUIDT
 
         CryptoPP::SecByteBlock mainConfigKey = utility::RSADecryptKey(
             m_keysManager->getMyPrivateKey(),
-            jsonObject["encryptedMainConfigKey"].get<std::string>());
+            jsonObject[ENCRYPTED_MAIN_CONFIG_KEY].get<std::string>());
 
-        m_currentVersionNumber = utility::AESDecrypt(mainConfigKey, jsonObject["currentVersionNumber"].get<std::string>());
-        m_myUID = utility::AESDecrypt(mainConfigKey, jsonObject["myUID"].get<std::string>());
+        m_currentVersionNumber = utility::AESDecrypt(mainConfigKey, jsonObject[CURRENT_VERSION_NUMBER].get<std::string>());
+        m_myUID = utility::AESDecrypt(mainConfigKey, jsonObject[MY_UID].get<std::string>());
 
-        if (jsonObject.contains("passwordHash")) {
-            m_myPasswordHash = jsonObject["passwordHash"].get<std::string>();
+        if (jsonObject.contains(PASSWORD_HASH)) {
+            m_myPasswordHash = jsonObject[PASSWORD_HASH].get<std::string>();
         }
 
-        m_myLoginHash = jsonObject["loginHash"].get<std::string>();
-        m_myName = utility::AESDecrypt(mainConfigKey, jsonObject["name"].get<std::string>());
-        m_isHasAvatar = utility::AESDecrypt(mainConfigKey, jsonObject["isHasAvatar"].get<std::string>()) == "1";
+        m_myLoginHash = jsonObject[LOGIN_HASH].get<std::string>();
+        m_myName = utility::AESDecrypt(mainConfigKey, jsonObject[NAME].get<std::string>());
+        m_isHasAvatar = utility::AESDecrypt(mainConfigKey, jsonObject[IS_HAS_AVATAR].get<std::string>()) == ONE_STR;
 
-        if (m_isHasAvatar && jsonObject.contains("myAvatarPath")) {
-            std::string avatarPath = utility::AESDecrypt(mainConfigKey, jsonObject["myAvatarPath"].get<std::string>());
+        if (m_isHasAvatar && jsonObject.contains(MY_AVATAR_PATH)) {
+            std::string avatarPath = utility::AESDecrypt(mainConfigKey, jsonObject[MY_AVATAR_PATH].get<std::string>());
             m_myAvatar = std::make_shared<Avatar>(m_keysManager->getAvatarsKey(), avatarPath);
         }
 
-        m_isHidden = jsonObject["isHidden"].get<bool>();
-        m_isDarkTheme = jsonObject["isDarkTheme"].get<bool>();
+        m_isHidden = jsonObject[IS_HIDDEN].get<bool>();
+        m_isDarkTheme = jsonObject[IS_DARK_THEME].get<bool>();
 
-        if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].is_array()) {
-            for (const auto& chatJson : jsonObject["chatsArray"]) {
+        if (jsonObject.contains(CHATS_ARRAY) && jsonObject[CHATS_ARRAY].is_array()) {
+            for (const auto& chatJson : jsonObject[CHATS_ARRAY]) {
                 ChatPtr chat = Chat::deserialize(
                     m_keysManager->getMyPrivateKey(),
                     m_myUID,
@@ -158,7 +158,7 @@ std::optional<std::string> ConfigManager::findAutoLoginConfigPath() {
 
     try {
         for (const auto& entry : std::filesystem::directory_iterator(dir)) {
-            if (entry.path().extension() == ".json") {
+            if (entry.path().extension() == JSON_EXT) {
                 std::ifstream file(entry.path());
                 if (!file.is_open()) {
                     std::cerr << "Couldn't open JSON file: " << entry.path() << std::endl;
@@ -168,7 +168,7 @@ std::optional<std::string> ConfigManager::findAutoLoginConfigPath() {
                 nlohmann::json jsonObject;
                 try {
                     file >> jsonObject;
-                    if (jsonObject.contains("passwordHash")) {
+                    if (jsonObject.contains(PASSWORD_HASH)) {
                         std::cout << "Auto-login configuration available in file: " << entry.path() << std::endl;
                         return entry.path().string();
                     }
@@ -205,10 +205,10 @@ bool ConfigManager::removeFriendChatFromConfig(const std::string& friendUID) {
     }
 
     bool isModified = false;
-    if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].is_array()) {
-        auto& chatsArray = jsonObject["chatsArray"];
+    if (jsonObject.contains(CHATS_ARRAY) && jsonObject[CHATS_ARRAY].is_array()) {
+        auto& chatsArray = jsonObject[CHATS_ARRAY];
         for (auto it = chatsArray.begin(); it != chatsArray.end(); ) {
-            if (it->contains("friendUID") && it->at("friendUID").get<std::string>() == friendUID) {
+            if (it->contains(FRIEND_UID) && it->at(FRIEND_UID).get<std::string>() == friendUID) {
                 it = chatsArray.erase(it);
                 isModified = true;
                 break;
@@ -254,12 +254,12 @@ bool ConfigManager::removePasswordHashFromConfig() {
         return false;
     }
 
-    if (!jsonObj.contains("passwordHash")) {
+    if (!jsonObj.contains(PASSWORD_HASH)) {
         std::cout << "[removePasswordHashFromConfig] Password hash not found" << std::endl;
         return true;
     }
 
-    jsonObj.erase("passwordHash");
+    jsonObj.erase(PASSWORD_HASH);
 
     std::ofstream outFile(m_loadedConfigPath);
     if (!outFile.is_open()) {
@@ -289,8 +289,8 @@ void ConfigManager::preloadLoginHash(const std::string& autoLoginPath) {
     try {
         nlohmann::json jsonObject;
         file >> jsonObject;
-        if (jsonObject.contains("loginHash")) {
-            m_myLoginHash = jsonObject["loginHash"].get<std::string>();
+        if (jsonObject.contains(LOGIN_HASH)) {
+            m_myLoginHash = jsonObject[LOGIN_HASH].get<std::string>();
         }
     }
     catch (const nlohmann::json::parse_error& e) {
@@ -308,8 +308,8 @@ void ConfigManager::preloadTheme(const std::string& autoLoginPath) {
     try {
         nlohmann::json jsonObject;
         file >> jsonObject;
-        if (jsonObject.contains("isDarkTheme")) {
-            m_isDarkTheme = jsonObject["isDarkTheme"].get<bool>();
+        if (jsonObject.contains(IS_DARK_THEME)) {
+            m_isDarkTheme = jsonObject[IS_DARK_THEME].get<bool>();
         }
     }
     catch (const nlohmann::json::parse_error& e) {
@@ -327,8 +327,8 @@ void ConfigManager::preloadIsHidden(const std::string& autoLoginPath) {
     try {
         nlohmann::json jsonObject;
         file >> jsonObject;
-        if (jsonObject.contains("isHidden")) {
-            m_isHidden = jsonObject["isHidden"].get<bool>();
+        if (jsonObject.contains(IS_HIDDEN)) {
+            m_isHidden = jsonObject[IS_HIDDEN].get<bool>();
         }
     }
     catch (const nlohmann::json::parse_error& e) {
@@ -346,8 +346,8 @@ void ConfigManager::preloadPasswordHash(const std::string& autoLoginPath) {
     try {
         nlohmann::json jsonObject;
         file >> jsonObject;
-        if (jsonObject.contains("passwordHash")) {
-            m_myPasswordHash = jsonObject["passwordHash"].get<std::string>();
+        if (jsonObject.contains(PASSWORD_HASH)) {
+            m_myPasswordHash = jsonObject[PASSWORD_HASH].get<std::string>();
         }
     }
     catch (const nlohmann::json::parse_error& e) {

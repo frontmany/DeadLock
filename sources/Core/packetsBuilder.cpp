@@ -3,58 +3,66 @@
 #include"packetType.h"
 #include"utility.h"
 
-#include "json.hpp"
+
 
 //GET
-
 std::string PacketsBuilder::getLoginAndPasswordHashPacket(const std::string& loginHash, const std::string& passwordHash) {
     nlohmann::json jsonObject;
-    jsonObject["GET"] = GET;
-    jsonObject["loginHash"] = loginHash;
-    jsonObject["passwordHash"] = passwordHash;
+    jsonObject[GET] = GET;
+    jsonObject[LOGIN_HASH] = loginHash;
+    jsonObject[PASSWORD_HASH] = passwordHash;
 
     return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getReconnectPacket(const std::string& loginHash, const std::string& passwordHash) {
-    return getLoginAndPasswordHashPacket(loginHash, passwordHash);
+nlohmann::json PacketsBuilder::getFriendsUIDsArray(const std::vector<std::string>& friendsUIDsVec) {
+    nlohmann::json friendsUIDsArray = nlohmann::json::array();
+    for (const auto& friendUID : friendsUIDsVec) {
+        friendsUIDsArray.push_back(friendUID);
+    }
+
+    return friendsUIDsArray;
 }
 
-const std::string PacketsBuilder::getAuthorizationPacket(const std::string& loginHash, const std::string& passwordHash) {
-    return getLoginAndPasswordHashPacket(loginHash, passwordHash);
+std::string PacketsBuilder::getReconnectPacket(const std::string& myLoginHash, const std::string& passwordHash) {
+    return getLoginAndPasswordHashPacket(myLoginHash, passwordHash);
 }
 
-const std::string PacketsBuilder::getRegistrationPacket(const std::string& loginHash, const std::string& passwordHash) {
-    return getLoginAndPasswordHashPacket(loginHash, passwordHash);
+std::string PacketsBuilder::getAuthorizationPacket(const std::string& myLoginHash, const std::string& passwordHash) {
+    return getLoginAndPasswordHashPacket(myLoginHash, passwordHash);
 }
 
-const std::string PacketsBuilder::getSendMyNameAndLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name)
+std::string PacketsBuilder::getRegistrationPacket(const std::string& myLoginHash, const std::string& passwordHash) {
+    return getLoginAndPasswordHashPacket(myLoginHash, passwordHash);
+}
+
+std::string PacketsBuilder::getSendMyNameAndLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name)
 {
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
     std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
     
     nlohmann::json jsonObject;
-    jsonObject["GET"] = GET;
-    jsonObject["login"] = utility::AESEncrypt(key, login);
-    jsonObject["name"] = utility::AESEncrypt(key, name);
-    jsonObject["encryptedKey"] = encryptedKey;
+    jsonObject[GET] = GET;
+    jsonObject[LOGIN] = utility::AESEncrypt(key, login);
+    jsonObject[NAME] = utility::AESEncrypt(key, name);
+    jsonObject[ENCRYPTED_KEY] = encryptedKey;
 
     return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getCreateChatPacket(const std::string& myUID,
+std::string PacketsBuilder::getCreateChatPacket(const std::string& myUID,
     const std::string& supposedFriendLoginHash)
 {
     nlohmann::json jsonObject;
-    jsonObject["GET"] = GET;
-    jsonObject["myUID"] = myUID;
-    jsonObject["supposedFriendLoginHash"] = supposedFriendLoginHash;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[SUPPOSED_FRIEND_LOGIN_HASH] = supposedFriendLoginHash;
 
     return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey,
+std::string PacketsBuilder::getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey,
     const std::string& myUID,
     const std::string& newName,
     const std::vector<std::string>& friendsUIDsVec)
@@ -64,274 +72,208 @@ const std::string PacketsBuilder::getUpdateMyNamePacket(const CryptoPP::RSA::Pub
     std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
     nlohmann::json jsonObject;
-    jsonObject["GET"] = GET;
-    jsonObject["myUID"] = myUID;
-    jsonObject["newName"] = utility::AESEncrypt(key, newName);
-
-    nlohmann::json friendsUIDsArray = nlohmann::json::array();
-    for (const auto& friendUID : friendsUIDsVec) {
-        friendsUIDsArray[friendUID] = friendUID;
-    }
-
-    jsonObject["friendsUIDsArray"] = friendsUIDsArray;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[NEW_NAME] = utility::AESEncrypt(key, newName);
+    jsonObject[ENCRYPTED_KEY] = encryptedKey;
+    jsonObject[FRIENDS_UIDS] = getFriendsUIDsArray(friendsUIDsVec);
 
     return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getUpdateMyPasswordPacket(
-    const std::string& loginHash,
+std::string PacketsBuilder::getUpdateMyPasswordPacket(
+    const std::string& myUID,
     const std::string& newPasswordHash)
 {
-    std::ostringstream oss;
-    oss << get << '\n'
-        << loginHash << '\n'
-        << newPasswordHash;
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[NEW_PASSWORD_HASH] = newPasswordHash;
 
-
-    return oss.str();
+    return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getSerializedFriendsLoginHashesVec(const std::vector<std::string>& friendsLoginHashesVec)
+
+std::string  PacketsBuilder::getUpdateMyLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& newLoginHash, const std::string& newLogin) 
 {
-    std::ostringstream oss;
-
-    oss << vecBegin << '\n';
-    for (const auto& loginHash : friendsLoginHashesVec) {
-        oss << loginHash << '\n';
-    }
-    oss << vecEnd << '\n';
-
-    return oss.str();
-}
-
-const std::string  PacketsBuilder::getUpdateMyLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLoginHash, const std::string& newLogin, const std::vector<std::string>& friendsLoginHashesVec) {
-    std::ostringstream oss;
-
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
-
     std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
-    oss << get << '\n'
-        << encryptedKey << '\n'
-        << oldLoginHash << '\n'
-        << newLoginHash << '\n'
-        << utility::AESEncrypt(key, newLogin) << '\n';
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[NEW_LOGIN_HASH] = newLoginHash;
+    jsonObject[NEW_LOGIN] = utility::AESEncrypt(key, newLogin);
+    jsonObject[ENCRYPTED_KEY] = encryptedKey;
 
-    oss << vecBegin << '\n';
-    for (const auto& loginHash : friendsLoginHashesVec) {
-        oss << loginHash << '\n';
-    }
-    oss << vecEnd;
-
-    return oss.str();
-}
-
-const std::string PacketsBuilder::getLoadUserInfoPacket(const std::string& loginHashToSearch, const std::string& loginHash) {
-    std::ostringstream oss;
-    oss << get << '\n'
-        << loginHash << '\n'
-        << loginHashToSearch << '\n';
-
-    return oss.str();
-}
-
-const std::string PacketsBuilder::getLoadMyInfoPacket(const std::string& loginHash, const CryptoPP::RSA::PublicKey& myNewPublicKey) {
-    std::ostringstream oss;
-    oss << get << '\n'
-        << loginHash << '\n'
-        << utility::serializePublicKey(myNewPublicKey);
-
-    return oss.str();
+    return jsonObject.dump();
 }
 
 
-const std::string PacketsBuilder::getVerifyPasswordPacket(const std::string& loginHash, const std::string& passwordHash) {
-    std::ostringstream oss;
 
-    oss << get << '\n'
-        << loginHash << '\n'
-        << passwordHash;
 
-    return oss.str();
+
+
+
+
+
+std::string PacketsBuilder::getLoadUserInfoPacket(const std::string& myUID, const std::string& friendUID) {
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[FRIEND_UID] = friendUID;
+
+    return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getLoadAllFriendsStatusesPacket(const std::string& loginHash, const std::vector<std::string>& friendsLoginHashesVec) {
-    std::ostringstream oss;
 
-    oss << get << '\n'
-        << loginHash << '\n'
-        << vecBegin << '\n';
+std::string PacketsBuilder::getVerifyPasswordPacket(const std::string& myUID, const std::string& passwordHash) {
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[PASSWORD_HASH] = passwordHash;
 
-    for (const auto& friendLoginHash : friendsLoginHashesVec) {
-        oss << friendLoginHash << '\n';
-    }
-
-    oss << vecEnd;
-
-    return oss.str();
+    return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getCheckIsNewLoginAvailablePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLogin) {
-    std::ostringstream oss;
+std::string PacketsBuilder::getLoadAllFriendsStatusesPacket(const std::string& myUID, const std::vector<std::string>& friendsUIDsVec) {
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[FRIENDS_UIDS] = getFriendsUIDsArray(friendsUIDsVec);
 
+    return jsonObject.dump();
+}
+
+std::string PacketsBuilder::getCheckIsNewLoginAvailablePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& newLogin)
+{
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
-
     std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
-    oss << get << '\n'
-        << encryptedKey << '\n'
-        << oldLoginHash << '\n'
-        << utility::AESEncrypt(key, newLogin);
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[NEW_LOGIN] = utility::AESEncrypt(key, newLogin);
+    jsonObject[ENCRYPTED_KEY] = encryptedKey;
 
-    return oss.str();
+    return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getFindUserPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myLoginHash, const std::string& searchText) {
-    std::ostringstream oss;
-
+std::string PacketsBuilder::getFindUserPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& searchText) 
+{
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
-
     std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
-    oss << get << '\n'
-        << encryptedKey << '\n'
-        << myLoginHash << '\n'
-        << utility::AESEncrypt(key, searchText);
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[SEARCH_TEXT] = utility::AESEncrypt(key, searchText);
+    jsonObject[ENCRYPTED_KEY] = encryptedKey;
 
-    return oss.str();
+    return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getSendMeFilePacket(const CryptoPP::RSA::PrivateKey& myPrivatKey, const std::string& encryptedKey, const std::string& myLoginHash, const std::string& friendLoginHash, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, const std::string& filesInBlobCount) {
-    std::ostringstream oss;
+std::string PacketsBuilder::getSendMeFilePacket(const std::string& myUID, const std::string& fileId) {
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[FILE_ID] = fileId;
 
-    CryptoPP::SecByteBlock key = utility::RSADecryptKey(myPrivatKey, encryptedKey);
-
-    oss << get << '\n'
-        << encryptedKey << '\n'
-        << myLoginHash << '\n'
-        << fileId << '\n'
-        << blobUID << "\n"
-        << friendLoginHash << '\n'
-        << utility::AESEncrypt(key, fileName) << '\n' //here
-        << fileSize << '\n'
-        << utility::AESEncrypt(key, timestamp) << '\n';
-
-        if (caption != "") {
-            oss << utility::AESEncrypt(key, caption) << '\n';
-        }
-        else {
-            oss << '\n';
-        }
-        
-        oss << filesInBlobCount;
-
-    return oss.str();
+    return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getPublicKeyPacket(const std::string& myLoginHash, const CryptoPP::RSA::PublicKey& myPublicKey) {
-    std::ostringstream oss;
+std::string PacketsBuilder::getPublicKeyPacket(const std::string& myUID, const CryptoPP::RSA::PublicKey& myPublicKey) {
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[FILE_ID] = utility::serializePublicKey(myPublicKey);
 
-    oss << get << '\n'
-        << myLoginHash << '\n'
-        << utility::serializePublicKey(myPublicKey);
-
-    return oss.str();
+    return jsonObject.dump();
 }
 
-const std::string PacketsBuilder::getUpdateRequestPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const std::string& versionNumber) {
+std::string PacketsBuilder::getUpdateRequestPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& versionNumber) {
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
-
     std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
-    std::ostringstream oss;
-    oss << get << '\n'
-        << encryptedKey << '\n'
-        << loginHash << '\n'
-        << utility::AESEncrypt(key, versionNumber);
+    nlohmann::json jsonObject;
+    jsonObject[GET] = GET;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[VERSION_NUMBER] = utility::AESEncrypt(key, versionNumber);
+    jsonObject[ENCRYPTED_KEY] = encryptedKey;
 
-    return oss.str();
+    return jsonObject.dump();
 }  
 
+
+
+
+
+
+
+
+
 //RPL
-const std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message)
-{
-    CryptoPP::SecByteBlock key;
-    utility::generateAESKey(key);
-
-    std::string encryptedKey = utility::RSAEncryptKey(friendPublicKey, key);
-
-    std::ostringstream oss;
-    oss << rpl << '\n'
-        << friendLoginHash << '\n'
-        << myLoginHash << '\n'
-        << encryptedKey << '\n'
-        << message->getId() << '\n'
-        << utility::AESEncrypt(key, message->getMessage()) << '\n'
-        << utility::AESEncrypt(key, message->getTimestamp());
-
-    return oss.str();
-}
-
-const std::string PacketsBuilder::getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey,const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message)
-{
-    CryptoPP::SecByteBlock key;
-    utility::generateAESKey(key);
-
-    std::string encryptedKey = utility::RSAEncryptKey(friendPublicKey, key);
-
-    std::ostringstream oss;
-    oss << rpl << '\n'
-        << friendLoginHash << '\n'
-        << myLoginHash << '\n'
-        << encryptedKey << '\n'
-        << utility::AESEncrypt(key, message->getId());
-
-    return oss.str();
-}
-
-const std::string PacketsBuilder::getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash,const std::string& friendLoginHash, bool isTyping) 
+std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, MessagePtr message)
 {
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
     std::string encryptedKey = utility::RSAEncryptKey(friendPublicKey, key);
 
-    std::ostringstream oss;
-    oss << rpl << '\n'
-        << friendLoginHash << '\n'
-        << myLoginHash << '\n'
-        << encryptedKey << '\n'
-        << utility::AESEncrypt(key, (isTyping ? "1" : "0"));
+    nlohmann::json jsonObject;
+    jsonObject[RPL] = RPL;
+    jsonObject[FRIEND_UID] = friendUID;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[MESSAGE_ID] = message->getId();
+    jsonObject[MESSAGE] = utility::AESEncrypt(key, message->getMessage());
+    jsonObject[TIMESTAMP] = utility::AESEncrypt(key, message->getTimestamp());
+    jsonObject[ENCRYPTED_KEY] = encryptedKey;
 
-    return oss.str();
+    return jsonObject.dump();
 }
+
+std::string PacketsBuilder::getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& messageId) {
+    nlohmann::json jsonObject;
+    jsonObject[RPL] = RPL;
+    jsonObject[FRIEND_UID] = friendUID;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[MESSAGE_ID] = messageId;
+
+    return jsonObject.dump();
+}
+
+std::string PacketsBuilder::getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID,const std::string& friendUID, bool isTyping) {
+    nlohmann::json jsonObject;
+    jsonObject[RPL] = RPL;
+    jsonObject[FRIEND_UID] = friendUID;
+    jsonObject[IS_TYPING] = isTyping;
+
+    return jsonObject.dump();
+}
+
+
+
+
+
+
+
+
 
 //BROADCAST
-const std::string PacketsBuilder::getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status,
-    const std::string& myLoginHash,
-    const std::vector<std::string>& friendsLoginHashesVec)
+std::string PacketsBuilder::getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status, const std::string& myUID, const std::vector<std::string>& friendsUIDsVec)
 {
-    std::ostringstream oss;
-
     CryptoPP::SecByteBlock key;
     utility::generateAESKey(key);
-
     std::string encryptedKey = utility::RSAEncryptKey(serverPublicKey, key);
 
-    oss << broadcast << '\n'
-        << encryptedKey << '\n'
-        << utility::AESEncrypt(key, status) << '\n'
-        << myLoginHash << '\n'
-        << vecBegin << '\n';
+    nlohmann::json jsonObject;
+    jsonObject[BROADCAST] = BROADCAST;
+    jsonObject[MY_UID] = myUID;
+    jsonObject[STATUS] = utility::AESEncrypt(key, status);
+    jsonObject[FRIENDS_UIDS] = getFriendsUIDsArray(friendsUIDsVec);
 
-    for (const auto& loginHash : friendsLoginHashesVec) {
-        oss << loginHash << '\n';
-    }
-
-    oss << vecEnd;
-
-    return oss.str();
+    return jsonObject.dump();
 }

@@ -85,5 +85,28 @@ private:
     bool m_isDarkTheme;
 
     KeysManagerPtr m_keysManager;
+
+
+    // JSON keys and fixed string literals
+    static constexpr const char* CURRENT_VERSION_NUMBER = "currentVersionNumber";
+    static constexpr const char* MY_UID = "myUID";
+    static constexpr const char* PASSWORD_HASH = "passwordHash";
+    static constexpr const char* LOGIN_HASH = "loginHash";
+    static constexpr const char* LOGIN = "login";
+    static constexpr const char* NAME = "name";
+    static constexpr const char* IS_HAS_AVATAR = "isHasAvatar";
+    static constexpr const char* MY_AVATAR_PATH = "myAvatarPath";
+    static constexpr const char* IS_HIDDEN = "isHidden";
+    static constexpr const char* IS_DARK_THEME = "isDarkTheme";
+    static constexpr const char* PUBLIC_KEY = "publicKey";
+    static constexpr const char* PRIVATE_KEY = "privateKey";
+    static constexpr const char* ENCRYPTED_MAIN_CONFIG_KEY = "encryptedMainConfigKey";
+    static constexpr const char* CHATS_ARRAY = "chatsArray";
+    static constexpr const char* FRIEND_UID = "friendUID";
+
+    static constexpr const char* ONE_STR = "1";
+    static constexpr const char* ZERO_STR = "0";
+    static constexpr const char* JSON_EXT = ".json";
+
 };
 

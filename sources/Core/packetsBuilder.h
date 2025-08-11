@@ -2,51 +2,80 @@
 #include<vector>
 
 #include "rsa.h"
+#include "json.hpp"
 
 class Message;
 
+typedef std::shared_ptr<Message> MessagePtr;
 
 class PacketsBuilder {
 public:
 	PacketsBuilder() {};
 	~PacketsBuilder() = default;
 
-	PacketsBuilder& operator=(const PacketsBuilder& other) { return *this; }
+    //GET
+    static std::string getReconnectPacket(const std::string& myLoginHash, const std::string& passwordHash);
+    static std::string getAuthorizationPacket(const std::string& myLoginHash, const std::string& passwordHash);
+    static std::string getRegistrationPacket(const std::string& myLoginHash, const std::string& passwordHash);
+    static std::string getSendMyNameAndLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name);
+    static std::string getCreateChatPacket(const std::string& myUID, const std::string& supposedFriendLoginHash);
 
-	//GET
-	const std::string getReconnectPacket(const std::string& loginHash, const std::string& passwordHash);
-	const std::string getAuthorizationPacket(const std::string& loginHash, const std::string& passwordHash);
-	const std::string getRegistrationPacket(const std::string& loginHash, const std::string& passwordHash);
-	const std::string getSendMyNameAndLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name);
-	const std::string getCreateChatPacket(const std::string& myUID, const std::string& supposedFriendLoginHash);
-	const std::string getFindUserPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myLoginHash, const std::string& searchText);
+    static std::string getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& newName, const std::vector<std::string>& friendsUIDsVec);
+    static std::string getUpdateMyPasswordPacket(const std::string& myUID, const std::string& newPasswordHash);
+    static std::string getUpdateMyLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& newLoginHash, const std::string& newLogin);
 
-	const std::string getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& newName, const std::vector<std::string>& friendsUIDsVec);
-	const std::string getUpdateMyPasswordPacket(const std::string& loginHash, const std::string& newPasswordHash);
-	const std::string getUpdateMyLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLoginHash, const std::string& newLogin, const std::vector<std::string>& friendsLoginHashesVec);
-	const std::string getSerializedFriendsLoginHashesVec(const std::vector<std::string>& friendsLoginHashesVec);
+    static std::string getLoadUserInfoPacket(const std::string& myUID, const std::string& friendUID);
+    static std::string getVerifyPasswordPacket(const std::string& myUID, const std::string& passwordHash);
+    static std::string getLoadAllFriendsStatusesPacket(const std::string& myUID, const std::vector<std::string>& friendsUIDsVec);
+    static std::string getCheckIsNewLoginAvailablePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& newLogin);
+    static std::string getFindUserPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& searchText);
+    static std::string getSendMeFilePacket(const std::string& myUID, const std::string& fileId);
+    static std::string getPublicKeyPacket(const std::string& myUID, const CryptoPP::RSA::PublicKey& myPublicKey);
+    static std::string getUpdateRequestPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& versionNumber);
 
-	const std::string getLoadUserInfoPacket(const std::string& loginHashToSearch, const std::string& loginHash);
-	const std::string getLoadMyInfoPacket(const std::string& loginHash, const CryptoPP::RSA::PublicKey& myNewPublicKey);
-	const std::string getLoadAllFriendsStatusesPacket(const std::string& loginHash, const std::vector<std::string>& friendsLoginHashesVec);
-	const std::string getVerifyPasswordPacket(const std::string& login, const std::string& passwordHash);
-	const std::string getCheckIsNewLoginAvailablePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLogin);
-	const std::string getSendMeFilePacket(const CryptoPP::RSA::PrivateKey& myPrivatKey, const std::string& encryptedKey, const std::string& myLoginHash, const std::string& friendLoginHash, const std::string& fileName, const std::string& fileId, const std::string& fileSize, const std::string& timestamp, const std::string& caption, const std::string& blobUID, const std::string& filesInBlobCount);
-	const std::string getPublicKeyPacket(const std::string& myLoginHash, const CryptoPP::RSA::PublicKey& myPublicKey);
-	const std::string getUpdateRequestPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const std::string& versionNumber);
+    //RPL
+    static std::string getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, MessagePtr message);
+    static std::string getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& messageId);
+    static std::string getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, bool isTyping);
 
-	//RPL
-	const std::string getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message);
-	const std::string getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, const Message* message);
-	const std::string getTypingPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myLoginHash, const std::string& friendLoginHash, bool isTyping);
-
-	//BROADCAST
-	const std::string getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status, const std::string& myLoginHash, const std::vector<std::string>& friendsLoginHashesVec);
+    //BROADCAST
+    static std::string getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status, const std::string& myUID, const std::vector<std::string>& friendsUIDsVec);
 
 private:
-	std::string getLoginAndPasswordHashPacket(const std::string& loginHash, const std::string& passwordHash);
+    static std::string getLoginAndPasswordHashPacket(const std::string& loginHash, const std::string& passwordHash);
+    static nlohmann::json getFriendsUIDsArray(const std::vector<std::string>& friendsUIDsVec);
 
-	static constexpr const char* GET = "GET";
-	static constexpr const char* RPL = "RPL";
-	static constexpr const char* BROADCAST = "BROADCAST";
+private:
+    // Top-level command markers
+    static constexpr const char* GET = "GET";
+    static constexpr const char* RPL = "RPL";
+    static constexpr const char* BROADCAST = "BROADCAST";
+
+    // JSON key names for markers
+    static constexpr const char* KEY_GET = "GET";
+    static constexpr const char* KEY_RPL = "RPL";
+    static constexpr const char* KEY_BROADCAST = "BROADCAST";
+
+    // JSON field keys
+    static constexpr const char* LOGIN_HASH = "loginHash";
+    static constexpr const char* PASSWORD_HASH = "passwordHash";
+    static constexpr const char* LOGIN = "login";
+    static constexpr const char* NAME = "name";
+    static constexpr const char* ENCRYPTED_KEY = "encryptedKey";
+    static constexpr const char* MY_UID = "myUID";
+    static constexpr const char* SUPPOSED_FRIEND_LOGIN_HASH = "supposedFriendLoginHash";
+    static constexpr const char* NEW_NAME = "newName";
+    static constexpr const char* FRIENDS_UIDS = "friendsUIDs";
+    static constexpr const char* NEW_PASSWORD_HASH = "newPasswordHash";
+    static constexpr const char* NEW_LOGIN_HASH = "newLoginHash";
+    static constexpr const char* NEW_LOGIN = "newLogin";
+    static constexpr const char* FRIEND_UID = "friendUID";
+    static constexpr const char* SEARCH_TEXT = "searchText";
+    static constexpr const char* FILE_ID = "fileId";
+    static constexpr const char* VERSION_NUMBER = "versionNumber";
+    static constexpr const char* MESSAGE_ID = "messageId";
+    static constexpr const char* MESSAGE = "message";
+    static constexpr const char* TIMESTAMP = "timestamp";
+    static constexpr const char* IS_TYPING = "isTyping";
+    static constexpr const char* STATUS = "status";
 };
