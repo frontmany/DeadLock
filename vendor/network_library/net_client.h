@@ -7,8 +7,11 @@
 #include "net_safeDeque.h"
 #include "net_connectionsManager.h"
 #include "net_message.h"
-#include "net_file.h"
 #include "rsa.h"
+
+class Blob;
+
+typedef std::shared_ptr<Blob> BlobPtr;
 
 namespace net 
 {
@@ -28,7 +31,7 @@ namespace net
 
 		bool isConnected();
 		void send(const net::Message& msg);
-		void sendFile(const File& file);
+		void sendBlob(BlobPtr blob);
 
 		void update(size_t maxMessagesCount = std::numeric_limits<size_t>::max());
 
@@ -37,7 +40,7 @@ namespace net
 
 	protected:
 		virtual void onMessage(net::Message message) = 0;
-		virtual void onFile(File file) = 0;
+		virtual void onFile(Blob& file) = 0;
 		virtual void onAllFilesSent() = 0;
 
 		virtual void onSendFileProgressUpdate(const File& file, uint32_t progressPercent) = 0;
@@ -68,11 +71,6 @@ namespace net
 		SafeDeque<net::Message> m_safe_deque_of_incoming_messages;
 		SafeDeque<File> m_safe_deque_of_incoming_files;
 		asio::ip::tcp::resolver::results_type m_serverEndpoint;
-
-	protected:
-		CryptoPP::RSA::PublicKey  m_server_public_key;
-		CryptoPP::RSA::PrivateKey m_my_private_key;
-		CryptoPP::RSA::PublicKey  m_my_public_key;
 	};
 }
 

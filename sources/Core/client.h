@@ -95,10 +95,7 @@ public:
     int geServerPort() const {return m_server_port; }
     void setServerPort(int port) {m_server_port = port; }
 
-    std::unordered_map<std::string, Chat*>& getMyHashChatsMap() { return m_map_friend_loginHash_to_chat; }
-
-    void setIsHidden(bool isHidden) { m_is_hidden = isHidden; }
-    bool getIsHidden() { return m_is_hidden; }
+    std::unordered_map<std::string, Chat*>& getMyChatsMap() { return m_map_friend_loginHash_to_chat; }
 
     void setIsAbleToClose(bool isAbleToClose) { m_is_able_to_close = isAbleToClose; }
     bool getIsAbleToClose() { return m_is_able_to_close; }
@@ -111,13 +108,6 @@ public:
 
     void setConfigManager(std::shared_ptr<ConfigManager> configManager) { m_config_manager = configManager; }
     std::shared_ptr<ConfigManager> getConfigManager() { return m_config_manager; }
-
-    CryptoPP::SecByteBlock getAvatarsKey() { return m_AESE_avatarsKey; }
-    void setAvatarsKey(const CryptoPP::SecByteBlock& avatarsKey) { m_AESE_avatarsKey = avatarsKey; }
-
-    void setServerEncryptionPart(const std::string& encryptionPart);
-    const std::string& getServerEncryptionPart() const { return m_server_encryption_part; }
-    std::string getSpecialServerKey() const;
 
     void setIsFirstAuthentication(bool isFirstAuthentication) { m_is_first_authentication = isFirstAuthentication; }
     bool getIsFirstAuthentication() { return m_is_first_authentication; }
@@ -132,25 +122,22 @@ private:
     void sendPacket(const std::string& packet, QueryType type);
 
 private:
-    std::thread             m_worker_thread;
+    std::thread             m_workerThread;
 
-    bool                    m_is_hidden;
-    bool                    m_is_first_authentication;
-    bool                    m_is_passed_authentication;
-    bool                    m_is_connection_down;
-    bool                    m_is_able_to_close;
-    std::atomic<bool>       m_is_ui_ready_to_update;
+    bool                    m_isFirstAuthentication;
+    bool                    m_isPassedAuthentication;
+    bool                    m_isConnectionDown;
+    bool                    m_isAbleToClose;
+    std::atomic<bool>       m_isUIReadyToUpdate;
 
-    CryptoPP::SecByteBlock	m_AESE_avatarsKey;
     ResponseHandler*        m_response_handler;
     PacketsBuilder*         m_packets_builder;
     Database*               m_db;
 
     std::shared_ptr<ConfigManager> m_config_manager;
 
-    std::string m_server_encryption_part = "";
-    std::string m_server_ipAddress = "";
-    int m_server_port = 0;
+    std::string m_serverIpAddress = "";
+    int m_serverPort = 0;
 
     std::unordered_map<std::string, Chat*> m_map_friend_loginHash_to_chat;    
 };

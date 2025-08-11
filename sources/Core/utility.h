@@ -29,10 +29,12 @@ namespace utility {
     std::string getConfigsAndPhotosDirectory();
     std::string getAvatarPreviewsDirectory();
     std::string parseDate(const std::string& fulldate);
+    std::string escape(const std::string& s);
+    std::string unescape(const std::string& s);
 
     // time
-    std::string getCurrentFullDateAndTime();
-    std::string getCurrentTime();
+    std::string currentGMTTime();
+    std::string localTimeFromGMT(const std::string& gmtTimeStr);
 
     // System functions
     qreal getDeviceScaleFactor();

@@ -2,102 +2,88 @@
 
 #include <string>
 
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonArray>
 #include <iostream>
-#include <QString>
 #include <codecvt>
 #include <locale>
-#include <QFile>
-#include <QDir>
+#include <fstream>
 #include <unordered_map>
 #include <rsa.h>
 
 #include "theme.h"
 
 class Avatar;
-class Chat;
 class Database;
-class Client;
+class Chat;
+class KeysManager;
 
+typedef std::shared_ptr<KeysManager> KeysManagerPtr;
+typedef std::shared_ptr<Database> DatabasePtr;
+typedef std::shared_ptr<Avatar> AvatarPtr;
+typedef std::shared_ptr<Chat> ChatPtr;
 
 class ConfigManager {
 public:
     ConfigManager();
-    ~ConfigManager() { std::cout << "config manager destroed\n"; }
-    void updateInConfigFriendLogin(const std::string& oldLogin, const std::string& newLogin);
-    void updateConfigFileName(const std::string& oldLogin, const std::string& newLoginHash);
-    void deleteFriendChatInConfig(const std::string& friendLogin);
+    ~ConfigManager() = default;
 
-    bool checkIsAutoLogin();
-    bool undoAutoLogin();
+    void save(const std::unordered_map<std::string, ChatPtr>& mapFriendUIDToChat, DatabasePtr database, bool isAutoLogin) const;
+    bool load(std::unordered_map<std::string, ChatPtr>& mapFriendUIDToChat, const std::string& fileName, DatabasePtr database);
 
-    void save(const CryptoPP::RSA::PublicKey& myPublicKey, const CryptoPP::RSA::PrivateKey& myPrivateKey, const std::string& serverKey, std::unordered_map<std::string, Chat*> mapFriendLoginHashToChat, bool isHidden, Database* database);
-    bool load(const std::string& fileName, const std::string& specialServerKey, Database* database);
+    std::optional<std::string> findAutoLoginConfigPath();
+    void preloadLoginHash(const std::string& autoLoginPath);
+    void preloadPasswordHash(const std::string& autoLoginPath);
+    void preloadTheme(const std::string& autoLoginPath);
+    void preloadIsHidden(const std::string& autoLoginPath);
 
-    void loadLoginHash();
-    void loadPasswordHash();
-    void loadTheme();
-    
+    bool removePasswordHashFromConfig();
+    bool removeFriendChatFromConfig(const std::string& friendUID);
+
     //GET && SET
-    bool getIsAutoLogin() { return m_is_auto_login; };
-    void setIsNeedToAutoLogin(bool  isNeedToAutoLogin) { m_is_auto_login = isNeedToAutoLogin; }
+    void setMyUID(const std::string& myUID) { m_myUID = myUID; }
+    const std::string& getMyUID() const { return m_myUID; }
+    
+    void setMyPasswordHash(const std::string& passwordHash) { m_myPasswordHash = passwordHash; }
+    const std::string& getMyPasswordHash() const { return m_myPasswordHash; }
 
-    bool isUndoAutoLogin() { return m_is_undo_auto_login; };
-    void setNeedToUndoAutoLogin(bool  isNeedToUndoAutoLogin) { m_is_undo_auto_login = isNeedToUndoAutoLogin; }
+    void setMyLoginHash(const std::string& loginHash) { m_myLoginHash = loginHash; }
+    const std::string& getMyLoginHash() const { return m_myLoginHash; }
 
-    void setMyPasswordHash(const std::string& passwordHash) { m_my_password_hash = passwordHash; }
-    const std::string& getMyPasswordHash() const { return m_my_password_hash; }
+    void setMyLogin(const std::string& login) { m_myLogin = login; }
+    const std::string& getMyLogin() const { return m_myLogin; }
 
-    void setMyLogin(const std::string& login) { m_my_login = login; }
-    const std::string& getMyLogin() const { return m_my_login; }
+    void setMyName(const std::string& name) { m_myName = name; }
+    const std::string& getMyName() const { return m_myName; }
 
-    void setMyLoginHash(const std::string& loginHash) { m_my_login_hash = loginHash; }
-    const std::string& getMyLoginHash() const { return m_my_login_hash; }
+    void setAvatar(AvatarPtr avatar) { m_myAvatar = avatar; }
+    AvatarPtr getAvatar() const { return m_myAvatar; }
 
-    void setMyName(const std::string& name) { m_my_name = name; }
-    const std::string& getMyName() const { return m_my_name; }
-
-    void setAvatar(Avatar* avatar) { m_my_avatar = avatar; }
-    Avatar* getAvatar() const { return m_my_avatar; }
-
-    void setIsHasAvatar(bool isHasAvatar) { m_is_has_avatar = isHasAvatar; }
-    const bool getIsHasAvatar() const { return m_is_has_avatar; }
-
-    void setIsNeedToUpdate(bool isNeedToUpdate) { m_isNeedToUpdate = isNeedToUpdate; }
-    const bool getIsNeedToUpdate() const { return m_isNeedToUpdate; }
-
-    void setNewVersionNumber(const std::string& newVersionNumber) { m_newVersionNumber = newVersionNumber; }
-    const std::string& getNewVersionNumber() const { return m_newVersionNumber; }
+    void setIsHasAvatar(bool isHasAvatar) { m_isHasAvatar = isHasAvatar; }
+    const bool getIsHasAvatar() const { return  m_isHasAvatar; }
 
     void setTheme(bool isDarkTheme) { m_isDarkTheme = isDarkTheme; }
     bool getIsDarkTheme() { return m_isDarkTheme; }
 
-    void setClient(Client* client) { m_client = client; }
-    Client* getClient() const { return m_client; }
+    void setKeysManagerPtr(KeysManagerPtr keysManagerPtr) { m_keysManager = keysManagerPtr; }
+    KeysManagerPtr getKeysManagerPtr() const { return m_keysManager; }
+
+    void setVersionNumber(const std::string& versionNumber) { m_currentVersionNumber = versionNumber; }
+    const std::string& getVersionNumber() const { return m_currentVersionNumber; }
 
 private:
-    bool checkIsPasswordHashPresentInMyConfig() const;
-    CryptoPP::SecByteBlock getChatConfigKey(const std::string& login);
+    std::string m_loadedConfigPath;
+    std::string m_currentVersionNumber;
 
-private:
-    CryptoPP::SecByteBlock m_AESE_configKey;
+    std::string m_myUID;
+    std::string m_myPasswordHash;
+    std::string m_myLoginHash;
+    std::string m_myLogin;
+    std::string m_myName;
+    bool m_isHasAvatar;
+    AvatarPtr m_myAvatar;
 
-    std::string m_my_password_hash;
-    std::string m_auto_login_path;
-    std::string m_my_login_hash;
-    bool m_is_undo_auto_login;
-    std::string m_my_login;
-    std::string m_my_name;
-    bool m_is_auto_login;
-    bool m_is_has_avatar;
-    Avatar* m_my_avatar;
+    bool m_isHidden;
+    bool m_isDarkTheme;
 
-    std::string m_newVersionNumber = "";
-    bool m_isNeedToUpdate = false;
-    bool m_isDarkTheme = true;
-
-    Client* m_client;
+    KeysManagerPtr m_keysManager;
 };
 

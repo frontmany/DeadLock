@@ -13,22 +13,16 @@ endif()
 
 file(GLOB SOURCES "sources/*.cpp" "sources/*.h")
 source_group("Source Files" FILES ${SOURCES})
-
 file(GLOB LOGIN_FILES "sources/LoginWidget/*.cpp" "sources/LoginWidget/*.h")
 source_group("Source Files\\LoginUI Files" FILES ${LOGIN_FILES})
-
 file(GLOB PROFILE_FILES "sources/ProfileWidget/*.cpp" "sources/ProfileWidget/*.h")
 source_group("Source Files\\ProfileUI Files" FILES ${PROFILE_FILES})
-
 file(GLOB CHATS_FILES "sources/ChatsWidget/*.cpp" "sources/ChatsWidget/*.h")
 source_group("Source Files\\ChatsUI Files" FILES ${CHATS_FILES})
-
 file(GLOB IN_MESSAGING_AREA_FILES "sources/InMessagingAreaComponents/*.cpp" "sources/InMessagingAreaComponents/*.h")
 source_group("Source Files\\InMessagingArea Files" FILES ${IN_MESSAGING_AREA_FILES})
-
 file(GLOB CORE_FILES "sources/Core/*.cpp" "sources/Core/*.h" "vendor/base_64/base64_my.h" "vendor/base_64/base64_my.cpp")
 source_group("Source Files\\Core Files" FILES ${CORE_FILES})
-
 file(GLOB_RECURSE NET_LIB "vendor/network_library/*.h" "vendor/network_library/*.cpp")
 source_group("Source Files\\Net Library Files" FILES ${NET_LIB})
 
@@ -39,7 +33,7 @@ set(CMAKE_AUTOMOC ON)
 
 add_subdirectory("Deadlock_client_updater")
 
-include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/InMessagingAreaComponents" "sources/Core" "sources/ProfileWidget" "vendor" "vendor/base_64" "vendor/network_library" "vendor/cryptopp")
+include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/InMessagingAreaComponents" "sources/Core" "sources/ProfileWidget" "vendor" "vendor/base_64" "vendor/network_library" "vendor/cryptopp" "vendor/json/include")
 link_directories("vendor/sqlite" ${CRYPTOPP_LIB_DIR})
 
 qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/GreetWidget/greetResources.qrc resources/ChatsWidget/chatsResources.qrc)

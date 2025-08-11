@@ -64,21 +64,6 @@ std::string utility::getUpdateTemporaryPath(const std::string& fileName) {
     return (tempDir / (fileName + ".exe")).string();
 }
 
-std::string utility::getCurrentFullDateAndTime() {
-    std::time_t now = std::time(0);
-    std::tm* ltm = std::localtime(&now);
-
-    std::stringstream ss;
-    ss << std::setw(4) << std::setfill('0') << ltm->tm_year + 1900 << "-"
-        << std::setw(2) << std::setfill('0') << ltm->tm_mon + 1 << "-"
-        << std::setw(2) << std::setfill('0') << ltm->tm_mday << " "
-        << std::setw(2) << std::setfill('0') << ltm->tm_hour << ":"
-        << std::setw(2) << std::setfill('0') << ltm->tm_min << ":"
-        << std::setw(2) << std::setfill('0') << ltm->tm_sec;
-
-    return "last seen: " + ss.str();
-}
-
 std::string utility::getConfigsAndPhotosDirectory() {
     std::string saveDirectory = "./Data_Air_Gram";
 
@@ -248,16 +233,35 @@ void utility::decreaseFollowingChatIndexes(std::unordered_map<std::string, Chat*
     }
 }
 
+time_t timegm_alt(std::tm* tm) {
+#ifdef _WIN32
+    return _mkgmtime(tm);
+#else
+    return timegm(tm);  
+#endif
+}
 
-std::string utility::getCurrentTime() {
+std::string utility::localTimeFromGMT(const std::string& gmtTimeStr) {
+    std::tm tm = {};
+    std::istringstream ss(gmtTimeStr);
+    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+
+    if (ss.fail()) {
+        throw std::runtime_error("Invalid GMT time format. Expected: YYYY-MM-DD HH:MM:SS");
+    }
+
+    time_t time_utc = timegm_alt(&tm);
+
+    std::tm* tm_local = localtime(&time_utc);
+
+    std::ostringstream result;
+    result << std::put_time(tm_local, "%H:%M");
+    return result.str();
+}
+
+std::string utility::currentGMTTime() {
     auto now = std::chrono::system_clock::now();
-
-    std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
-
-    std::ostringstream oss;
-    oss << std::put_time(std::localtime(&now_time_t), "%H:%M");
-
-    return oss.str();
+    return std::format("{:%Y-%m-%d %H:%M:%S}", std::chrono::time_point_cast<std::chrono::seconds>(now));
 }
 
 bool utility::isDarkMode() {
@@ -771,3 +775,33 @@ bool utility::validatePublicKey(const RSA::PublicKey& key) {
     }
 }
 
+std::string utility::escape(const std::string& s) {
+    std::string result;
+    for (char c : s) {
+        if (c == '|') {
+            result += "\\|";
+        }
+        else if (c == '\\') {
+            result += "\\\\";
+        }
+        else {
+            result += c;
+        }
+    }
+    return result;
+}
+
+std::string utility::unescape(const std::string& s) {
+    std::string result;
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] == '\\' && i + 1 < s.size()) {
+            if (s[i + 1] == '|' || s[i + 1] == '\\') {
+                result += s[i + 1];
+                ++i;
+                continue;
+            }
+        }
+        result += s[i];
+    }
+    return result;
+}

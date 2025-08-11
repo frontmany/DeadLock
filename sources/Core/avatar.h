@@ -13,7 +13,7 @@
 
 class Avatar {
 public:
-    Avatar(const CryptoPP::SecByteBlock& avatarsKey, const std::string& avatarPath = "");
+    Avatar(const CryptoPP::SecByteBlock& avatarsKey, const std::string& avatarPath);
 
     static void rename(const std::string& oldName, const std::string& newName);
     void setNewPath(const std::string& newAvatarPath);

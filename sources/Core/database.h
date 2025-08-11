@@ -1,41 +1,75 @@
 #pragma once
+
 #include <iostream>
 #include <unordered_map>
 #include <string>
 #include <vector>
+#include <sstream>
+#include <optional>
+#include <memory>
 
-#include"sqlite/sqlite3.h" 
-#include"message.h" 
+#include "SQLiteCpp/Transaction.h"
+#include "SQLiteCpp/SQLiteCpp.h"
+
+#include "rsa.h"
 
 class User;
+class Blob;
+class Message;
+
+typedef std::shared_ptr<Blob> BlobPtr;
+typedef std::shared_ptr<Message> MessagePtr;
 
 class Database {
 public:
-	Database() = default;
-	~Database();
+	Database();
+	~Database() = default;
 
-	bool addRequestedFile(const std::string& loginHash, const std::string& fileId);
-	bool removeRequestedFile(const std::string& loginHash, const std::string& fileId);
-	bool checkRequestedFile(const std::string& loginHash, const std::string& fileId);
-	std::vector<std::string> getRequestedFiles(const std::string& loginHash);
+	void init(const std::string& myUID);
 
-	bool addBlob(const CryptoPP::RSA::PublicKey& publicKey, const std::string& loginHash, const std::string& blobUid, int filesCountInBlob, int filesReceived, const std::string& serializedMessage);
-	bool removeBlob(const std::string& loginHash, const std::string& blobUid);
-	bool isBlobExists(const std::string& loginHash, const std::string& blobUid);
-	std::string getSerializedMessage(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& loginHash, const std::string& blobUid);
-	bool updateSerializedMessage(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& loginHash, const std::string& blobUid, const std::string& message);
-	bool incrementFilesReceivedCounter(const std::string& loginHash, const std::string& blobUid);
-	std::string getEncryptedAesKey(const std::string& loginHash, const std::string& blobUid);
-	int getReceivedFilesCount(const std::string& loginHash, const std::string& blobUid);
+	// REQUESTED_FILES_IDS
+	bool addRequestedFileId(const std::string& myUID, const std::string& fileId);
+	bool removeRequestedFileId(const std::string& myUID, const std::string& fileId);
+	bool isRequestedFileId(const std::string& myUID, const std::string& fileId);
+	std::optional<std::vector<std::string>> getAllRequestedFilesIds(const std::string& myUID);
 
-	void init(const std::string& loginHash);
-	void updateTableName(const std::string& oldLoginHash, const std::string& newLoginHash);
-	void updateFriendLoginHash(const std::string& myLoginHash, const std::string& oldLoginHash, const std::string& newLoginHash);
-	void saveMessages(const CryptoPP::RSA::PublicKey& publicKey, const std::string& myLogin, const std::string& friendLogin, std::vector<Message*> messages) const;
-	std::vector<Message*> loadMessages(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myLogin, const std::string& friendLogin, std::vector<Message*>& messages) const;
-	void deleteAllMessages(const std::string& myLogin, const std::string& friendLogin) const;
+
+	// BLOB_BUFFERS
+	bool addBlobBuffer(const CryptoPP::RSA::PublicKey& myPpublicKey, const std::string& myUID, const std::string& blobUid, const std::string& senderUid, const std::string& timestamp, int filesCountInBlob, const std::string& caption);
+	bool removeBlobBuffer(const std::string& myUID, const std::string& blobUid);
+	bool isBlobBuffer(const std::string& myUID, const std::string& blobUid);
+	bool incrementReceivedFilesCountInBlobBuffer(const std::string& myUID, const std::string& blobUid);
+	std::optional<int> getReceivedFilesCountInBlobBuffer(const std::string& myUID, const std::string& blobUid);
+	BlobPtr getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& loginHash, const std::string& blobUid);
+	
+
+	// BLOB_BUFFER_FILES
+	bool addFileToBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myUID, const std::string& blobUid, const std::string& fileId, const std::string& fileName, const std::string& fileSize, const std::string& filePath);
+    bool removeFileFromBlobBuffer(const std::string& myUID, const std::string& fileId);
+    bool isFileInBlobBuffer(const std::string& myUID, const std::string& fileId);
+
+
+	// BLOBS
+	bool addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myUID, const std::string& friendUID, BlobPtr blob);
+	BlobPtr getBlob(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& blobUid);
+	bool removeBlob(const std::string& myUID, const std::string& blobUid);
+	bool saveBlobs(const CryptoPP::RSA::PublicKey& publicKey, const std::string& myUID, const std::string& friendUID, const std::vector<BlobPtr>& blobs) const;
+	void loadBlobs(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& friendUID, std::vector<BlobPtr>& blobs) const;
+	bool deleteAllBlobs(const std::string& myUID, const std::string& friendUID) const;
+
+
+	// MESSAGES
+	bool addMessage(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myUID, const std::string& friendUID, MessagePtr message);
+	std::optional<std::string> getMessage(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& id);
+	bool removeMessage(const std::string& myUID, const std::string& id);
+	bool saveMessages(const CryptoPP::RSA::PublicKey& publicKey, const std::string& myUID, const std::string& friendUID, const std::vector<MessagePtr>& messages) const;
+	void loadMessages(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& friendUID, std::vector<MessagePtr>& messages) const;
+	bool deleteAllMessages(const std::string& myUID, const std::string& friendUID) const;
+
 
 private:
-	const std::string c_delimiter = "--8d45f2a1-3c7b-4e9d-a2f6-1b0c9e3d5a7f--";
-	sqlite3* m_db = nullptr;
+	std::string constructTableName(const std::string& tableName, const std::string& loginHash) const;
+
+private:
+	std::unique_ptr<SQLite::Database> m_db;
 };

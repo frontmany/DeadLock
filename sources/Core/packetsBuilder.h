@@ -17,11 +17,11 @@ public:
 	const std::string getReconnectPacket(const std::string& loginHash, const std::string& passwordHash);
 	const std::string getAuthorizationPacket(const std::string& loginHash, const std::string& passwordHash);
 	const std::string getRegistrationPacket(const std::string& loginHash, const std::string& passwordHash);
-	const std::string getAfterRegistrationSendMyInfoPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name);
-	const std::string getCreateChatPacket(const std::string& myLoginHash, const std::string& friendLoginHash);
+	const std::string getSendMyNameAndLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& login, const std::string& name);
+	const std::string getCreateChatPacket(const std::string& myUID, const std::string& supposedFriendLoginHash);
 	const std::string getFindUserPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myLoginHash, const std::string& searchText);
 
-	const std::string getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& loginHash, const std::string& newName, const std::vector<std::string>& friendsLoginsVec);
+	const std::string getUpdateMyNamePacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& newName, const std::vector<std::string>& friendsUIDsVec);
 	const std::string getUpdateMyPasswordPacket(const std::string& loginHash, const std::string& newPasswordHash);
 	const std::string getUpdateMyLoginPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& oldLoginHash, const std::string& newLoginHash, const std::string& newLogin, const std::vector<std::string>& friendsLoginHashesVec);
 	const std::string getSerializedFriendsLoginHashesVec(const std::vector<std::string>& friendsLoginHashesVec);
@@ -44,16 +44,9 @@ public:
 	const std::string getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status, const std::string& myLoginHash, const std::vector<std::string>& friendsLoginHashesVec);
 
 private:
-	static constexpr const char* get = "GET";
-	static constexpr const char* rpl = "RPL";
-	static constexpr const char* broadcast = "BROADCAST";
+	std::string getLoginAndPasswordHashPacket(const std::string& loginHash, const std::string& passwordHash);
 
-	static constexpr const char* messageBegin = "MESSAGE_BEGIN";
-	static constexpr const char* messageEnd = "MESSAGE_END";
-
-	static constexpr const char* photoBegin = "PHOTO_BEGIN";
-	static constexpr const char* photoEnd = "PHOTO_END";
-
-	static constexpr const char* vecBegin = "VEC_BEGIN";
-	static constexpr const char* vecEnd = "VEC_END";
+	static constexpr const char* GET = "GET";
+	static constexpr const char* RPL = "RPL";
+	static constexpr const char* BROADCAST = "BROADCAST";
 };

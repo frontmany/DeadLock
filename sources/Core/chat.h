@@ -1,73 +1,88 @@
 #pragma once
 #include<vector>
-#include<QJsonObject>
-#include"message.h"
 
-#include "secblock.h"
-#include "secblockfwd.h"
 #include "rsa.h"
+#include "json.hpp"
 
 class Database;
+class Message;
+class Blob;
+class FilesBlob;
 class Avatar;
 
+typedef std::shared_ptr<Message> MessagePtr;
+typedef std::shared_ptr<Avatar> AvatarPtr;
+typedef std::shared_ptr<Blob> BlobPtr;
+typedef std::shared_ptr<Database> DatabasePtr;
 
 class Chat {
 public:
-	Chat() : m_is_friend_has_avatar(false),
-		m_index_at_layout(100000),
-		m_friend_avatar(nullptr) 
-	{
-	}
-	
-	~Chat() {
-		for (auto msg : m_vec_messages) {
-			delete msg;
-		}
-		delete m_friend_avatar;
-	}
+	Chat();
+	~Chat() = default;
 
-	std::vector<Message*>& getMessagesVec() { return m_vec_messages; }
-	const std::vector<Message*> getUnreadSendMessagesVec() const;
-	const std::vector<Message*> getUnreadReceiveMessagesVec() const;
+    // Messages operations
+    void addMessage(MessagePtr newMessage);
+    void markMessageAsRead(const std::string& messageUID);
 
-	void setFriendLogin(const std::string& friendLogin) { m_friend_login = friendLogin; }
-	const std::string& getFriendLogin() const { return m_friend_login; }
+    const std::vector<MessagePtr>& getMessagesVec() const;
+    const std::vector<MessagePtr>& getUnreadReceivedMessagesVec() const;
 
-	void setPublicKey(const CryptoPP::RSA::PublicKey& publicKey) { m_publicKey = publicKey; }
-	const CryptoPP::RSA::PublicKey& getPublicKey() const { return m_publicKey; }
-	
-	void setLastReceivedOrSentMessage(const std::string& lastReceivedOrSentMessage) { m_last_received_or_sent_message = lastReceivedOrSentMessage; }
-	const std::string& getLastReceivedOrSentMessage() const { return m_last_received_or_sent_message; }
+    const std::vector<BlobPtr>& getBlobsVec() const;
+    const std::vector<BlobPtr>& getUnreadReceivedBlobsVec() const;
 
-	void setFriendName(const std::string& name) { m_friend_name = name; }
-	const std::string& getFriendName() const { return m_friend_name; }
+    // Friend info accessors
+    void setFriendUID(const std::string& friendUID);
+    const std::string& getFriendUID() const;
 
-	void setFriendLastSeen(const std::string& lastSeen) { m_friend_last_seen = lastSeen; }
-	const std::string& getFriendLastSeen() const { return m_friend_last_seen; }
+    void setPublicKey(const CryptoPP::RSA::PublicKey& publicKey);
+    const CryptoPP::RSA::PublicKey& getPublicKey() const;
 
-	void setIsFriendHasAvatar(const bool isHasAvatar) { m_is_friend_has_avatar = isHasAvatar; }
-	const bool getIsFriendHasAvatar() const { return m_is_friend_has_avatar; }
+    void setMessageToShowInChatsList(const std::string& message);
+    const std::string& getMessageToShowInChatsList() const;
 
-	void setFriendAvatar(Avatar* avatar) { m_friend_avatar = avatar; }
-	const Avatar* getFriendAvatar() const { return m_friend_avatar; }
+    void setFriendName(const std::string& name);
+    const std::string& getFriendName() const;
 
-	void setLayoutIndex(int index) { m_index_at_layout = index; }
-	const int getLayoutIndex() const { return m_index_at_layout; }
+    void setFriendLastSeen(const std::string& lastSeen);
+    const std::string& getFriendLastSeen() const;
 
-	CryptoPP::SecByteBlock& getChatConfigKey() { return m_AESE_chat_configKey; }
+    // Avatar management
+    void setIsFriendHasAvatar(bool isHasAvatar);
+    bool getIsFriendHasAvatar() const;
 
-	QJsonObject serialize(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myLogin, const Database& db);
-	static Chat* deserialize(const CryptoPP::RSA::PrivateKey& myPrivateKey, const std::string& myLogin, const QJsonObject& jsonObject, const Database& db, CryptoPP::SecByteBlock avatarsKey);
+    void setFriendAvatar(AvatarPtr avatar);
+    AvatarPtr getFriendAvatar() const;
+
+    // Layout management
+    void setLayoutIndex(int index);
+    int getLayoutIndex() const;
+
+    // Serialization
+    nlohmann::json serialize(const CryptoPP::RSA::PublicKey& myPublicKey,
+        const std::string& myUID,
+        DatabasePtr db);
+
+    static std::shared_ptr<Chat> deserialize(const CryptoPP::RSA::PrivateKey& myPrivateKey,
+        const std::string& myUID,
+        const nlohmann::json& jsonObject,
+        DatabasePtr db,
+        const CryptoPP::SecByteBlock& avatarsKey);
+
 
 private:
-	CryptoPP::SecByteBlock	  m_AESE_chat_configKey;
-	CryptoPP::RSA::PublicKey  m_publicKey;
-	std::vector<Message*>	  m_vec_messages;
-	std::string				  m_friend_last_seen;
-	std::string				  m_friend_login;
-	std::string				  m_friend_name;
-	std::string				  m_last_received_or_sent_message;
-	bool					  m_is_friend_has_avatar;
-	Avatar*					  m_friend_avatar;
-	int						  m_index_at_layout;
+	std::string	m_friendUID;
+	std::string	m_friendName;
+	std::string m_friendLastSeen;
+	bool m_isFriendHasAvatar;
+	AvatarPtr m_friendAvatar;
+	CryptoPP::RSA::PublicKey m_friendPublicKey;
+
+	int	m_indexAtLayout;
+	std::string	m_messageToShowInChatsList;
+
+	std::vector<BlobPtr> m_vecBlobs;
+    std::vector<BlobPtr> m_vecUnreadReceivedBlobs;
+
+	std::vector<MessagePtr> m_vecMessages;
+	std::vector<MessagePtr> m_vecUnreadReceivedMessages;
 };

@@ -1,85 +1,38 @@
 #include"message.h"
 
+#include"utility.h"
 #include <sstream>
-#include <string>
-#include <iostream>
+
+
+Message::Message(const std::string& message,
+    const std::string& timestamp,
+    const std::string& id,
+    bool isFromMe,
+    bool isRead)
+    : m_message(message),
+    m_timestamp(timestamp),
+    m_id(id),
+    m_isFromMe(isFromMe),
+    m_isRead(isRead),
+    m_isNeedToRetry(false),
+    m_isSending(false)
+{
+}
 
 std::string Message::serialize() const {
     std::ostringstream oss;
 
-    auto escape = [](const std::string& s) {
-        std::string result;
-        for (char c : s) {
-            if (c == '|') {
-                result += "\\|";
-            }
-            else if (c == '\\') {
-                result += "\\\\";
-            }
-            else {
-                result += c;
-            }
-        }
-        return result;
-        };
-
-    oss << escape(m_message) << "|"
-        << escape(m_timestamp) << "|"
-        << escape(m_id) << "|"
-        << (m_is_from_me ? "true" : "false") << "|"
-        << (m_is_read ? "true" : "false") << "|";
-        if (m_is_sending || m_is_need_to_retry) {
-            oss << "true" << "|";
-        }
-        else {
-            oss << "false" << "|";
-        }
-        
-
-    oss << std::to_string(m_vec_related_files.size()) << "|";
-
-    for (const auto& file_entry : m_vec_related_files) {
-        const auto& file = file_entry.file;
-
-        oss << (file_entry.isPresent ? "true" : "false") << "|"
-            << (file_entry.isSending ? "true" : "false") << "|"
-            << escape(file.blobUID) << "|"
-            << escape(file.senderLoginHash) << "|"
-            << escape(file.receiverLoginHash) << "|"
-            << escape(file.filePath) << "|"
-            << escape(file.id) << "|"
-            << escape(file.timestamp) << "|"
-            << file.fileSize << "|"
-            << escape(file.caption) << "|"
-            << escape(file.fileName) << "|"
-            << file.filesInBlobCount << "|"
-            << escape(file.encryptedKey) << "|";
-    }
+    oss << utility::escape(m_message) << "|"
+        << utility::escape(m_timestamp) << "|"
+        << utility::escape(m_id) << "|"
+        << (m_isFromMe ? "true" : "false") << "|"
+        << (m_isRead ? "true" : "false") << "|"
+        << ((m_isSending || m_isNeedToRetry) ? "true" : "false") << "|";
 
     return oss.str();
 }
 
-void Message::setRelatedFilePaths(std::vector<fileWrapper> relatedFilesVec) {
-    m_vec_related_files = std::move(relatedFilesVec);
-}
-
-
-Message* Message::deserialize(const std::string& data) {
-    auto unescape = [](const std::string& s) {
-        std::string result;
-        for (size_t i = 0; i < s.size(); ++i) {
-            if (s[i] == '\\' && i + 1 < s.size()) {
-                if (s[i + 1] == '|' || s[i + 1] == '\\') {
-                    result += s[i + 1];
-                    ++i;
-                    continue;
-                }
-            }
-            result += s[i];
-        }
-        return result;
-        };
-
+std::shared_ptr<Message> Message::deserialize(const std::string& data) {
     std::vector<std::string> tokens;
     bool escape = false;
     std::string current;
@@ -103,51 +56,83 @@ Message* Message::deserialize(const std::string& data) {
         tokens.push_back(current);
     }
 
-    const size_t MIN_TOKENS = 7;
-    if (tokens.size() < MIN_TOKENS) {
+    const size_t REQUIRED_TOKENS = 6;
+    if (tokens.size() < REQUIRED_TOKENS) {
         return nullptr;
     }
 
-    Message* msg = new Message();
+    std::shared_ptr<Message> msg = std::make_shared<Message>();
     size_t index = 0;
 
     try {
-        msg->m_message = unescape(tokens[index++]);
-        msg->m_timestamp = unescape(tokens[index++]);
-        msg->m_id = unescape(tokens[index++]);
-        msg->m_is_from_me = (tokens[index++] == "true");
-        msg->m_is_read = (tokens[index++] == "true");
-        msg->m_is_need_to_retry = (tokens[index++] == "true");
-        size_t file_count = std::stoul(tokens[index++]);
-
-        const size_t FIELDS_PER_FILE = 13;
-        for (size_t i = 0; i < file_count; ++i) {
-            if (index + FIELDS_PER_FILE - 1 >= tokens.size()) {
-                throw std::runtime_error("Not enough tokens for file data");
-            }
-            fileWrapper file_entry;
-            file_entry.isPresent = (tokens[index++] == "true");
-            file_entry.isNeedToRetry = (tokens[index++] == "true");
-
-            file_entry.file.blobUID = unescape(tokens[index++]);
-            file_entry.file.senderLoginHash = unescape(tokens[index++]);
-            file_entry.file.receiverLoginHash = unescape(tokens[index++]);
-            file_entry.file.filePath = unescape(tokens[index++]);
-            file_entry.file.id = unescape(tokens[index++]);
-            file_entry.file.timestamp = unescape(tokens[index++]);
-            file_entry.file.fileSize = tokens[index++];
-            file_entry.file.caption = unescape(tokens[index++]);
-            file_entry.file.fileName = unescape(tokens[index++]);
-            file_entry.file.filesInBlobCount = tokens[index++];
-            file_entry.file.encryptedKey = unescape(tokens[index++]);
-
-            msg->m_vec_related_files.push_back(file_entry);
-        }
+        msg->m_message = utility::unescape(tokens[index++]);
+        msg->m_timestamp = utility::unescape(tokens[index++]);
+        msg->m_id = utility::unescape(tokens[index++]);
+        msg->m_isFromMe = (tokens[index++] == "true");
+        msg->m_isRead = (tokens[index++] == "true");
+        msg->m_isNeedToRetry = (tokens[index++] == "true");
+        msg->m_isSending = false;
     }
     catch (...) {
-        delete msg;
         return nullptr;
     }
 
     return msg;
+}
+
+
+const std::string& Message::getMessage() const {
+    return m_message;
+}
+
+void Message::setMessage(const std::string& message) {
+    m_message = message;
+}
+
+const std::string& Message::getTimestamp() const {
+    return m_timestamp;
+}
+
+void Message::setTimestamp(const std::string& timestamp) {
+    m_timestamp = timestamp;
+}
+
+const std::string& Message::getId() const {
+    return m_id;
+}
+
+void Message::setId(const std::string& id) {
+    m_id = id;
+}
+
+bool Message::getIsFromMe() const {
+    return m_isFromMe;
+}
+
+void Message::setIsFromMe(bool isFromMe) {
+    m_isFromMe = isFromMe;
+}
+
+bool Message::getIsRead() const {
+    return m_isRead;
+}
+
+void Message::setIsRead(bool isRead) {
+    m_isRead = isRead;
+}
+
+bool Message::getIsNeedToRetry() const {
+    return m_isNeedToRetry;
+}
+
+void Message::setIsNeedToRetry(bool isNeedToRetry) {
+    m_isNeedToRetry = isNeedToRetry;
+}
+
+bool Message::getIsSending() const {
+    return m_isSending;
+}
+
+void Message::setIsSending(bool isSending) {
+    m_isSending = isSending;
 }

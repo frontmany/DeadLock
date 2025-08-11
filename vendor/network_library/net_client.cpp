@@ -1,4 +1,5 @@
 #include "net_client.h"
+#include "blob.h"
 
 namespace net {
 	ClientInterface::ClientInterface() 
@@ -112,7 +113,7 @@ namespace net {
 		m_connection->send(msg);
 	}
 
-	void ClientInterface::sendFile(const File& file)
+	void sendBlob(BlobPtr blob)
 	{
 		m_files_connection->sendFile(file);
 	}

@@ -12,9 +12,6 @@
 
 #include "theme.h"
 
-
-
-
 class ChatsWidget;
 class ButtonIcon;
 class AvatarIcon;

@@ -1,480 +1,356 @@
 #include "configManager.h"
+
 #include "database.h"
+#include "keysManager.h"
 #include "utility.h"
 #include "chat.h"
 #include "avatar.h"
 #include "client.h"
 
-#include <rsa.h>                                           
+#include <json.hpp>                                     
 #include <secblockfwd.h> 
 
 ConfigManager::ConfigManager()
-    : m_my_password_hash(""),
-    m_my_login_hash(""),
-    m_auto_login_path(""),
-    m_is_undo_auto_login(false),
-    m_my_login(""),
-    m_my_name(""),
-    m_is_auto_login(false),
-    m_is_has_avatar(false),
-    m_my_avatar(nullptr),
-    m_client(nullptr)
+    : 
+    m_currentVersionNumber(""),
+    m_myUID(""),
+    m_myPasswordHash(""),
+    m_myLoginHash(""),
+    m_myName(""),
+    m_myAvatar(nullptr),
+    m_isHasAvatar(false),
+    m_isHidden(true),
+    m_isDarkTheme(true)
 {
 }
 
-void ConfigManager::save(const CryptoPP::RSA::PublicKey& myPublicKey, const CryptoPP::RSA::PrivateKey& myPrivateKey, const std::string& serverKey, std::unordered_map<std::string, Chat*> mapFriendLoginHashToChat, bool isHidden, Database* database) {
-    CryptoPP::SecByteBlock AESEConfigKey;
-    utility::generateAESKey(AESEConfigKey);
 
-    QJsonObject jsonObject;
-    jsonObject["theme"] = QString::fromStdString(m_isDarkTheme ? "true" : "false");
-    jsonObject["isNeedToUpdate"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_isNeedToUpdate ? "true" : "false"));
-    if (m_newVersionNumber != "") {
-        jsonObject["newVersionNumber"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_newVersionNumber));
-    }
-    jsonObject["my_login"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_login));
-    jsonObject["my_login_hash"] = QString::fromStdString(m_my_login_hash);
-    jsonObject["is_hidden"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, (isHidden ? "1" : "0")));
-    jsonObject["my_name"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_name));
-    jsonObject["is_has_avatar"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, (m_is_has_avatar ? "1" : "0")));
-    if (m_is_has_avatar && m_my_avatar) {
-        jsonObject["my_avatar_path"] = QString::fromStdString(utility::AESEncrypt(AESEConfigKey, m_my_avatar->getPath()));
-    }
-    if (!checkIsPasswordHashPresentInMyConfig() && !m_is_undo_auto_login) {
-        jsonObject["my_password_hash"] = QString::fromStdString(m_my_password_hash);
+
+void ConfigManager::save(const std::unordered_map<std::string, ChatPtr>& mapFriendUIDToChat, DatabasePtr database, bool isAutoLogin) const {
+    CryptoPP::SecByteBlock mainConfigKey;
+    utility::generateAESKey(mainConfigKey);
+
+    nlohmann::json jsonObject;
+    jsonObject["currentVersionNumber"] = utility::AESEncrypt(mainConfigKey, m_currentVersionNumber);
+    jsonObject["myUID"] = utility::AESEncrypt(mainConfigKey, m_myUID);
+
+    if (isAutoLogin) {
+        jsonObject["passwordHash"] = m_myPasswordHash;
     }
 
-    if (!myPublicKey.GetModulus().IsZero() && !myPrivateKey.GetModulus().IsZero()) {
-        jsonObject["public_key"] = QString::fromStdString(utility::encryptWithServerKey(utility::serializePublicKey(myPublicKey), serverKey));
-        jsonObject["private_key"] = QString::fromStdString(utility::encryptWithServerKey(utility::serializePrivateKey(myPrivateKey), serverKey));
+
+    jsonObject["loginHash"] = m_myLoginHash;
+    jsonObject["login"] = utility::AESEncrypt(mainConfigKey, m_myLogin);
+    jsonObject["name"] = utility::AESEncrypt(mainConfigKey, m_myName);
+    jsonObject["isHasAvatar"] = utility::AESEncrypt(mainConfigKey, (m_isHasAvatar ? "1" : "0"));
+
+    if (m_isHasAvatar) {
+        jsonObject["myAvatarPath"] = utility::AESEncrypt(mainConfigKey, m_myAvatar->getPath());
     }
 
-    std::string encryptedAESEConfigKey = utility::RSAEncryptKey(myPublicKey, AESEConfigKey);
-    jsonObject["encrypted_config_key"] = QString::fromStdString(encryptedAESEConfigKey);
+    jsonObject["isHidden"] = m_isHidden;
+    jsonObject["isDarkTheme"] = m_isDarkTheme;
+    jsonObject["publicKey"] = utility::encryptWithServerKey(utility::serializePublicKey(m_keysManager->getMyPublicKey()), m_keysManager->getServerSpecialKey());
+    jsonObject["privateKey"] = utility::encryptWithServerKey(utility::serializePrivateKey(m_keysManager->getMyPrivateKey()), m_keysManager->getServerSpecialKey());
+    jsonObject["encryptedMainConfigKey"] = utility::RSAEncryptKey(m_keysManager->getMyPublicKey(), mainConfigKey);
 
-
-    QJsonArray chatsArray;
-    for (const auto& chatPair : mapFriendLoginHashToChat) {
-        chatsArray.append(chatPair.second->serialize(myPublicKey, m_my_login, *database));
+    nlohmann::json chatsArray = nlohmann::json::array();
+    for (const auto& chatPair : mapFriendUIDToChat) {
+        chatsArray.push_back(chatPair.second->serialize(m_keysManager->getMyPublicKey(), m_myUID, database));
     }
     jsonObject["chatsArray"] = chatsArray;
-    
-    QString fileName = QString::fromStdString(m_my_login_hash) + ".json";
-    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
-    QDir saveDir(dir);
-    QString fullPath = saveDir.filePath(fileName);
 
-    QFile file(fullPath);
-    if (file.open(QIODevice::WriteOnly)) {
-        QJsonDocument saveDoc(jsonObject);
-        file.write(saveDoc.toJson());
+    std::string fileName = m_myUID + ".json";
+    std::string dir = utility::getConfigsAndPhotosDirectory();
+    std::filesystem::path fullPath = std::filesystem::path(dir) / fileName;
+
+    std::ofstream file(fullPath);
+    if (file.is_open()) {
+        file << jsonObject.dump(4);
         file.close();
-        qDebug() << "Successfully saved user data to:" << fullPath;
+        std::cout << "Successfully saved user data to: " << fullPath << std::endl;
     }
     else {
-        qWarning() << "Failed to open file for writing:" << fullPath;
+        std::cerr << "Failed to open file for writing: " << fullPath << std::endl;
     }
 }
 
-bool ConfigManager::load(const std::string& fileName, const std::string& specialServerKey, Database* database) {
+bool ConfigManager::load(std::unordered_map<std::string, ChatPtr>& mapFriendUIDToChat, const std::string& fileName, DatabasePtr database) {
     try {
-        QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
-        QString fileNameFinal = QString::fromStdString(fileName);
-        QDir saveDir(dir);
-        QString fullPath = saveDir.filePath(fileNameFinal);
+        std::string dir = utility::getConfigsAndPhotosDirectory();
+        std::filesystem::path fullPath = std::filesystem::path(dir) / fileName;
 
-        QFile file(fullPath);
-        if (!file.open(QIODevice::ReadOnly)) {
-            qWarning() << "Couldn't open the .json config file:" << QString::fromStdString(fileName);
+        std::ifstream file(fullPath);
+        if (!file.is_open()) {
+            std::cerr << "Couldn't open the .json config file: " << fileName << std::endl;
             return false;
         }
 
-        QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
+        nlohmann::json jsonObject;
+        file >> jsonObject;
         file.close();
 
-        if (!loadDoc.isObject()) {
-            qWarning() << "Invalid JSON in the file:" << QString::fromStdString(fileName);
+        std::string encryptedPublicKeyStr = jsonObject["publicKey"].get<std::string>();
+        m_keysManager->setMyPublicKey(utility::deserializePublicKey(
+            utility::decryptWithServerKey(encryptedPublicKeyStr, m_keysManager->getServerSpecialKey())));
+
+        std::string encryptedPrivateKeyStr = jsonObject["privateKey"].get<std::string>();
+        m_keysManager->setMyPrivateKey(utility::deserializePrivateKey(
+            utility::decryptWithServerKey(encryptedPrivateKeyStr, m_keysManager->getServerSpecialKey())));
+
+        if (!utility::validateKeys(m_keysManager->getMyPublicKey(), m_keysManager->getMyPrivateKey())) {
+            std::cerr << "Error: Your keys do not match!" << std::endl;
             return false;
         }
 
-        QJsonObject jsonObject = loadDoc.object();
+        CryptoPP::SecByteBlock mainConfigKey = utility::RSADecryptKey(
+            m_keysManager->getMyPrivateKey(),
+            jsonObject["encryptedMainConfigKey"].get<std::string>());
 
-        if (jsonObject.contains("public_key") && jsonObject.contains("private_key")) {
-            std::string encryptedPublicKeyStr = jsonObject["public_key"].toString().toStdString();
-            m_client->setPublicKey(utility::deserializePublicKey(utility::decryptWithServerKey(encryptedPublicKeyStr, specialServerKey)));
+        m_currentVersionNumber = utility::AESDecrypt(mainConfigKey, jsonObject["currentVersionNumber"].get<std::string>());
+        m_myUID = utility::AESDecrypt(mainConfigKey, jsonObject["myUID"].get<std::string>());
 
-            std::string encryptedPrivateKeyStr = jsonObject["private_key"].toString().toStdString();
-            m_client->setPrivateKey(utility::deserializePrivateKey(utility::decryptWithServerKey(encryptedPrivateKeyStr, specialServerKey)));
-
-            if (!utility::validateKeys(m_client->getPublicKey(), m_client->getPrivateKey()))
-                std::cerr << "error: your keys do not match!\n";
+        if (jsonObject.contains("passwordHash")) {
+            m_myPasswordHash = jsonObject["passwordHash"].get<std::string>();
         }
 
-        CryptoPP::SecByteBlock AESEConfigKey = utility::RSADecryptKey(m_client->getPrivateKey(), jsonObject["encrypted_config_key"].toString().toStdString());
+        m_myLoginHash = jsonObject["loginHash"].get<std::string>();
+        m_myName = utility::AESDecrypt(mainConfigKey, jsonObject["name"].get<std::string>());
+        m_isHasAvatar = utility::AESDecrypt(mainConfigKey, jsonObject["isHasAvatar"].get<std::string>()) == "1";
 
-        if (jsonObject.contains("theme")) {
-            m_isDarkTheme = jsonObject["theme"].toString().toStdString() == "true";
-        }
-        if (jsonObject.contains("isNeedToUpdate")) {
-            m_isNeedToUpdate = utility::AESDecrypt(AESEConfigKey, jsonObject["isNeedToUpdate"].toString().toStdString()) == "true";
-        }
-        if (jsonObject.contains("newVersionNumber")) {
-            m_newVersionNumber = utility::AESDecrypt(AESEConfigKey, jsonObject["newVersionNumber"].toString().toStdString());
-        }
-        m_my_login = utility::AESDecrypt(AESEConfigKey, jsonObject["my_login"].toString().toStdString());
-        m_my_name = utility::AESDecrypt(AESEConfigKey, jsonObject["my_name"].toString().toStdString());
-        m_is_has_avatar = utility::AESDecrypt(AESEConfigKey, jsonObject["is_has_avatar"].toString().toStdString()) == "1";
-        m_client->setIsHidden(utility::AESDecrypt(AESEConfigKey, jsonObject["is_hidden"].toString().toStdString()) == "1");
-
-        if (m_is_has_avatar && jsonObject.contains("my_avatar_path")) {
-            QString photoPath = QString::fromStdString(utility::AESDecrypt(AESEConfigKey, jsonObject["my_avatar_path"].toString().toStdString()));
-            if (!photoPath.isEmpty()) {
-                m_my_avatar = new Avatar(m_client->getAvatarsKey(), photoPath.toStdString());
-            }
+        if (m_isHasAvatar && jsonObject.contains("myAvatarPath")) {
+            std::string avatarPath = utility::AESDecrypt(mainConfigKey, jsonObject["myAvatarPath"].get<std::string>());
+            m_myAvatar = std::make_shared<Avatar>(m_keysManager->getAvatarsKey(), avatarPath);
         }
 
-        auto& mapFriendLoginToChat = m_client->getMyHashChatsMap();
-        if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].isArray()) {
-            QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
-            for (const QJsonValue& value : chatsArray) {
-                if (value.isObject()) {
-                    Chat* chat = Chat::deserialize(m_client->getPrivateKey(), m_my_login, value.toObject(), *database, m_client->getAvatarsKey());
-                    if (chat) {
-                        mapFriendLoginToChat[utility::calculateHash(chat->getFriendLogin())] = chat;
-                    }
+        m_isHidden = jsonObject["isHidden"].get<bool>();
+        m_isDarkTheme = jsonObject["isDarkTheme"].get<bool>();
+
+        if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].is_array()) {
+            for (const auto& chatJson : jsonObject["chatsArray"]) {
+                ChatPtr chat = Chat::deserialize(
+                    m_keysManager->getMyPrivateKey(),
+                    m_myUID,
+                    chatJson,
+                    database,
+                    m_keysManager->getAvatarsKey());
+                if (chat) {
+                    mapFriendUIDToChat[chat->getFriendUID()] = chat;
                 }
             }
         }
 
+        m_loadedConfigPath = fullPath.string();
         return true;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error loading config: " << e.what() << std::endl;
+        return false;
     }
     catch (...) {
+        std::cerr << "Unknown error loading config" << std::endl;
         return false;
     }
 }
 
-void ConfigManager::updateConfigFileName(const std::string& oldLoginHash, const std::string& newLoginHash) {
-    QString oldFileName = QString::fromStdString(utility::getConfigsAndPhotosDirectory()) +
-        QString::fromStdString("/" + oldLoginHash) + ".json";
-    QFile oldFile(oldFileName);
+std::optional<std::string> ConfigManager::findAutoLoginConfigPath() {
+    std::string dir = utility::getConfigsAndPhotosDirectory();
 
-    if (oldFile.exists()) {
-        QString newFileName = QString::fromStdString(utility::getConfigsAndPhotosDirectory()) +
-            QString::fromStdString("/" + newLoginHash) + ".json";
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(dir)) {
+            if (entry.path().extension() == ".json") {
+                std::ifstream file(entry.path());
+                if (!file.is_open()) {
+                    std::cerr << "Couldn't open JSON file: " << entry.path() << std::endl;
+                    continue;
+                }
 
-        if (!oldFile.rename(newFileName)) {
-            qWarning() << "Failed to rename config file from" << oldFileName << "to" << newFileName;
-            return;
-        }
-    }
-}
-
-void ConfigManager::updateInConfigFriendLogin(const std::string& oldLogin, const std::string& newLogin) {
-    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
-    QString fileName = QString::fromStdString("/" + m_my_login_hash) + ".json";
-    QString fullPath = dir + fileName;
-    std::string STRDEBUG = fullPath.toStdString();
-
-    QFile file(fullPath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Failed to open config file for reading:" << fullPath;
-        return;
-    }
-
-    QJsonDocument configDoc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-
-    if (configDoc.isNull()) {
-        qWarning() << "Invalid JSON in config file:" << fullPath;
-        return;
-    }
-
-    QJsonObject configObj = configDoc.object();
-
-    if (!configObj.contains("chatsArray") || !configObj["chatsArray"].isArray()) {
-        qWarning() << "No chats array found in config";
-        return;
-    }
-
-    QJsonArray chatsArray = configObj["chatsArray"].toArray();
-    bool found = false;
-
-    for (auto&& chatValue : chatsArray) {
-        if (!chatValue.isObject()) continue;
-        CryptoPP::SecByteBlock chatConfigKey = getChatConfigKey(newLogin);
-
-        QJsonObject chatObj = chatValue.toObject();
-        std::string currentLogin = utility::AESDecrypt(chatConfigKey, chatObj["friend_login"].toString().toStdString());
-        if (currentLogin == oldLogin) {
-            chatObj["friend_login"] = QString::fromStdString(utility::AESEncrypt(chatConfigKey, newLogin));
-            chatValue = chatObj;
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        qWarning() << "Friend login" << oldLogin.c_str() << "not found in config";
-        return;
-    }
-
-    configObj["chatsArray"] = chatsArray;
-
-    if (!file.open(QIODevice::WriteOnly)) {
-        qWarning() << "Failed to open config file for writing:" << fullPath;
-        return;
-    }
-
-    file.write(QJsonDocument(configObj).toJson());
-    file.close();
-}
-
-bool ConfigManager::checkIsAutoLogin() {
-    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
-    QDir saveDir(dir);
-
-    QStringList jsonFiles = saveDir.entryList(QStringList() << "*.json", QDir::Files);
-    if (jsonFiles.isEmpty()) {
-        qDebug() << "No JSON files found for auto-login";
-        return false;
-    }
-
-    for (const QString& jsonFile : jsonFiles) {
-        QString fullPath = saveDir.filePath(jsonFile);
-        QFile file(fullPath);
-
-        if (!file.open(QIODevice::ReadOnly)) {
-            qWarning() << "Couldn't open JSON file:" << fullPath;
-            continue;
-        }
-
-        QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
-        file.close();
-
-        if (!loadDoc.isObject()) {
-            qWarning() << "Invalid JSON format in file:" << fullPath;
-            continue;
-        }
-
-        QJsonObject jsonObject = loadDoc.object();
-        if (jsonObject.contains("my_password_hash")) {
-            qDebug() << "Auto-login configuration available in file:" << fullPath;
-
-            m_auto_login_path = fullPath.toStdString();
-            return true;
-        }
-    }
-
-    qDebug() << "No valid auto-login configuration found";
-        return false;
-}
-
-void ConfigManager::deleteFriendChatInConfig(const std::string& friendLogin) {
-    QString configPath = QString::fromStdString(utility::getConfigsAndPhotosDirectory() + "/" + m_my_login_hash + ".json");
-    QFile file(configPath);
-
-    if (!file.open(QIODevice::ReadWrite)) {
-        qWarning() << "Couldn't open config file for update:" << configPath;
-        return;
-    }
-
-    QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
-    if (!loadDoc.isObject()) {
-        qWarning() << "Invalid JSON in config file:" << configPath;
-        file.close();
-        return;
-    }
-
-    QJsonObject jsonObject = loadDoc.object();
-
-    if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].isArray()) {
-        QJsonArray chatsArray = jsonObject["chatsArray"].toArray();
-        QJsonArray newChatsArray;
-        for (const QJsonValue& value : chatsArray) {
-            if (value.isObject()) {
-                QJsonObject chatObj = value.toObject();
-                Chat* chat = Chat::deserialize(m_client->getPrivateKey(), m_my_login, chatObj, *m_client->getDatabase(), m_client->getAvatarsKey());
-                if (chatObj.contains("friend_login") &&
-                    utility::AESDecrypt(chat->getChatConfigKey(), chatObj["friend_login"].toString().toStdString()) != friendLogin) {
-                    newChatsArray.append(chatObj);
+                nlohmann::json jsonObject;
+                try {
+                    file >> jsonObject;
+                    if (jsonObject.contains("passwordHash")) {
+                        std::cout << "Auto-login configuration available in file: " << entry.path() << std::endl;
+                        return entry.path().string();
+                    }
+                }
+                catch (const nlohmann::json::parse_error& e) {
+                    std::cerr << "Invalid JSON format in file: " << entry.path() << " - " << e.what() << std::endl;
                 }
             }
         }
+    }
+    catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
+    }
 
-        if (newChatsArray.size() != chatsArray.size()) {
-            jsonObject["chatsArray"] = newChatsArray;
+    std::cout << "No valid auto-login configuration found" << std::endl;
+    return std::nullopt;
+}
 
-            file.resize(0);
-            file.write(QJsonDocument(jsonObject).toJson());
-            qDebug() << "Chat with friend" << QString::fromStdString(friendLogin)
-                << "removed from config";
+bool ConfigManager::removeFriendChatFromConfig(const std::string& friendUID) {
+    std::ifstream inFile(m_loadedConfigPath);
+    if (!inFile.is_open()) {
+        std::cerr << "[removeFriendChatFromConfig] Failed to open config file: " << m_loadedConfigPath << std::endl;
+        return false;
+    }
+
+    nlohmann::json jsonObject;
+    try {
+        inFile >> jsonObject;
+        inFile.close();
+    }
+    catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "[removeFriendChatFromConfig] Invalid JSON: " << e.what() << std::endl;
+        return false;
+    }
+
+    bool isModified = false;
+    if (jsonObject.contains("chatsArray") && jsonObject["chatsArray"].is_array()) {
+        auto& chatsArray = jsonObject["chatsArray"];
+        for (auto it = chatsArray.begin(); it != chatsArray.end(); ) {
+            if (it->contains("friendUID") && it->at("friendUID").get<std::string>() == friendUID) {
+                it = chatsArray.erase(it);
+                isModified = true;
+                break;
+            }
+            else {
+                ++it;
+            }
         }
     }
 
-    file.close();
+    if (isModified) {
+        std::ofstream outFile(m_loadedConfigPath);
+        if (!outFile.is_open()) {
+            std::cerr << "[removeFriendChatFromConfig] Failed to write updated config" << std::endl;
+            return false;
+        }
+        outFile << jsonObject.dump(4);
+        std::cout << "Successfully removed chat with friend UID: " << friendUID << std::endl;
+    }
+
+    return isModified;
 }
 
-bool ConfigManager::undoAutoLogin() {
-    QString oldFileName = QString::fromStdString(utility::getConfigsAndPhotosDirectory()) +
-        QString::fromStdString("/" + m_my_login_hash) + ".json";
-
-    QFile file(oldFileName);
-
-    if (!file.exists()) {
-        qWarning() << "Auto-login file not found:" << oldFileName;
+bool ConfigManager::removePasswordHashFromConfig() {
+    if (!std::filesystem::exists(m_loadedConfigPath)) {
+        std::cerr << "Auto-login file not found: " << m_loadedConfigPath << std::endl;
         return false;
     }
 
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open file for reading:" << oldFileName;
+    std::ifstream inFile(m_loadedConfigPath);
+    if (!inFile.is_open()) {
+        std::cerr << "[removePasswordHashFromConfig] Couldn't open file: " << m_loadedConfigPath << std::endl;
         return false;
     }
 
-    QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-
-    if (doc.isNull() || !doc.isObject()) {
-        qWarning() << "Invalid JSON in file:" << oldFileName;
+    nlohmann::json jsonObj;
+    try {
+        inFile >> jsonObj;
+        inFile.close();
+    }
+    catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "[removePasswordHashFromConfig] Invalid JSON: " << e.what() << std::endl;
         return false;
     }
 
-    QJsonObject jsonObj = doc.object();
-
-    if (!jsonObj.contains("my_password_hash")) {
-        qDebug() << "Password hash field not found in file:" << oldFileName;
+    if (!jsonObj.contains("passwordHash")) {
+        std::cout << "[removePasswordHashFromConfig] Password hash not found" << std::endl;
         return true;
     }
 
-    jsonObj.remove("my_password_hash");
+    jsonObj.erase("passwordHash");
 
-    if (!file.open(QIODevice::WriteOnly)) {
-        qWarning() << "Couldn't open file for writing:" << oldFileName;
+    std::ofstream outFile(m_loadedConfigPath);
+    if (!outFile.is_open()) {
+        std::cerr << "[removePasswordHashFromConfig] Couldn't open file for writing" << std::endl;
         return false;
     }
 
-    QJsonDocument newDoc(jsonObj);
-    if (file.write(newDoc.toJson()) == -1) {
-        qWarning() << "Failed to write to file:" << oldFileName;
-        file.close();
-        return false;
-    }
-
-    file.close();
-    qDebug() << "Successfully removed password hash from:" << oldFileName;
+    outFile << jsonObj.dump(4);
+    std::cout << "Successfully removed password hash from: " << m_loadedConfigPath << std::endl;
     return true;
 }
 
 
 
-// private
-void ConfigManager::loadLoginHash() {
-    QFile file(QString::fromStdString(m_auto_login_path));
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open the .json config file: config.json";
+
+
+
+
+
+void ConfigManager::preloadLoginHash(const std::string& autoLoginPath) {
+    std::ifstream file(autoLoginPath);
+    if (!file.is_open()) {
+        std::cerr << "Couldn't open config file: " << autoLoginPath << std::endl;
         return;
     }
 
-    QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-
-    if (!loadDoc.isObject()) {
-        qWarning() << "Invalid JSON in the file: config.json";
-        return;
-    }
-
-    QJsonObject jsonObject = loadDoc.object();
-
-    if (jsonObject.contains("my_login_hash")) {
-        std::string loginHash = jsonObject["my_login_hash"].toString().toStdString();
-        m_my_login_hash = loginHash;
-    }
-}
-
-void ConfigManager::loadTheme() {
-    QFile file(QString::fromStdString(m_auto_login_path));
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open the .json config file: config.json";
-        return;
-    }
-
-    QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-
-    if (!loadDoc.isObject()) {
-        qWarning() << "Invalid JSON in the file: config.json";
-        return;
-    }
-
-    QJsonObject jsonObject = loadDoc.object();
-
-    if (jsonObject.contains("theme")) {
-        std::string themeString = jsonObject["theme"].toString().toStdString();
-        m_isDarkTheme = themeString == "true";
-    }
-}
-
-void ConfigManager::loadPasswordHash() {
-    QFile file(QString::fromStdString(m_auto_login_path));
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Couldn't open the .json config file: config.json";
-        return;
-    }
-
-    QJsonDocument loadDoc = QJsonDocument::fromJson(file.readAll());
-    file.close();
-
-    if (!loadDoc.isObject()) {
-        qWarning() << "Invalid JSON in the file: config.json";
-        return;
-    }
-
-    QJsonObject jsonObject = loadDoc.object();
-
-    if (jsonObject.contains("my_password_hash")) {
-        std::string passwordHash = jsonObject["my_password_hash"].toString().toStdString();
-        m_my_password_hash = passwordHash;
-    }
-}
-
-bool ConfigManager::checkIsPasswordHashPresentInMyConfig() const {
-    QString dir = QString::fromStdString(utility::getConfigsAndPhotosDirectory());
-    QDir saveDir(dir);
-
-    if (!saveDir.exists()) {
-        if (!saveDir.mkpath(".")) {
-            qWarning() << "Failed to create directory:" << dir;
-            return false;
+    try {
+        nlohmann::json jsonObject;
+        file >> jsonObject;
+        if (jsonObject.contains("loginHash")) {
+            m_myLoginHash = jsonObject["loginHash"].get<std::string>();
         }
     }
-
-    bool isPresent = false;
-    QStringList jsonFiles = saveDir.entryList(QStringList() << "*.json", QDir::Files);
-
-    for (const QString& file : jsonFiles) {
-        if (file == QString::fromStdString(m_my_login_hash + ".json")) {
-            continue;
-        }
-
-        QFileInfo fileInfo(saveDir.filePath(file));
-        QFile f(fileInfo.filePath());
-
-        if (f.open(QIODevice::ReadOnly)) {
-            QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
-            f.close();
-
-            if (doc.isObject() && doc.object().contains("my_password_hash")) {
-                isPresent = true;
-                break;
-            }
-        }
+    catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "Invalid JSON: " << e.what() << std::endl;
     }
-
-    return isPresent;
 }
 
-//here
-CryptoPP::SecByteBlock ConfigManager::getChatConfigKey(const std::string& login) {
-    auto chatOpt = m_client->findChat(utility::calculateHash(login)); 
-    auto chat = *chatOpt;
-    return chat->getChatConfigKey();
+void ConfigManager::preloadTheme(const std::string& autoLoginPath) {
+    std::ifstream file(autoLoginPath);
+    if (!file.is_open()) {
+        std::cerr << "Couldn't open config file: " << autoLoginPath << std::endl;
+        return;
+    }
+
+    try {
+        nlohmann::json jsonObject;
+        file >> jsonObject;
+        if (jsonObject.contains("isDarkTheme")) {
+            m_isDarkTheme = jsonObject["isDarkTheme"].get<bool>();
+        }
+    }
+    catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "Invalid JSON: " << e.what() << std::endl;
+    }
+}
+
+void ConfigManager::preloadIsHidden(const std::string& autoLoginPath) {
+    std::ifstream file(autoLoginPath);
+    if (!file.is_open()) {
+        std::cerr << "Couldn't open config file: " << autoLoginPath << std::endl;
+        return;
+    }
+
+    try {
+        nlohmann::json jsonObject;
+        file >> jsonObject;
+        if (jsonObject.contains("isHidden")) {
+            m_isHidden = jsonObject["isHidden"].get<bool>();
+        }
+    }
+    catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "Invalid JSON: " << e.what() << std::endl;
+    }
+}
+
+void ConfigManager::preloadPasswordHash(const std::string& autoLoginPath) {
+    std::ifstream file(autoLoginPath);
+    if (!file.is_open()) {
+        std::cerr << "Couldn't open config file: " << autoLoginPath << std::endl;
+        return;
+    }
+
+    try {
+        nlohmann::json jsonObject;
+        file >> jsonObject;
+        if (jsonObject.contains("passwordHash")) {
+            m_myPasswordHash = jsonObject["passwordHash"].get<std::string>();
+        }
+    }
+    catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "Invalid JSON: " << e.what() << std::endl;
+    }
 }
