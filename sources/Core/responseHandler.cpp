@@ -5,7 +5,7 @@
 #include "friendInfo.h"
 #include "client.h"
 #include "utility.h"
-#include "queryType.h"
+#include "packetType.h"
 #include "database.h"
 #include "message.h"
 #include "avatar.h"

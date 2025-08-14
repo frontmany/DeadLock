@@ -6,6 +6,8 @@
 
 #include "file.h"
 
+typedef std::shared_ptr<File> FilePtr;
+
 class Blob {
 public:
     Blob() = default;
@@ -16,8 +18,8 @@ public:
          int filesCount);
     ~Blob() = default;
 
-    const std::unordered_map<std::string, File>& getRelatedFilesMap() const;
-    void setRelatedFilesMap(const std::unordered_map<std::string, File>& relatedFiles);
+    const std::unordered_map<std::string, FilePtr>& getRelatedFilesMap() const;
+    void setRelatedFilesMap(const std::unordered_map<std::string, FilePtr>& relatedFiles);
 
     const std::string& getTimestamp() const;
     void setTimestamp(const std::string& value);
@@ -47,7 +49,7 @@ public:
     static std::shared_ptr<Blob> deserialize(const std::string& data);
 
 private:
-    std::unordered_map<std::string, File> m_mapRelatedFiles;
+    std::unordered_map<std::string, FilePtr> m_mapRelatedFiles;
     uint32_t m_filesCount{};
 
     std::string m_caption;

@@ -25,6 +25,9 @@ File::File(uint32_t fileSize,
 uint32_t File::getFileSize() const { return m_fileSize; }
 void File::setFileSize(uint32_t fileSize) { m_fileSize = fileSize; }
 
+const std::string& File::getBlobId() const { return m_blobId; }
+void File::setBlobId(const std::string& id) { m_blobId = id; }
+
 const std::string& File::getFilePath() const { return m_filePath; }
 void File::setFilePath(const std::string& filePath) { m_filePath = filePath; }
 

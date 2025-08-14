@@ -23,7 +23,6 @@ namespace net {
 			asio::io_context& asioContext,
 			asio::ip::tcp::socket socket,
 			SafeDeque<File>& incomingFilesQueue,
-			CryptoPP::RSA::PrivateKey* myPrivateKey,
 			std::function<void(std::error_code, std::optional<File>)> onReceiveFileError,
 			std::function<void(std::error_code, File)> onSendFileError,
 			std::function<void(const File&, uint32_t)> onSendProgressUpdate,
@@ -34,6 +33,7 @@ namespace net {
 		~FilesConnection() = default;
 
 		asio::ip::tcp::socket& socket();
+		void supplyMyPrivateKeyForFilesReceiver(const CryptoPP::RSA::PrivateKey& myPrivateKey);
 		void disconnect();
 		bool isConnected();
 		void startReceiving();

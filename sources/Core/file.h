@@ -19,6 +19,9 @@ public:
     uint32_t getFileSize() const;
     void setFileSize(uint32_t fileSize);
 
+    const std::string& getBlobId() const;
+    void setBlobId(const std::string& id);
+
     const std::string& getFilePath() const;
     void setFilePath(const std::string& filePath);
 
@@ -42,6 +45,7 @@ public:
 
 private:
     uint32_t m_fileSize{};
+    std::string m_blobId;
     std::string m_filePath;
     std::string m_fileName;
     std::string m_id;

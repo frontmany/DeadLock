@@ -1,39 +1,28 @@
 #pragma once
-#include <string>
-
-#include <memory>
-#include <thread>
-#include <mutex>
-#include <deque>
-#include <optional>
-#include <vector>
-#include <set>
-#include <fstream>
-#include <iostream>
-#include <system_error>
-#include <filesystem>
-#include <unordered_set>  
-#include <chrono>
-#include <cstdint>    
-#include <cstring>
+#include <vector>     
+#include <cstdint>     
+#include <cstring>  
+#include <string>    
+#include <type_traits> 
+#include <stdexcept>   
 
 namespace net {
-    struct MessageHeader {
+    struct PacketHeader {
         uint32_t type = 0;
         uint32_t size = 0;
     };
 
 
-    struct Message {
-        MessageHeader header{};
+    struct Packet {
+        PacketHeader header{};
         std::vector<uint8_t> body{};
 
         size_t size() const {
-            return sizeof(MessageHeader) + body.size();
+            return sizeof(PacketHeader) + body.size();
         }
 
         template <typename DataType>
-        friend Message& operator << (Message& msg, const DataType& data) {
+        friend Packet& operator << (Packet& msg, const DataType& data) {
             static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pushed");
 
             size_t i = msg.body.size();
@@ -44,7 +33,7 @@ namespace net {
             return msg;
         }
 
-        friend Message& operator << (Message& msg, const std::string& str) {
+        friend Packet& operator << (Packet& msg, const std::string& str) {
             msg.body.insert(msg.body.end(), str.begin(), str.end());
 
             uint32_t size = static_cast<uint32_t>(str.size());
@@ -56,11 +45,11 @@ namespace net {
         }
 
         template <typename DataType>
-        friend Message& operator >> (Message& msg, DataType& data) {
+        friend Packet& operator >> (Packet& msg, DataType& data) {
             static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pulled");
 
             if (msg.body.size() < sizeof(DataType))
-                throw std::runtime_error("Message body too small for data type");
+                throw std::runtime_error("Packet body too small for data type");
 
             size_t i = msg.body.size() - sizeof(DataType);
             memcpy(&data, msg.body.data() + i, sizeof(DataType));
@@ -70,12 +59,12 @@ namespace net {
             return msg;
         }
 
-        friend Message& operator >> (Message& msg, std::string& str) {
+        friend Packet& operator >> (Packet& msg, std::string& str) {
             uint32_t size = 0;
             msg >> size;
 
             if (msg.body.size() < size)
-                throw std::runtime_error("Message body too small for string");
+                throw std::runtime_error("Packet body too small for string");
 
             str.assign(reinterpret_cast<const char*>(msg.body.data()), size);
             msg.body.erase(msg.body.begin(), msg.body.begin() + size);
@@ -83,14 +72,5 @@ namespace net {
 
             return msg;
         }
-    };
-
-    class Connection;
-    typedef std::shared_ptr<Connection> ConnectionPtr;
-
-
-    struct OwnedMessage {
-        ConnectionPtr connection;
-        Message message;
     };
 }

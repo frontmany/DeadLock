@@ -1,20 +1,22 @@
-#include "net_sender.h"
+#include "net_packetsSender.h"
 #include "net_connection.h"
 
 namespace net {
 
-	Sender::Sender(asio::io_context* asioContext,
+	PacketsSender::PacketsSender(asio::io_context* asioContext,
 		asio::ip::tcp::socket* socket, 
 		std::function<void(std::error_code, net::Message)> onSendMessageError,
-		std::function<void()> onDisconnect)
+		std::function<void()> onDisconnect,
+		std::function<void(uint32_t)> onPacketSent)
 		: m_socket(socket),
 		m_asioContext(asioContext),
 		m_onSendMessageError(onSendMessageError),
-		m_onDisconnect(onDisconnect)
+		m_onDisconnect(onDisconnect),
+		m_onPacketSent(onPacketSent)
 	{
 	}
 
-	void Sender::send(const net::Message& msg) {
+	void PacketsSender::send(const net::Message& msg) {
 		asio::post(*m_asioContext, [this, msg]() {
 			bool isAbleToWrite = m_safeDequeOutgoingMessages.empty();
 
@@ -26,14 +28,14 @@ namespace net {
 		});
 	}
 
-	Sender::Sender(Sender&& other) noexcept
+	PacketsSender::PacketsSender(PacketsSender&& other) noexcept
 		: m_socket(std::exchange(other.m_socket, nullptr)),
 		m_asioContext(std::exchange(other.m_asioContext, nullptr)),
 		m_onSendMessageError(std::move(other.m_onSendMessageError)),
 		m_onDisconnect(std::move(other.m_onDisconnect)) {
 	}
 
-	Sender& Sender::operator=(Sender&& other) noexcept {
+	PacketsSender& PacketsSender::operator=(PacketsSender&& other) noexcept {
 		if (this != &other) {
 			m_socket = std::exchange(other.m_socket, nullptr);
 			m_asioContext = std::exchange(other.m_asioContext, nullptr);
@@ -43,7 +45,7 @@ namespace net {
 		return *this;
 	}
 
-	void Sender::writeHeader() {
+	void PacketsSender::writeHeader() {
 		asio::async_write(
 			*m_socket,
 			asio::buffer(&m_safeDequeOutgoingMessages.front().header,
@@ -78,7 +80,7 @@ namespace net {
 		);
 	}
 
-	void Sender::writeBody() {
+	void PacketsSender::writeBody() {
 		asio::async_write(
 			*m_socket,
 			asio::buffer(m_safeDequeOutgoingMessages.front().body.data(),

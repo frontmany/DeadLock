@@ -3,21 +3,21 @@
 #include "net_safeDeque.h"
 #include "net_message.h"
 #include "net_file.h"
-#include "queryType.h"
+#include "packetType.h"
 #include "utility.h"
 
 namespace net
 {
 	class FilesReceiver {
 	public:
-		FilesReceiver(CryptoPP::RSA::PrivateKey* myPrivateKey,
-			SafeDeque<File>& incomingFilesQueue,
+		FilesReceiver(SafeDeque<File>& incomingFilesQueue,
 			asio::ip::tcp::socket& socket,
 			std::function<void(const File&, uint32_t)> onProgressUpdate,
 			std::function<void(std::error_code, std::optional<File>)> onReceiveError
 		);
 
 		void startReceiving();
+		void setMyPrivateKey(const CryptoPP::RSA::PrivateKey& myPrivateKey);
 
 	private:
 		void readMetadataHeader();
@@ -43,7 +43,7 @@ namespace net
 		uint64_t m_totalReceivedBytes;
 
 		SafeDeque<File>& m_incomingFilesQueue;
-		CryptoPP::RSA::PrivateKey* m_myPrivateKey;
+		const CryptoPP::RSA::PrivateKey* m_myPrivateKey;
 		asio::ip::tcp::socket& m_socket;
 		std::array<char, c_receivedChunkSize> m_receiveBuffer{};
 		CryptoPP::SecByteBlock m_sessionKey;

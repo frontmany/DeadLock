@@ -2,12 +2,11 @@
 
 namespace net
 {
-	FilesReceiver::FilesReceiver(CryptoPP::RSA::PrivateKey* myPrivateKey,
-		SafeDeque<File>& incomingFilesQueue,
+	FilesReceiver::FilesReceiver(SafeDeque<File>& incomingFilesQueue,
 		asio::ip::tcp::socket& socket,
 		std::function<void(const File&, uint32_t)> onProgressUpdate,
 		std::function<void(std::error_code, std::optional<File>)> onReceiveError)
-		: m_myPrivateKey(myPrivateKey),
+		: m_myPrivateKey(nullptr),
 		m_incomingFilesQueue(incomingFilesQueue),
 		m_socket(socket),
 		m_onProgressUpdate(onProgressUpdate),
@@ -21,6 +20,10 @@ namespace net
 
 	void FilesReceiver::startReceiving() {
 		readMetadataHeader();
+	}
+
+	void FilesReceiver::setMyPrivateKey(const CryptoPP::RSA::PrivateKey& myPrivateKey) {
+		m_myPrivateKey = &myPrivateKey;
 	}
 
 	void FilesReceiver::readMetadataHeader() {

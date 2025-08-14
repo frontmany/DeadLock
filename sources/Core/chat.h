@@ -34,8 +34,8 @@ public:
     void setFriendUID(const std::string& friendUID);
     const std::string& getFriendUID() const;
 
-    void setPublicKey(const CryptoPP::RSA::PublicKey& publicKey);
-    const CryptoPP::RSA::PublicKey& getPublicKey() const;
+    void setFriendPublicKey(const CryptoPP::RSA::PublicKey& publicKey);
+    const CryptoPP::RSA::PublicKey& getFriendPublicKey() const;
 
     void setMessageToShowInChatsList(const std::string& message);
     const std::string& getMessageToShowInChatsList() const;
@@ -85,4 +85,16 @@ private:
 
 	std::vector<MessagePtr> m_vecMessages;
 	std::vector<MessagePtr> m_vecUnreadReceivedMessages;
+
+    // JSON keys for chat serialization
+    static constexpr const char* FRIEND_UID = "friendUID";
+    static constexpr const char* FRIEND_NAME = "friendName";
+    static constexpr const char* FRIEND_LAST_SEEN = "friendLastSeen";
+    static constexpr const char* IS_FRIEND_HAS_AVATAR = "isFriendHasAvatar";
+    static constexpr const char* AVATAR_PATH = "avatarPath";
+    static constexpr const char* FRIEND_PUBLIC_KEYS = "friendPublicKeys";
+    static constexpr const char* INDEX_AT_LAYOUT = "indexAtLayout";
+    static constexpr const char* MESSAGE_TO_SHOW_IN_CHATS_LIST = "messageToShowInChatsList";
+    static constexpr const char* CHAT_CONFIG_KEY = "chatConfigKey";
+
 };

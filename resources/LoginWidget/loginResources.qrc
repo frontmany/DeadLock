@@ -1,6 +1,0 @@
-<RCC>
-    <qresource prefix="/resources/LoginWidget">
-        <file>darkLoginBackground.jpg</file>
-        <file>lightLoginBackground.jpg</file>
-    </qresource>
-</RCC>

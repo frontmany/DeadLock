@@ -13,18 +13,27 @@ endif()
 
 file(GLOB SOURCES "sources/*.cpp" "sources/*.h")
 source_group("Source Files" FILES ${SOURCES})
-file(GLOB LOGIN_FILES "sources/LoginWidget/*.cpp" "sources/LoginWidget/*.h")
-source_group("Source Files\\LoginUI Files" FILES ${LOGIN_FILES})
-file(GLOB PROFILE_FILES "sources/ProfileWidget/*.cpp" "sources/ProfileWidget/*.h")
-source_group("Source Files\\ProfileUI Files" FILES ${PROFILE_FILES})
-file(GLOB CHATS_FILES "sources/ChatsWidget/*.cpp" "sources/ChatsWidget/*.h")
-source_group("Source Files\\ChatsUI Files" FILES ${CHATS_FILES})
-file(GLOB IN_MESSAGING_AREA_FILES "sources/InMessagingAreaComponents/*.cpp" "sources/InMessagingAreaComponents/*.h")
-source_group("Source Files\\InMessagingArea Files" FILES ${IN_MESSAGING_AREA_FILES})
+
+
+file(GLOB WIDGETS "sources/Widgets/*.cpp" "sources/Widgets/*.h")
+source_group("Source Files\\Widgets" FILES ${WIDGETS})
+
+file(GLOB MESSAGE_FILES "sources/Message/*.cpp" "sources/Message/*.h")
+source_group("Source Files\\Widgets\\Message" FILES ${MESSAGE_FILES})
+
+file(GLOB PROFILE_FILES "sources/Profile/*.cpp" "sources/Profile/*.h")
+source_group("Source Files\\Widgets\\Profile" FILES ${PROFILE_FILES})
+
+file(GLOB AUTHORIZATION_FILES "sources/Authorization/*.cpp" "sources/Authorization/*.h")
+source_group("Source Files\\Widgets\\Authorization" FILES ${AUTHORIZATION_FILES})
+
+
+
 file(GLOB CORE_FILES "sources/Core/*.cpp" "sources/Core/*.h" "vendor/base_64/base64_my.h" "vendor/base_64/base64_my.cpp")
-source_group("Source Files\\Core Files" FILES ${CORE_FILES})
-file(GLOB_RECURSE NET_LIB "vendor/network_library/*.h" "vendor/network_library/*.cpp")
-source_group("Source Files\\Net Library Files" FILES ${NET_LIB})
+source_group("Source Files\\Core" FILES ${CORE_FILES})
+
+file(GLOB_RECURSE NET_LIB "sources/Network/*.h" "sources/Network/*.cpp")
+source_group("Source Files\\Network" FILES ${NET_LIB})
 
 set(CMAKE_PREFIX_PATH "C:/Program Files/Qt/6.5.1")
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
@@ -33,12 +42,11 @@ set(CMAKE_AUTOMOC ON)
 
 add_subdirectory("Deadlock_client_updater")
 
-include_directories("sources" "sources/LoginWidget" "sources/ChatsWidget" "sources/InMessagingAreaComponents" "sources/Core" "sources/ProfileWidget" "vendor" "vendor/base_64" "vendor/network_library" "vendor/cryptopp" "vendor/json/include")
+include_directories("sources" "sources/Widgets" "sources/Core" "sources/Network" "vendor" "vendor/base_64" "vendor/cryptopp" "vendor/json/include" "vendor/SQLiteCpp/include")
 link_directories("vendor/sqlite" ${CRYPTOPP_LIB_DIR})
 
-qt6_add_resources(QRC_FILES resources/LoginWidget/loginResources.qrc resources/GreetWidget/greetResources.qrc resources/ChatsWidget/chatsResources.qrc)
+qt6_add_resources(QRC_FILES resources/resources.qrc)
+set(RC_FILE resources/app_icon.rc)
 
-set(RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/app_icon.rc")
-
-add_executable(${PROJECT_NAME} ${SOURCES} ${LOGIN_FILES} ${IN_MESSAGING_AREA_FILES} ${CHATS_FILES} ${CORE_FILES} ${QRC_FILES} ${PROFILE_FILES} ${NET_LIB} ${RC_FILE})
+add_executable(${PROJECT_NAME} ${SOURCES} ${AUTHORIZATION_FILES} ${MESSAGE_FILES} ${WIDGETS} ${CORE_FILES} ${QRC_FILES} ${PROFILE_FILES} ${NET_LIB} ${RC_FILE})
 target_link_libraries(${PROJECT_NAME} Qt6::Widgets ws2_32 sqlite.lib cryptlib.lib)

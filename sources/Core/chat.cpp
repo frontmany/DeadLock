@@ -15,23 +15,28 @@ nlohmann::json Chat::serialize(const CryptoPP::RSA::PublicKey& myPublicKey,
         utility::generateAESKey(chatConfigKey);
 
         nlohmann::json jsonObject;
-        jsonObject["friendUID"] = utility::AESEncrypt(chatConfigKey, m_friendUID);
-        jsonObject["friendName"] = utility::AESEncrypt(chatConfigKey, m_friendName);
-        jsonObject["friendLastSeen"] = utility::AESEncrypt(chatConfigKey, m_friendLastSeen);
-        jsonObject["isFriendHasAvatar"] = m_isFriendHasAvatar;
+        jsonObject[FRIEND_UID] = utility::AESEncrypt(chatConfigKey, m_friendUID);
+        jsonObject[FRIEND_NAME] = utility::AESEncrypt(chatConfigKey, m_friendName);
+        jsonObject[FRIEND_LAST_SEEN] = utility::AESEncrypt(chatConfigKey, m_friendLastSeen);
+        jsonObject[IS_FRIEND_HAS_AVATAR] = m_isFriendHasAvatar;
 
         if (m_isFriendHasAvatar) {
-            jsonObject["avatarPath"] = utility::AESEncrypt(chatConfigKey, m_friendAvatar->getPath());
+            jsonObject[AVATAR_PATH] = utility::AESEncrypt(chatConfigKey, m_friendAvatar->getPath());
         }
 
-        jsonObject["friendPublicKey"] = utility::serializePublicKey(m_friendPublicKey);
-        jsonObject["indexAtLayout"] = utility::AESEncrypt(chatConfigKey, std::to_string(m_indexAtLayout));
+        nlohmann::json friendPublicKeysArray = nlohmann::json::array();
+        for (const auto& key : m_vecFriendPublicKeys) {
+            friendPublicKeysArray.push_back(utility::serializePublicKey(key));
+        }
+        jsonObject[FRIEND_PUBLIC_KEYS] = friendPublicKeysArray;
+        
+        jsonObject[INDEX_AT_LAYOUT] = utility::AESEncrypt(chatConfigKey, std::to_string(m_indexAtLayout));
 
         if (!m_messageToShowInChatsList.empty()) {
-            jsonObject["messageToShowInChatsList"] = utility::AESEncrypt(chatConfigKey, m_messageToShowInChatsList);
+            jsonObject[MESSAGE_TO_SHOW_IN_CHATS_LIST] = utility::AESEncrypt(chatConfigKey, m_messageToShowInChatsList);
         }
 
-        jsonObject["chatConfigKey"] = utility::RSAEncryptKey(myPublicKey, chatConfigKey);
+        jsonObject[CHAT_CONFIG_KEY] = utility::RSAEncryptKey(myPublicKey, chatConfigKey);
 
         return jsonObject;
     }
@@ -51,47 +56,49 @@ std::shared_ptr<Chat> Chat::deserialize(const CryptoPP::RSA::PrivateKey& myPriva
 
         CryptoPP::SecByteBlock chatConfigKey = utility::RSADecryptKey(
             myPrivateKey,
-            jsonObject["chatConfigKey"].get<std::string>()
+            jsonObject[CHAT_CONFIG_KEY].get<std::string>()
         );
 
         chat->m_friendUID = utility::AESDecrypt(
             chatConfigKey,
-            jsonObject["friendUID"].get<std::string>()
+            jsonObject[FRIEND_UID].get<std::string>()
         );
 
         chat->m_friendName = utility::AESDecrypt(
             chatConfigKey,
-            jsonObject["friendName"].get<std::string>()
+            jsonObject[FRIEND_NAME].get<std::string>()
         );
 
         chat->m_friendLastSeen = utility::AESDecrypt(
             chatConfigKey,
-            jsonObject["friendLastSeen"].get<std::string>()
+            jsonObject[FRIEND_LAST_SEEN].get<std::string>()
         );
 
-        chat->m_isFriendHasAvatar = jsonObject["isFriendHasAvatar"].get<bool>();
+        chat->m_isFriendHasAvatar = jsonObject[IS_FRIEND_HAS_AVATAR].get<bool>();
 
         if (chat->m_isFriendHasAvatar) {
             std::string avatarPath = utility::AESDecrypt(
                 chatConfigKey,
-                jsonObject["avatarPath"].get<std::string>()
+                jsonObject[AVATAR_PATH].get<std::string>()
             );
             chat->m_friendAvatar = std::make_shared<Avatar>(avatarsKey, avatarPath);
         }
 
-        chat->m_friendPublicKey = utility::deserializePublicKey(
-            jsonObject["friendPublicKey"].get<std::string>()
-        );
+        if (jsonObject.contains(FRIEND_PUBLIC_KEYS) && jsonObject[FRIEND_PUBLIC_KEYS].is_array()) {
+            for (const auto& keyJson : jsonObject[FRIEND_PUBLIC_KEYS]) {
+                chat->m_vecFriendPublicKeys.push_back(utility::deserializePublicKey(keyJson.get<std::string>()));
+            }
+        }
 
         chat->m_indexAtLayout = std::stoi(utility::AESDecrypt(
             chatConfigKey,
-            jsonObject["indexAtLayout"].get<std::string>()
+            jsonObject[INDEX_AT_LAYOUT].get<std::string>()
         ));
 
-        if (jsonObject.contains("messageToShowInChatsList")) {
+        if (jsonObject.contains(MESSAGE_TO_SHOW_IN_CHATS_LIST)) {
             chat->m_messageToShowInChatsList = utility::AESDecrypt(
                 chatConfigKey,
-                jsonObject["messageToShowInChatsList"].get<std::string>()
+                jsonObject[MESSAGE_TO_SHOW_IN_CHATS_LIST].get<std::string>()
             );
         }
 
@@ -168,11 +175,11 @@ const std::string& Chat::getFriendUID() const {
     return m_friendUID;
 }
 
-void Chat::setPublicKey(const CryptoPP::RSA::PublicKey& publicKey) {
+void Chat::setFriendPublicKey(const CryptoPP::RSA::PublicKey& publicKey) {
     m_friendPublicKey = publicKey;
 }
 
-const CryptoPP::RSA::PublicKey& Chat::getPublicKey() const {
+const CryptoPP::RSA::PublicKey& Chat::getFriendPublicKey() const {
     return m_friendPublicKey;
 }
 

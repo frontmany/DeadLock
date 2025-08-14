@@ -1,7 +1,6 @@
 #include "utility.h"
 #include "Windows.h"
 #include "chat.h"
-#include "base64_my.h"
 
 #include "secblock.h"
 #include <rsa.h>                 
@@ -203,17 +202,15 @@ std::string utility::calculateHash(const std::string& text) {
     return digest;
 }
 
-void utility::incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap) {
-    for (auto& pair : loginToChatMap) {
-        Chat* chatTmp = pair.second;
-        chatTmp->setLayoutIndex(chatTmp->getLayoutIndex() + 1);
+void utility::incrementAllChatLayoutIndexes(std::unordered_map<std::string, ChatPtr>& uidToChatMap) {
+    for (auto& [uid, currentChat] : uidToChatMap) {
+        currentChat->setLayoutIndex(currentChat->getLayoutIndex() + 1);
     }
 }
 
-void utility::increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat) {
-    for (auto pair : loginToChatMap) {
-        Chat* currentChat = pair.second;
-        if (currentChat->getFriendLogin() == chat->getFriendLogin()) {
+void utility::increasePreviousChatIndexes(std::unordered_map<std::string, ChatPtr>& uidToChatMap, ChatPtr chat) {
+    for (auto& [uid, currentChat] : uidToChatMap) {
+        if (currentChat->getFriendUID() == chat->getFriendUID()) {
             continue;
         }
         else if (currentChat->getLayoutIndex() < chat->getLayoutIndex()) {
@@ -222,9 +219,9 @@ void utility::increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>
     }
 }
 
-void utility::decreaseFollowingChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat) {
-    for (auto [login, currentChat] : loginToChatMap) {
-        if (currentChat->getFriendLogin() == chat->getFriendLogin()) {
+void utility::decreaseFollowingChatIndexes(std::unordered_map<std::string, ChatPtr>& uidToChatMap, ChatPtr chat) {
+    for (auto& [uid, currentChat] : uidToChatMap) {
+        if (currentChat->getFriendUID() == chat->getFriendUID()) {
             continue;
         }
         else if (currentChat->getLayoutIndex() > chat->getLayoutIndex()) {
@@ -571,7 +568,7 @@ std::string utility::encryptWithServerKey(const std::string& plaintext, const st
                 new CryptoPP::StringSink(ciphertext)
             ));
 
-        return base64_encode(ciphertext);
+        return ciphertext;
     }
     catch (const CryptoPP::Exception& e) {
         throw std::runtime_error("Crypto++ error: " + std::string(e.what()));
@@ -583,12 +580,10 @@ std::string utility::encryptWithServerKey(const std::string& plaintext, const st
 
 std::string utility::decryptWithServerKey(const std::string& ciphertext, const std::string& keyStr) {
     try {
-        std::string decodedCiphertext = base64_decode(ciphertext);
-
         if (keyStr.empty()) {
             throw std::runtime_error("Key must not be empty");
         }
-        if (decodedCiphertext.empty()) {
+        if (ciphertext.empty()) {
             throw std::runtime_error("Ciphertext must not be empty");
         }
 
@@ -606,7 +601,7 @@ std::string utility::decryptWithServerKey(const std::string& ciphertext, const s
         CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption decryptor;
         decryptor.SetKeyWithIV(key, key.size(), iv);
 
-        CryptoPP::StringSource(decodedCiphertext, true,
+        CryptoPP::StringSource(ciphertext, true,
             new CryptoPP::StreamTransformationFilter(decryptor,
                 new CryptoPP::StringSink(decrypted)
             ));

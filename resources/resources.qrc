@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/resources/ChatsWidget">
+    <qresource prefix="/resources">
         <file>darkChatsBackground.jpg</file>
         <file>startChatDark.png</file>
         <file>startChatLight.png</file>
@@ -66,5 +66,8 @@
 		<file>warning.png</file>
 		<file>loading.gif</file>
 		<file>process.gif</file>
+		<file>loadPhoto.png</file>
+        <file>loadPhotoDark.png</file>
+        <file>Deadlock.ico</file>
     </qresource>
 </RCC>

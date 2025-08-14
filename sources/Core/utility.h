@@ -20,7 +20,7 @@
 
 class Chat;
 
-
+typedef std::shared_ptr<Chat> ChatPtr;
 
 namespace utility {
     // Utility functions
@@ -46,9 +46,9 @@ namespace utility {
     std::string getUpdateTemporaryPath(const std::string& fileName);
 
     // Chat management
-    void incrementAllChatLayoutIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap);
-    void increasePreviousChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
-    void decreaseFollowingChatIndexes(std::unordered_map<std::string, Chat*>& loginToChatMap, Chat* chat);
+    void incrementAllChatLayoutIndexes(std::unordered_map<std::string, ChatPtr>& uidToChatMap);
+    void increasePreviousChatIndexes(std::unordered_map<std::string, ChatPtr>& uidToChatMap, ChatPtr chat);
+    void decreaseFollowingChatIndexes(std::unordered_map<std::string, ChatPtr>& uidToChatMap, ChatPtr chat);
 
     // Cryptography functions
     void generateRSAKeyPair(CryptoPP::RSA::PrivateKey& privateKey, CryptoPP::RSA::PublicKey& publicKey);

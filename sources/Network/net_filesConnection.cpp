@@ -6,7 +6,6 @@ namespace net
 		asio::io_context& asioContext,
 		asio::ip::tcp::socket socket,
 		SafeDeque<File>& incomingFilesQueue,
-		CryptoPP::RSA::PrivateKey* myPrivateKey,
 		std::function<void(std::error_code, std::optional<File>)> onReceiveFileError,
 		std::function<void(std::error_code, File)> onSendFileError,
 		std::function<void(const File&, uint32_t)> onSendProgressUpdate,
@@ -15,8 +14,12 @@ namespace net
 		: m_asioContext(asioContext),
 		m_socket(std::move(socket)),
 		m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError, onAllFilesSent),
-		m_filesReceiver(myPrivateKey, incomingFilesQueue, m_socket, onReceiveProgressUpdate, onReceiveFileError)
+		m_filesReceiver(incomingFilesQueue, m_socket, onReceiveProgressUpdate, onReceiveFileError)
 	{
+	}
+
+	void FilesConnection::supplyMyPrivateKeyForFilesReceiver(const CryptoPP::RSA::PrivateKey& myPrivateKey) {
+		m_filesReceiver.setMyPrivateKey(myPrivateKey);
 	}
 
 	void FilesConnection::startReceiving() {

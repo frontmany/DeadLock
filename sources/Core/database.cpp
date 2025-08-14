@@ -1,30 +1,30 @@
 #include "database.h"
 
 #include "utility.h"
-#include "secblock.h"
 #include "message.h"
 #include "blob.h"
 #include "file.h"
 
-Database::Database() {
-    try {
-        m_db = std::make_unique<SQLite::Database>("your_database.db", SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
-    }
-    catch (const SQLite::Exception& e) {
-        std::cerr << "Database error: " << e.what() << std::endl;
-        throw;
-    }
+Database::Database() :
+    m_db("your_database.db", SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE)
+{
 }
 
-void Database::init(const std::string& myUID) {
-    if (!m_db) {
-        throw SQLite::Exception("Database is not open or initialized");
-    }
+void Database::init(const std::string& myUID) 
+{
+    m_myUID = myUID;
 
     try {
-        SQLite::Transaction transaction(*m_db);
+        SQLite::Transaction transaction(m_db);
+        
 
-        std::string blobsTableName = constructTableName("BLOB_BUFFERS", myUID);
+        std::string requestedFilesTableName = constructTableName("REQUESTED_FILES_IDS", m_myUID);
+        std::string sqlRequestedFiles = "CREATE TABLE IF NOT EXISTS " + requestedFilesTableName + " ("
+            "FILE_ID TEXT NOT NULL PRIMARY KEY);";
+        m_db.exec(sqlRequestedFiles);
+
+
+        std::string blobsTableName = constructTableName("BLOB_BUFFERS", m_myUID);
         std::string sqlBlobs = "CREATE TABLE IF NOT EXISTS " + blobsTableName + " ("
         "BLOB_UID             TEXT    NOT NULL PRIMARY KEY,"
         "SENDER_UID           TEXT    NOT NULL,"
@@ -34,10 +34,10 @@ void Database::init(const std::string& myUID) {
         "CAPTION              TEXT    NOT NULL,"
         "CAPTION_KEY          TEXT    NOT NULL,"
         "CHECK (FILES_RECEIVED <= FILES_COUNT_IN_BLOB));";
-        m_db->exec(sqlBlobs);
+        m_db.exec(sqlBlobs);
 
 
-        std::string blobFilesTableTableName = constructTableName("BLOB_BUFFER_FILES", myUID);
+        std::string blobFilesTableTableName = constructTableName("BLOB_BUFFER_FILES", m_myUID);
         std::string sqlBlobFiles = "CREATE TABLE IF NOT EXISTS " + blobFilesTableTableName +" ("
             "BLOB_UID      TEXT    NOT NULL,"
             "FILE_NAME     TEXT    NOT NULL,"
@@ -45,34 +45,44 @@ void Database::init(const std::string& myUID) {
             "FILE_PATH     TEXT    NOT NULL,"
             "FILE_KEY      TEXT    NOT NULL,"
             "FILE_ID       TEXT    NOT NULL);";
-        m_db->exec(sqlBlobFiles);
+        m_db.exec(sqlBlobFiles);
 
 
-        std::string blobsTableName = constructTableName("BLOBS", myUID);
+        std::string blobsTableName = constructTableName("BLOBS", m_myUID);
         std::string sqlBlobs = "CREATE TABLE IF NOT EXISTS " + blobsTableName + " ("
             "ID          TEXT    NOT NULL PRIMARY KEY,"
             "FRIEND_UID  TEXT    NOT NULL,"
             "TIMESTAMP   TEXT    NOT NULL,"
             "BLOB        TEXT    NOT NULL,"
-            "BLOB_KEY    BLOB    NOT NULL);";
-        m_db->exec(sqlBlobs);
+            "BLOB_KEY    TEXT    NOT NULL);";
+        m_db.exec(sqlBlobs);
 
 
-        std::string messagesTableName = constructTableName("MESSAGES", myUID);
+        std::string messagesTableName = constructTableName("MESSAGES", m_myUID);
         std::string sqlMessages = "CREATE TABLE IF NOT EXISTS " + messagesTableName + " ("
             "ID          TEXT NOT NULL PRIMARY KEY,"
             "FRIEND_UID  TEXT    NOT NULL,"
             "TIMESTAMP   TEXT NOT NULL,"
             "MESSAGE     TEXT NOT NULL,"
-            "MESSAGE_KEY BLOB NOT NULL);";
-        m_db->exec(sqlMessages);
+            "MESSAGE_KEY TEXT NOT NULL);";
+        m_db.exec(sqlMessages);
 
 
-        std::string requestedFilesTableName = constructTableName("REQUESTED_FILES_IDS", myUID);
-        std::string sqlRequestedFiles = "CREATE TABLE IF NOT EXISTS " + requestedFilesTableName + " ("
-            "FILE_ID TEXT NOT NULL PRIMARY KEY);";
-        m_db->exec(sqlRequestedFiles);
+        std::string messageSendTasksTableName = constructTableName("SEND_MESSAGE_TASKS", m_myUID);
+        std::string sqlSendMessageTasks = "CREATE TABLE IF NOT EXISTS " + messageSendTasksTableName + " ("
+            "MESSAGE_ID        TEXT NOT NULL,"
+            "FRIEND_PUBLIC_KEY TEXT NOT NULL,"
+            "PRIMARY KEY (MESSAGE_ID, FRIEND_PUBLIC_KEY)" 
+            ");";
+        m_db.exec(sqlSendMessageTasks);
 
+        std::string fileSendTasksTableName = constructTableName("SEND_FILE_TASKS", m_myUID);
+        std::string sqlSendFileTasks = "CREATE TABLE IF NOT EXISTS " + fileSendTasksTableName + " ("
+            "FILE_ID           TEXT NOT NULL,"
+            "FRIEND_PUBLIC_KEY TEXT NOT NULL,"
+            "PRIMARY KEY (FILE_ID, FRIEND_PUBLIC_KEY)"
+            ");";
+        m_db.exec(sqlSendFileTasks);
 
         transaction.commit();
     }
@@ -85,10 +95,10 @@ void Database::init(const std::string& myUID) {
 
 
 // REQUESTED_FILES_IDS
-bool Database::addRequestedFileId(const std::string& myUID, const std::string& fileId) {
+bool Database::addRequestedFileId(const std::string& fileId) {
     try {
-        std::string tableName = constructTableName("REQUESTED_FILES_IDS", myUID);
-        SQLite::Statement query(*m_db,
+        std::string tableName = constructTableName("REQUESTED_FILES_IDS", m_myUID);
+        SQLite::Statement query(m_db,
             "INSERT INTO " + tableName + " (FILE_ID) VALUES (?);");
 
         query.bind(1, fileId); 
@@ -108,11 +118,11 @@ bool Database::addRequestedFileId(const std::string& myUID, const std::string& f
     }
 }
 
-bool Database::removeRequestedFileId(const std::string& myUID, const std::string& fileId) {
+bool Database::removeRequestedFileId(const std::string& fileId) {
     try {
-        std::string tableName = constructTableName("REQUESTED_FILES_IDS", myUID);
+        std::string tableName = constructTableName("REQUESTED_FILES_IDS", m_myUID);
 
-        SQLite::Statement query(*m_db,
+        SQLite::Statement query(m_db,
             "DELETE FROM " + tableName + " WHERE FILE_ID = ?");
 
         query.bind(1, fileId);
@@ -125,11 +135,11 @@ bool Database::removeRequestedFileId(const std::string& myUID, const std::string
     }
 }
 
-bool Database::isRequestedFileId(const std::string& myUID, const std::string& fileId) {
+bool Database::isRequestedFileId(const std::string& fileId) {
     try {
-        std::string tableName = constructTableName("REQUESTED_FILES_IDS", myUID);
+        std::string tableName = constructTableName("REQUESTED_FILES_IDS", m_myUID);
 
-        SQLite::Statement query(*m_db,
+        SQLite::Statement query(m_db,
             "SELECT 1 FROM " + tableName + " WHERE FILE_ID = ? LIMIT 1");
 
         query.bind(1, fileId);
@@ -142,13 +152,13 @@ bool Database::isRequestedFileId(const std::string& myUID, const std::string& fi
     }
 }
 
-std::optional<std::vector<std::string>> Database::getAllRequestedFilesIds(const std::string& myUID) {
+std::optional<std::vector<std::string>> Database::getAllRequestedFilesIds() {
     std::vector<std::string> files;
 
     try {
-        std::string tableName = constructTableName("REQUESTED_FILES_IDS", myUID);
+        std::string tableName = constructTableName("REQUESTED_FILES_IDS", m_myUID);
 
-        SQLite::Statement query(*m_db,
+        SQLite::Statement query(m_db,
             "SELECT FILE_ID FROM " + tableName);
 
         while (query.executeStep()) {
@@ -166,11 +176,11 @@ std::optional<std::vector<std::string>> Database::getAllRequestedFilesIds(const 
 
 
 // BLOB_BUFFERS
-bool Database::addBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myUID, const std::string& blobUid, const std::string& senderUid, const std::string& timestamp, int filesCountInBlob, const std::string& caption)
+bool Database::addBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& blobUid, const std::string& senderUid, const std::string& timestamp, int filesCountInBlob, const std::string& caption)
 {
     try {
-        std::string tableName = constructTableName("BLOB_BUFFERS", myUID);
-        SQLite::Statement query(*m_db,
+        std::string tableName = constructTableName("BLOB_BUFFERS", m_myUID);
+        SQLite::Statement query(m_db,
             "INSERT INTO " + tableName +
             " (BLOB_UID, SENDER_UID, TIMESTAMP, FILES_COUNT_IN_BLOB, RECEIVED_FILES_COUNT, CAPTION, CAPTION_KEY) "
             "VALUES (?, ?, ?, ?, 0, ?, ?)");
@@ -197,15 +207,15 @@ bool Database::addBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const 
     }
 }
 
-bool Database::removeBlobBuffer(const std::string& myUID, const std::string& blobUid) {
+bool Database::removeBlobBuffer(const std::string& blobUid) {
     try {
-        SQLite::Transaction txn(*m_db);
+        SQLite::Transaction txn(m_db);
 
-        const std::string buffersTable = constructTableName("BLOB_BUFFERS", myUID);
-        const std::string filesTable = constructTableName("BLOB_BUFFER_FILES", myUID);
+        const std::string buffersTable = constructTableName("BLOB_BUFFERS", m_myUID);
+        const std::string filesTable = constructTableName("BLOB_BUFFER_FILES", m_myUID);
 
         {
-            SQLite::Statement delFiles(*m_db,
+            SQLite::Statement delFiles(m_db,
                 "DELETE FROM " + filesTable + " WHERE BLOB_UID = ?");
             delFiles.bind(1, blobUid);
             delFiles.exec();
@@ -213,7 +223,7 @@ bool Database::removeBlobBuffer(const std::string& myUID, const std::string& blo
 
         int changes = 0;
         {
-            SQLite::Statement delBlob(*m_db,
+            SQLite::Statement delBlob(m_db,
                 "DELETE FROM " + buffersTable + " WHERE BLOB_UID = ?");
             delBlob.bind(1, blobUid);
             changes = delBlob.exec();
@@ -228,10 +238,10 @@ bool Database::removeBlobBuffer(const std::string& myUID, const std::string& blo
     }
 }
 
-bool Database::isBlobBuffer(const std::string& myUID, const std::string& blobUid) {
+bool Database::isBlobBuffer(const std::string& blobUid) {
     try {
-        std::string tableName = constructTableName("BLOB_BUFFERS", myUID);
-        SQLite::Statement query(*m_db,
+        std::string tableName = constructTableName("BLOB_BUFFERS", m_myUID);
+        SQLite::Statement query(m_db,
             "SELECT 1 FROM " + tableName + " WHERE BLOB_UID = ? LIMIT 1");
         query.bind(1, blobUid);
         return query.executeStep();
@@ -242,10 +252,10 @@ bool Database::isBlobBuffer(const std::string& myUID, const std::string& blobUid
     }
 }
 
-bool Database::incrementReceivedFilesCountInBlobBuffer(const std::string& myUID, const std::string& blobUid) {
+bool Database::incrementReceivedFilesCountInBlobBuffer(const std::string& blobUid) {
     try {
-        std::string tableName = constructTableName("BLOB_BUFFERS", myUID);
-        SQLite::Statement query(*m_db,
+        std::string tableName = constructTableName("BLOB_BUFFERS", m_myUID);
+        SQLite::Statement query(m_db,
             "UPDATE " + tableName +
             " SET RECEIVED_FILES_COUNT = RECEIVED_FILES_COUNT + 1 "
             "WHERE BLOB_UID = ? AND RECEIVED_FILES_COUNT < FILES_COUNT_IN_BLOB");
@@ -258,10 +268,10 @@ bool Database::incrementReceivedFilesCountInBlobBuffer(const std::string& myUID,
     }
 }
 
-std::optional<int> Database::getReceivedFilesCountInBlobBuffer(const std::string& myUID, const std::string& blobUid) {
+std::optional<int> Database::getReceivedFilesCountInBlobBuffer(const std::string& blobUid) {
     try {
-        std::string tableName = constructTableName("BLOB_BUFFERS", myUID);
-        SQLite::Statement query(*m_db,
+        std::string tableName = constructTableName("BLOB_BUFFERS", m_myUID);
+        SQLite::Statement query(m_db,
             "SELECT RECEIVED_FILES_COUNT FROM " + tableName + " WHERE BLOB_UID = ?");
         query.bind(1, blobUid);
         if (query.executeStep()) {
@@ -275,11 +285,11 @@ std::optional<int> Database::getReceivedFilesCountInBlobBuffer(const std::string
     }
 }
 
-BlobPtr Database::getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& loginHash, const std::string& blobUid)
+BlobPtr Database::getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& blobUid)
 {
     try {
-        const std::string buffersTable = constructTableName("BLOB_BUFFERS", loginHash);
-        SQLite::Statement blobStmt(*m_db,
+        const std::string buffersTable = constructTableName("BLOB_BUFFERS", m_myUID);
+        SQLite::Statement blobStmt(m_db,
             "SELECT TIMESTAMP, FILES_COUNT_IN_BLOB, CAPTION, CAPTION_KEY FROM " + buffersTable +
             " WHERE BLOB_UID = ?");
         blobStmt.bind(1, blobUid);
@@ -308,8 +318,8 @@ BlobPtr Database::getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, con
             decryptedCaption.clear();
         }
 
-        const std::string filesTable = constructTableName("BLOB_BUFFER_FILES", loginHash);
-        SQLite::Statement filesStmt(*m_db,
+        const std::string filesTable = constructTableName("BLOB_BUFFER_FILES", m_myUID);
+        SQLite::Statement filesStmt(m_db,
             "SELECT FILE_ID, FILE_NAME, FILE_SIZE, FILE_PATH FROM " + filesTable +
             " WHERE BLOB_UID = ?");
         filesStmt.bind(1, blobUid);
@@ -339,11 +349,11 @@ BlobPtr Database::getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, con
 
 
 // BLOB_BUFFER_FILES
-bool Database::addFileToBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myUID, const std::string& blobUid, const std::string& fileId, const std::string& fileName, const std::string& fileSize, const std::string& filePath)
+bool Database::addFileToBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& blobUid, const std::string& fileId, const std::string& fileName, const std::string& fileSize, const std::string& filePath)
 {
     try {
-        const std::string tableName = constructTableName("BLOB_BUFFER_FILES", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("BLOB_BUFFER_FILES", m_myUID);
+        SQLite::Statement stmt(m_db,
             "INSERT INTO " + tableName +
             " (BLOB_UID, FILE_NAME, FILE_SIZE, FILE_PATH, FILE_KEY, FILE_ID) VALUES (?, ?, ?, ?, ?, ?)"
         );
@@ -367,11 +377,11 @@ bool Database::addFileToBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, 
     }
 }
 
-bool Database::removeFileFromBlobBuffer(const std::string& myUID, const std::string& fileId)
+bool Database::removeFileFromBlobBuffer(const std::string& fileId)
 {
     try {
-        const std::string tableName = constructTableName("BLOB_BUFFER_FILES", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("BLOB_BUFFER_FILES", m_myUID);
+        SQLite::Statement stmt(m_db,
             "DELETE FROM " + tableName + " WHERE FILE_ID = ?");
         stmt.bind(1, fileId);
 
@@ -383,11 +393,11 @@ bool Database::removeFileFromBlobBuffer(const std::string& myUID, const std::str
     }
 }
 
-bool Database::isFileInBlobBuffer(const std::string& myUID, const std::string& fileId)
+bool Database::isFileInBlobBuffer(const std::string& fileId)
 {
     try {
-        const std::string tableName = constructTableName("BLOB_BUFFER_FILES", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("BLOB_BUFFER_FILES", m_myUID);
+        SQLite::Statement stmt(m_db,
             "SELECT 1 FROM " + tableName + " WHERE FILE_ID = ? LIMIT 1");
         stmt.bind(1, fileId);
 
@@ -401,7 +411,7 @@ bool Database::isFileInBlobBuffer(const std::string& myUID, const std::string& f
 
 
 // BLOBS
-bool Database::addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myUID, const std::string& friendUID, BlobPtr blob)
+bool Database::addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& friendUID, BlobPtr blob)
 {
     try {
         CryptoPP::SecByteBlock aesKey;
@@ -411,8 +421,8 @@ bool Database::addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::s
         const std::string encPayload = utility::AESEncrypt(aesKey, serialized);
         const std::string encAesKey = utility::RSAEncryptKey(myPublicKey, aesKey);
 
-        const std::string tableName = constructTableName("BLOBS", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("BLOBS", m_myUID);
+        SQLite::Statement stmt(m_db,
             "INSERT INTO " + tableName + " (ID, FRIEND_UID, TIMESTAMP, BLOB, BLOB_KEY) VALUES (?, ?, ?, ?, ?)");
 
         stmt.bind(1, blob->getBlobId());
@@ -430,11 +440,11 @@ bool Database::addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::s
     }
 }
 
-BlobPtr Database::getBlob(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& blobUid)
+BlobPtr Database::getBlob(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& blobUid)
 {
     try {
-        const std::string tableName = constructTableName("BLOBS", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("BLOBS", m_myUID);
+        SQLite::Statement stmt(m_db,
             "SELECT FRIEND_UID, TIMESTAMP, BLOB, BLOB_KEY FROM " + tableName + " WHERE ID = ? LIMIT 1");
         stmt.bind(1, blobUid);
 
@@ -463,10 +473,10 @@ BlobPtr Database::getBlob(const CryptoPP::RSA::PrivateKey& privateKey, const std
     }
 }
 
-bool Database::removeBlob(const std::string& myUID, const std::string& blobUid) {
+bool Database::removeBlob(const std::string& blobUid) {
     try {
-        const std::string tableName = constructTableName("BLOBS", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("BLOBS", m_myUID);
+        SQLite::Statement stmt(m_db,
             "DELETE FROM " + tableName + " WHERE ID = ?");
         stmt.bind(1, blobUid);
         return stmt.exec() > 0;
@@ -477,13 +487,15 @@ bool Database::removeBlob(const std::string& myUID, const std::string& blobUid) 
     }
 }
 
-bool Database::saveBlobs(const CryptoPP::RSA::PublicKey& publicKey, const std::string& myUID, const std::string& friendUID, const std::vector<BlobPtr>& blobs) const
+bool Database::saveBlobs(const CryptoPP::RSA::PublicKey& publicKey, const std::string& friendUID, const std::vector<BlobPtr>& blobs)
 {
-    if (!m_db || blobs.empty()) return true;
+    if (blobs.empty()) 
+        return true;
+
     try {
-        SQLite::Transaction txn(*m_db);
-        const std::string tableName = constructTableName("BLOBS", myUID);
-        SQLite::Statement insertStmt(*m_db, "INSERT OR REPLACE INTO " + tableName + " (ID, FRIEND_UID, TIMESTAMP, BLOB, BLOB_KEY) VALUES (?, ?, ?, ?, ?)");
+        SQLite::Transaction txn(m_db);
+        const std::string tableName = constructTableName("BLOBS", m_myUID);
+        SQLite::Statement insertStmt(m_db, "INSERT OR REPLACE INTO " + tableName + " (ID, FRIEND_UID, TIMESTAMP, BLOB, BLOB_KEY) VALUES (?, ?, ?, ?, ?)");
 
         for (const auto blobPtr : blobs) {
             if (!blobPtr) continue;
@@ -509,12 +521,12 @@ bool Database::saveBlobs(const CryptoPP::RSA::PublicKey& publicKey, const std::s
     }
 }
 
-void Database::loadBlobs(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& friendUID, std::vector<BlobPtr>& blobs) const
+void Database::loadBlobs(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& friendUID, std::vector<BlobPtr>& blobs) const
 {
     blobs.clear();
     try {
-        const std::string tableName = constructTableName("BLOBS", myUID);
-        SQLite::Statement stmt(*m_db, "SELECT ID, TIMESTAMP, BLOB, BLOB_KEY FROM " + tableName + " WHERE FRIEND_UID = ? ORDER BY TIMESTAMP ASC");
+        const std::string tableName = constructTableName("BLOBS", m_myUID);
+        SQLite::Statement stmt(m_db, "SELECT ID, TIMESTAMP, BLOB, BLOB_KEY FROM " + tableName + " WHERE FRIEND_UID = ? ORDER BY TIMESTAMP ASC");
         stmt.bind(1, friendUID);
         while (stmt.executeStep()) {
             const std::string id = stmt.getColumn(0).getString();
@@ -537,11 +549,11 @@ void Database::loadBlobs(const CryptoPP::RSA::PrivateKey& privateKey, const std:
     }
 }
 
-bool Database::deleteAllBlobs(const std::string& myUID, const std::string& friendUID) const
+bool Database::deleteAllBlobs(const std::string& friendUID) const
 {
     try {
-        const std::string tableName = constructTableName("BLOBS", myUID);
-        SQLite::Statement stmt(*m_db, "DELETE FROM " + tableName + " WHERE FRIEND_UID = ?");
+        const std::string tableName = constructTableName("BLOBS", m_myUID);
+        SQLite::Statement stmt(m_db, "DELETE FROM " + tableName + " WHERE FRIEND_UID = ?");
         stmt.bind(1, friendUID);
         return stmt.exec() > 0;
     }
@@ -553,7 +565,7 @@ bool Database::deleteAllBlobs(const std::string& myUID, const std::string& frien
 
 
 // MESSAGES
-bool Database::addMessage(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myUID, const std::string& friendUID, MessagePtr message)
+bool Database::addMessage(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& friendUID, MessagePtr message)
 {
     try {
         CryptoPP::SecByteBlock aesKey;
@@ -562,8 +574,8 @@ bool Database::addMessage(const CryptoPP::RSA::PublicKey& myPublicKey, const std
         const std::string encPayload = utility::AESEncrypt(aesKey, serialized);
         const std::string encAesKey = utility::RSAEncryptKey(myPublicKey, aesKey);
 
-        const std::string tableName = constructTableName("MESSAGES", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("MESSAGES", m_myUID);
+        SQLite::Statement stmt(m_db,
             "INSERT INTO " + tableName + " (ID, FRIEND_UID, TIMESTAMP, MESSAGE, MESSAGE_KEY) VALUES (?, ?, ?, ?, ?)" );
         stmt.bind(1, message->getId());
         stmt.bind(2, friendUID);
@@ -579,11 +591,11 @@ bool Database::addMessage(const CryptoPP::RSA::PublicKey& myPublicKey, const std
     }
 }
 
-std::optional<std::string> Database::getMessage(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& id)
+std::optional<std::string> Database::getMessage(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& id)
 {
     try {
-        const std::string tableName = constructTableName("MESSAGES", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("MESSAGES", m_myUID);
+        SQLite::Statement stmt(m_db,
             "SELECT MESSAGE, MESSAGE_KEY FROM " + tableName + " WHERE ID = ? LIMIT 1");
         stmt.bind(1, id);
         if (!stmt.executeStep()) {
@@ -605,11 +617,11 @@ std::optional<std::string> Database::getMessage(const CryptoPP::RSA::PrivateKey&
     }
 }
 
-bool Database::removeMessage(const std::string& myUID, const std::string& id)
+bool Database::removeMessage(const std::string& id)
 {
     try {
-        const std::string tableName = constructTableName("MESSAGES", myUID);
-        SQLite::Statement stmt(*m_db,
+        const std::string tableName = constructTableName("MESSAGES", m_myUID);
+        SQLite::Statement stmt(m_db,
             "DELETE FROM " + tableName + " WHERE ID = ?");
         stmt.bind(1, id);
         return stmt.exec() > 0;
@@ -620,14 +632,16 @@ bool Database::removeMessage(const std::string& myUID, const std::string& id)
     }
 }
 
-bool Database::saveMessages(const CryptoPP::RSA::PublicKey& publicKey, const std::string& myUID, const std::string& friendUID, const std::vector<MessagePtr>& messages) const
+bool Database::saveMessages(const CryptoPP::RSA::PublicKey& publicKey, const std::string& friendUID, const std::vector<MessagePtr>& messages)
 {
-    if (!m_db || messages.empty()) return true;
-    try {
-        SQLite::Transaction txn(*m_db);
-        const std::string tableName = constructTableName("MESSAGES", myUID);
+    if (messages.empty())
+        return true;
 
-        SQLite::Statement insertStmt(*m_db, "INSERT OR REPLACE INTO " + tableName + " (ID, FRIEND_UID, TIMESTAMP, MESSAGE, MESSAGE_KEY) VALUES (?, ?, ?, ?, ?)");
+    try {
+        SQLite::Transaction txn(m_db);
+        const std::string tableName = constructTableName("MESSAGES", m_myUID);
+
+        SQLite::Statement insertStmt(m_db, "INSERT OR REPLACE INTO " + tableName + " (ID, FRIEND_UID, TIMESTAMP, MESSAGE, MESSAGE_KEY) VALUES (?, ?, ?, ?, ?)");
 
         for (const auto msgPtr : messages) {
             if (!msgPtr) continue;
@@ -653,12 +667,12 @@ bool Database::saveMessages(const CryptoPP::RSA::PublicKey& publicKey, const std
     }
 }
 
-void Database::loadMessages(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& myUID, const std::string& friendUID, std::vector<MessagePtr>& messages) const
+void Database::loadMessages(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& friendUID, std::vector<MessagePtr>& messages) const
 {
     messages.clear();
     try {
-        const std::string tableName = constructTableName("MESSAGES", myUID);
-        SQLite::Statement stmt(*m_db, "SELECT ID, TIMESTAMP, MESSAGE, MESSAGE_KEY FROM " + tableName + " WHERE FRIEND_UID = ? ORDER BY TIMESTAMP ASC");
+        const std::string tableName = constructTableName("MESSAGES", m_myUID);
+        SQLite::Statement stmt(m_db, "SELECT ID, TIMESTAMP, MESSAGE, MESSAGE_KEY FROM " + tableName + " WHERE FRIEND_UID = ? ORDER BY TIMESTAMP ASC");
         stmt.bind(1, friendUID);
         while (stmt.executeStep()) {
             const std::string id = stmt.getColumn(0).getString();
@@ -679,11 +693,11 @@ void Database::loadMessages(const CryptoPP::RSA::PrivateKey& privateKey, const s
     }
 }
 
-bool Database::deleteAllMessages(const std::string& myUID, const std::string& friendUID) const
+bool Database::deleteAllMessages(const std::string& friendUID) const
 {
     try {
-        const std::string tableName = constructTableName("MESSAGES", myUID);
-        SQLite::Statement stmt(*m_db, "DELETE FROM " + tableName + " WHERE FRIEND_UID = ?");
+        const std::string tableName = constructTableName("MESSAGES", m_myUID);
+        SQLite::Statement stmt(m_db, "DELETE FROM " + tableName + " WHERE FRIEND_UID = ?");
         stmt.bind(1, friendUID);
         return stmt.exec() > 0;
     } catch (const SQLite::Exception& e) {
@@ -691,6 +705,10 @@ bool Database::deleteAllMessages(const std::string& myUID, const std::string& fr
         return false;
     }
 }
+
+
+
+
 
 
 

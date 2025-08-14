@@ -66,12 +66,16 @@ public:
     void setKeysManagerPtr(KeysManagerPtr keysManagerPtr) { m_keysManager = keysManagerPtr; }
     KeysManagerPtr getKeysManagerPtr() const { return m_keysManager; }
 
-    void setVersionNumber(const std::string& versionNumber) { m_currentVersionNumber = versionNumber; }
-    const std::string& getVersionNumber() const { return m_currentVersionNumber; }
+    void setCurrentVersionNumber(const std::string& versionNumber) { m_currentVersionNumber = versionNumber; }
+    const std::string& getCurrentVersionNumber() const { return m_currentVersionNumber; }
+
+    void setVersionNumberToUpdate(const std::string& versionNumber) { m_versionNumberToUpdate = versionNumber; }
+    const std::string& getVersionNumberToUpdate() const { return m_versionNumberToUpdate; }
 
 private:
     std::string m_loadedConfigPath;
     std::string m_currentVersionNumber;
+    std::string m_versionNumberToUpdate;
 
     std::string m_myUID;
     std::string m_myPasswordHash;
@@ -85,7 +89,6 @@ private:
     bool m_isDarkTheme;
 
     KeysManagerPtr m_keysManager;
-
 
     // JSON keys and fixed string literals
     static constexpr const char* CURRENT_VERSION_NUMBER = "currentVersionNumber";
@@ -107,6 +110,5 @@ private:
     static constexpr const char* ONE_STR = "1";
     static constexpr const char* ZERO_STR = "0";
     static constexpr const char* JSON_EXT = ".json";
-
 };
 

@@ -15,8 +15,8 @@ Blob::Blob(const std::unordered_map<std::string, File>& relatedFiles,
 {
 }
 
-const std::unordered_map<std::string, File>& Blob::getRelatedFilesMap() const { return m_mapRelatedFiles; }
-void Blob::setRelatedFilesMap(const std::unordered_map<std::string, File>& relatedFiles) { m_mapRelatedFiles = relatedFiles; }
+const std::unordered_map<std::string, FilePtr>& Blob::getRelatedFilesMap() const { return m_mapRelatedFiles; }
+void Blob::setRelatedFilesMap(const std::unordered_map<std::string, FilePtr>& relatedFiles) { m_mapRelatedFiles = relatedFiles; }
 
 const std::string& Blob::getTimestamp() const { return m_timestamp; }
 void Blob::setTimestamp(const std::string& value) { m_timestamp = value; }
