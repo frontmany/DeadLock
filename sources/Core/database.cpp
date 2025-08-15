@@ -16,7 +16,6 @@ void Database::init(const std::string& myUID)
 
     try {
         SQLite::Transaction transaction(m_db);
-        
 
         std::string requestedFilesTableName = constructTableName("REQUESTED_FILES_IDS", m_myUID);
         std::string sqlRequestedFiles = "CREATE TABLE IF NOT EXISTS " + requestedFilesTableName + " ("
@@ -285,28 +284,30 @@ std::optional<int> Database::getReceivedFilesCountInBlobBuffer(const std::string
     }
 }
 
-BlobPtr Database::getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& blobUid)
+std::optional<std::pair<std::string, BlobPtr>> Database::getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& blobUid)
 {
     try {
         const std::string buffersTable = constructTableName("BLOB_BUFFERS", m_myUID);
         SQLite::Statement blobStmt(m_db,
-            "SELECT TIMESTAMP, FILES_COUNT_IN_BLOB, CAPTION, CAPTION_KEY FROM " + buffersTable +
+            "SELECT TIMESTAMP, SENDER_UID, FILES_COUNT_IN_BLOB, CAPTION, CAPTION_KEY FROM " + buffersTable +
             " WHERE BLOB_UID = ?");
         blobStmt.bind(1, blobUid);
 
         std::string timestamp;
+        std::string senderUID;
         int filesCount = 0;
         std::string encryptedCaption;
         std::string encryptedCaptionKey;
 
         if (!blobStmt.executeStep()) {
-            return nullptr;
+            return std::nullopt;
         }
 
         timestamp = blobStmt.getColumn(0).getString();
-        filesCount = blobStmt.getColumn(1).getInt();
-        encryptedCaption = blobStmt.getColumn(2).getString();
-        encryptedCaptionKey = blobStmt.getColumn(3).getString();
+        senderUID = blobStmt.getColumn(1).getString();
+        filesCount = blobStmt.getColumn(2).getInt();
+        encryptedCaption = blobStmt.getColumn(3).getString();
+        encryptedCaptionKey = blobStmt.getColumn(4).getString();
 
         std::string decryptedCaption;
         try {
@@ -339,11 +340,11 @@ BlobPtr Database::getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, con
         }
 
         BlobPtr blob= std::make_shared<Blob>(relatedFiles, timestamp, decryptedCaption, blobUid, filesCount);
-        return blob;
+        return std::make_pair(senderUID, blob);
     }
     catch (const SQLite::Exception& e) {
         std::cerr << "[getBlobBuffer] SQL error: " << e.what() << std::endl;
-        return nullptr;
+        return std::nullopt;
     }
 }
 

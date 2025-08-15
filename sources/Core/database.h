@@ -34,7 +34,7 @@ public:
 	bool isBlobBuffer(const std::string& blobUid);
 	bool incrementReceivedFilesCountInBlobBuffer(const std::string& blobUid);
 	std::optional<int> getReceivedFilesCountInBlobBuffer(const std::string& blobUid);
-	BlobPtr getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& blobUid);
+	std::optional<std::pair<std::string, BlobPtr>> getBlobBuffer(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& blobUid);
 	
 
 	// BLOB_BUFFER_FILES

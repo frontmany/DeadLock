@@ -47,7 +47,7 @@ namespace net
 		asio::ip::tcp::socket& m_socket;
 		std::array<char, c_receivedChunkSize> m_receiveBuffer{};
 		CryptoPP::SecByteBlock m_sessionKey;
-		net::Message m_metadataMessage;
+		Message m_metadataMessage;
 		std::ofstream m_fileStream;
 		File m_file;
 

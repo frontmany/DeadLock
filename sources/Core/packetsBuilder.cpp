@@ -13,11 +13,16 @@ std::string PacketsBuilder::getLoginAndPasswordHashPacket(const std::string& log
     return jsonObject.dump();
 }
 
-std::string PacketsBuilder::getBlobAndMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& id) {
+std::string PacketsBuilder::getBlobAndMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& id, bool isBlobReadConfirmation) {
     nlohmann::json jsonObject;
     jsonObject[FRIEND_UID] = friendUID;
     jsonObject[MY_UID] = myUID;
-    jsonObject[BLOB_ID] = id;
+    if (isBlobReadConfirmation) {
+        jsonObject[BLOB_ID] = id;
+    }
+    else {
+        jsonObject[MESSAGE_ID] = id;
+    }
 
     return jsonObject.dump();
 }

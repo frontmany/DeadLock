@@ -7,11 +7,12 @@ namespace net {
 	PacketsConnection::PacketsConnection(asio::io_context& asioContext,
 		asio::ip::tcp::socket socket,
 		SafeDeque<Packet>& safeDequeIncomingPackets,
-		std::function<void(std::error_code, Packet)> onSendError,
-		std::function<void()> onDisconnect)
+		std::function<void(std::error_code, Packet&&)> onSendError,
+		std::function<void()> onDisconnect,
+		std::function<void(Packet&&)> onPacketSent)
 		: m_asioContext(asioContext),
 		m_socket(std::move(socket)),
-		m_packetsSender(&asioContext,&m_socket, onSendError, onDisconnect),
+		m_packetsSender(&asioContext,&m_socket, onSendError, onDisconnect, onPacketSent),
 		m_packetsReceiver(&m_socket, safeDequeIncomingPackets, onDisconnect)
 	{
 	}

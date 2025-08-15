@@ -4,10 +4,6 @@
 #include "rsa.h"
 #include "json.hpp"
 
-class Message;
-
-typedef std::shared_ptr<Message> MessagePtr;
-
 class PacketsBuilder {
 public:
 	PacketsBuilder() {};
@@ -40,7 +36,7 @@ public:
 
 private:
     static std::string getLoginAndPasswordHashPacket(const std::string& loginHash, const std::string& passwordHash);
-    static std::string getBlobAndMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& id);
+    static std::string getBlobAndMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& id, bool isBlobReadConfirmation = false);
     static nlohmann::json getFriendsUIDsArray(const std::vector<std::string>& friendsUIDsVec);
 
 private:

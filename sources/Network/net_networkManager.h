@@ -6,6 +6,7 @@
 #include "net_safeDeque.h"
 #include "net_connectionsManager.h"
 #include "net_packet.h"
+#include "net_tasksManager.h"
 
 #include "packetType.h"
 #include "rsa.h"
@@ -48,6 +49,9 @@ namespace net
 		void sendAvatar(AvatarPtr avatar);
 
 	private:
+		void onPacketSent(PacketType type);
+		void onConfirmationSent(const std::string& id);
+
 		void onPacketsConnectionReconnected();
 		void onFilesConnectionReconnected();
 		void createPacketsConnection(asio::ip::tcp::socket packetsSocket);
@@ -59,7 +63,7 @@ namespace net
 		std::thread	m_contextThread;
 		asio::executor_work_guard<asio::io_context::executor_type, void, void> m_workGuard;
 		
-		std::unique_ptr<TasksManager> m_tasksManager;
+		TasksManager m_tasksManager;
 		std::unique_ptr<ConnectionsManager> m_connectionsManager;
 		asio::ip::tcp::resolver::results_type m_serverEndpoint;
 		std::shared_ptr<FilesConnection> m_filesConnection;

@@ -124,7 +124,7 @@ namespace net
 		else {
 			m_totalBytesSent = 0;
 			m_fileStream.close();
-			m_metadataMessage = net::Message{};
+			m_metadataMessage = Message{};
 			m_file = File{};
 			m_sessionKey = CryptoPP::SecByteBlock{};
 
@@ -174,7 +174,7 @@ namespace net
 		else {
 			m_totalBytesSent = 0;
 			m_fileStream.close();
-			m_metadataMessage = net::Message{};
+			m_metadataMessage = Message{};
 			m_file = File{};
 			m_sessionKey = CryptoPP::SecByteBlock{};
 

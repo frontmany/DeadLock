@@ -24,8 +24,6 @@ namespace net {
 			[this]() { onPacketsConnectionReconnected(); },
 			[this]() { onFilesConnectionReconnected(); }
 		);
-
-		m_tasksManager = std::make_unique<TasksManager>();
 	}
 
 	void NetworkManager::runContextThread() {

@@ -13,8 +13,9 @@ namespace net {
 		PacketsConnection(asio::io_context& asioContext,
 			asio::ip::tcp::socket socket,
 			SafeDeque<Packet>& safeDequeIncomingPackets,
-			std::function<void(std::error_code, Packet)> onSendError,
-			std::function<void()> onDisconnect
+			std::function<void(std::error_code, Packet&&)> onSendError,
+			std::function<void()> onDisconnect,
+			std::function<void(Packet&&)> onPacketSent
 		);
 
 		~PacketsConnection() = default;
@@ -24,7 +25,6 @@ namespace net {
 		bool isConnected();
 		void startReceiving();
 		void sendPacket(const Packet& packet);
-		void sendMessage(const Packet& packet, std::vector<CryptoPP::RSA::PublicKey> friendKeys)
 
 	private:
 		asio::ip::tcp::socket m_socket;

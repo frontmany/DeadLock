@@ -10,12 +10,11 @@ class WorkerUI;
 class Client;
 class ConfigManager;
 class Chat;
-class Message;
 enum class QueryType : uint32_t;
 
-namespace net {
-	class Message;
-	class File;
+namespace net 
+{
+	class Packet;
 }
 
 class ResponseHandler {
@@ -24,7 +23,7 @@ public:
 	void setWorkerUI(WorkerUI* workerImpl);
 	WorkerUI* getWorkerUI() { return m_worker_UI; }
 
-	void handleResponse(net::Message& msg);
+	void handleResponse(net::Packet& packet);
 	void onAvatar(net::File& file);
 	void onFile(net::File& file);
 

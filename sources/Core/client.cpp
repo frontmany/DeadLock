@@ -30,30 +30,17 @@ Client::Client() :
     m_configManager(nullptr),
     m_serverIpAddress(""),
     m_serverPort(0),
-    m_responseHandler(this, m_configManager),
-    m_networkManager(*this)
+    m_responseHandler(this, m_configManager)
 {
     m_keysManagerPtr = std::make_shared<KeysManager>();
     m_configManager = std::make_shared<ConfigManager>();
     m_configManager->setKeysManagerPtr(m_keysManagerPtr);
-}
-
-bool Client::tryReconnect() {
-    m_networkManager.reconnectPacketsConnection();
-
-    bool isConnected = waitForConnectionWithTimeout(2500);
-    if (isConnected) {
-        m_networkManager.sendPacket(PacketsBuilder::getReconnectPacket(m_configManager->getMyLoginHash(), m_configManager->getMyPasswordHash()), PacketType::RECONNECT);
-        return true;
-    }
-    else {
-        return false;
-    }
+    m_networkManager = std::make_shared<net::NetworkManager>(*this);
 }
 
 bool Client::waitForConnectionWithTimeout(int timeoutMs) {
     auto startTime = std::chrono::steady_clock::now();
-    while (!m_networkManager.isPacketsConnectionConnected()) {
+    while (!m_networkManager->isPacketsConnectionConnected()) {
         if (std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - startTime).count() > timeoutMs) {
             return false; 
@@ -68,40 +55,18 @@ void Client::initDatabase(const std::string& loginHash) {
 }
 
 void Client::startProcessingIncomingPackets() { 
-    m_packetsProcessingThread = std::thread([this]() { m_networkManager.startProcessingIncomingPackets(); });
+    m_packetsProcessingThread = std::thread([this]() { m_networkManager->startProcessingIncomingPackets(); });
 }
 
 void Client::startProcessingIncomingBlobs() {
-    m_blobsProcessingThread = std::thread([this]() { m_networkManager.startProcessingIncomingBlobs(); });
+    m_blobsProcessingThread = std::thread([this]() { m_networkManager->startProcessingIncomingBlobs(); });
 }
 
 void Client::connectTo(const std::string& ipAddress, int port) {
     m_serverIpAddress = ipAddress;
     m_serverPort = port;
-    m_networkManager.createPacketsConnection(ipAddress, port);
-    m_networkManager.runContextThread();
-}
-
-void Client::typingNotify(const std::string& friendUID, bool isTyping) {
-    auto it = m_mapChats.find(friendUID);
-    auto& [hash, chat] = *it;
-    sendPacket(PacketsBuilder::getTypingPacket(chat->getFriendPublicKey(), m_configManager->getMyUID(), friendUID, isTyping), PacketType::TYPING);
-}
-
-void Client::authorizeClient(const std::string& loginHash, const std::string& passwordHash) {
-    m_configManager->setMyLoginHash(loginHash);
-    m_configManager->setMyPasswordHash(passwordHash);
-    sendPacket(PacketsBuilder::getAuthorizationPacket(loginHash, passwordHash), PacketType::AUTHORIZATION);
-}
-
-void Client::registerClient(const std::string& login, const std::string& password, const std::string& name) {
-    // if registration will fail fields will be set empty in "onRegistrationFail" function
-    m_configManager->setMyLogin(login);
-    m_configManager->setMyLoginHash(utility::calculateHash(login));
-    m_configManager->setMyName(name);
-    m_configManager->setMyPasswordHash(utility::calculateHash(password));
-
-    sendPacket(PacketsBuilder::getRegistrationPacket(m_configManager->getMyLoginHash(), m_configManager->getMyPasswordHash()), PacketType::REGISTRATION);
+    m_networkManager->createPacketsConnection(ipAddress, port);
+    m_networkManager->runContextThread();
 }
 
 void Client::generateMyKeyPair() {
@@ -115,44 +80,149 @@ void Client::generateMyKeyPair() {
     }
 }
 
+
+
+
+
+
+
+
+
+
+// send packet operations
+bool Client::tryReconnect() {
+    m_networkManager->reconnectPacketsConnection();
+
+    bool isConnected = waitForConnectionWithTimeout(2500);
+    if (isConnected) {
+        m_networkManager->sendPacket(PacketsBuilder::getReconnectPacket(m_configManager->getMyLoginHash(), m_configManager->getMyPasswordHash()), PacketType::RECONNECT);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+void Client::typingNotify(const std::string& friendUID, bool isTyping) {
+    auto it = m_mapChats.find(friendUID);
+    auto& [hash, chat] = *it;
+    m_networkManager->sendPacket(PacketsBuilder::getTypingPacket(chat->getFriendPublicKey(), m_configManager->getMyUID(), friendUID, isTyping), PacketType::TYPING);
+}
+
+void Client::authorizeClient(const std::string& loginHash, const std::string& passwordHash) {
+    m_configManager->setMyLoginHash(loginHash);
+    m_configManager->setMyPasswordHash(passwordHash);
+    m_networkManager->sendPacket(PacketsBuilder::getAuthorizationPacket(loginHash, passwordHash), PacketType::AUTHORIZATION);
+}
+
+void Client::registerClient(const std::string& login, const std::string& password, const std::string& name) {
+    // if registration will fail fields will be set empty in "onRegistrationFail" function
+    m_configManager->setMyLogin(login);
+    m_configManager->setMyLoginHash(utility::calculateHash(login));
+    m_configManager->setMyName(name);
+    m_configManager->setMyPasswordHash(utility::calculateHash(password));
+
+    m_networkManager->sendPacket(PacketsBuilder::getRegistrationPacket(m_configManager->getMyLoginHash(), m_configManager->getMyPasswordHash()), PacketType::REGISTRATION);
+}
+
 void Client::sendMyInfoAfterRegistration() {
-    sendPacket(PacketsBuilder::getAfterRegistrationInfoPacket(m_keysManagerPtr->getServerPublicKey(), m_keysManagerPtr->getMyPublicKey(), m_configManager->getMyLogin(), m_configManager->getMyName()), PacketType::AFTER_RREGISTRATION_SEND_MY_INFO);
+    m_tasksManager.addSendCommonPacketTask(PacketType::AFTER_RREGISTRATION_SEND_MY_INFO);
+    m_networkManager->sendPacket(PacketsBuilder::getAfterRegistrationInfoPacket(m_keysManagerPtr->getServerPublicKey(), m_keysManagerPtr->getMyPublicKey(), m_configManager->getMyLogin(), m_configManager->getMyName()), PacketType::AFTER_RREGISTRATION_SEND_MY_INFO);
 }
 
 void Client::createChatWith(const std::string& supposedFriendLogin) {
-    sendPacket(PacketsBuilder::getCreateChatPacket(m_configManager->getMyUID(), utility::calculateHash(supposedFriendLogin)), PacketType::CREATE_CHAT);
+    m_networkManager->sendPacket(PacketsBuilder::getCreateChatPacket(m_configManager->getMyUID(), utility::calculateHash(supposedFriendLogin)), PacketType::CREATE_CHAT);
 }
 
 void Client::broadcastMyStatus(const std::string& status) {
     const std::vector<std::string>& tmpFriendsUIDsVec = getFriendsUIDsVecFromMap();
-    sendPacket(PacketsBuilder::getStatusPacket(m_keysManagerPtr->getServerPublicKey(), status, m_configManager->getMyUID(), tmpFriendsUIDsVec), PacketType::STATUS);
+    m_networkManager->sendPacket(PacketsBuilder::getStatusPacket(m_keysManagerPtr->getServerPublicKey(), status, m_configManager->getMyUID(), tmpFriendsUIDsVec), PacketType::STATUS);
 }
 
 void Client::sendMessageReadConfirmation(const std::string& friendUID, const std::string& messageId) {
     auto it = m_mapChats.find(friendUID);
     if (it != m_mapChats.end()) {
-        sendPacket(PacketsBuilder::getMessageReadConfirmationPacket(it->second->getFriendPublicKey(), m_configManager->getMyUID(), utility::calculateHash(friendUID), messageId), PacketType::MESSAGE_READ_CONFIRMATION);
+        m_tasksManager.addSendReadConfirmationTask(messageId, friendUID);
+        m_networkManager->sendPacket(PacketsBuilder::getMessageReadConfirmationPacket(it->second->getFriendPublicKey(), m_configManager->getMyUID(), utility::calculateHash(friendUID), messageId), PacketType::MESSAGE_READ_CONFIRMATION);
     }
 }
 
 void Client::sendBlobReadConfirmation(const std::string& friendUID, const std::string& blobId) {
     auto it = m_mapChats.find(friendUID);
     if (it != m_mapChats.end()) {
-        sendPacket(PacketsBuilder::getBlobReadConfirmationPacket(it->second->getFriendPublicKey(), m_configManager->getMyUID(), utility::calculateHash(friendUID), blobId), PacketType::BLOB_READ_CONFIRMATION);
+        m_tasksManager.addSendReadConfirmationTask(blobId, friendUID);
+        m_networkManager->sendPacket(PacketsBuilder::getBlobReadConfirmationPacket(it->second->getFriendPublicKey(), m_configManager->getMyUID(), utility::calculateHash(friendUID), blobId), PacketType::BLOB_READ_CONFIRMATION);
     }
 }
 
 void Client::getAllFriendsStatuses() {
-    sendPacket(PacketsBuilder::getLoadAllFriendsStatusesPacket(m_configManager->getMyUID(), getFriendsUIDsVecFromMap()), PacketType::LOAD_ALL_FRIENDS_STATUSES);
+    m_networkManager->sendPacket(PacketsBuilder::getLoadAllFriendsStatusesPacket(m_configManager->getMyUID(), getFriendsUIDsVecFromMap()), PacketType::LOAD_ALL_FRIENDS_STATUSES);
 }
 
 void Client::findUser(const std::string& searchText) {
-    sendPacket(PacketsBuilder::getFindUserPacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), searchText), PacketType::FIND_USER);
+    m_networkManager->sendPacket(PacketsBuilder::getFindUserPacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), searchText), PacketType::FIND_USER);
 }
 
 void Client::requestUserInfoFromServer(const std::string& friendUID, const std::string& myUID) {
-    sendPacket(PacketsBuilder::getLoadUserInfoPacket(friendUID, myUID), PacketType::LOAD_USER_INFO);
+    m_networkManager->sendPacket(PacketsBuilder::getLoadUserInfoPacket(friendUID, myUID), PacketType::LOAD_USER_INFO);
 }
+
+void Client::requestUpdate() {
+    m_networkManager->sendPacket(PacketsBuilder::getUpdateRequestPacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), m_configManager->getVersionNumberToUpdate()), PacketType::UPDATE_REQUEST);
+}
+
+void Client::verifyPassword(const std::string& passwordHash) {
+    m_networkManager->sendPacket(PacketsBuilder::getVerifyPasswordPacket(m_configManager->getMyUID(), passwordHash), PacketType::VERIFY_PASSWORD);
+}
+
+void Client::checkIsNewLoginAvailable(const std::string& newLogin) {
+    m_networkManager->sendPacket(PacketsBuilder::getCheckIsNewLoginAvailablePacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), newLogin), PacketType::CHECK_NEW_LOGIN);
+}
+
+void Client::updateMyLogin(const std::string& newLogin) {
+    if (m_configManager->getMyLogin() == newLogin) {
+        return;
+    }
+
+    std::string oldLoginHash = m_configManager->getMyLoginHash();
+    std::string newLoginHash = utility::calculateHash(newLogin);
+
+    m_configManager->setMyLogin(newLogin);
+    m_configManager->setMyLoginHash(newLoginHash);
+
+    m_tasksManager.addSendCommonPacketTask(PacketType::UPDATE_MY_LOGIN);
+
+    m_networkManager->sendPacket(PacketsBuilder::getUpdateMyLoginPacket(m_keysManagerPtr->getServerPublicKey(), oldLoginHash, newLoginHash, newLogin), PacketType::UPDATE_MY_LOGIN);
+}
+
+void Client::updateMyName(const std::string& newName) {
+    m_configManager->setMyName(newName);
+
+    m_tasksManager.addSendCommonPacketTask(PacketType::UPDATE_MY_NAME);
+
+    m_networkManager->sendPacket(PacketsBuilder::getUpdateMyNamePacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), newName, getFriendsUIDsVecFromMap()), PacketType::UPDATE_MY_NAME);
+}
+
+void Client::updateMyPassword(const std::string& newPasswordHash) {
+    m_configManager->setMyPasswordHash(newPasswordHash);
+
+    m_tasksManager.addSendCommonPacketTask(PacketType::UPDATE_MY_PASSWORD);
+
+    m_networkManager->sendPacket(PacketsBuilder::getUpdateMyPasswordPacket(m_configManager->getMyUID(), newPasswordHash), PacketType::UPDATE_MY_PASSWORD);
+}
+
+void Client::requestFile(const std::string& fileId) {
+    std::string packetStr = PacketsBuilder::getSendMeFilePacket(m_configManager->getMyUID(), fileId);
+    m_db.addRequestedFileId(fileId);
+    m_networkManager->sendPacket(packetStr, PacketType::SEND_ME_FILE);
+}
+
+void Client::sendMessage(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& friendUID, MessagePtr message) {
+    message->setIsSending(true);
+    m_networkManager->sendPacket(PacketsBuilder::getMessagePacket(friendPublicKey, m_configManager->getMyLoginHash(), friendUID, message->getId(), message->getMessage(), message->getTimestamp()), PacketType::MESSAGE);
+}
+
+
 
 /*
 void Client::requestMyInfoFromServerAndResetKeys(const std::string& loginHash) {
@@ -167,42 +237,7 @@ void Client::requestMyInfoFromServerAndResetKeys(const std::string& loginHash) {
 }
 */
 
-void Client::requestUpdate() {
-    sendPacket(PacketsBuilder::getUpdateRequestPacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), m_configManager->getVersionNumberToUpdate()), PacketType::UPDATE_REQUEST);
-}
-
-void Client::verifyPassword(const std::string& passwordHash) {
-    sendPacket(PacketsBuilder::getVerifyPasswordPacket(m_configManager->getMyUID(), passwordHash), PacketType::VERIFY_PASSWORD);
-}
-
-void Client::checkIsNewLoginAvailable(const std::string& newLogin) {
-    sendPacket(PacketsBuilder::getCheckIsNewLoginAvailablePacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), newLogin), PacketType::CHECK_NEW_LOGIN);
-}
-
-void Client::updateMyLogin(const std::string& newLogin) {
-    if (m_configManager->getMyLogin() == newLogin) {
-        return;
-    }
-
-    std::string oldLoginHash = m_configManager->getMyLoginHash();
-    std::string newLoginHash = utility::calculateHash(newLogin);
-
-    m_configManager->setMyLogin(newLogin);
-    m_configManager->setMyLoginHash(newLoginHash);
-
-    sendPacket(PacketsBuilder::getUpdateMyLoginPacket(m_keysManagerPtr->getServerPublicKey(), oldLoginHash, newLoginHash, newLogin), PacketType::UPDATE_MY_LOGIN);
-}
-
-void Client::updateMyName(const std::string& newName) {
-    m_configManager->setMyName(newName);
-    sendPacket(PacketsBuilder::getUpdateMyNamePacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), newName, getFriendsUIDsVecFromMap()), PacketType::UPDATE_MY_NAME);
-}
-
-void Client::updateMyPassword(const std::string& newPasswordHash) {
-    m_configManager->setMyPasswordHash(newPasswordHash);
-    sendPacket(PacketsBuilder::getUpdateMyPasswordPacket(m_configManager->getMyUID(), newPasswordHash), PacketType::UPDATE_MY_PASSWORD);
-}
-
+/*
 void Client::updateMyAvatar(AvatarPtr newAvatar) {
     net::File avatarFile;
     avatarFile.senderLoginHash = m_configManager->getMyLoginHash();
@@ -216,7 +251,7 @@ void Client::updateMyAvatar(AvatarPtr newAvatar) {
 
     sendFile(avatarFile);
 }
-
+*/
 
 //essantial functions
 ChatPtr Client::findChat(const std::string& UID) const {
@@ -228,7 +263,7 @@ ChatPtr Client::findChat(const std::string& UID) const {
     }
     else {
         return nullptr;
-        std::cout << "\"updateInConfigFriendLogin\" cannot find friend loginHash: " << loginHash << std::endl;
+        std::cout << "\"updateInConfigFriendLogin\" cannot find friend UID: " << UID << std::endl;
     }
 }
 
@@ -263,34 +298,6 @@ void Client::deleteFriendFromChatsMap(const std::string& friendUID) {
     }
 }
 
-void Client::onPacket(const Packet& packet) {
-    m_isAbleToClose = false;
-    m_responseHandler.handleResponse(packet);
-    m_isAbleToClose = true;
-}
-
-void Client::onBlob(BlobPtr blob) {
-    /*
-    if (file.isAvatarPreview && file.isAvatar) {
-        m_response_handler->onAvatarPreview(file);
-        return;
-    }
-    else if (!file.isAvatarPreview && file.isAvatar) {
-        m_response_handler->onAvatar(file);
-    }
-    else {
-        m_is_able_to_close = false;
-        m_response_handler->onFile(file);
-        m_is_able_to_close = true;
-    }
-    */
-}
-
-void Client::sendMessage(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& friendUID, MessagePtr message) {
-    message->setIsSending(true);
-    m_networkManager.sendPacket(PacketsBuilder::getMessagePacket(friendPublicKey, m_configManager->getMyLoginHash(), friendUID, message), PacketType::MESSAGE);
-}
-
 /*
 void Client::sendBlob(BlobPtr blob) {
     auto workerUI = m_response_handler->getWorkerUI();
@@ -321,16 +328,8 @@ void Client::retrySendFilesMessage(Message& filesMessage) {
 }
 */
 
-void Client::requestFile(const std::string& fileId) {
-    std::string packetStr = PacketsBuilder::getSendMeFilePacket(m_configManager->getMyUID(), fileId);
-    m_db.addRequestedFileId(fileId);
-    sendPacket(packetStr, PacketType::SEND_ME_FILE);
-}
-
-
-
-
-void Client::onSendMessageError(std::error_code ec, net::Message unsentMessage) {
+/*
+void Client::onSendMessageError(std::error_code ec, Message unsentMessage) {
     std::string messageStr;
     unsentMessage >> messageStr;
     std::istringstream iss(messageStr);
@@ -421,7 +420,6 @@ void Client::onSendFileError(std::error_code ec, net::File unsentFille) {
         m_response_handler->getWorkerUI()->onMessageSendingError(chat->getFriendLogin(), msg);
 }
 
-
 void Client::onReceiveFileError(std::error_code ec, std::optional<net::File> unreadFile) {
     onConnectionDown();
 
@@ -429,21 +427,148 @@ void Client::onReceiveFileError(std::error_code ec, std::optional<net::File> unr
         m_response_handler->getWorkerUI()->onRequestedFileError(unreadFile.value().receiverLoginHash, { false, unreadFile.value() });
     }
 }
+*/
+
+/*
+void Client::onSendFileProgressUpdate(const InfoToWhom& info, uint32_t progressPercent) {
+    m_responseHandler.getWorkerUI()->updateFileSendingProgress(file.receiverLoginHash, file, progressPercent);
+}
+*/
+
+/*
+void Client::onRequestedFileProgressUpdate(const InfoToWhom& info, uint32_t progressPercent) {
+    m_responseHandler.getWorkerUI()->updateFileLoadingProgress(file.senderLoginHash, file, progressPercent);
+}
+*/
 
 
+
+
+
+
+
+// callback handlers
+void Client::onBlob(BlobPtr blob) {
+    /*
+    if (file.isAvatarPreview && file.isAvatar) {
+        m_response_handler->onAvatarPreview(file);
+        return;
+    }
+    else if (!file.isAvatarPreview && file.isAvatar) {
+        m_response_handler->onAvatar(file);
+    }
+    else {
+        m_is_able_to_close = false;
+        m_response_handler->onFile(file);
+        m_is_able_to_close = true;
+    }
+    */
+}
+
+void Client::onPacket(net::Packet&& packet) {
+    m_isAbleToClose = false;
+    m_responseHandler.handleResponse(packet);
+    m_isAbleToClose = true;
+}
+
+
+void Client::onPacketSent(net::Packet&& packet) {
+    if (packet.header.type == PacketType::UPDATE_MY_LOGIN ||
+        packet.header.type == PacketType::UPDATE_MY_NAME ||
+        packet.header.type == PacketType::UPDATE_MY_PASSWORD ||
+        packet.header.type == PacketType::AFTER_RREGISTRATION_SEND_MY_INFO) 
+    {
+        m_tasksManager.removeSendCommonPacketTask(packet.header.type);
+    }
+    else if (packet.header.type == PacketType::BLOB_READ_CONFIRMATION ||
+        packet.header.type == PacketType::MESSAGE_READ_CONFIRMATION) 
+    {
+        nlohmann::json jsonObj;
+        packet >> jsonObj;
+
+        std::string id;
+        if (jsonObj.contains(MESSAGE_ID)) {
+            id = jsonObj[MESSAGE_ID];
+        }
+        else if (jsonObj.contains(BLOB_ID)) {
+            id = jsonObj[BLOB_ID];
+        }
+
+        m_tasksManager.removeSendReadConfirmationTask(id);
+    }
+}
 
 void Client::onConnectionDown() {
-    disconnect();
-    m_response_handler->getWorkerUI()->onConnectionDown();
+    m_networkManager->disconnectPacketsConnection();
+    m_networkManager->disconnectFilesConnection();
+    m_responseHandler.getWorkerUI()->onConnectionDown();
 }
 
-void Client::onSendFileProgressUpdate(const net::File& file, uint32_t progressPercent) {
-    waitUntilUIReadyToUpdate();
-    m_response_handler->getWorkerUI()->updateFileSendingProgress(file.receiverLoginHash, file, progressPercent);
+
+
+
+
+// GET && SET implementations
+const Database& Client::getDatabase() const {
+    return m_db;
 }
 
-void Client::onReceiveFileProgressUpdate(const net::File& file, uint32_t progressPercent) {
-    waitUntilUIReadyToUpdate();
+bool Client::getIsUIReadyToUpdate() const {
+    return m_isUIReadyToUpdate.load();
+}
 
-    m_response_handler->getWorkerUI()->updateFileLoadingProgress(file.senderLoginHash, file, progressPercent);
+void Client::setIsUIReadyToUpdate(bool isUIReadyToUpdate) {
+    m_isUIReadyToUpdate.store(isUIReadyToUpdate);
+}
+
+const std::string& Client::getServerIpAddress() const {
+    return m_serverIpAddress;
+}
+
+void Client::setServerIpAddress(const std::string& ipAddress) {
+    m_serverIpAddress = ipAddress;
+}
+
+int Client::getServerPort() const {
+    return m_serverPort;
+}
+
+void Client::setServerPort(int port) {
+    m_serverPort = port;
+}
+
+std::unordered_map<std::string, ChatPtr>& Client::getMyChatsMap() {
+    return m_mapChats;
+}
+
+bool Client::getIsAbleToClose() const {
+    return m_isAbleToClose;
+}
+
+void Client::setIsAbleToClose(bool isAbleToClose) {
+    m_isAbleToClose = isAbleToClose;
+}
+
+ConfigManagerPtr Client::getConfigManager() const {
+    return m_configManager;
+}
+
+void Client::setConfigManager(ConfigManagerPtr configManager) {
+    m_configManager = configManager;
+}
+
+bool Client::getIsFirstAuthentication() const {
+    return m_isFirstAuthentication;
+}
+
+void Client::setIsFirstAuthentication(bool isFirstAuthentication) {
+    m_isFirstAuthentication = isFirstAuthentication;
+}
+
+bool Client::getIsPassedAuthentication() const {
+    return m_isPassedAuthentication;
+}
+
+void Client::setIsPassedAuthentication(bool isPassedAuthentication) {
+    m_isPassedAuthentication = isPassedAuthentication;
 }

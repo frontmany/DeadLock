@@ -8,14 +8,12 @@
 
 #include <filesystem>
 
-#include "base64_my.h"
 #include "rsa.h"
 
 class Avatar {
 public:
     Avatar(const CryptoPP::SecByteBlock& avatarsKey, const std::string& avatarPath);
 
-    static void rename(const std::string& oldName, const std::string& newName);
     void setNewPath(const std::string& newAvatarPath);
 
     const std::string& getPath() const { return m_avatarPath; }

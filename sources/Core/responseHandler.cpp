@@ -12,6 +12,8 @@
 #include "chat.h"
 #include "net.h"
 
+#include "net_packet.h"
+
 ResponseHandler::ResponseHandler(Client* client, std::shared_ptr<ConfigManager> configManager)
 	: m_client(client), m_worker_UI(nullptr), m_configManager(configManager) {}
 
@@ -19,7 +21,7 @@ void ResponseHandler::setWorkerUI(WorkerUI* workerImpl) {
     m_worker_UI = workerImpl;
 }
 
-void ResponseHandler::handleResponse(net::Message& msg) {
+void ResponseHandler::handleResponse(net::Packet& packet) {
     if (msg.header.type != static_cast<uint32_t>(QueryType::REGISTRATION_SUCCESS) &&
         msg.header.type != static_cast<uint32_t>(QueryType::AUTHORIZATION_SUCCESS) &&
         msg.header.type != static_cast<uint32_t>(QueryType::REGISTRATION_FAIL) &&

@@ -132,14 +132,13 @@ bool TasksManager::addSendReadConfirmationTask(const std::string& id, const std:
     }
 }
 
-bool TasksManager::removeSendReadConfirmationTask(const std::string& id, const std::string& friendUID)
+bool TasksManager::removeSendReadConfirmationTask(const std::string& id)
 {
     try {
         const std::string tableName = constructTableName("SEND_READ_CONFIRMATION_TASKS", m_myUID);
         SQLite::Statement stmt(*m_tasksManager,
-            "DELETE FROM " + tableName + " WHERE ID = ? AND FRIEND_UID = ?");
+            "DELETE FROM " + tableName + " WHERE ID = ?");
         stmt.bind(1, id);
-        stmt.bind(2, friendUID);
         return stmt.exec() > 0;
     }
     catch (const SQLite::Exception& e) {
@@ -148,14 +147,13 @@ bool TasksManager::removeSendReadConfirmationTask(const std::string& id, const s
     }
 }
 
-bool TasksManager::isSendReadConfirmationTask(const std::string& id, const std::string& friendUID)
+bool TasksManager::isSendReadConfirmationTask(const std::string& id)
 {
     try {
         const std::string tableName = constructTableName("SEND_READ_CONFIRMATION_TASKS", m_myUID);
         SQLite::Statement stmt(*m_tasksManager,
-            "SELECT 1 FROM " + tableName + " WHERE ID = ? AND FRIEND_UID = ? LIMIT 1");
+            "SELECT 1 FROM " + tableName + " WHERE ID = ? LIMIT 1");
         stmt.bind(1, id);
-        stmt.bind(2, friendUID);
         return stmt.executeStep();
     }
     catch (const SQLite::Exception& e) {

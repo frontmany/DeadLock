@@ -25,8 +25,8 @@ public:
 
 	// SEND_READ_CONFIRMATION_TASKS
 	bool addSendReadConfirmationTask(const std::string& id, const std::string& friendUID);
-	bool removeSendReadConfirmationTask(const std::string& id, const std::string& friendUID);
-	bool isSendReadConfirmationTask(const std::string& id, const std::string& friendUID);
+	bool removeSendReadConfirmationTask(const std::string& id);
+	bool isSendReadConfirmationTask(const std::string& id);
 	std::optional<std::vector<std::pair<std::string, std::string>>> getAllSendReadConfirmationTasks();
 
 private:
