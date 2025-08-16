@@ -1,15 +1,19 @@
+#pragma once
+
 #include<iostream>
 #include<vector>
 
 #include "rsa.h"
 #include "json.hpp"
 
+class FileTransferData;
+class AvatarTransferData;
+
 class PacketsBuilder {
 public:
 	PacketsBuilder() {};
 	~PacketsBuilder() = default;
 
-    //GET
     static std::string getReconnectPacket(const std::string& myLoginHash, const std::string& passwordHash);
     static std::string getAuthorizationPacket(const std::string& myLoginHash, const std::string& passwordHash);
     static std::string getRegistrationPacket(const std::string& myLoginHash, const std::string& passwordHash);
@@ -27,8 +31,8 @@ public:
     static std::string getPublicKeyPacket(const std::string& myUID, const CryptoPP::RSA::PublicKey& myPublicKey);
     static std::string getUpdateRequestPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& myUID, const std::string& versionNumber);
     static std::string getStatusPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const std::string& status, const std::string& myUID, const std::vector<std::string>& friendsUIDsVec);
-
-    //RPL
+    static std::string getFileMetadataPacket(const FileTransferData& fileTransferData, const CryptoPP::SecByteBlock& sessionKey);
+    static std::string getAvatarMetadataPacket(const AvatarTransferData& avatarTransferData);
     static std::string getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& messageID, const std::string& message, const std::string& timestamp);
     static std::string getMessageReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& messageId);
     static std::string getBlobReadConfirmationPacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& blobId);
@@ -61,6 +65,9 @@ private:
     static constexpr const char* FRIEND_UID = "friendUID";
     static constexpr const char* SEARCH_TEXT = "searchText";
     static constexpr const char* FILE_ID = "fileId";
+    static constexpr const char* FILE_SIZE = "fileSize";
+    static constexpr const char* AVATAR_SIZE = "avatarSize";
+    static constexpr const char* FILE_NAME = "fileName";
     static constexpr const char* VERSION_NUMBER = "versionNumber";
     static constexpr const char* MESSAGE_ID = "messageId";
     static constexpr const char* BLOB_ID = "blobId";
@@ -68,4 +75,6 @@ private:
     static constexpr const char* TIMESTAMP = "timestamp";
     static constexpr const char* IS_TYPING = "isTyping";
     static constexpr const char* STATUS = "status";
+    static constexpr const char* FILES_COUNT_IN_BLOB = "filesCountInBlob";
+    static constexpr const char* CAPTION = "caption";
 };

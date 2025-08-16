@@ -1,88 +1,70 @@
 #include "net_filesSender.h"
+#include "packetsBuilder.h"
+#include "fileLocationInfo.h"
+#include "file.h"
+#include "avatar.h"
+
 
 namespace net
 {
 	FilesSender::FilesSender(asio::io_context& asioContext,
 		asio::ip::tcp::socket& socket,
-		std::function<void(const File&, uint32_t)> onSendProgress,
-		std::function<void(std::error_code, File)> onSendError,
-		std::function<void()> onAllFilesSent)
+		std::function<void(FileLocationInfo&&, uint32_t)> onSendProgress,
+		std::function<void()> onAvatarSent,
+		std::function<void(std::error_code ec, FileLocationInfo&&)> onSendError)
 		: m_socket(socket),
 		m_onSendProgressUpdate(onSendProgress),
+		m_onAvatarSent(onAvatarSent),
 		m_onSendError(onSendError),
-		m_asioContext(asioContext),
-		m_onAllFilesSent(onAllFilesSent)
+		m_asioContext(asioContext)
 	{
 		m_totalBytesSent = 0;
 	}
 
-	void FilesSender::sendFile(const File& file) {
+	void FilesSender::sendFile(const std::variant<FileTransferData, AvatarTransferData>& file) {
 		asio::post(m_asioContext, [this, file]() {
 			bool isSendingAllowed = m_outgoingFilesQueue.empty();
 			m_outgoingFilesQueue.push_back(file);
 			if (isSendingAllowed) {
-				m_file = m_outgoingFilesQueue.front();
 				sendMetadata();
 			}
 		});
 	}
 
 	void FilesSender::sendMetadata() {
-		if (m_file.isAvatar) {
-			std::ostringstream oss;
-			oss << m_file.senderLoginHash << '\n'
-				<< m_file.fileSize << '\n'
-				<< m_file.ifFileIsAvatarFriendLoginHashesList;
+		utility::generateAESKey(m_sessionKey);
 
-			m_metadataMessage.header.type = static_cast<uint32_t>(QueryType::UPDATE_MY_AVATAR);
+		auto& file = m_outgoingFilesQueue.front_mut();
+		if (auto data = std::get_if<FileTransferData>(&file)) {
+			m_metadataPacket.setType(PacketType::FILE_METADATA);
+			m_metadataPacket.add(PacketsBuilder::getFileMetadataPacket(*data, m_sessionKey));
 
-			m_metadataMessage << oss.str();
-			m_metadataMessage.header.size = m_metadataMessage.size();
 		}
-		else {
-			utility::generateAESKey(m_sessionKey);
-			std::string encryptedKey = utility::RSAEncryptKey(m_file.friendPublicKey, m_sessionKey);
-
-			std::ostringstream oss;
-			oss << encryptedKey << '\n'
-				<< m_file.id << '\n'
-				<< m_file.blobUID << "\n"
-				<< m_file.receiverLoginHash << '\n'
-				<< m_file.senderLoginHash << '\n'
-				<< m_file.fileSize << '\n'
-				<< utility::AESEncrypt(m_sessionKey, m_file.fileName) << '\n'
-				<< utility::AESEncrypt(m_sessionKey, m_file.timestamp) << '\n'
-				<< m_file.filesInBlobCount << '\n';
-
-			if (m_file.caption != "") {
-				oss << utility::AESEncrypt(m_sessionKey, m_file.caption);
-			}
-
-			m_metadataMessage.header.type = static_cast<uint32_t>(QueryType::PREPARE_TO_RECEIVE_FILE);
-			m_metadataMessage << oss.str();
-			m_metadataMessage.header.size = m_metadataMessage.size();
+		else if (auto data = std::get_if<AvatarTransferData>(&file)) {
+			m_metadataPacket.setType(PacketType::UPDATE_MY_AVATAR);
+			m_metadataPacket.add(PacketsBuilder::getAvatarMetadataPacket(*data));
 		}
 
 		asio::async_write(
 			m_socket,
-			asio::buffer(&m_metadataMessage.header, sizeof(MessageHeader)),
+			asio::buffer(&m_metadataPacket.header(), Packet::sizeOfHeader()),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec)
 				{
-					m_onSendError(ec, m_outgoingFilesQueue.pop_front());
+					processError(ec);
 				}
 				else
 				{
 					asio::async_write(
 						m_socket,
-						asio::buffer(m_metadataMessage.body.data(), m_metadataMessage.body.size()),
-						[this](std::error_code ec, std::size_t length)
-						{
-							if (ec) {
-								m_onSendError(ec, m_outgoingFilesQueue.pop_front());
+						asio::buffer(m_metadataPacket.body().data(), m_metadataPacket.body().size()),
+						[this](std::error_code ec, std::size_t length) {
+							if (ec) 
+							{
+								processError(ec);
 							}
 							else {
-								if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::UPDATE_MY_AVATAR)) {
+								if (m_metadataPacket.type() == PacketType::UPDATE_MY_AVATAR) {
 									sendFileChunkWithoutEncryption();
 								}
 								else {
@@ -111,8 +93,9 @@ namespace net
 				m_socket,
 				asio::buffer(m_encryptedBuffer.data(), c_encryptedOutputChunkSize),
 				[this](std::error_code ec, std::size_t) {
-					if (ec) {
-						m_onSendError(ec, m_outgoingFilesQueue.front());
+					if (ec) 
+					{
+						processError(ec);
 					}
 					else {
 						m_totalBytesSent += c_readChunkSize;
@@ -124,14 +107,12 @@ namespace net
 		else {
 			m_totalBytesSent = 0;
 			m_fileStream.close();
-			m_metadataMessage = Message{};
-			m_file = File{};
+			m_metadataPacket.clear();
+			m_outgoingFilesQueue.pop_front();
 			m_sessionKey = CryptoPP::SecByteBlock{};
 
-			m_outgoingFilesQueue.pop_front();
 			if (!m_outgoingFilesQueue.empty())
 			{
-				m_file = m_outgoingFilesQueue.front();
 				sendMetadata();
 			}
 		}
@@ -154,18 +135,12 @@ namespace net
 				m_socket,
 				asio::buffer(m_encryptedBuffer.data(), c_encryptedOutputChunkSize),
 				[this](std::error_code ec, std::size_t) {
-					if (ec) {
-						m_onSendError(ec, m_outgoingFilesQueue.front());
+					if (ec) 
+					{
+						processError(ec);
 					}
 					else {
-						m_totalBytesSent += c_readChunkSize;
-						if (m_totalBytesSent < std::stoull(m_file.fileSize)) {
-							const auto& frontFile = m_outgoingFilesQueue.front();
-
-							const uint64_t fileSize = std::stoull(frontFile.fileSize);
-							uint32_t progress_percent = static_cast<uint32_t>(std::min<uint64_t>((m_totalBytesSent * 100) / fileSize, 100));
-							m_onSendProgressUpdate(frontFile, progress_percent);
-						}
+						notifySendFileProgress();
 						sendFileChunk();
 					}
 				}
@@ -174,30 +149,69 @@ namespace net
 		else {
 			m_totalBytesSent = 0;
 			m_fileStream.close();
-			m_metadataMessage = Message{};
-			m_file = File{};
+			m_metadataPacket.clear();
+			m_outgoingFilesQueue.pop_front();
 			m_sessionKey = CryptoPP::SecByteBlock{};
 
-			m_onSendProgressUpdate(m_outgoingFilesQueue.front(), 100);
+			notifySendFileProgress(true);
 
-			m_outgoingFilesQueue.pop_front();
 			if (!m_outgoingFilesQueue.empty())
 			{
-				m_file = m_outgoingFilesQueue.front();
 				sendMetadata();
 			}
-			else {
-				m_onAllFilesSent();
-			}
+		}
+	}
+
+	void FilesSender::processError(std::error_code ec) {
+		auto file = m_outgoingFilesQueue.pop_front();
+		if (auto data = std::get_if<FileTransferData>(&file)) {
+			FileLocationInfo fileLocationInfo;
+			fileLocationInfo.blobId = data->file->getBlobId();
+			fileLocationInfo.fileId = data->file->getId();
+			fileLocationInfo.friendUID = data->friendUID;
+			m_onSendError(ec, std::move(fileLocationInfo));
+		}
+	}
+
+	void FilesSender::notifySendFileProgress(bool hundredPercentSent) {
+		auto& file = m_outgoingFilesQueue.front_mut();
+		auto& data = std::get<FileTransferData>(file);
+
+		FileLocationInfo fileLocationInfo;
+		fileLocationInfo.blobId = data.file->getBlobId();
+		fileLocationInfo.fileId = data.file->getId();
+		fileLocationInfo.friendUID = data.friendUID;
+
+		if (hundredPercentSent) {
+			m_onSendProgressUpdate(std::move(fileLocationInfo), 100);
+			return;
+		}
+		else {
+			m_totalBytesSent += c_readChunkSize;
+		}
+
+		if (m_totalBytesSent < data.file->getFileSize()) {
+			const uint32_t fileSize = data.file->getFileSize();
+			uint32_t progressPercent = static_cast<uint32_t>(std::min<uint64_t>((m_totalBytesSent * 100) / fileSize, 100));
+			m_onSendProgressUpdate(std::move(fileLocationInfo), progressPercent);
 		}
 	}
 
 	bool FilesSender::openFile() {
 		std::error_code ec;
 
+		std::string path;
+		auto& file = m_outgoingFilesQueue.front_mut();
+		if (auto data = std::get_if<FileTransferData>(&file)) {
+			path = data->file->getFilePath();
+		}
+		else if (auto data = std::get_if<AvatarTransferData>(&file)) {
+			path = data->avatar->getPath();
+		}
+
 #ifdef _WIN32
 		int size_needed = MultiByteToWideChar(CP_UTF8, 0,
-			m_file.filePath.c_str(),
+			path.c_str(),
 			-1, nullptr, 0);
 		if (size_needed == 0) {
 			std::cerr << "UTF-8 to UTF-16 conversion failed\n";
@@ -206,13 +220,13 @@ namespace net
 
 		std::wstring filePath(size_needed, 0);
 		MultiByteToWideChar(CP_UTF8, 0,
-			m_file.filePath.c_str(),
+			path.c_str(),
 			-1, &filePath[0], size_needed);
 
 		if (!filePath.empty() && filePath.back() == L'\0')
 			filePath.pop_back();
 #else
-		std::string filePath = m_fileMetadataToHold.filePath;
+		std::string filePath = path;
 #endif
 
 		m_fileStream.open(filePath, std::ios::binary);

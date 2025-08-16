@@ -2,12 +2,11 @@
 
 #include "net_packet.h"
 #include "net_safeDeque.h"
+
 #include "asio.hpp"
 
 
 namespace net {
-	class PacketsConnection;
-
 	class PacketsSender {
 	public:
 		PacketsSender() = default;

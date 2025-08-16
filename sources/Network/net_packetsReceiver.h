@@ -1,22 +1,19 @@
 #pragma once
-#include "net_message.h"
+#include "net_packet.h"
 #include "net_safeDeque.h"
-#include "asio.hpp"
 
 namespace net {
-	class Connection;
-
-	class Receiver {
+	class PacketsReceiver {
 	public:
-		Receiver() = default;
+		PacketsReceiver() = default;
 
-		Receiver(asio::ip::tcp::socket* socket,
-			SafeDeque<net::Message>& safeDequeIncomingMessages,
+		PacketsReceiver(asio::ip::tcp::socket* socket,
+			SafeDeque<Packet>& safeDequeIncomingPackets,
 			std::function<void()> onDisconnect
 		);
 
-		Receiver(const Receiver&) = delete;
-		Receiver& operator=(const Receiver&) = delete;
+		PacketsReceiver(const PacketsReceiver&) = delete;
+		PacketsReceiver& operator=(const PacketsReceiver&) = delete;
 
 		void startReceiving();
 
@@ -26,8 +23,8 @@ namespace net {
 
 	private:
 		asio::ip::tcp::socket* m_socket;
-		net::Message m_temporaryMessage;
-		SafeDeque<net::Message>& m_safeDequeIncomingMessages;
+		Packet m_temporaryPacket;
+		SafeDeque<Packet>& m_safeDequeIncomingPackets;
 
 		std::function<void()> m_onClientDisconnected;
 		std::function<void()> m_onDisconnect;

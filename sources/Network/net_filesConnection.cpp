@@ -7,13 +7,14 @@ namespace net
 		asio::ip::tcp::socket socket,
 		SafeDeque<File>& incomingFilesQueue,
 		std::function<void(std::error_code, std::optional<File>)> onReceiveFileError,
+		std::function<void(std::error_code ec, FileLocationInfo&&)> onSendFileError,
 		std::function<void(std::error_code, File)> onSendFileError,
-		std::function<void(const File&, uint32_t)> onSendProgressUpdate,
-		std::function<void(const File&, uint32_t)> onReceiveProgressUpdate,
-		std::function<void()> onAllFilesSent)
+		std::function<void()> onAvatarSent,
+		std::function<void(FileLocationInfo&&, uint32_t)> onSendProgressUpdate,
+		std::function<void(const File&, uint32_t)> onReceiveProgressUpdate)
 		: m_asioContext(asioContext),
 		m_socket(std::move(socket)),
-		m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError, onAllFilesSent),
+		m_filesSender(asioContext, m_socket, onSendProgressUpdate, onSendFileError),
 		m_filesReceiver(incomingFilesQueue, m_socket, onReceiveProgressUpdate, onReceiveFileError)
 	{
 	}
@@ -26,7 +27,7 @@ namespace net
 		m_filesReceiver.startReceiving();
 	}
 
-	void FilesConnection::sendFile(const File& file) {
+	void FilesConnection::send(const std::variant<FileTransferData, AvatarTransferData>& file) {
 		m_filesSender.sendFile(file);
 	}
 

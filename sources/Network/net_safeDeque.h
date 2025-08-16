@@ -1,8 +1,7 @@
 #pragma once
 
 #include <deque>
-
-#include "net_common.h"
+#include <mutex>
 
 namespace net {
 
@@ -14,9 +13,14 @@ namespace net {
 		virtual ~SafeDeque() { clear(); }
 
 	public: 
-		const T& front() {
+		const T& front() const {
 			std::scoped_lock lock(m_mtx);
 			return m_deque.front();
+		}
+
+		T& front_mut() {
+			std::scoped_lock lock(m_mtx); 
+			return m_deque.front();  
 		}
 
 		const T& back() {
@@ -40,9 +44,9 @@ namespace net {
 			m_cv_blocking.notify_one();
 		}
 
-		size_t count(){
+		size_t size(){
 			std::scoped_lock lock(m_mtx);
-			return m_deque.count();
+			return m_deque.size();
 		}
 
 		bool empty() {

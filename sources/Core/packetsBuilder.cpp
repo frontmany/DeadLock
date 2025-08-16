@@ -1,7 +1,10 @@
 #include"packetsBuilder.h"
 #include"packetType.h"
+#include"file.h"
+#include"avatar.h"
+#include"net_fileTransferData.h"
+#include"net_avatarTransferData.h"
 #include"utility.h"
-
 
 
 // ESSENTIALS
@@ -27,7 +30,6 @@ std::string PacketsBuilder::getBlobAndMessageReadConfirmationPacket(const Crypto
     return jsonObject.dump();
 }
 
-
 nlohmann::json PacketsBuilder::getFriendsUIDsArray(const std::vector<std::string>& friendsUIDsVec) {
     nlohmann::json friendsUIDsArray = nlohmann::json::array();
     for (const auto& friendUID : friendsUIDsVec) {
@@ -38,7 +40,8 @@ nlohmann::json PacketsBuilder::getFriendsUIDsArray(const std::vector<std::string
 }
 
 
-//GET
+
+// PACKETS
 std::string PacketsBuilder::getReconnectPacket(const std::string& myLoginHash, const std::string& passwordHash) {
     return getLoginAndPasswordHashPacket(myLoginHash, passwordHash);
 }
@@ -50,6 +53,33 @@ std::string PacketsBuilder::getAuthorizationPacket(const std::string& myLoginHas
 std::string PacketsBuilder::getRegistrationPacket(const std::string& myLoginHash, const std::string& passwordHash) {
     return getLoginAndPasswordHashPacket(myLoginHash, passwordHash);
 }
+
+
+std::string PacketsBuilder::getFileMetadataPacket(const FileTransferData& fileTransferData, const CryptoPP::SecByteBlock& sessionKey) {
+    nlohmann::json jsonObject;
+    jsonObject[BLOB_ID] = fileTransferData.file->getBlobId();
+    jsonObject[FILE_ID] = fileTransferData.file->getId();
+    jsonObject[MY_UID] = fileTransferData.myUID;
+    jsonObject[FRIEND_UID] = fileTransferData.friendUID;
+    jsonObject[FILE_SIZE] = fileTransferData.file->getFileSize();
+    jsonObject[FILE_NAME] = utility::AESEncrypt(sessionKey, fileTransferData.file->getFileName());
+    jsonObject[TIMESTAMP] = utility::AESEncrypt(sessionKey, fileTransferData.timestamp);
+    jsonObject[FILES_COUNT_IN_BLOB] = utility::AESEncrypt(sessionKey, fileTransferData.filesCountInBlob);
+    if (fileTransferData.caption) {
+        jsonObject[CAPTION] = fileTransferData.caption.value();
+    }
+    jsonObject[ENCRYPTED_KEY] = utility::RSAEncryptKey(fileTransferData.friendKey, sessionKey);
+
+    return jsonObject.dump();
+}
+
+std::string PacketsBuilder::getAvatarMetadataPacket(const AvatarTransferData& avatarTransferData) {
+    nlohmann::json jsonObject;
+    jsonObject[FRIENDS_UIDS] = getFriendsUIDsArray(avatarTransferData.friendsUIDsVec);
+    jsonObject[MY_UID] = avatarTransferData.myUID;
+    jsonObject[AVATAR_SIZE] = avatarTransferData.avatar->getSize();
+}
+
 
 std::string PacketsBuilder::getAfterRegistrationInfoPacket(const CryptoPP::RSA::PublicKey& serverPublicKey, const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& myLogin, const std::string& myName)
 {
@@ -216,14 +246,6 @@ std::string PacketsBuilder::getStatusPacket(const CryptoPP::RSA::PublicKey& serv
     return jsonObject.dump();
 }
 
-
-
-
-
-
-
-
-//RPL
 std::string PacketsBuilder::getMessagePacket(const CryptoPP::RSA::PublicKey& friendPublicKey, const std::string& myUID, const std::string& friendUID, const std::string& messageID, const std::string& message, const std::string& timestamp)
 {
     CryptoPP::SecByteBlock key;

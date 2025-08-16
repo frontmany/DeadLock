@@ -7,6 +7,8 @@
 #include "theme.h"
 #include "packetType.h"
 #include "database.h"
+#include "fileLocationInfo.h"
+
 #include "net_tasksManager.h"
 
 
@@ -17,10 +19,12 @@ class ConfigManager;
 class Chat;
 class Avatar;
 class PacketsBuilder;
+class AvatarInfo;
 class KeysManager;
 
 namespace net {
     class NetworkManager;
+    class Packet;
 }
 
 typedef std::shared_ptr<KeysManager> KeysManagerPtr;
@@ -99,13 +103,16 @@ public:
     */
 
     void onPacket(net::Packet&& packet);
+    void onAvatar(AvatarInfo&& avatarInfo);
     void onBlob(BlobPtr blob);
+
     void onPacketSent(net::Packet&& packet);
-    void onSendFileProgressUpdate(const InfoToWhom& info, uint32_t progressPercent);
-    void onRequestedFileProgressUpdate(const InfoToWhom& info, uint32_t progressPercent);
+    void onAvatarSent();
+    void onSendFileProgressUpdate(FileLocationInfo&& info, uint32_t progressPercent);
+    void onRequestedFileProgressUpdate(FileLocationInfo&& info, uint32_t progressPercent);
     void onDeadlockNewVersionProgressUpdate(uint32_t progressPercent);
-    void onReceiveRequestedFileError(std::error_code ec, const InfoToWhom& info);
-    void onSendFileError(std::error_code ec, const InfoToWhom& info);
+    void onReceiveRequestedFileError(std::error_code ec, FileLocationInfo&& info);
+    void onSendFileError(std::error_code ec, FileLocationInfo&& info);
     void onSendPacketError(std::error_code ec, const net::Packet& unsentPacket);
     void onConnectionDown();
 
@@ -150,7 +157,7 @@ private:
 
     TasksManager m_tasksManager;
     ConfigManagerPtr m_configManager;
-    KeysManagerPtr m_keysManagerPtr;
+    KeysManagerPtr m_keysManager;
     ResponseHandler m_responseHandler;
     NetworkManagerPtr m_networkManager;
     Database m_db;

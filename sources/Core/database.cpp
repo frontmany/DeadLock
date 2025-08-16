@@ -10,6 +10,11 @@ Database::Database() :
 {
 }
 
+void Database::setMyPublicKey(const CryptoPP::RSA::PublicKey& myPublicKey)
+{
+    m_myPublicKey = myPublicKey;
+}
+
 void Database::init(const std::string& myUID) 
 {
     m_myUID = myUID;
@@ -175,7 +180,7 @@ std::optional<std::vector<std::string>> Database::getAllRequestedFilesIds() {
 
 
 // BLOB_BUFFERS
-bool Database::addBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& blobUid, const std::string& senderUid, const std::string& timestamp, int filesCountInBlob, const std::string& caption)
+bool Database::addBlobBuffer(const std::string& blobUid, const std::string& senderUid, const std::string& timestamp, int filesCountInBlob, const std::optional<std::string>& caption)
 {
     try {
         std::string tableName = constructTableName("BLOB_BUFFERS", m_myUID);
@@ -186,15 +191,19 @@ bool Database::addBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const 
 
         CryptoPP::SecByteBlock aesKey;
         utility::generateAESKey(aesKey);
-        const std::string encryptedCaption = utility::AESEncrypt(aesKey, caption);
 
-        const std::string encryptedAesKey = utility::RSAEncryptKey(myPublicKey, aesKey);
 
         query.bind(1, blobUid);
         query.bind(2, senderUid);
         query.bind(3, timestamp);
         query.bind(4, filesCountInBlob);
-        query.bind(5, encryptedCaption);
+
+        if (caption) {
+            const std::string encryptedCaption = utility::AESEncrypt(aesKey, caption.value());
+            query.bind(5, encryptedCaption);
+        }
+
+        const std::string encryptedAesKey = utility::RSAEncryptKey(m_myPublicKey, aesKey);
         query.bind(6, encryptedAesKey);
 
         query.exec();
@@ -350,7 +359,7 @@ std::optional<std::pair<std::string, BlobPtr>> Database::getBlobBuffer(const Cry
 
 
 // BLOB_BUFFER_FILES
-bool Database::addFileToBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& blobUid, const std::string& fileId, const std::string& fileName, const std::string& fileSize, const std::string& filePath)
+bool Database::addFileToBlobBuffer(const std::string& blobUid, const std::string& fileId, const std::string& fileName, const std::string& fileSize, const std::string& filePath)
 {
     try {
         const std::string tableName = constructTableName("BLOB_BUFFER_FILES", m_myUID);
@@ -361,7 +370,7 @@ bool Database::addFileToBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, 
 
         CryptoPP::SecByteBlock aesKey;
         utility::generateAESKey(aesKey);
-        const std::string encryptedAesKey = utility::RSAEncryptKey(myPublicKey, aesKey);
+        const std::string encryptedAesKey = utility::RSAEncryptKey(m_myPublicKey, aesKey);
 
         stmt.bind(1, blobUid);
         stmt.bind(2, fileName);
@@ -412,7 +421,7 @@ bool Database::isFileInBlobBuffer(const std::string& fileId)
 
 
 // BLOBS
-bool Database::addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& friendUID, BlobPtr blob)
+bool Database::addBlob(const std::string& friendUID, BlobPtr blob)
 {
     try {
         CryptoPP::SecByteBlock aesKey;
@@ -420,7 +429,7 @@ bool Database::addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::s
 
         const std::string serialized = blob->serialize();
         const std::string encPayload = utility::AESEncrypt(aesKey, serialized);
-        const std::string encAesKey = utility::RSAEncryptKey(myPublicKey, aesKey);
+        const std::string encAesKey = utility::RSAEncryptKey(m_myPublicKey, aesKey);
 
         const std::string tableName = constructTableName("BLOBS", m_myUID);
         SQLite::Statement stmt(m_db,
@@ -566,14 +575,14 @@ bool Database::deleteAllBlobs(const std::string& friendUID) const
 
 
 // MESSAGES
-bool Database::addMessage(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& friendUID, MessagePtr message)
+bool Database::addMessage(const std::string& friendUID, MessagePtr message)
 {
     try {
         CryptoPP::SecByteBlock aesKey;
         utility::generateAESKey(aesKey);
         const std::string serialized = message->serialize();
         const std::string encPayload = utility::AESEncrypt(aesKey, serialized);
-        const std::string encAesKey = utility::RSAEncryptKey(myPublicKey, aesKey);
+        const std::string encAesKey = utility::RSAEncryptKey(m_myPublicKey, aesKey);
 
         const std::string tableName = constructTableName("MESSAGES", m_myUID);
         SQLite::Statement stmt(m_db,

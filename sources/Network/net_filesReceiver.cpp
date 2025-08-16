@@ -1,16 +1,27 @@
 #include "net_filesReceiver.h"
+#include "json.hpp"
+#include "database.h"
+
+#include <fstream>
+
 
 namespace net
 {
-	FilesReceiver::FilesReceiver(SafeDeque<File>& incomingFilesQueue,
+	FilesReceiver::FilesReceiver(SafeDeque<BlobPtr>& incomingBlobsQueue,
 		asio::ip::tcp::socket& socket,
-		std::function<void(const File&, uint32_t)> onProgressUpdate,
-		std::function<void(std::error_code, std::optional<File>)> onReceiveError)
+		Database& db,
+		std::function<void(AvatarInfo&&)> onAvatar,
+		std::function<void(FileLocationInfo&&, uint32_t)> onRequestedFileProgressUpdate,
+		std::function<void(uint32_t)> onDeadlockNewVersionProgressUpdate,
+		std::function<void(std::error_code, FileLocationInfo&&)> onReceiveRequestedFileError)
 		: m_myPrivateKey(nullptr),
-		m_incomingFilesQueue(incomingFilesQueue),
+		m_incomingBlobsQueue(incomingBlobsQueue),
 		m_socket(socket),
-		m_onProgressUpdate(onProgressUpdate),
-		m_onReceiveError(onReceiveError)
+		m_db(db),
+		m_onAvatar(onAvatar),
+		m_onRequestedFileProgressUpdate(onRequestedFileProgressUpdate),
+		m_onDeadlockNewVersionProgressUpdate(onDeadlockNewVersionProgressUpdate),
+		m_onReceiveRequestedFileError(onReceiveRequestedFileError)
 	{
 		m_lastChunkSize = 0;
 		m_currentChunksCount = 0;
@@ -27,15 +38,16 @@ namespace net
 	}
 
 	void FilesReceiver::readMetadataHeader() {
-		asio::async_read(m_socket, asio::buffer(&m_metadataMessage.header, sizeof(MessageHeader)),
+		asio::async_read(m_socket, asio::buffer(&m_metadataPacket.header_mut(), Packet::sizeOfHeader()),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec) {
 					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
-						m_onReceiveError(ec, std::nullopt);
+						processError(ec);
+						reset();
 					}
 				}
 				else {
-					m_metadataMessage.body.resize(m_metadataMessage.header.size - sizeof(MessageHeader));
+					m_metadataPacket.body_mut().resize(m_metadataPacket.size() - Packet::sizeOfHeader());
 					readMetadataBody();
 				}
 			});
@@ -43,29 +55,32 @@ namespace net
 
 
 	void FilesReceiver::readMetadataBody() {
-		asio::async_read(m_socket, asio::buffer(m_metadataMessage.body.data(), m_metadataMessage.body.size()),
+		asio::async_read(m_socket, asio::buffer(m_metadataPacket.body_mut().data(), m_metadataPacket.body().size()),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec) {
 					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
-						m_onReceiveError(ec, std::nullopt);
+						processError(ec);
+						reset();
 					}
 				}
 				else {
-					if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR) ||
-						m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR_FOR_PREVIEW)) {
-						parseAvatarMetadata();
+					if (m_metadataPacket.type() == PacketType::PREPARE_TO_RECEIVE_FILE) 
+					{
+						std::string path = parseFileMetadata();
+						openFile(path);
+						readChunk();
 					}
-					else {
-						parseMetadata();
-					}
-
-					openFile();
-
-					if (m_file.senderLoginHash == "server" || m_file.isAvatar) {
+					else if (m_metadataPacket.type() == PacketType::FRIEND_AVATAR || m_metadataPacket.type() == PacketType::FRIEND_AVATAR_FOR_PREVIEW)
+					{
+						std::string path = parseAvatarMetadata();
+						openFile(path);
 						readChunkWithoutDecryption();
 					}
-					else {
-						readChunk();
+					else if (m_metadataPacket.type() == PacketType::DEADLOCK_UPDATE) 
+					{
+						std::string path = parseDeadlockUpdateMetadata();
+						openFile(path);
+						readChunkWithoutDecryption();
 					}
 				}
 			});
@@ -78,9 +93,9 @@ namespace net
 				if (ec) {
 					removePartiallyDownloadedFile();
 					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
-						m_onReceiveError(ec, m_file);
+						processError(ec);
+						reset();
 					}
-					return;
 				}
 				else {
 					m_currentChunksCount++;
@@ -88,20 +103,16 @@ namespace net
 						std::array<char, c_decryptedChunkSize> decryptedChunk = utility::AESDecrypt(m_sessionKey, m_receiveBuffer);
 						m_fileStream.write(decryptedChunk.data(), c_decryptedChunkSize);
 						m_totalReceivedBytes += bytesTransferred - c_overhead;
+						
 						readChunk();
-
-						if (m_totalReceivedBytes < std::stoull(m_file.fileSize)) {
-							const uint64_t fileSize = std::stoull(m_file.fileSize);
-							const uint64_t progress = std::min<uint64_t>((m_totalReceivedBytes * 100) / fileSize, 100);
-							m_onProgressUpdate(m_file, progress);
-						}
-
-
+						notifyReceiveRequestedFileProgress();
 					}
 					else if (m_currentChunksCount == m_expectedChunksCount) {
 						std::array<char, c_decryptedChunkSize> decryptedChunk = utility::AESDecrypt(m_sessionKey, m_receiveBuffer);
 						m_fileStream.write(decryptedChunk.data(), m_lastChunkSize);
+						
 						finalizeReceiving();
+						reset();
 					}
 				}
 			});
@@ -113,10 +124,7 @@ namespace net
 			[this](std::error_code ec, std::size_t bytesTransferred) {
 				if (ec) {
 					removePartiallyDownloadedFile();
-					if (ec != asio::error::connection_reset && ec != asio::error::operation_aborted) {
-						m_onReceiveError(ec, m_file);
-					}
-					return;
+					reset();
 				}
 				else {
 					m_currentChunksCount++;
@@ -127,126 +135,146 @@ namespace net
 					else if (m_currentChunksCount == m_expectedChunksCount) {
 						m_fileStream.write(m_receiveBuffer.data(), m_lastChunkSize);
 						finalizeReceiving();
+						reset();
 					}
 				}
 			});
 	}
 
-	void FilesReceiver::parseAvatarMetadata() {
-		std::string metadataString;
-		m_metadataMessage >> metadataString;
-		std::istringstream iss(metadataString);
+	std::string FilesReceiver::parseAvatarMetadata() {
+		try {
+			nlohmann::json jsonObject = nlohmann::json::parse(m_metadataPacket.get());
 
-		std::string senderLoginHash;
-		std::getline(iss, senderLoginHash);
+			std::string encryptedKey = jsonObject[ENCRYPTED_KEY].get<std::string>();
+			m_sessionKey = utility::RSADecryptKey(*m_myPrivateKey, encryptedKey);
 
-		std::string fileSize;
-		std::getline(iss, fileSize);
+			std::string senderUID = jsonObject[SENDER_UID].get<std::string>();
+			std::string fileSize = jsonObject[FILE_SIZE].get<std::string>();
 
-		m_file.fileSize = fileSize;
-		m_file.senderLoginHash = senderLoginHash;
-		m_file.isAvatar = true;
+			m_avatarInfo.friendUID = senderUID;
 
-		if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR)) {
-			m_file.filePath = utility::getConfigsAndPhotosDirectory() + "/" + senderLoginHash + ".dph";
-			m_file.isAvatarPreview = false;
-		}
-		else if (m_metadataMessage.header.type == static_cast<uint32_t>(QueryType::AVATAR_FOR_PREVIEW)) {
-			m_file.filePath = utility::getAvatarPreviewsDirectory() + "/" + senderLoginHash + ".dph";
-			m_file.isAvatarPreview = true;
-		}
+			std::string filePath;
+			if (m_metadataPacket.type() == PacketType::FRIEND_AVATAR) {
+				filePath = utility::getConfigsAndPhotosDirectory() + "/" + senderUID + ".dph";
+			}
+			else if (m_metadataPacket.type() == PacketType::FRIEND_AVATAR_FOR_PREVIEW) {
+				filePath = utility::getAvatarPreviewsDirectory() + "/" + senderUID + ".dph";
+			}
 
-		m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(m_file.fileSize)) / c_receivedChunkSize));
-		int lastChunksSize = std::stoi(m_file.fileSize) - (m_expectedChunksCount * c_receivedChunkSize);
-		if (lastChunksSize == 0) {
-			m_lastChunkSize = c_receivedChunkSize;
-		}
-		else {
-			m_lastChunkSize = lastChunksSize + c_receivedChunkSize;
-		}
-	}
-
-	void FilesReceiver::parseMetadata() {
-		std::string metadataString;
-		m_metadataMessage >> metadataString;
-		std::istringstream iss(metadataString);
-
-		std::string encryptedKey;
-		std::getline(iss, encryptedKey);
-		m_sessionKey = utility::RSADecryptKey(*m_myPrivateKey, encryptedKey);
-
-		std::string fileId;
-		std::getline(iss, fileId);
-
-		std::string blobUID;
-		std::getline(iss, blobUID);
-
-		std::string receiverLoginHash;
-		std::getline(iss, receiverLoginHash);
-
-		std::string senderLoginHash;
-		std::getline(iss, senderLoginHash);
-
-		std::string fileSize;
-		std::getline(iss, fileSize);
-
-		std::string fileName;
-		std::getline(iss, fileName);
-		if (senderLoginHash != "server") {
-			fileName = utility::AESDecrypt(m_sessionKey, fileName);
-		}
-
-		std::string timestamp;
-		std::getline(iss, timestamp);
-		if (senderLoginHash != "server") {
-			timestamp = utility::AESDecrypt(m_sessionKey, timestamp);
-		}
-
-		std::string filesCountInBlob;
-		std::getline(iss, filesCountInBlob);
-
-		std::string caption;
-		std::getline(iss, caption);
-		if (caption != "") {
-			caption = utility::AESDecrypt(m_sessionKey, caption);
-		}
-
-		m_file.fileName = fileName;
-		m_file.senderLoginHash = senderLoginHash;
-		m_file.receiverLoginHash = receiverLoginHash;
-		m_file.fileSize = fileSize;
-		m_file.id = fileId;
-		m_file.timestamp = timestamp;
-		m_file.caption = caption;
-		m_file.blobUID = blobUID;
-		m_file.filesInBlobCount = filesCountInBlob;
-		m_file.isAvatar = false;
-		m_file.isAvatarPreview = false;
-
-
-		if (senderLoginHash == "server") {
-			m_file.filePath = utility::getUpdateTemporaryPath(fileName);
-
-			m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(m_file.fileSize)) / c_receivedChunkSize));
-			int lastChunksSize = std::stoi(m_file.fileSize) - (m_expectedChunksCount * c_receivedChunkSize);
+			m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(fileSize)) / c_receivedChunkSize));
+			int lastChunksSize = std::stoi(fileSize) - (m_expectedChunksCount * c_receivedChunkSize);
 			if (lastChunksSize == 0) {
 				m_lastChunkSize = c_receivedChunkSize;
 			}
 			else {
 				m_lastChunkSize = lastChunksSize + c_receivedChunkSize;
 			}
-		}
-		else {
-			m_file.filePath = utility::getFileSavePath(fileName);
 
-			m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(m_file.fileSize)) / c_decryptedChunkSize));
-			int lastChunksSize = std::stoi(m_file.fileSize) - (m_expectedChunksCount * c_decryptedChunkSize);
+			return filePath;
+		}
+		catch (const std::exception& e) {
+			std::cout << "Failed to parse avatar metadata: " + std::string(e.what());
+		}
+	}
+
+	std::string FilesReceiver::parseFileMetadata() {
+		nlohmann::json jsonObject(m_metadataPacket.get());
+
+		try {
+			nlohmann::json jsonObject = nlohmann::json::parse(m_metadataPacket.get());
+
+			std::string encryptedKey = jsonObject[ENCRYPTED_KEY].get<std::string>();
+			m_sessionKey = utility::RSADecryptKey(*m_myPrivateKey, encryptedKey);
+
+			std::string fileId = jsonObject[FILE_ID].get<std::string>();
+			std::string blobId = jsonObject[BLOB_ID].get<std::string>();
+			std::string senderUID = jsonObject[MY_UID].get<std::string>();
+			std::string fileSize = jsonObject[FILE_SIZE].get<std::string>();
+
+			std::string encryptedFileName = jsonObject[FILE_NAME].get<std::string>();
+			std::string fileName = utility::AESDecrypt(m_sessionKey, encryptedFileName);
+
+			std::string encryptedTimestamp = jsonObject[TIMESTAMP].get<std::string>();
+			std::string timestamp = utility::AESDecrypt(m_sessionKey, encryptedTimestamp);
+
+			std::string encryptedFilesCount = jsonObject[FILES_COUNT_IN_BLOB].get<std::string>();
+			std::string filesCountInBlob = utility::AESDecrypt(m_sessionKey, encryptedFilesCount);
+
+			m_fileDataTemporaryContainer.blobId = blobId;
+			m_fileDataTemporaryContainer.fileId = fileId;
+			m_fileDataTemporaryContainer.fileName = fileName;
+			m_fileDataTemporaryContainer.friendUID = senderUID;
+			m_fileDataTemporaryContainer.fileSize = std::stoi(fileSize);
+			m_fileDataTemporaryContainer.filePath = utility::getFileSavePath(fileName);
+
+			m_fileLocationInfoForCallback.blobId = blobId;
+			m_fileLocationInfoForCallback.fileId = fileId;
+			m_fileLocationInfoForCallback.friendUID = senderUID;
+
+			if (jsonObject.contains(CAPTION)) {
+				std::string encryptedCaption = jsonObject[CAPTION].get<std::string>();
+				std::string caption = utility::AESDecrypt(m_sessionKey, encryptedFilesCount);
+
+				if (!m_db.isBlobBuffer(blobId)) {
+					m_db.addBlobBuffer(blobId, senderUID, timestamp, std::stoi(filesCountInBlob), caption);
+				}
+			}
+			else {
+				if (!m_db.isBlobBuffer(blobId)) {
+					m_db.addBlobBuffer(blobId, senderUID, timestamp, std::stoi(filesCountInBlob), std::nullopt);
+				}
+			}
+
+			m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(fileSize)) / c_decryptedChunkSize));
+			int lastChunksSize = std::stoi(fileSize) - (m_expectedChunksCount * c_decryptedChunkSize);
 			if (lastChunksSize == 0) {
 				m_lastChunkSize = c_receivedChunkSize;
 			}
 			else {
 				m_lastChunkSize = lastChunksSize + c_decryptedChunkSize;
 				m_lastChunkSize += c_overhead;
+			}
+
+			return m_fileDataTemporaryContainer.filePath;
+		}
+		catch (const std::exception& e) {
+			std::cout << "Failed to parse file metadata: " + std::string(e.what());
+		}
+	}
+
+	std::string FilesReceiver::parseDeadlockUpdateMetadata() {
+		nlohmann::json jsonObject = nlohmann::json::parse(m_metadataPacket.get());
+		std::string fileSize = jsonObject[FILE_SIZE].get<std::string>();
+		std::string fileName = jsonObject[FILE_NAME].get<std::string>();
+
+		m_expectedChunksCount = static_cast<int>(std::ceil(static_cast<double>(std::stoi(fileSize)) / c_receivedChunkSize));
+		int lastChunksSize = std::stoi(fileSize) - (m_expectedChunksCount * c_receivedChunkSize);
+		if (lastChunksSize == 0) {
+			m_lastChunkSize = c_receivedChunkSize;
+		}
+		else {
+			m_lastChunkSize = lastChunksSize + c_receivedChunkSize;
+		}
+
+		return utility::getUpdateTemporaryPath(fileName);
+	}
+
+	void FilesReceiver::processError(std::error_code ec) {
+		if (m_db.isRequestedFileId(m_fileDataTemporaryContainer.fileId)) {
+			m_onReceiveRequestedFileError(ec, std::move(m_fileLocationInfoForCallback));
+		}
+	}
+
+	void FilesReceiver::notifyReceiveRequestedFileProgress(bool hundredPercentReceived) {
+		if (m_db.isRequestedFileId(m_fileDataTemporaryContainer.fileId)) {
+			if (hundredPercentReceived) {
+				m_onRequestedFileProgressUpdate(std::move(m_fileLocationInfoForCallback), 100);
+			}
+
+			if (m_totalReceivedBytes < m_fileDataTemporaryContainer.fileSize) {
+				const uint32_t fileSize = m_fileDataTemporaryContainer.fileSize;
+				const uint32_t progress = std::min<uint32_t>((m_totalReceivedBytes * 100) / fileSize, 100);
+				m_onRequestedFileProgressUpdate(std::move(m_fileLocationInfoForCallback), progress);
 			}
 		}
 	}
@@ -283,14 +311,14 @@ namespace net
 		}
 	}
 
-	void FilesReceiver::openFile() {
+	void FilesReceiver::openFile(const std::string& path) {
 		try {
 			std::filesystem::path filePath;
 
 #ifdef _WIN32
-			filePath = std::filesystem::u8path(m_file.filePath);
+			filePath = std::filesystem::u8path(path);
 #else
-			filePath = m_file.filePath;
+			filePath = path;
 #endif
 			m_fileStream.open(filePath, std::ios::binary | std::ios::trunc);
 
@@ -306,4 +334,8 @@ namespace net
 		}
 	}
 
+	void FilesReceiver::reset() {
+
+	}
 }
+

@@ -21,6 +21,8 @@ public:
 
 	void init(const std::string& myUID);
 
+	void setMyPublicKey(const CryptoPP::RSA::PublicKey& myPublicKey);
+
 	// REQUESTED_FILES_IDS
 	bool addRequestedFileId(const std::string& fileId);
 	bool removeRequestedFileId(const std::string& fileId);
@@ -29,7 +31,7 @@ public:
 
 
 	// BLOB_BUFFERS
-	bool addBlobBuffer(const CryptoPP::RSA::PublicKey& myPpublicKey, const std::string& blobUid, const std::string& senderUid, const std::string& timestamp, int filesCountInBlob, const std::string& caption);
+	bool addBlobBuffer(const std::string& blobUid, const std::string& senderUid, const std::string& timestamp, int filesCountInBlob, const std::optional<std::string>& caption);
 	bool removeBlobBuffer(const std::string& blobUid);
 	bool isBlobBuffer(const std::string& blobUid);
 	bool incrementReceivedFilesCountInBlobBuffer(const std::string& blobUid);
@@ -38,13 +40,13 @@ public:
 	
 
 	// BLOB_BUFFER_FILES
-	bool addFileToBlobBuffer(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& blobUid, const std::string& fileId, const std::string& fileName, const std::string& fileSize, const std::string& filePath);
+	bool addFileToBlobBuffer(const std::string& blobUid, const std::string& fileId, const std::string& fileName, const std::string& fileSize, const std::string& filePath);
 	    bool removeFileFromBlobBuffer(const std::string& fileId);
 	    bool isFileInBlobBuffer(const std::string& fileId);
 
 
 	// BLOBS
-	bool addBlob(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& friendUID, BlobPtr blob);
+	bool addBlob(const std::string& friendUID, BlobPtr blob);
 	BlobPtr getBlob(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& blobUid);
 	bool removeBlob(const std::string& blobUid);
 	bool saveBlobs(const CryptoPP::RSA::PublicKey& publicKey, const std::string& friendUID, const std::vector<BlobPtr>& blobs);
@@ -53,7 +55,7 @@ public:
 
 
 	// MESSAGES
-	bool addMessage(const CryptoPP::RSA::PublicKey& myPublicKey, const std::string& friendUID, MessagePtr message);
+	bool addMessage(const std::string& friendUID, MessagePtr message);
 	std::optional<std::string> getMessage(const CryptoPP::RSA::PrivateKey& privateKey, const std::string& id);
 	bool removeMessage(const std::string& id);
 	bool saveMessages(const CryptoPP::RSA::PublicKey& publicKey, const std::string& friendUID, const std::vector<MessagePtr>& messages);
@@ -65,5 +67,6 @@ private:
 
 private:
 	SQLite::Database m_db;
+	CryptoPP::RSA::PublicKey m_myPublicKey;
     std::string m_myUID;
 };

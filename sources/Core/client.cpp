@@ -10,6 +10,7 @@
 
 #include "packetsBuilder.h"
 #include "configManager.h"
+#include "avatarInfo.h"
 #include "keysManager.h"
 #include "responseHandler.h"
 #include "net_networkManager.h"
@@ -32,9 +33,9 @@ Client::Client() :
     m_serverPort(0),
     m_responseHandler(this, m_configManager)
 {
-    m_keysManagerPtr = std::make_shared<KeysManager>();
+    m_keysManager = std::make_shared<KeysManager>();
     m_configManager = std::make_shared<ConfigManager>();
-    m_configManager->setKeysManagerPtr(m_keysManagerPtr);
+    m_configManager->setKeysManagerPtr(m_keysManager);
     m_networkManager = std::make_shared<net::NetworkManager>(*this);
 }
 
@@ -70,13 +71,13 @@ void Client::connectTo(const std::string& ipAddress, int port) {
 }
 
 void Client::generateMyKeyPair() {
-    if (m_keysManagerPtr->getMyPublicKey().GetModulus().IsZero() || m_keysManagerPtr->getMyPrivateKey().GetModulus().IsZero()) {
+    if (m_keysManager->getMyPublicKey().GetModulus().IsZero() || m_keysManager->getMyPrivateKey().GetModulus().IsZero()) {
         CryptoPP::RSA::PublicKey publicKey;
         CryptoPP::RSA::PrivateKey privateKey;
         utility::generateRSAKeyPair(privateKey, publicKey);
 
-        m_keysManagerPtr->setMyPublicKey(publicKey);
-        m_keysManagerPtr->setMyPrivateKey(privateKey);
+        m_keysManager->setMyPublicKey(publicKey);
+        m_keysManager->setMyPrivateKey(privateKey);
     }
 }
 
@@ -127,7 +128,7 @@ void Client::registerClient(const std::string& login, const std::string& passwor
 
 void Client::sendMyInfoAfterRegistration() {
     m_tasksManager.addSendCommonPacketTask(PacketType::AFTER_RREGISTRATION_SEND_MY_INFO);
-    m_networkManager->sendPacket(PacketsBuilder::getAfterRegistrationInfoPacket(m_keysManagerPtr->getServerPublicKey(), m_keysManagerPtr->getMyPublicKey(), m_configManager->getMyLogin(), m_configManager->getMyName()), PacketType::AFTER_RREGISTRATION_SEND_MY_INFO);
+    m_networkManager->sendPacket(PacketsBuilder::getAfterRegistrationInfoPacket(m_keysManager->getServerPublicKey(), m_keysManager->getMyPublicKey(), m_configManager->getMyLogin(), m_configManager->getMyName()), PacketType::AFTER_RREGISTRATION_SEND_MY_INFO);
 }
 
 void Client::createChatWith(const std::string& supposedFriendLogin) {
@@ -136,7 +137,7 @@ void Client::createChatWith(const std::string& supposedFriendLogin) {
 
 void Client::broadcastMyStatus(const std::string& status) {
     const std::vector<std::string>& tmpFriendsUIDsVec = getFriendsUIDsVecFromMap();
-    m_networkManager->sendPacket(PacketsBuilder::getStatusPacket(m_keysManagerPtr->getServerPublicKey(), status, m_configManager->getMyUID(), tmpFriendsUIDsVec), PacketType::STATUS);
+    m_networkManager->sendPacket(PacketsBuilder::getStatusPacket(m_keysManager->getServerPublicKey(), status, m_configManager->getMyUID(), tmpFriendsUIDsVec), PacketType::STATUS);
 }
 
 void Client::sendMessageReadConfirmation(const std::string& friendUID, const std::string& messageId) {
@@ -160,7 +161,7 @@ void Client::getAllFriendsStatuses() {
 }
 
 void Client::findUser(const std::string& searchText) {
-    m_networkManager->sendPacket(PacketsBuilder::getFindUserPacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), searchText), PacketType::FIND_USER);
+    m_networkManager->sendPacket(PacketsBuilder::getFindUserPacket(m_keysManager->getServerPublicKey(), m_configManager->getMyUID(), searchText), PacketType::FIND_USER);
 }
 
 void Client::requestUserInfoFromServer(const std::string& friendUID, const std::string& myUID) {
@@ -168,7 +169,7 @@ void Client::requestUserInfoFromServer(const std::string& friendUID, const std::
 }
 
 void Client::requestUpdate() {
-    m_networkManager->sendPacket(PacketsBuilder::getUpdateRequestPacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), m_configManager->getVersionNumberToUpdate()), PacketType::UPDATE_REQUEST);
+    m_networkManager->sendPacket(PacketsBuilder::getUpdateRequestPacket(m_keysManager->getServerPublicKey(), m_configManager->getMyUID(), m_configManager->getVersionNumberToUpdate()), PacketType::UPDATE_REQUEST);
 }
 
 void Client::verifyPassword(const std::string& passwordHash) {
@@ -176,7 +177,7 @@ void Client::verifyPassword(const std::string& passwordHash) {
 }
 
 void Client::checkIsNewLoginAvailable(const std::string& newLogin) {
-    m_networkManager->sendPacket(PacketsBuilder::getCheckIsNewLoginAvailablePacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), newLogin), PacketType::CHECK_NEW_LOGIN);
+    m_networkManager->sendPacket(PacketsBuilder::getCheckIsNewLoginAvailablePacket(m_keysManager->getServerPublicKey(), m_configManager->getMyUID(), newLogin), PacketType::CHECK_NEW_LOGIN);
 }
 
 void Client::updateMyLogin(const std::string& newLogin) {
@@ -192,7 +193,12 @@ void Client::updateMyLogin(const std::string& newLogin) {
 
     m_tasksManager.addSendCommonPacketTask(PacketType::UPDATE_MY_LOGIN);
 
-    m_networkManager->sendPacket(PacketsBuilder::getUpdateMyLoginPacket(m_keysManagerPtr->getServerPublicKey(), oldLoginHash, newLoginHash, newLogin), PacketType::UPDATE_MY_LOGIN);
+    m_networkManager->sendPacket(PacketsBuilder::getUpdateMyLoginPacket(m_keysManager->getServerPublicKey(), oldLoginHash, newLoginHash, newLogin), PacketType::UPDATE_MY_LOGIN);
+}
+
+void Client::updateMyAvatar(AvatarPtr newAvatar) {
+    m_tasksManager.addSendCommonPacketTask(PacketType::UPDATE_MY_AVATAR);
+    m_networkManager->sendAvatar(m_configManager->getMyUID(), newAvatar);
 }
 
 void Client::updateMyName(const std::string& newName) {
@@ -200,7 +206,7 @@ void Client::updateMyName(const std::string& newName) {
 
     m_tasksManager.addSendCommonPacketTask(PacketType::UPDATE_MY_NAME);
 
-    m_networkManager->sendPacket(PacketsBuilder::getUpdateMyNamePacket(m_keysManagerPtr->getServerPublicKey(), m_configManager->getMyUID(), newName, getFriendsUIDsVecFromMap()), PacketType::UPDATE_MY_NAME);
+    m_networkManager->sendPacket(PacketsBuilder::getUpdateMyNamePacket(m_keysManager->getServerPublicKey(), m_configManager->getMyUID(), newName, getFriendsUIDsVecFromMap()), PacketType::UPDATE_MY_NAME);
 }
 
 void Client::updateMyPassword(const std::string& newPasswordHash) {
@@ -237,21 +243,6 @@ void Client::requestMyInfoFromServerAndResetKeys(const std::string& loginHash) {
 }
 */
 
-/*
-void Client::updateMyAvatar(AvatarPtr newAvatar) {
-    net::File avatarFile;
-    avatarFile.senderLoginHash = m_configManager->getMyLoginHash();
-    avatarFile.isAvatar = true;
-    avatarFile.fileSize = std::to_string(newAvatar->getEncryptedSize());
-    avatarFile.ifFileIsAvatarFriendLoginHashesList = m_packets_builder->getSerializedFriendsLoginHashesVec(std::move(getFriendsLoginHashesVecFromMap()));
-
-    std::string fileName = m_configManager->getMyLoginHash() + ".dph";
-    std::string filePath = utility::getConfigsAndPhotosDirectory() + "/" + fileName;
-    avatarFile.filePath = filePath;
-
-    sendFile(avatarFile);
-}
-*/
 
 //essantial functions
 ChatPtr Client::findChat(const std::string& UID) const {
@@ -471,21 +462,23 @@ void Client::onPacket(net::Packet&& packet) {
     m_isAbleToClose = true;
 }
 
+void Client::onAvatarSent() {
+    m_tasksManager.removeSendCommonPacketTask(PacketType::UPDATE_MY_AVATAR);
+}
 
 void Client::onPacketSent(net::Packet&& packet) {
-    if (packet.header.type == PacketType::UPDATE_MY_LOGIN ||
-        packet.header.type == PacketType::UPDATE_MY_NAME ||
-        packet.header.type == PacketType::UPDATE_MY_PASSWORD ||
-        packet.header.type == PacketType::AFTER_RREGISTRATION_SEND_MY_INFO) 
+    uint32_t type = packet.type();
+    if (type == PacketType::UPDATE_MY_LOGIN ||
+        type == PacketType::UPDATE_MY_NAME ||
+        type == PacketType::UPDATE_MY_PASSWORD ||
+        type == PacketType::AFTER_RREGISTRATION_SEND_MY_INFO)
     {
-        m_tasksManager.removeSendCommonPacketTask(packet.header.type);
+        m_tasksManager.removeSendCommonPacketTask(type);
     }
-    else if (packet.header.type == PacketType::BLOB_READ_CONFIRMATION ||
-        packet.header.type == PacketType::MESSAGE_READ_CONFIRMATION) 
+    else if (type == PacketType::BLOB_READ_CONFIRMATION ||
+        type == PacketType::MESSAGE_READ_CONFIRMATION)
     {
-        nlohmann::json jsonObj;
-        packet >> jsonObj;
-
+        nlohmann::json jsonObj(packet.get());
         std::string id;
         if (jsonObj.contains(MESSAGE_ID)) {
             id = jsonObj[MESSAGE_ID];

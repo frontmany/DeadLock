@@ -1,3 +1,5 @@
+#define ASIO_STANDALONE
+
 #include <QApplication>
 #include <QProxyStyle>
 #include <QStyleOptionTitleBar>
@@ -12,6 +14,8 @@
 #include "mainWindow.h"
 #include "utility.h"
 #include "theme.h"
+
+
 
 void tryAutoLoginOrShowLoginForm(MainWindow* mainWindow, Client* client, std::shared_ptr<ConfigManager> configManager) {
     if (configManager->checkIsAutoLogin()) {

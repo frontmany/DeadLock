@@ -24,7 +24,7 @@ namespace net {
 		void disconnect();
 		bool isConnected();
 		void startReceiving();
-		void sendPacket(const Packet& packet);
+		void send(const Packet& packet);
 
 	private:
 		asio::ip::tcp::socket m_socket;

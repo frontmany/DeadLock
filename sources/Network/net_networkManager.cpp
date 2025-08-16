@@ -1,6 +1,6 @@
 #include "net_networkManager.h"
 #include "net_tasksManager.h"
-#include "infoToWhom.h"
+#include "fileLocationInfo.h"
 #include "database.h"
 #include "blob.h"
 #include "client.h"
@@ -150,14 +150,13 @@ namespace net {
 		m_packetsConnection->sendPacket(packet);
 	}
 
-	void NetworkManager::sendBlob(BlobPtr blob, const std::vector<CryptoPP::RSA::PublicKey>& friendKeys) {
+	void NetworkManager::sendBlob(const std::string& myUID, const CryptoPP::RSA::PublicKey& friendPublicKey, BlobPtr blob) {
 		m_filesConnection->sendBlob(blob, friendKeys);
 	}
 
-	void sendAvatar(AvatarPtr avatar, const CryptoPP::RSA::PublicKey& serverKey) {
+	void  NetworkManager::sendAvatar(const std::string& myUID, AvatarPtr avatar) {
 		m_filesConnection->sendAvatar(avatar, serverKey);
 	}
-
 
 	void NetworkManager::startProcessingIncomingPackets() 
 	{
@@ -202,10 +201,10 @@ namespace net {
 			m_context,
 			std::move(filesSocket),
 			m_dequeIncomingBlobs,
-			[this](std::error_code ec, InfoToWhom&& info) {m_client.onReceiveRequestedFileError(ec, std::move(info)); },
-			[this](std::error_code ec, InfoToWhom&& info) {m_client.onSendFileError(ec, info); },
-			[this](InfoToWhom&& info, uint32_t progressPercent) {m_client.onSendFileProgressUpdate(info, progressPercent); },
-			[this](InfoToWhom&& info, uint32_t progressPercent) {m_client.onRequestedFileProgressUpdate(info, progressPercent); },
+			[this](std::error_code ec, FileLocationInfo&& info) {m_client.onReceiveRequestedFileError(ec, std::move(info)); },
+			[this](std::error_code ec, FileLocationInfo&& info) {m_client.onSendFileError(ec, info); },
+			[this](FileLocationInfo&& info, uint32_t progressPercent) {m_client.onSendFileProgressUpdate(info, progressPercent); },
+			[this](FileLocationInfo&& info, uint32_t progressPercent) {m_client.onRequestedFileProgressUpdate(info, progressPercent); },
 			[this]( uint32_t progressPercent) {m_client.onDeadlockNewVersionProgressUpdate(progressPercent); }
 		);
 

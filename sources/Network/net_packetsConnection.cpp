@@ -43,12 +43,8 @@ namespace net {
 		return m_socket.is_open();
 	}
 
-	void PacketsConnection::sendPacket(const Packet& packet) {
+	void PacketsConnection::send(const Packet& packet) {
 		m_packetsSender.sendPacket(packet);
-	}
-
-	void PacketsConnection::sendMessage(const Packet& packet, std::vector<CryptoPP::RSA::PublicKey> friendKeys) {
-		m_packetsSender.send(packet);
 	}
 }
 

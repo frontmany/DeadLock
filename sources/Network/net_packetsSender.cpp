@@ -1,5 +1,8 @@
 #include "net_packetsSender.h"
-#include "net_packetsConnection.h"
+
+#include "asio.hpp"
+#include "asio/ts/buffer.hpp"
+#include "asio/ts/internet.hpp"
 
 namespace net {
 
@@ -48,8 +51,7 @@ namespace net {
 	void PacketsSender::writeHeader() {
 		asio::async_write(
 			*m_socket,
-			asio::buffer(&m_safeDequeOutgoingPackets.front().header,
-			sizeof(PacketHeader)),
+			asio::buffer(&m_safeDequeOutgoingPackets.front().header(), Packet::sizeOfHeader()),
 			[this](std::error_code ec, std::size_t length) {
 				if (ec)
 				{
@@ -62,7 +64,7 @@ namespace net {
 				}
 				else
 				{
-					if (m_safeDequeOutgoingPackets.front().body.size() > 0)
+					if (m_safeDequeOutgoingPackets.front().body().size() > 0)
 					{
 						writeBody();
 					}
@@ -83,10 +85,8 @@ namespace net {
 	void PacketsSender::writeBody() {
 		asio::async_write(
 			*m_socket,
-			asio::buffer(m_safeDequeOutgoingPackets.front().body.data(),
-				m_safeDequeOutgoingPackets.front().body.size()),
-			[this](std::error_code ec, std::size_t length)
-			{
+			asio::buffer(m_safeDequeOutgoingPackets.front().body().data(), m_safeDequeOutgoingPackets.front().body().size()),
+			[this](std::error_code ec, std::size_t length) {
 				if (ec) {
 					m_onDisconnect();
 
